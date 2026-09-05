@@ -1,0 +1,257 @@
+/* =========================================================
+   KHARIDINO PRODUCT VISUAL SYSTEM
+   Premium product-image presentation for desktop + mobile
+   ========================================================= */
+
+:root {
+    --kv-image-bg: rgba(255,255,255,.035);
+    --kv-image-border: rgba(255,255,255,.10);
+    --kv-image-glow: rgba(56,189,248,.18);
+    --kv-image-shadow: 0 22px 55px rgba(0,0,0,.28);
+}
+
+/* Product image containers */
+.product-image,
+.kd-product-image,
+.kd-product-image-card {
+    isolation: isolate;
+}
+
+.product-image,
+.kd-product-image {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 45%, rgba(56,189,248,.10), transparent 34%),
+        radial-gradient(circle at 75% 75%, rgba(99,102,241,.09), transparent 38%),
+        linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+}
+
+.product-image::before,
+.kd-product-image::before {
+    content: "";
+    position: absolute;
+    inset: 10%;
+    border: 1px solid rgba(255,255,255,.055);
+    border-radius: 28px;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.product-image::after,
+.kd-product-image::after {
+    content: "";
+    position: absolute;
+    width: 42%;
+    aspect-ratio: 1;
+    left: 29%;
+    top: 28%;
+    border-radius: 50%;
+    background: var(--kv-image-glow);
+    filter: blur(42px);
+    opacity: .55;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.product-image img,
+.kd-product-image img {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    padding: 16px;
+    filter: drop-shadow(0 18px 24px rgba(0,0,0,.20));
+    transition: transform .55s cubic-bezier(.2,.75,.2,1), filter .35s ease;
+}
+
+.product-card:hover .product-image img,
+.kd-product-image:hover img {
+    transform: scale(1.075) translateY(-3px);
+    filter: drop-shadow(0 24px 30px rgba(0,0,0,.30));
+}
+
+/* Premium image placeholder */
+.product-placeholder,
+.kd-image-placeholder {
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(145deg, rgba(56,189,248,.07), rgba(99,102,241,.06)),
+        rgba(255,255,255,.02);
+}
+
+.product-placeholder::before,
+.kd-image-placeholder::before {
+    content: "";
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(168,85,247,.12));
+    filter: blur(28px);
+    animation: kvImagePulse 4s ease-in-out infinite;
+}
+
+.product-placeholder i,
+.kd-image-placeholder i {
+    position: relative;
+    z-index: 2;
+    font-size: clamp(46px, 7vw, 82px);
+    background: linear-gradient(135deg, #7dd3fc, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 10px 22px rgba(56,189,248,.18));
+}
+
+/* Small image badges */
+.kv-image-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #eaf7ff;
+    background: rgba(5,12,24,.68);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 8px 24px rgba(0,0,0,.20);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.kv-image-badge i { color: #67e8f9; }
+
+/* Product-card polish */
+.product-card {
+    overflow: hidden;
+}
+
+.product-card .product-image {
+    border-bottom: 1px solid rgba(255,255,255,.055);
+}
+
+.product-card .product-image img {
+    transform-origin: center;
+}
+
+/* Main product page */
+.kd-product-image-card {
+    overflow: hidden;
+    border: 1px solid var(--kv-image-border);
+    box-shadow: var(--kv-image-shadow);
+}
+
+.kd-product-image {
+    min-height: 430px;
+    cursor: zoom-in;
+}
+
+.kd-product-image img {
+    padding: 28px;
+}
+
+.kd-image-zoom {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: rgba(4,10,20,.72);
+    border: 1px solid rgba(255,255,255,.10);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #e5f5ff;
+    font-size: 11px;
+    pointer-events: none;
+}
+
+.kd-image-zoom i { color: #67e8f9; }
+
+@keyframes kvImagePulse {
+    0%, 100% { transform: scale(.92); opacity: .65; }
+    50% { transform: scale(1.08); opacity: .95; }
+}
+
+/* =========================================================
+   MOBILE PRODUCT EXPERIENCE
+   ========================================================= */
+@media (max-width: 768px) {
+    .product-image {
+        height: 210px;
+        padding: 10px;
+    }
+
+    .product-image img {
+        padding: 12px;
+    }
+
+    .kd-product-image {
+        min-height: 330px;
+    }
+
+    .kd-product-image img {
+        padding: 18px;
+    }
+
+    .kd-image-zoom {
+        right: 12px;
+        bottom: 12px;
+        padding: 7px 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .product-image {
+        height: 185px;
+    }
+
+    .product-image::before,
+    .kd-product-image::before {
+        inset: 7%;
+        border-radius: 20px;
+    }
+
+    .kd-product-image {
+        min-height: 285px;
+    }
+
+    .kd-product-image img {
+        padding: 12px;
+    }
+
+    .kv-image-badge {
+        top: 8px;
+        left: 8px;
+        min-height: 27px;
+        padding: 5px 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .product-image img,
+    .kd-product-image img,
+    .product-card:hover .product-image img,
+    .kd-product-image:hover img {
+        transition: none;
+        transform: none;
+    }
+
+    .product-placeholder::before,
+    .kd-image-placeholder::before {
+        animation: none;
+    }
+}

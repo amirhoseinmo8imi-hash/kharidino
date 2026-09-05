@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ 'ورود' if mode == 'login' else 'ثبت‌نام' }} | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="auth-page"><form class="auth-card" method="post">
+<div class="auth-icon"><i class="fa-solid fa-{{ 'right-to-bracket' if mode == 'login' else 'user-plus' }}"></i></div>
+<h1>{{ 'ورود به حساب' if mode == 'login' else 'ساخت حساب' }}</h1>
+{% if mode == 'register' %}<input name="name" placeholder="نام" required>{% endif %}
+<input type="email" name="email" placeholder="ایمیل" required>
+<input type="password" name="password" placeholder="رمز عبور" required>
+<button class="btn full">{{ 'ورود' if mode == 'login' else 'ثبت‌نام' }}</button>
+<p>{% if mode == 'login' %}حساب نداری؟ <a href="{{ url_for('register') }}">ثبت‌نام</a>{% else %}حساب داری؟ <a href="{{ url_for('login') }}">ورود</a>{% endif %}</p>
+</form></section>
+{% endblock %}

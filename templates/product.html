@@ -1,0 +1,1109 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ product.name }} | {{ site_name }}
+{% endblock %}
+
+{% block content %}
+
+<section class="kd-product-page">
+
+    <div class="container">
+
+        <!-- =====================================================
+             BREADCRUMB
+        ====================================================== -->
+
+        <nav class="kd-breadcrumb" aria-label="مسیر صفحه">
+
+            <a href="{{ url_for('home') }}">
+                <i class="fa-solid fa-house"></i>
+                خانه
+            </a>
+
+            <i class="fa-solid fa-chevron-left"></i>
+
+            {% if product.category %}
+
+                <a href="{{ url_for('category', category_id=product.category.id) }}">
+                    {{ product.category.name }}
+                </a>
+
+                <i class="fa-solid fa-chevron-left"></i>
+
+            {% endif %}
+
+            <span>
+                {{ product.name }}
+            </span>
+
+        </nav>
+
+
+        <div class="product-top-actions">
+            <form method="POST" action="{{ url_for('compare_add', product_id=product.id) }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button class="btn btn-outline" type="submit">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                    افزودن به مقایسه
+                </button>
+            </form>
+            <a href="#price-offers" class="btn btn-primary">
+                <i class="fa-solid fa-tags"></i>
+                دیدن بهترین قیمت
+            </a>
+        </div>
+
+
+        <!-- =====================================================
+             PRODUCT HERO
+        ====================================================== -->
+
+        <div class="kd-product-hero">
+
+            <!-- =================================================
+                 PRODUCT IMAGE
+            ================================================== -->
+
+            <div class="kd-product-visual">
+
+                <div class="kd-product-image-card">
+
+                    <!-- TOP ACTIONS -->
+
+                    <div class="kd-image-actions">
+
+                        {% if offers %}
+
+                            <span class="kd-stock-pill">
+
+                                <span class="kd-pulse"></span>
+
+                                موجود در فروشگاه‌ها
+
+                            </span>
+
+                        {% else %}
+
+                            <span class="kd-stock-pill kd-stock-off">
+
+                                <span></span>
+
+                                ناموجود
+
+                            </span>
+
+                        {% endif %}
+
+
+                        <div class="kd-round-actions">
+
+                            {% if current_user %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('toggle_favorite', product_id=product.id) }}"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="kd-round-btn {% if product.id in favorite_ids %}is-favorite{% endif %}"
+                                        aria-label="افزودن به علاقه‌مندی"
+                                    >
+
+                                        <i class="{% if product.id in favorite_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+
+                                    </button>
+
+                                </form>
+
+                            {% else %}
+
+                                <a
+                                    href="{{ url_for('login', next=request.path) }}"
+                                    class="kd-round-btn"
+                                    aria-label="ورود برای علاقه‌مندی"
+                                >
+
+                                    <i class="fa-regular fa-heart"></i>
+
+                                </a>
+
+                            {% endif %}
+
+
+                            <button
+                                type="button"
+                                class="kd-round-btn"
+                                onclick="kdShareProduct()"
+                                aria-label="اشتراک گذاری"
+                            >
+
+                                <i class="fa-solid fa-share-nodes"></i>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- IMAGE -->
+
+                    <div
+                        class="kd-product-image"
+                        onclick="kdOpenImage()"
+                    >
+
+                        {% if product.image %}
+
+                            <img
+                                id="kdMainProductImage"
+                                src="{{ url_for('static', filename=product.image) }}"
+                                alt="{{ product.name }}"
+                                loading="eager"
+                            >
+
+                        {% else %}
+
+                            <div class="kd-image-placeholder">
+
+                                <div class="kd-placeholder-glow"></div>
+
+                                <i class="fa-solid {{ product.category.icon if product.category else 'fa-box' }}"></i>
+
+                            </div>
+
+                        {% endif %}
+
+
+                        {% if product.image %}
+
+                            <div class="kd-image-zoom">
+
+                                <i class="fa-solid fa-expand"></i>
+
+                                بزرگنمایی
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- IMAGE FOOTER -->
+
+                    <div class="kd-image-footer">
+
+                        <span>
+
+                            <i class="fa-solid fa-shield-halved"></i>
+
+                            خرید هوشمند با خریدینو
+
+                        </span>
+
+                        <span>
+
+                            <i class="fa-solid fa-image"></i>
+
+                            تصویر محصول
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 PRODUCT INFORMATION
+            ================================================== -->
+
+            <div class="kd-product-info">
+
+                <!-- CATEGORY -->
+
+                {% if product.category %}
+
+                    <a
+                        href="{{ url_for('category', category_id=product.category.id) }}"
+                        class="kd-category-badge"
+                    >
+
+                        <i class="fa-solid fa-layer-group"></i>
+
+                        {{ product.category.name }}
+
+                    </a>
+
+                {% endif %}
+
+
+                <!-- TITLE -->
+
+                <h1 class="kd-product-title">
+                    {{ product.name }}
+                </h1>
+
+
+                <!-- DESCRIPTION -->
+
+                {% if product.description %}
+
+                    <p class="kd-product-description">
+                        {{ product.description }}
+                    </p>
+
+                {% else %}
+
+                    <p class="kd-product-description kd-muted">
+                        این محصول را در فروشگاه‌های مختلف مقایسه کنید
+                        و بهترین قیمت را پیدا کنید.
+                    </p>
+
+                {% endif %}
+
+
+                <!-- QUICK STATS -->
+
+                <div class="kd-product-stats">
+
+                    <div class="kd-stat">
+
+                        <div class="kd-stat-icon">
+                            <i class="fa-solid fa-store"></i>
+                        </div>
+
+                        <div>
+
+                            <small>
+                                فروشگاه
+                            </small>
+
+                            <strong>
+                                {{ offers|length }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="kd-stat">
+
+                        <div class="kd-stat-icon">
+                            <i class="fa-solid fa-tag"></i>
+                        </div>
+
+                        <div>
+
+                            <small>
+                                وضعیت
+                            </small>
+
+                            <strong>
+                                {% if offers %}
+                                    موجود
+                                {% else %}
+                                    ناموجود
+                                {% endif %}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="kd-stat">
+
+                        <div class="kd-stat-icon">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+
+                        <div>
+
+                            <small>
+                                مقایسه
+                            </small>
+
+                            <strong>
+                                قیمت‌ها
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     BEST PRICE
+                ================================================== -->
+
+                <div class="kd-best-price">
+
+                    <div class="kd-best-price-top">
+
+                        <div class="kd-best-label">
+
+                            <span class="kd-crown">
+
+                                <i class="fa-solid fa-crown"></i>
+
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    بهترین قیمت
+                                </strong>
+
+                                <small>
+                                    کمترین قیمت پیدا شده
+                                </small>
+
+                            </div>
+
+                        </div>
+
+
+                        {% if offers %}
+
+                            <span class="kd-offer-count">
+
+                                {{ offers|length }}
+
+                                پیشنهاد
+
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="kd-price-main">
+
+                        <strong>
+                            {{ lowest_price|money }}
+                        </strong>
+
+                        <span>
+                            تومان
+                        </span>
+
+                    </div>
+
+
+                    <div class="kd-price-note">
+
+                        <i class="fa-solid fa-circle-info"></i>
+
+                        قیمت‌ها ممکن است در فروشگاه‌ها تغییر کنند.
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     ACTIONS
+                ================================================== -->
+
+                <div class="kd-product-actions">
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('cart_add', product_id=product.id) }}"
+                    >
+
+                        <button
+                            type="submit"
+                            class="kd-add-cart"
+                        >
+
+                            <span class="kd-cart-icon">
+
+                                <i class="fa-solid fa-cart-plus"></i>
+
+                            </span>
+
+                            <span>
+                                افزودن به سبد خرید
+                            </span>
+
+                            <i class="fa-solid fa-arrow-left"></i>
+
+                        </button>
+
+                    </form>
+
+
+                    <a
+                        href="{{ url_for('cart') }}"
+                        class="kd-view-cart"
+                    >
+
+                        <i class="fa-solid fa-basket-shopping"></i>
+
+                        سبد خرید
+
+                        {% if cart_count %}
+
+                            <span>
+                                {{ cart_count }}
+                            </span>
+
+                        {% endif %}
+
+                    </a>
+
+                </div>
+
+
+                <!-- TRUST -->
+
+                <div class="kd-trust-row">
+
+                    <div>
+
+                        <i class="fa-solid fa-shield-halved"></i>
+
+                        <span>
+                            خرید مطمئن
+                        </span>
+
+                    </div>
+
+                    <div>
+
+                        <i class="fa-solid fa-bolt"></i>
+
+                        <span>
+                            مقایسه سریع
+                        </span>
+
+                    </div>
+
+                    <div>
+
+                        <i class="fa-solid fa-heart"></i>
+
+                        <span>
+                            ذخیره محصول
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             PRICE COMPARISON
+        ====================================================== -->
+
+        <section class="kd-price-section">
+
+            <!-- HEADER -->
+
+            <div class="kd-section-header">
+
+                <div>
+
+                    <span class="kd-section-label">
+
+                        <i class="fa-solid fa-scale-balanced"></i>
+
+                        مقایسه قیمت
+
+                    </span>
+
+                    <h2>
+                        بهترین قیمت را از کجا بخریم؟
+                    </h2>
+
+                    <p>
+                        قیمت فروشگاه‌ها را مقایسه کن و مناسب‌ترین گزینه را انتخاب کن.
+                    </p>
+
+                </div>
+
+
+                <div class="kd-result-counter">
+
+                    <strong>
+                        {{ offers|length }}
+                    </strong>
+
+                    <span>
+                        فروشگاه
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 OFFERS
+            ================================================== -->
+
+            <div class="kd-offers" id="price-offers">
+
+                {% if offers %}
+
+                    {% for o in offers %}
+
+                        <article
+                            class="kd-offer-card {% if o.in_stock %}available{% else %}unavailable{% endif %}"
+                        >
+
+                            <!-- BEST OFFER -->
+
+                            {% if loop.first and o.in_stock %}
+
+                                <div class="kd-best-badge">
+
+                                    <i class="fa-solid fa-crown"></i>
+
+                                    پیشنهاد ویژه
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <!-- STORE -->
+
+                            <div class="kd-offer-store">
+
+                                <div class="kd-store-logo">
+
+                                    {% if o.store and o.store.logo %}
+
+                                        <img
+                                            src="{{ url_for('static', filename=o.store.logo) }}"
+                                            alt="{{ o.store.name }}"
+                                            loading="lazy"
+                                        >
+
+                                    {% else %}
+
+                                        <i class="fa-solid fa-store"></i>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <div class="kd-store-details">
+
+                                    {% if o.store %}
+
+                                        <strong>
+                                            {{ o.store.name }}
+                                        </strong>
+
+                                    {% else %}
+
+                                        <strong>
+                                            فروشگاه
+                                        </strong>
+
+                                    {% endif %}
+
+
+                                    {% if o.in_stock %}
+
+                                        <span class="kd-available">
+
+                                            <i class="fa-solid fa-circle-check"></i>
+
+                                            موجود
+
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="kd-unavailable">
+
+                                            <i class="fa-solid fa-circle-xmark"></i>
+
+                                            ناموجود
+
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- PRICE -->
+
+                            <div class="kd-offer-price">
+
+                                <small>
+                                    قیمت
+                                </small>
+
+                                <div>
+
+                                    <strong>
+                                        {{ o.price|money }}
+                                    </strong>
+
+                                    <span>
+                                        تومان
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- ACTION -->
+
+                            <div class="kd-offer-action">
+
+                                {% if o.url and o.in_stock %}
+
+                                    <a
+                                        href="{{ o.url }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="kd-buy-button"
+                                    >
+
+                                        خرید از فروشگاه
+
+                                        <i class="fa-solid fa-arrow-up-left-from-circle"></i>
+
+                                    </a>
+
+                                {% elif o.url %}
+
+                                    <a
+                                        href="{{ o.url }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="kd-see-button"
+                                    >
+
+                                        مشاهده
+
+                                        <i class="fa-solid fa-arrow-up-left-from-circle"></i>
+
+                                    </a>
+
+                                {% else %}
+
+                                    <span class="kd-no-link">
+
+                                        لینک خرید موجود نیست
+
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+                        </article>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <!-- =================================================
+                         EMPTY STATE
+                    ================================================== -->
+
+                    <div class="kd-empty">
+
+                        <div class="kd-empty-icon">
+
+                            <i class="fa-solid fa-store-slash"></i>
+
+                        </div>
+
+                        <h3>
+                            هنوز فروشگاهی برای این محصول ثبت نشده
+                        </h3>
+
+                        <p>
+                            برای این محصول هنوز پیشنهاد فروشگاهی فعالی ثبت نشده است.
+                        </p>
+
+                        <a
+                            href="{{ url_for('home') }}"
+                            class="kd-empty-button"
+                        >
+
+                            <i class="fa-solid fa-house"></i>
+
+                            بازگشت به خانه
+
+                        </a>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             WHY KHARIDINO
+        ====================================================== -->
+
+        <section class="kd-benefits">
+
+            <div class="kd-benefit">
+
+                <div class="kd-benefit-icon">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        مقایسه هوشمند
+                    </strong>
+
+                    <span>
+                        قیمت چند فروشگاه را یکجا ببینید.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="kd-benefit">
+
+                <div class="kd-benefit-icon">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        سریع و ساده
+                    </strong>
+
+                    <span>
+                        سریع‌تر به بهترین پیشنهاد برسید.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="kd-benefit">
+
+                <div class="kd-benefit-icon">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+
+                <div>
+
+                    <strong>
+                        علاقه‌مندی‌ها
+                    </strong>
+
+                    <span>
+                        محصولات موردعلاقه خود را ذخیره کنید.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- =========================================================
+         MOBILE BUY BAR
+    ========================================================== -->
+
+    <div class="kd-mobile-buy-bar">
+
+        <div class="kd-mobile-price">
+
+            <small>
+                بهترین قیمت
+            </small>
+
+            <strong>
+
+                {{ lowest_price|money }}
+
+                <span>
+                    تومان
+                </span>
+
+            </strong>
+
+        </div>
+
+
+        <form
+            method="POST"
+            action="{{ url_for('cart_add', product_id=product.id) }}"
+        >
+
+            <button type="submit">
+
+                <i class="fa-solid fa-cart-plus"></i>
+
+                افزودن به سبد
+
+            </button>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     IMAGE LIGHTBOX
+========================================================= -->
+
+{% if product.image %}
+
+    <div
+        id="kdImageLightbox"
+        class="kd-lightbox"
+        onclick="kdCloseImage(event)"
+    >
+
+        <button
+            type="button"
+            class="kd-lightbox-close"
+            onclick="kdCloseImage()"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+
+        <img
+            src="{{ url_for('static', filename=product.image) }}"
+            alt="{{ product.name }}"
+        >
+
+    </div>
+
+{% endif %}
+
+
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+    id="kdToast"
+    class="kd-toast"
+>
+
+    <i class="fa-solid fa-check"></i>
+
+    <span>
+        لینک محصول کپی شد
+    </span>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   SHARE PRODUCT
+========================================================= */
+
+function kdShareProduct() {
+
+    const productName = {{ product.name|tojson }};
+    const productUrl = window.location.href;
+
+    if (navigator.share) {
+
+        navigator.share({
+            title: productName,
+            text: "مشاهده این محصول در خریدینو",
+            url: productUrl
+        }).catch(() => {});
+
+        return;
+    }
+
+
+    if (navigator.clipboard) {
+
+        navigator.clipboard.writeText(productUrl)
+            .then(function () {
+
+                kdShowToast("لینک محصول کپی شد");
+
+            })
+            .catch(function () {
+
+                kdFallbackCopy(productUrl);
+
+            });
+
+        return;
+    }
+
+
+    kdFallbackCopy(productUrl);
+}
+
+
+/* =========================================================
+   FALLBACK COPY
+========================================================= */
+
+function kdFallbackCopy(text) {
+
+    const input = document.createElement("input");
+
+    input.value = text;
+
+    document.body.appendChild(input);
+
+    input.select();
+
+    try {
+
+        document.execCommand("copy");
+
+        kdShowToast("لینک محصول کپی شد");
+
+    } catch (e) {
+
+        window.prompt(
+            "لینک محصول:",
+            text
+        );
+
+    }
+
+    input.remove();
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+function kdShowToast(message) {
+
+    const toast = document.getElementById("kdToast");
+
+    if (!toast) return;
+
+    const text = toast.querySelector("span");
+
+    if (text) {
+        text.textContent = message;
+    }
+
+    toast.classList.add("show");
+
+    clearTimeout(window.kdToastTimer);
+
+    window.kdToastTimer = setTimeout(function () {
+
+        toast.classList.remove("show");
+
+    }, 2500);
+}
+
+
+/* =========================================================
+   OPEN IMAGE
+========================================================= */
+
+function kdOpenImage() {
+
+    const lightbox = document.getElementById(
+        "kdImageLightbox"
+    );
+
+    if (!lightbox) return;
+
+    lightbox.classList.add("show");
+
+    document.body.classList.add(
+        "kd-no-scroll"
+    );
+}
+
+
+/* =========================================================
+   CLOSE IMAGE
+========================================================= */
+
+function kdCloseImage(event) {
+
+    if (
+        event &&
+        event.target &&
+        event.target.tagName === "IMG"
+    ) {
+        return;
+    }
+
+    const lightbox = document.getElementById(
+        "kdImageLightbox"
+    );
+
+    if (!lightbox) return;
+
+    lightbox.classList.remove("show");
+
+    document.body.classList.remove(
+        "kd-no-scroll"
+    );
+}
+
+
+/* =========================================================
+   ESC CLOSE
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    function (event) {
+
+        if (event.key === "Escape") {
+
+            kdCloseImage();
+
+        }
+
+    }
+);
+
+</script>
+
+{% endblock %}

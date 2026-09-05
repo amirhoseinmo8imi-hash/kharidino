@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ store.name }} | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><span class="section-kicker">فروشگاه</span><h1>{{ store.name }}</h1>{% if store.website %}<a class="btn" href="{{ store.website }}" target="_blank">وب‌سایت فروشگاه</a>{% endif %}</div></section>
+<section class="section"><div class="container table-card"><div class="offer-table">
+{% for o in offers %}
+<div class="offer-row"><span>{{ o.product.name }}</span><strong>{{ o.price|money }} تومان</strong>{% if o.url %}<a class="btn" target="_blank" href="{{ o.url }}">خرید</a>{% endif %}</div>
+{% else %}<div class="empty">قیمتی ثبت نشده.</div>{% endfor %}
+</div></div></section>
+{% endblock %}

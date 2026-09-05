@@ -1,0 +1,86 @@
+===========================================================================
+KHARIDINO - PRODUCT IMAGE REPORT
+===========================================================================
+
+TOTAL PRODUCTS: 44
+VERIFIED: 4
+NORMAL: 13
+NO IMAGE: 27
+
+===========================================================================
+
+🟢 VERIFIED IMAGES (4)
+---------------------------------------------------------------------------
+01 | Galaxy S24
+     IMAGE: uploads/products/google_candidates/candidate_017.jpg
+02 | MacBook Air M3
+     IMAGE: uploads/products/product_2_macbook-air-m3_verified.jpg
+03 | AirPods Pro 2
+     IMAGE: uploads/products/product_3_airpods-pro-2_verified.jpg
+04 | PS5 Slim
+     IMAGE: uploads/products/product_4_PS5-Slim_verified.jpg
+
+===========================================================================
+
+🟡 NORMAL IMAGES (13)
+---------------------------------------------------------------------------
+05 | samsung s21
+     IMAGE: uploads/products/product_5.jpg
+06 | Samsung Galaxy S24
+     IMAGE: uploads/products/product_6.jpg
+07 | Apple iPhone 16 Pro
+     IMAGE: uploads/products/product_7.jpg
+08 | Xiaomi Redmi Note 13 Pro
+     IMAGE: uploads/products/product_8_xiaomi-redmi-note-13-pro.jpg
+09 | Samsung Galaxy A55
+     IMAGE: uploads/products/product_9.jpg
+10 | Apple MacBook Air M3
+     IMAGE: uploads/products/product_10.jpg
+11 | ASUS TUF Gaming F15
+     IMAGE: uploads/products/product_11.jpg
+13 | HP Victus 15
+     IMAGE: uploads/products/product_13.jpg
+15 | Silicon Power Blaze B10 32GB
+     IMAGE: uploads/products/product_15_Silicon-Power-Blaze-B10-32GB.jpg
+17 | TP-Link Archer C6
+     IMAGE: uploads/products/product_17.jpg
+18 | Apple AirPods Pro 2
+     IMAGE: uploads/products/product_18_Apple-AirPods-Pro-2.jpg
+19 | Anker Soundcore R50i
+     IMAGE: uploads/products/product_19.jpg
+22 | Xbox Series X
+     IMAGE: uploads/products/product_22.jpg
+
+===========================================================================
+
+🔴 PRODUCTS WITHOUT IMAGE (27)
+---------------------------------------------------------------------------
+12 | Lenovo IdeaPad Slim 3
+14 | Seagate Expansion Portable 2TB
+16 | Baseus Simple Mini3 Wireless Charger
+20 | Sony WH-1000XM5
+21 | Sony PlayStation 5 Slim
+23 | Sony DualSense Wireless Controller
+24 | Samsung 55 Inch 4K Smart TV
+25 | LG 55 Inch 4K Smart TV
+26 | Samsung Galaxy Watch 6
+27 | Apple Watch Series 9
+28 | Vidhas VIR-5637 Sandwich Maker
+29 | Philips Espresso Machine
+30 | Bosch Vacuum Cleaner
+31 | Hiska H5107 Hair Brush
+32 | Nivea Sun SPF 50
+33 | کتاب بیلیجی
+34 | دفتر یادداشت 100 برگ
+35 | Nike Running Shoes
+36 | قمقمه ورزشی 750ml
+37 | Bosch Cordless Drill
+38 | Ronix Tool Set
+39 | Bosch Car Air Filter
+40 | Car Phone Holder
+41 | تیشرت نخی مردانه
+42 | کفش اسپرت مردانه
+43 | قهوه فوری کلاسیک
+44 | چای سیاه ایرانی
+
+===========================================================================

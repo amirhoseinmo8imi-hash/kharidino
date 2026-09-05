@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}ثبت سفارش | {{ site_name }}{% endblock %}
+
+{% block content %}
+
+<section class="page-hero checkout-page-hero">
+
+```
+<div class="container">
+
+    <span class="section-kicker">
+        <i class="fa-solid fa-credit-card"></i>
+        تکمیل سفارش
+    </span>
+
+    <h1>تقریباً تمام شد 🎉</h1>
+
+    <p>
+        اطلاعات تحویل را وارد کن تا سفارش تو ثبت شود.
+    </p>
+
+</div>
+```
+
+</section>
+
+<section class="section checkout-section">
+
+```
+<div class="container">
+
+    <div class="checkout-layout">
+
+        <!-- =====================================
+             CHECKOUT FORM
+        ====================================== -->
+
+        <form
+            class="checkout-form checkout-main"
+            method="post"
+        >
+
+            <div class="checkout-card-header">
+
+                <div class="checkout-header-icon">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+
+                <div>
+                    <span>اطلاعات گیرنده</span>
+                    <h2>مشخصات تحویل سفارش</h2>
+                </div>
+
+            </div>
+
+
+            <div class="checkout-form-body">
+
+                <div class="form-section-title">
+                    <i class="fa-solid fa-address-card"></i>
+                    اطلاعات تماس
+                </div>
+
+
+                <div class="form-grid checkout-fields">
+
+                    <div class="checkout-field">
+
+                        <label>
+                            نام و نام خانوادگی
+                            <b>*</b>
+                        </label>
+
+                        <div class="field-wrapper">
+
+                            <i class="fa-solid fa-user"></i>
+
+                            <input
+                                name="customer_name"
+                                value="{{ current_user.name }}"
+                                placeholder="مثلاً امیر محمدی"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="checkout-field">
+
+                        <label>
+                            شماره تماس
+                            <b>*</b>
+                        </label>
+
+                        <div class="field-wrapper">
+
+                            <i class="fa-solid fa-phone"></i>
+
+                            <input
+                                name="phone"
+                                type="tel"
+                                placeholder="09xxxxxxxxx"
+                                inputmode="tel"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-section-title address-title">
+
+                    <i class="fa-solid fa-location-dot"></i>
+
+                    آدرس تحویل
+
+                </div>
+
+
+                <div class="checkout-field">
+
+                    <label>
+                        آدرس کامل
+                        <b>*</b>
+                    </label>
+
+                    <textarea
+                        name="address"
+                        rows="5"
+                        placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد..."
+                        required
+                    ></textarea>
+
+                    <small class="field-hint">
+                        آدرس را دقیق وارد کن تا سفارش بدون مشکل تحویل شود.
+                    </small>
+
+                </div>
+
+
+                <div class="checkout-field">
+
+                    <label>
+                        توضیحات سفارش
+                        <span>اختیاری</span>
+                    </label>
+
+                    <textarea
+                        name="note"
+                        rows="3"
+                        placeholder="اگر توضیح خاصی درباره سفارش داری اینجا بنویس..."
+                    ></textarea>
+
+                </div>
+
+
+                <!-- PAYMENT NOTE -->
+
+                <div class="payment-note">
+
+                    <div class="payment-note-icon">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            روش ثبت سفارش
+                        </strong>
+
+                        <span>
+                            در این نسخه سفارش شما ثبت می‌شود.
+                            پرداخت آنلاین می‌تواند در مرحله بعد به درگاه بانکی متصل شود.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="btn full checkout-submit"
+                    type="submit"
+                >
+
+                    <i class="fa-solid fa-check"></i>
+
+                    ثبت نهایی سفارش
+
+                    <span class="submit-arrow">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </span>
+
+                </button>
+
+
+                <div class="checkout-safe">
+
+                    <i class="fa-solid fa-lock"></i>
+
+                    اطلاعات شما با امنیت کامل ثبت می‌شود.
+
+                </div>
+
+            </div>
+
+        </form>
+
+
+        <!-- =====================================
+             ORDER SUMMARY
+        ====================================== -->
+
+        <aside class="summary-card checkout-summary">
+
+            <div class="summary-header">
+
+                <span>
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    خلاصه سفارش
+                </span>
+
+                <div class="summary-icon">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+
+            </div>
+
+
+            <div class="checkout-items">
+
+                {% for row in items %}
+
+                <div class="mini-item">
+
+                    <div class="mini-item-image">
+
+                        {% if row.product.image %}
+
+                        <img
+                            src="{{ url_for('static', filename=row.product.image) }}"
+                            alt="{{ row.product.name }}"
+                        >
+
+                        {% else %}
+
+                        <i class="fa-solid {{ row.product.category.icon if row.product.category else 'fa-box' }}"></i>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="mini-item-info">
+
+                        <strong>
+                            {{ row.product.name }}
+                        </strong>
+
+                        <span>
+                            {{ row.quantity }} ×
+                            {{ row.price|money }}
+                            تومان
+                        </span>
+
+                    </div>
+
+
+                    <b>
+                        {{ row.subtotal|money }}
+                        <small>تومان</small>
+                    </b>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <div class="summary-divider"></div>
+
+
+            <div class="summary-row">
+
+                <span>جمع محصولات</span>
+
+                <strong>
+                    {{ total|money }}
+                    تومان
+                </strong>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>هزینه ارسال</span>
+
+                <strong class="free-shipping">
+                    رایگان
+                </strong>
+
+            </div>
+
+
+            <div class="summary-divider"></div>
+
+
+            <div class="summary-total">
+
+                <span>مبلغ نهایی</span>
+
+                <strong>
+                    {{ total|money }}
+                    <small>تومان</small>
+                </strong>
+
+            </div>
+
+
+            <div class="checkout-guarantee">
+
+                <div>
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+
+                <span>
+                    ثبت سفارش سریع و امن
+                </span>
+
+            </div>
+
+        </aside>
+
+    </div>
+
+</div>
+```
+
+</section>
+
+{% endblock %}

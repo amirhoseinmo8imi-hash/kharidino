@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}تماس با ما | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><span class="section-kicker">ارتباط با ما</span><h1>چطور می‌توانیم کمکت کنیم؟</h1><p>پیشنهاد، انتقاد یا سوالت را برای ما بفرست.</p></div></section>
+<section class="section"><div class="container contact-grid"><div class="contact-info"><div class="contact-item"><i class="fa-solid fa-envelope"></i><div><b>ایمیل</b><span>support@kharidino.local</span></div></div><div class="contact-item"><i class="fa-solid fa-headset"></i><div><b>پشتیبانی</b><span>شنبه تا پنجشنبه، ۹ تا ۱۸</span></div></div><div class="contact-item"><i class="fa-solid fa-location-dot"></i><div><b>دفتر</b><span>پشتیبانی آنلاین خریدینو</span></div></div></div><form class="contact-form" method="post"><input name="name" placeholder="نام شما" required><input name="email" type="email" placeholder="ایمیل" required><textarea name="message" rows="6" placeholder="پیامتان..." required></textarea><button class="btn">ارسال پیام <i class="fa-solid fa-paper-plane"></i></button></form></div></section>
+{% endblock %}

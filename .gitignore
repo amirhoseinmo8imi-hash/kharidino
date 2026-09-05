@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db.backup*
+*.bak
+
+# Generated reports / temporary files
+*.log
+static/uploads/products/google_candidates/
+static/uploads/products/google_candidates/
+static/uploads/products/no_image_27/

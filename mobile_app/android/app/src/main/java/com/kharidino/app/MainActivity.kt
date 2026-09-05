@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,8 +35,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,6 +46,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.kharidino.app.api.ApiClient
+import com.kharidino.app.api.Product
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,32 +67,35 @@ fun KharidinoApp() {
         containerColor = Background,
         bottomBar = {
             NavigationBar(containerColor = Surface) {
-                val items = listOf("خانه", "جستجو", "سبد", "علاقه‌مندی", "حساب")
+                val labels = listOf("خانه", "جستجو", "سبد", "علاقه‌مندی", "حساب")
                 val icons = listOf(Icons.Default.Home, Icons.Default.Search, Icons.Default.ShoppingCart, Icons.Default.FavoriteBorder, Icons.Default.Person)
-                items.forEachIndexed { index, label ->
-                    NavigationBarItem(
-                        selected = selected == index,
-                        onClick = { selected = index },
-                        icon = { Icon(icons[index], label) },
-                        label = { Text(label) }
-                    )
+                labels.forEachIndexed { index, label ->
+                    NavigationBarItem(selected = selected == index, onClick = { selected = index }, icon = { Icon(icons[index], label) }, label = { Text(label) })
                 }
             }
         }
-    ) { padding ->
-        HomeScreen(Modifier.padding(padding))
-    }
+    ) { padding -> HomeScreen(Modifier.padding(padding)) }
 }
 
 @Composable
 private fun HomeScreen(modifier: Modifier = Modifier) {
-    val categories = listOf("موبایل", "لپ‌تاپ", "هدفون", "کنسول", "لوازم خانه")
-    val products = listOf("Galaxy S24", "iPhone 16 Pro", "AirPods Pro 2", "PS5 Slim")
+    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var search by remember { mutableStateOf("") }
 
-    Column(
-        modifier = modifier.fillMaxSize().background(Background).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
+    LaunchedEffect(Unit) {
+        try {
+            products = ApiClient.service.products(limit = 20).items
+            error = null
+        } catch (e: Exception) {
+            error = "اتصال به سرور خریدینو برقرار نشد."
+        } finally {
+            loading = false
+        }
+    }
+
+    Column(modifier.fillMaxSize().background(Background).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("خریدینو", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -96,31 +104,16 @@ private fun HomeScreen(modifier: Modifier = Modifier) {
             IconButton(onClick = {}) { Icon(Icons.Default.ShoppingCart, "سبد خرید", tint = Primary) }
         }
 
-        OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            placeholder = { Text("چی می‌خوای بخری؟") },
-            leadingIcon = { Icon(Icons.Default.Search, "جستجو") }
-        )
+        OutlinedTextField(value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("چی می‌خوای بخری؟") }, leadingIcon = { Icon(Icons.Default.Search, "جستجو") })
 
-        Text("دسته‌بندی‌ها", color = Color.White, fontWeight = FontWeight.Bold)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(categories) { category ->
-                Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Surface)) {
-                    Text(category, color = Color.White, modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp))
-                }
+        Text("محصولات فروشگاه", color = Color.White, fontWeight = FontWeight.Bold)
+        when {
+            loading -> CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.CenterHorizontally))
+            error != null -> Text(error!!, color = Color(0xFFFF8A8A))
+            else -> {
+                val shown = products.filter { it.name.contains(search, ignoreCase = true) }
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) { items(shown) { ProductCard(it) } }
             }
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text("پیشنهادهای خریدینو", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            TextButton(onClick = {}) { Text("مشاهده همه") }
-        }
-
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(products) { product -> ProductCard(product) }
         }
 
         Spacer(Modifier.height(4.dp))
@@ -134,14 +127,14 @@ private fun HomeScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ProductCard(name: String) {
+private fun ProductCard(product: Product) {
     Card(modifier = Modifier.size(width = 190.dp, height = 220.dp), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(Modifier.fillMaxWidth().height(115.dp).background(Color(0xFF172235), RoundedCornerShape(16.dp)), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Icon(Icons.Default.ShoppingCart, null, tint = Primary, modifier = Modifier.size(48.dp))
             }
-            Text(name, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("مقایسه قیمت", color = Color(0xFF94A3B8))
+            Text(product.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
+            Text("${product.price} تومان", color = Primary, fontWeight = FontWeight.Bold)
         }
     }
 }

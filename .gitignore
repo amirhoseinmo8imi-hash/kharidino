@@ -22,5 +22,7 @@ env/
 # Generated reports / temporary files
 *.log
 static/uploads/products/google_candidates/
-static/uploads/products/google_candidates/
 static/uploads/products/no_image_27/
+
+# Local project archives
+kharidino_ready.zip

@@ -1,0 +1,47 @@
+:root {
+  --kx-bg: #070b14;
+  --kx-surface: #101827;
+  --kx-surface-2: #172235;
+  --kx-primary: #38bdf8;
+  --kx-primary-2: #6366f1;
+  --kx-success: #22c55e;
+  --kx-text: #f8fafc;
+  --kx-muted: #94a3b8;
+  --kx-radius-card: 22px;
+  --kx-radius-button: 15px;
+  --kx-shadow-card: 0 16px 40px rgba(0,0,0,.28);
+}
+
+/* Android-oriented visual language */
+.kx-product-card {
+  background: linear-gradient(145deg, var(--kx-surface-2), var(--kx-surface));
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--kx-radius-card);
+  box-shadow: var(--kx-shadow-card);
+}
+
+.kx-product-image {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--kx-radius-card) var(--kx-radius-card) 0 0;
+  background: radial-gradient(circle, rgba(56,189,248,.12), transparent 68%);
+}
+
+.kx-product-image img {
+  width: 88%;
+  height: 210px;
+  object-fit: contain;
+}
+
+.kx-bottom-nav {
+  height: 72px;
+  border-top: 1px solid rgba(255,255,255,.09);
+  background: rgba(7,11,20,.96);
+  backdrop-filter: blur(22px);
+}
+
+.kx-bottom-nav .active {
+  color: var(--kx-primary);
+}

@@ -1,16 +1,14 @@
-"""Recommended launcher for Kharidino Ultimate.
-
-Enables the AI control plane and the cinematic first-entry splash without
-changing the original app.py runtime contract.
-"""
+"""Recommended launcher for Kharidino Ultimate."""
 import os
 
 from flask import redirect, request, render_template
 
-from app import app, db, Product, Store, Offer, User, admin_required
+from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai
+from mobile_api import register_mobile_api
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
+register_mobile_api(app, db, Product, Category, Store, Offer)
 
 
 @app.get("/splash")
@@ -20,12 +18,10 @@ def kharidino_splash():
 
 @app.before_request
 def splash_gate():
-    # Static assets, splash itself, and AI API calls must be reachable before
-    # the splash cookie exists. The AI API routes still enforce admin access
-    # through @admin_required inside kharidino_ai.py.
     if (
         request.path.startswith("/static/")
         or request.path.startswith("/splash")
+        or request.path.startswith("/api/mobile/")
         or request.path.startswith("/admin/kharidino-ai/api/")
     ):
         return None

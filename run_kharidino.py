@@ -20,7 +20,14 @@ def kharidino_splash():
 
 @app.before_request
 def splash_gate():
-    if request.path.startswith("/static/") or request.path.startswith("/splash"):
+    # Static assets, splash itself, and AI API calls must be reachable before
+    # the splash cookie exists. The AI API routes still enforce admin access
+    # through @admin_required inside kharidino_ai.py.
+    if (
+        request.path.startswith("/static/")
+        or request.path.startswith("/splash")
+        or request.path.startswith("/admin/kharidino-ai/api/")
+    ):
         return None
     if request.cookies.get("kharidino_splash") != "1":
         return redirect("/splash")

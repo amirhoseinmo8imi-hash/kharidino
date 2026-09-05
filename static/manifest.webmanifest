@@ -1,0 +1,12 @@
+{
+  "name": "خریدینو",
+  "short_name": "خریدینو",
+  "description": "مقایسه قیمت و خرید هوشمند",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050816",
+  "theme_color": "#6c5ce7",
+  "icons": []
+}

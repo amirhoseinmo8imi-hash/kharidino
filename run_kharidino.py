@@ -1,4 +1,4 @@
-"""Recommended launcher for Kharidino Ultimate."""
+"""Production-safe launcher for Kharidino Ultimate."""
 import os
 import socket
 
@@ -60,7 +60,22 @@ def splash_gate():
     return None
 
 
+def validate_runtime_config():
+    """Fail fast when the production runtime is missing required secrets."""
+    secret = os.environ.get("SECRET_KEY", "").strip()
+    debug = os.environ.get("FLASK_DEBUG", "0").lower() in {"1", "true", "yes"}
+    if not secret or secret in {"change-this-secret-key", "dev-secret"}:
+        if not debug:
+            raise RuntimeError(
+                "SECRET_KEY is not configured. Set a strong random SECRET_KEY before starting Kharidino."
+            )
+        app.logger.warning("Using development SECRET_KEY configuration; do not use this in production.")
+    if len(secret) < 32 and not debug:
+        raise RuntimeError("SECRET_KEY must contain at least 32 characters in production.")
+
+
 if __name__ == "__main__":
+    validate_runtime_config()
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "5000"))
     debug = os.environ.get("FLASK_DEBUG", "0").lower() in {"1", "true", "yes"}

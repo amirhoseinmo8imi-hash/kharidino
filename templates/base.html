@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-final.css', v='2026-09-06-7') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inventory-ui.css', v='2026-09-06-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inner-final.css', v='2026-09-07-1') }}">
-  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-1') }}">{% endif %}
+  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-1') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-07-2') }}">{% endif %}
 </head>
 <body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
@@ -82,3 +82,5 @@
 })();
 </script>
 <script src="{{ url_for('static', filename='js/inventory-ui.js', v='2026-09-06-1') }}" defer></script>
+</body>
+</html>

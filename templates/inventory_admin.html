@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}مدیریت موجودی | {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="container admin-section">
+  <div class="admin-title">
+    <div>
+      <span class="section-kicker">انبار</span>
+      <h1>مدیریت موجودی کالا</h1>
+      <p>موجودی عددی هر محصول را تنظیم کن. در زمان خرید، موجودی به‌صورت اتمیک کم می‌شود.</p>
+    </div>
+    <a class="btn" href="{{ url_for('admin') }}">بازگشت به پنل مدیریت</a>
+  </div>
+
+  <div class="admin-card">
+    {% if products %}
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>کالا</th>
+              <th>وضعیت</th>
+              <th>موجودی فعلی</th>
+              <th>تنظیم موجودی</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+            {% set row = inventory.get(product.id) %}
+            <tr>
+              <td>
+                <strong>{{ product.name }}</strong>
+                <small>#{{ product.id }}</small>
+              </td>
+              <td>
+                {% if row and row.managed %}
+                  {% if row.quantity > 0 %}موجود{% else %}ناموجود{% endif %}
+                {% else %}
+                  کنترل عددی نشده
+                {% endif %}
+              </td>
+              <td>{{ row.quantity if row else '—' }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin_inventory_set') }}" class="form-inline">
+                  <input type="hidden" name="product_id" value="{{ product.id }}">
+                  <input type="number" name="quantity" min="0" max="2147483647" value="{{ row.quantity if row else 0 }}" required>
+                  <button class="btn" type="submit">ذخیره</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>هنوز محصولی ثبت نشده است.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 {% block title %}مالی فروشگاه | {{ account.store.name }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css') }}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css', v='2026-09-07-2') }}">{% endblock %}
 {% block content %}
-<main class="km2-wrap" dir="rtl">
-  <div class="km2-head"><div><span class="km2-eyebrow">SELLER FINANCE</span><h1>مالی و تسویه حساب</h1><p>گردش مالی فقط برای فروشگاه {{ account.store.name }}</p></div><div class="km2-actions"><a class="km2-btn" href="{{ url_for('seller_dashboard') }}">داشبورد</a><a class="km2-btn" href="{{ url_for('seller_orders') }}">سفارش‌ها</a></div></div>
-  <div class="km2-stats"><div><small>فروش ناخالص</small><b>{{ totals.gross|money }}</b><span>تومان</span></div><div><small>کارمزد پلتفرم</small><b>{{ totals.fee|money }}</b><span>تومان</span></div><div><small>درآمد خالص</small><b>{{ totals.net|money }}</b><span>تومان</span></div><div><small>قابل تسویه</small><b>{{ totals.available|money }}</b><span>تومان</span></div></div>
-  <section class="km2-card"><div class="km2-card-title"><h2>دفتر تسویه</h2><small>تسویه خودکار بعد از تحویل سفارش فعال می‌شود.</small></div><div class="km2-table-wrap"><table class="km2-table"><thead><tr><th>زیرسفارش</th><th>ناخالص</th><th>کارمزد</th><th>خالص</th><th>وضعیت</th></tr></thead><tbody>{% for row in ledger %}<tr><td>#{{ row.seller_order_id }}</td><td>{{ row.gross|money }}</td><td>{{ row.platform_fee|money }}</td><td><b>{{ row.net|money }}</b></td><td><span class="km2-status">{{ {'pending':'در انتظار','available':'قابل تسویه','paid':'پرداخت شده','cancelled':'لغو شده'}.get(row.status,row.status) }}</span></td></tr>{% else %}<tr><td colspan="5" class="km2-empty">هنوز رکورد مالی وجود ندارد.</td></tr>{% endfor %}</tbody></table></div></section>
-</main>
+<div class="seller-workspace">
+  {% include "_seller_sidebar.html" %}
+  <main class="seller-workspace-main">
+    <div class="km2-head"><div><span class="km2-eyebrow">SELLER FINANCE</span><h1>مالی و تسویه حساب</h1><p>گردش مالی فقط برای فروشگاه {{ account.store.name }}</p></div><div class="km2-actions"><a class="km2-btn" href="{{ url_for('seller_dashboard') }}">داشبورد</a><a class="km2-btn" href="{{ url_for('seller_orders') }}">سفارش‌ها</a></div></div>
+    <div class="km2-stats"><div><small>فروش ناخالص</small><b>{{ totals.gross|money }}</b><span>تومان</span></div><div><small>کارمزد پلتفرم</small><b>{{ totals.fee|money }}</b><span>تومان</span></div><div><small>درآمد خالص</small><b>{{ totals.net|money }}</b><span>تومان</span></div><div><small>قابل تسویه</small><b>{{ totals.available|money }}</b><span>تومان</span></div></div>
+    <section class="km2-card"><div class="km2-card-title"><h2>دفتر تسویه</h2><small>تسویه خودکار بعد از تحویل سفارش فعال می‌شود.</small></div><div class="km2-table-wrap"><table class="km2-table"><thead><tr><th>زیرسفارش</th><th>ناخالص</th><th>کارمزد</th><th>خالص</th><th>وضعیت</th></tr></thead><tbody>{% for row in ledger %}<tr><td>#{{ row.seller_order_id }}</td><td>{{ row.gross|money }}</td><td>{{ row.platform_fee|money }}</td><td><b>{{ row.net|money }}</b></td><td><span class="km2-status">{{ {'pending':'در انتظار','available':'قابل تسویه','paid':'پرداخت شده','cancelled':'لغو شده'}.get(row.status,row.status) }}</span></td></tr>{% else %}<tr><td colspan="5" class="km2-empty">هنوز رکورد مالی وجود ندارد.</td></tr>{% endfor %}</tbody></table></div></section>
+  </main>
+</div>
 {% endblock %}

@@ -14,8 +14,8 @@
           <i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ q or '' }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button>
         </form>
         <div class="km-user-actions">
-          {% if session.get('user_id') %}<a href="{{ url_for('account') if 'account' in url_for.__globals__ else '#' }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
-          <a class="cart" href="#" aria-label="سبد خرید"><i class="fa-solid fa-cart-shopping"></i></a>
+          {% if session.get('user_id') %}<a href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
+          <a class="cart" href="{{ url_for('cart') }}" aria-label="سبد خرید"><i class="fa-solid fa-cart-shopping"></i>{% if cart_count %}<span class="cart-count">{{ cart_count }}</span>{% endif %}</a>
         </div>
       </div>
       <nav class="km-nav"><div class="km-nav-inner"><a href="#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in categories[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>

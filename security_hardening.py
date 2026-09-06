@@ -51,10 +51,12 @@ def _csrf_valid() -> bool:
 
 
 def _is_safe_local_redirect(target: str | None) -> bool:
-    """Allow only same-site relative paths for user-controlled redirects."""
+    """Allow only unambiguous same-site relative paths."""
     if not target:
         return False
     target = str(target).strip()
+    if not target or "\\" in target or any(ord(ch) < 32 for ch in target):
+        return False
     if not target.startswith("/") or target.startswith("//"):
         return False
     parsed = urlparse(target)

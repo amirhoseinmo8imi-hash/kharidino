@@ -6,20 +6,25 @@ that every Flask route receives the same baseline protections.
 """
 from __future__ import annotations
 
+import hashlib
 import hmac
 import os
 import secrets
+import threading
 import time
 from collections import defaultdict, deque
 from urllib.parse import urlparse
 
-from flask import abort, request, session
+from flask import abort, redirect, request, session, url_for
 
 _INSECURE_KEYS = {"", "change-this-secret-key", "dev-secret", "secret"}
 _RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 _CSRF_SESSION_KEY = "_kharidino_csrf_token"
 _CSRF_FIELD = "csrf_token"
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+_CHECKOUT_WINDOW_SECONDS = 60
+_CHECKOUT_LOCK = threading.RLock()
+_CHECKOUT_RECENT: dict[str, tuple[float, str]] = {}
 
 _IMAGE_MIME = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif"}
 _VIDEO_MIME = {"mp4": "video/mp4", "webm": "video/webm", "ogg": "video/ogg"}
@@ -61,6 +66,94 @@ def _is_safe_local_redirect(target: str | None) -> bool:
         return False
     parsed = urlparse(target)
     return not parsed.scheme and not parsed.netloc and not parsed.username and not parsed.password
+
+
+def _checkout_fingerprint() -> str | None:
+    if request.endpoint != "checkout" or request.method != "POST":
+        return None
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    try:
+        cart = session.get("cart", {})
+        if not isinstance(cart, dict):
+            cart = {}
+        normalized_cart = sorted((str(k), str(v)) for k, v in cart.items())
+        payload = "|".join(
+            [
+                str(user_id),
+                repr(normalized_cart),
+                request.form.get("customer_name", "").strip(),
+                request.form.get("phone", "").strip(),
+                request.form.get("address", "").strip(),
+                request.form.get("note", "").strip(),
+            ]
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    except Exception:
+        return None
+
+
+def _check_checkout_replay() -> None:
+    fingerprint = _checkout_fingerprint()
+    if not fingerprint:
+        return
+    now = time.monotonic()
+    with _CHECKOUT_LOCK:
+        expired = [key for key, (stamp, _status) in _CHECKOUT_RECENT.items() if now - stamp > _CHECKOUT_WINDOW_SECONDS]
+        for key in expired:
+            _CHECKOUT_RECENT.pop(key, None)
+        existing = _CHECKOUT_RECENT.get(fingerprint)
+        if existing and now - existing[0] <= _CHECKOUT_WINDOW_SECONDS:
+            abort(409, description="این سفارش قبلاً در حال ثبت یا ثبت شده است.")
+        _CHECKOUT_RECENT[fingerprint] = (now, "pending")
+
+
+def _finish_checkout_replay(response) -> None:
+    fingerprint = _checkout_fingerprint()
+    if not fingerprint:
+        return
+    with _CHECKOUT_LOCK:
+        if response.status_code >= 400:
+            _CHECKOUT_RECENT.pop(fingerprint, None)
+        else:
+            _CHECKOUT_RECENT[fingerprint] = (time.monotonic(), "completed")
+
+
+def _validate_checkout_stock() -> None:
+    if request.endpoint != "checkout" or not session.get("user_id"):
+        return
+    try:
+        from app import Product, Offer, Store
+        cart = session.get("cart", {})
+        if not isinstance(cart, dict):
+            cart = {}
+        for raw_id, raw_qty in cart.items():
+            try:
+                product_id = int(raw_id)
+                quantity = int(raw_qty)
+            except (TypeError, ValueError):
+                abort(400, description="سبد خرید نامعتبر است.")
+            if quantity < 1 or quantity > 99:
+                abort(400, description="تعداد کالا نامعتبر است.")
+            product = Product.query.get(product_id)
+            if not product or not product.active:
+                abort(400, description="یکی از کالاهای سبد دیگر قابل خرید نیست.")
+            available = (
+                Offer.query
+                .join(Store, Offer.store_id == Store.id)
+                .filter(
+                    Offer.product_id == product.id,
+                    Offer.in_stock.is_(True),
+                    Store.active.is_(True),
+                    Offer.price > 0,
+                )
+                .count()
+            )
+            if available == 0:
+                abort(409, description="یکی از کالاهای سبد در حال حاضر موجود نیست.")
+    except ImportError:
+        abort(503, description="سرویس سفارش موقتاً در دسترس نیست.")
 
 
 def apply_security(app):
@@ -106,6 +199,14 @@ def apply_security(app):
             if target and not _is_safe_local_redirect(target):
                 request.form = request.form.copy()
                 request.form.pop("next", None)
+        if request.endpoint == "login" and request.method == "POST":
+            target = request.args.get("next", "")
+            if target and not _is_safe_local_redirect(target):
+                abort(400, description="مقصد بازگشت نامعتبر است.")
+        if request.endpoint == "checkout":
+            _validate_checkout_stock()
+            if request.method == "POST":
+                _check_checkout_replay()
 
     @app.after_request
     def _security_headers(response):
@@ -118,9 +219,21 @@ def apply_security(app):
         if request.is_secure or _is_production():
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         response.headers.setdefault("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
+        if request.endpoint == "checkout" and request.method == "POST":
+            _finish_checkout_replay(response)
         if request.endpoint in {"login", "register", "logout"} and response.status_code < 400:
             _rotate_csrf_token()
         return response
+
+    @app.errorhandler(Exception)
+    def _safe_unhandled_error(error):
+        # Never expose traceback/DB/OS details to the browser. Flask HTTP
+        # exceptions keep their status code; unexpected exceptions are logged.
+        from werkzeug.exceptions import HTTPException
+        if isinstance(error, HTTPException):
+            return error
+        app.logger.exception("Unhandled Kharidino request error")
+        return "خطای داخلی سرور. لطفاً دوباره تلاش کنید.", 500
 
     app._kharidino_security_applied = True
     return app

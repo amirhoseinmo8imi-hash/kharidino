@@ -4,6 +4,7 @@
 {% block content %}
 <section class="km-auth-page">
   <form class="km-auth-card" method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="km-auth-brand"><div class="km-auth-brand-mark"><i class="fa-solid fa-bag-shopping"></i></div><h1>خریدینو</h1><p>{{ 'برای ادامه وارد حساب کاربری خود شوید' if mode == 'login' else 'حساب کاربری خود را در خریدینو بسازید' }}</p></div>
     <h2 class="km-auth-title">{{ 'ورود به حساب کاربری' if mode == 'login' else 'ثبت‌نام در خریدینو' }}</h2>
     {% if mode == 'register' %}<div class="km-field"><label for="name">نام و نام خانوادگی</label><input id="name" name="name" placeholder="نام و نام خانوادگی" autocomplete="name" required></div>{% endif %}

@@ -1,0 +1,1 @@
+Security hardening branch verification trigger. Production should use `wsgi:app` and a strong environment `SECRET_KEY`.

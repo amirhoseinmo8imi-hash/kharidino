@@ -123,8 +123,8 @@ def sync_order_to_seller_orders(order):
         sub = SellerOrder(order_id=order.id, store_id=store_id, status="new")
         db.session.add(sub)
         subtotal = sum(int(item.price or 0) * int(item.quantity or 0) for item, _ in rows)
-        sub.subtotal = subtotal
         sub.shipping_fee = 0
+        sub.subtotal = subtotal
         sub.platform_fee = max(0, round(subtotal * 0.05))
         sub.seller_total = max(0, subtotal + sub.shipping_fee - sub.platform_fee)
 
@@ -183,7 +183,7 @@ def seller_orders():
 
 
 @app.post("/seller/orders/<int:seller_order_id>/status")
-seller_required
+@seller_required
 def seller_order_status(seller_order_id):
     account = _seller_account()
     order = SellerOrder.query.filter_by(id=seller_order_id, store_id=account.store_id).first_or_404()
@@ -213,7 +213,7 @@ def seller_order_status(seller_order_id):
 
 
 @app.post("/seller/notifications/read-all")
-seller_required
+@seller_required
 def seller_notifications_read_all():
     account = _seller_account()
     SellerNotification.query.filter_by(store_id=account.store_id, is_read=False).update({"is_read": True})
@@ -222,7 +222,7 @@ def seller_notifications_read_all():
 
 
 @app.get("/seller/finance")
-seller_required
+@seller_required
 def seller_finance():
     account = _seller_account()
     ledger = SellerLedger.query.filter_by(store_id=account.store_id).order_by(SellerLedger.id.desc()).all()
@@ -237,7 +237,7 @@ def seller_finance():
 
 
 @app.get("/seller/analytics")
-seller_required
+@seller_required
 def seller_analytics():
     account = _seller_account()
     orders = SellerOrder.query.filter_by(store_id=account.store_id).all()
@@ -249,7 +249,7 @@ def seller_analytics():
 
 
 @app.post("/seller/products/bulk-stock")
-seller_required
+@seller_required
 def seller_bulk_stock():
     account = _seller_account()
     action = request.form.get("action", "").strip()

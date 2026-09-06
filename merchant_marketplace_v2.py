@@ -1,17 +1,10 @@
-"""Advanced multi-vendor marketplace layer for Kharidino.
-
-This extension deliberately leaves the storefront/home design and the existing
-Order schema intact. It adds isolated seller suborders, seller-scoped earnings,
-notifications, analytics and bulk inventory operations around the existing
-checkout/order records.
-"""
+"""Advanced multi-vendor marketplace layer for Kharidino."""
 from sqlalchemy import event
 from sqlalchemy.orm import Session
 from flask import abort, flash, redirect, render_template, request, url_for
 
-from app import app, db, User, Order, OrderItem, Product, Store, Offer, admin_required
+from app import app, db, Order, OrderItem, Product, Store, Offer, admin_required
 from merchant_marketplace import MerchantStore, SellerProduct, _seller_account, seller_required
-
 
 SELLER_STATUSES = {
     "new": "جدید",
@@ -93,7 +86,6 @@ def _merchant_store_ids():
 
 
 def _offer_for_order_item(item):
-    """Choose the deterministic seller offer that produced the checkout price."""
     offers = (
         Offer.query.join(Store, Offer.store_id == Store.id)
         .filter(Offer.product_id == item.product_id,
@@ -114,7 +106,11 @@ def sync_order_to_seller_orders(order):
     if not order or not order.items:
         return []
     created = []
-    existing_item_ids = {x.order_item_id for x in SellerOrderItem.query.join(SellerOrder).filter(SellerOrder.order_id == order.id).all()}
+    existing_item_ids = {
+        x.order_item_id
+        for x in SellerOrderItem.query.join(SellerOrder)
+        .filter(SellerOrder.order_id == order.id).all()
+    }
     grouped = {}
     for item in order.items:
         if item.id in existing_item_ids:
@@ -122,31 +118,37 @@ def sync_order_to_seller_orders(order):
         offer = _offer_for_order_item(item)
         if offer:
             grouped.setdefault(offer.store_id, []).append((item, offer))
+
     for store_id, rows in grouped.items():
         sub = SellerOrder(order_id=order.id, store_id=store_id, status="new")
         db.session.add(sub)
-        db.session.flush()
-        subtotal = 0
-        for item, _offer in rows:
-            subtotal += int(item.price or 0) * int(item.quantity or 0)
-            db.session.add(SellerOrderItem(
-                seller_order_id=sub.id, order_item_id=item.id,
-                product_id=item.product_id, product_name=item.product_name,
-                price=item.price, quantity=item.quantity,
-            ))
+        subtotal = sum(int(item.price or 0) * int(item.quantity or 0) for item, _ in rows)
         sub.subtotal = subtotal
         sub.shipping_fee = 0
-        # 5% is a placeholder marketplace fee and can be moved to a site setting later.
         sub.platform_fee = max(0, round(subtotal * 0.05))
         sub.seller_total = max(0, subtotal + sub.shipping_fee - sub.platform_fee)
+
+        for item, _offer in rows:
+            db.session.add(SellerOrderItem(
+                seller_order=sub,
+                order_item=item,
+                product_id=item.product_id,
+                product_name=item.product_name,
+                price=item.price,
+                quantity=item.quantity,
+            ))
         db.session.add(SellerLedger(
-            seller_order_id=sub.id, store_id=store_id,
-            gross=subtotal, shipping=sub.shipping_fee,
-            platform_fee=sub.platform_fee, net=sub.seller_total,
+            seller_order=sub,
+            store_id=store_id,
+            gross=subtotal,
+            shipping=sub.shipping_fee,
+            platform_fee=sub.platform_fee,
+            net=sub.seller_total,
             status="pending",
         ))
         db.session.add(SellerNotification(
-            store_id=store_id, seller_order_id=sub.id,
+            store_id=store_id,
+            seller_order_id=None,
             title="سفارش جدید",
             body=f"یک سفارش جدید برای فروشگاه شما ثبت شده است. سفارش اصلی #{order.id}",
         ))
@@ -156,7 +158,6 @@ def sync_order_to_seller_orders(order):
 
 @event.listens_for(Session, "after_flush")
 def _seller_order_after_flush(session_obj, flush_context):
-    """Automatically split newly-created master orders after checkout flush."""
     processed = session_obj.info.setdefault("kharidino_seller_split_orders", set())
     for obj in list(session_obj.new):
         if isinstance(obj, Order) and obj.id and obj.id not in processed:
@@ -169,9 +170,8 @@ def inject_seller_workspace_globals():
     account = _seller_account()
     if not account or account.status != "approved":
         return {"seller_unread_notifications": 0}
-    return {
-        "seller_unread_notifications": SellerNotification.query.filter_by(store_id=account.store_id, is_read=False).count()
-    }
+    return {"seller_unread_notifications": SellerNotification.query.filter_by(
+        store_id=account.store_id, is_read=False).count()}
 
 
 @app.get("/seller/orders")
@@ -183,7 +183,7 @@ def seller_orders():
 
 
 @app.post("/seller/orders/<int:seller_order_id>/status")
-@seller_required
+seller_required
 def seller_order_status(seller_order_id):
     account = _seller_account()
     order = SellerOrder.query.filter_by(id=seller_order_id, store_id=account.store_id).first_or_404()
@@ -222,7 +222,7 @@ def seller_notifications_read_all():
 
 
 @app.get("/seller/finance")
-@seller_required
+seller_required
 def seller_finance():
     account = _seller_account()
     ledger = SellerLedger.query.filter_by(store_id=account.store_id).order_by(SellerLedger.id.desc()).all()
@@ -237,18 +237,19 @@ def seller_finance():
 
 
 @app.get("/seller/analytics")
-@seller_required
+seller_required
 def seller_analytics():
     account = _seller_account()
     orders = SellerOrder.query.filter_by(store_id=account.store_id).all()
     delivered = [x for x in orders if x.status == "delivered"]
     revenue = sum(x.seller_total for x in delivered)
     return render_template("seller_analytics.html", account=account, orders=orders, revenue=revenue,
-                           total_orders=len(orders), delivered_orders=len(delivered), products=SellerProduct.query.filter_by(store_id=account.store_id).count())
+                           total_orders=len(orders), delivered_orders=len(delivered),
+                           products=SellerProduct.query.filter_by(store_id=account.store_id).count())
 
 
 @app.post("/seller/products/bulk-stock")
-@seller_required
+seller_required
 def seller_bulk_stock():
     account = _seller_account()
     action = request.form.get("action", "").strip()
@@ -261,7 +262,9 @@ def seller_bulk_stock():
     if action not in {"on", "off"} or not ids:
         flash("عملیات موجودی نامعتبر است.", "warning")
         return redirect(url_for("seller_dashboard") + "#products")
-    owned = SellerProduct.query.filter(SellerProduct.store_id == account.store_id, SellerProduct.product_id.in_(ids)).all()
+    owned = SellerProduct.query.filter(
+        SellerProduct.store_id == account.store_id,
+        SellerProduct.product_id.in_(ids)).all()
     owned_ids = {x.product_id for x in owned}
     offers = Offer.query.filter(Offer.store_id == account.store_id, Offer.product_id.in_(owned_ids)).all()
     for offer in offers:

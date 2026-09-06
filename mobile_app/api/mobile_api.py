@@ -2,6 +2,15 @@ from flask import Blueprint, jsonify, request
 
 
 def register_mobile_api(app, db, Product, Category, Store, Offer):
+    """Register the mobile API once.
+
+    The main app and the Ultimate launcher may both initialize optional
+    subsystems. Keep this registration idempotent so a second initialization
+    cannot create duplicate endpoint names or conflicting blueprints.
+    """
+    if "mobile_api.health" in app.view_functions:
+        return app
+
     bp = Blueprint("mobile_api", __name__, url_prefix="/api/mobile")
 
     def image_url(product):
@@ -85,3 +94,4 @@ def register_mobile_api(app, db, Product, Category, Store, Offer):
         return jsonify({"items": [product_json(p) for p in rows], "total": len(rows)})
 
     app.register_blueprint(bp)
+    return app

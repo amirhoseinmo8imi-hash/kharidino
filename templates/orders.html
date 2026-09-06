@@ -1,96 +1,16 @@
 {% extends "base.html" %}
-
 {% block title %}سفارش‌های من | {{ site_name }}{% endblock %}
-
 {% block content %}
-<section class="page-hero orders-page-hero">
-<div class="container">
-    <span class="section-kicker"><i class="fa-solid fa-box-open"></i> حساب کاربری</span>
-    <h1>سفارش‌های من</h1>
-    <p>سفارش‌های ثبت‌شده و وضعیت آن‌ها را اینجا مشاهده کن.</p>
-</div>
-</section>
-
-<section class="section orders-section">
-<div class="container">
-    {% if orders %}
-    <div class="orders-list">
-        {% for order in orders %}
-        {% set status_class = 'pending' %}
-        {% if order.status == 'تأیید شد' %}{% set status_class = 'confirmed' %}
-        {% elif order.status == 'در حال آماده‌سازی' %}{% set status_class = 'preparing' %}
-        {% elif order.status == 'ارسال شد' %}{% set status_class = 'shipping' %}
-        {% elif order.status == 'تحویل شد' %}{% set status_class = 'delivered' %}
-        {% elif order.status == 'لغو شد' %}{% set status_class = 'cancelled' %}{% endif %}
-
-        <article class="order-card">
-            <div class="order-head">
-                <div class="order-title">
-                    <div class="order-number-icon"><i class="fa-solid fa-receipt"></i></div>
-                    <div><span>شماره سفارش</span><strong>#{{ order.id }}</strong></div>
-                </div>
-                <div class="order-date">
-                    <i class="fa-regular fa-calendar"></i>
-                    {{ order.created_at.strftime('%Y/%m/%d') if order.created_at else '' }}
-                    {% if order.created_at %}<small>{{ order.created_at.strftime('%H:%M') }}</small>{% endif %}
-                </div>
-                <div class="order-status {{ status_class }}">
-                    {% if status_class == 'pending' %}<i class="fa-solid fa-clock"></i>
-                    {% elif status_class == 'confirmed' %}<i class="fa-solid fa-circle-check"></i>
-                    {% elif status_class == 'preparing' %}<i class="fa-solid fa-box"></i>
-                    {% elif status_class == 'shipping' %}<i class="fa-solid fa-truck"></i>
-                    {% elif status_class == 'delivered' %}<i class="fa-solid fa-check-double"></i>
-                    {% elif status_class == 'cancelled' %}<i class="fa-solid fa-circle-xmark"></i>{% endif %}
-                    {{ order.status }}
-                </div>
-            </div>
-
-            {% if status_class != 'cancelled' %}
-            <div class="order-progress">
-                <div class="progress-step active"><span><i class="fa-solid fa-receipt"></i></span><small>ثبت سفارش</small></div>
-                <div class="progress-line {% if status_class in ['confirmed','preparing','shipping','delivered'] %}active{% endif %}"></div>
-                <div class="progress-step {% if status_class in ['confirmed','preparing','shipping','delivered'] %}active{% endif %}"><span><i class="fa-solid fa-box"></i></span><small>آماده‌سازی</small></div>
-                <div class="progress-line {% if status_class in ['shipping','delivered'] %}active{% endif %}"></div>
-                <div class="progress-step {% if status_class in ['shipping','delivered'] %}active{% endif %}"><span><i class="fa-solid fa-truck"></i></span><small>ارسال</small></div>
-                <div class="progress-line {% if status_class == 'delivered' %}active{% endif %}"></div>
-                <div class="progress-step {% if status_class == 'delivered' %}active{% endif %}"><span><i class="fa-solid fa-house"></i></span><small>تحویل</small></div>
-            </div>
-            {% endif %}
-
-            <div class="order-items">
-                <div class="order-items-title"><span><i class="fa-solid fa-bag-shopping"></i> محصولات سفارش</span><span>{{ order.items|length }} قلم</span></div>
-                {% for item in order.items %}
-                <div class="order-item">
-                    <div class="order-item-icon">
-                        {% if item.product and item.product.image %}<img src="{{ url_for('static', filename=item.product.image) }}" alt="{{ item.product_name }}">{% else %}<i class="fa-solid fa-box"></i>{% endif %}
-                    </div>
-                    <div class="order-item-info"><strong>{{ item.product_name }}</strong><span>تعداد: {{ item.quantity }}</span></div>
-                    <div class="order-item-price"><strong>{{ (item.price * item.quantity)|money }}</strong><small>تومان</small></div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="order-foot">
-                <div class="order-customer"><span><i class="fa-solid fa-user"></i> گیرنده</span><strong>{{ order.customer_name }}</strong></div>
-                <div class="order-total"><span>مبلغ کل</span><strong>{{ order.total|money }} <small>تومان</small></strong></div>
-                {% if order.status == 'در انتظار بررسی' %}
-                <form method="post" action="{{ url_for('cancel_order', order_id=order.id) }}" onsubmit="return confirm('آیا از لغو این سفارش مطمئن هستید؟');">
-                    <button type="submit" class="btn btn-danger"><i class="fa-solid fa-ban"></i> لغو سفارش</button>
-                </form>
-                {% endif %}
-            </div>
-        </article>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-orders-card">
-        <div class="empty-orders-icon"><i class="fa-solid fa-box-open"></i></div>
-        <span class="section-kicker">سفارش‌های من</span>
-        <h2>هنوز سفارشی ثبت نکرده‌ای</h2>
-        <p>محصولات موردنظرت را پیدا کن و اولین سفارش خودت را ثبت کن.</p>
-        <a href="{{ url_for('home') }}" class="btn"><i class="fa-solid fa-cart-shopping"></i> شروع خرید</a>
-    </div>
-    {% endif %}
-</div>
-</section>
+<section class="page-hero orders-page-hero"><div class="container"><span class="section-kicker"><i class="fa-solid fa-box-open"></i> حساب کاربری</span><h1>سفارش‌های من</h1><p>سفارش‌های ثبت‌شده و وضعیت آن‌ها را اینجا مشاهده کن.</p></div></section>
+<section class="section orders-section"><div class="container">
+{% if orders %}<div class="orders-list">{% for order in orders %}
+{% set status_class = 'pending' %}{% if order.status == 'تأیید شد' %}{% set status_class = 'confirmed' %}{% elif order.status == 'در حال آماده‌سازی' %}{% set status_class = 'preparing' %}{% elif order.status == 'ارسال شد' %}{% set status_class = 'shipping' %}{% elif order.status == 'تحویل شد' %}{% set status_class = 'delivered' %}{% elif order.status == 'لغو شد' %}{% set status_class = 'cancelled' %}{% endif %}
+<article class="order-card"><div class="order-head"><div class="order-title"><div class="order-number-icon"><i class="fa-solid fa-receipt"></i></div><div><span>شماره سفارش</span><strong>#{{ order.id }}</strong></div></div><div class="order-date"><i class="fa-regular fa-calendar"></i> {{ order.created_at.strftime('%Y/%m/%d') if order.created_at else '' }} {% if order.created_at %}<small>{{ order.created_at.strftime('%H:%M') }}</small>{% endif %}</div><div class="order-status {{ status_class }}">{% if status_class == 'pending' %}<i class="fa-solid fa-clock"></i>{% elif status_class == 'confirmed' %}<i class="fa-solid fa-circle-check"></i>{% elif status_class == 'preparing' %}<i class="fa-solid fa-box"></i>{% elif status_class == 'shipping' %}<i class="fa-solid fa-truck"></i>{% elif status_class == 'delivered' %}<i class="fa-solid fa-check-double"></i>{% elif status_class == 'cancelled' %}<i class="fa-solid fa-circle-xmark"></i>{% endif %} {{ order.status }}</div></div>
+{% if status_class != 'cancelled' %}<div class="order-progress"><div class="progress-step active"><span><i class="fa-solid fa-receipt"></i></span><small>ثبت سفارش</small></div><div class="progress-line {% if status_class in ['confirmed','preparing','shipping','delivered'] %}active{% endif %}"></div><div class="progress-step {% if status_class in ['confirmed','preparing','shipping','delivered'] %}active{% endif %}"><span><i class="fa-solid fa-box"></i></span><small>آماده‌سازی</small></div><div class="progress-line {% if status_class in ['shipping','delivered'] %}active{% endif %}"></div><div class="progress-step {% if status_class in ['shipping','delivered'] %}active{% endif %}"><span><i class="fa-solid fa-truck"></i></span><small>ارسال</small></div><div class="progress-line {% if status_class == 'delivered' %}active{% endif %}"></div><div class="progress-step {% if status_class == 'delivered' %}active{% endif %}"><span><i class="fa-solid fa-house"></i></span><small>تحویل</small></div></div>{% endif %}
+<div class="order-items"><div class="order-items-title"><span><i class="fa-solid fa-bag-shopping"></i> محصولات سفارش</span><span>{{ order.items|length }} قلم</span></div>{% for item in order.items %}<div class="order-item"><div class="order-item-icon">{% if item.product and item.product.image %}<img src="{{ url_for('static', filename=item.product.image) }}" alt="{{ item.product_name }}">{% else %}<i class="fa-solid fa-box"></i>{% endif %}</div><div class="order-item-info"><strong>{{ item.product_name }}</strong><span>تعداد: {{ item.quantity }}</span></div><div class="order-item-price"><strong>{{ (item.price * item.quantity)|money }}</strong><small>تومان</small></div></div>{% endfor %}</div>
+{% set vendor_orders = seller_orders_by_master.get(order.id, []) %}{% if vendor_orders %}<div class="km2-card" style="margin-top:16px"><div class="km2-card-title"><h2>تفکیک سفارش بین فروشگاه‌ها</h2><small>{{ vendor_orders|length }} فروشگاه</small></div><div class="km2-orders">{% for sub in vendor_orders %}<div class="km2-order"><div class="km2-order-top"><div><b>{{ sub.store.name }}</b><span>زیرسفارش #{{ sub.id }}</span></div><span class="km2-status">{{ {'new':'جدید','confirmed':'تأیید شده','preparing':'در حال آماده‌سازی','shipped':'ارسال شده','delivered':'تحویل شده','cancelled':'لغو شده'}.get(sub.status, sub.status) }}</span></div><div class="km2-order-grid"><div><small>مبلغ فروشگاه</small><strong>{{ sub.subtotal|money }} تومان</strong></div><div><small>وضعیت</small><strong>{{ {'new':'جدید','confirmed':'تأیید شده','preparing':'آماده‌سازی','shipped':'ارسال','delivered':'تحویل','cancelled':'لغو'}.get(sub.status, sub.status) }}</strong></div></div></div>{% endfor %}</div></div>{% endif %}
+<div class="order-foot"><div class="order-customer"><span><i class="fa-solid fa-user"></i> گیرنده</span><strong>{{ order.customer_name }}</strong></div><div class="order-total"><span>مبلغ کل</span><strong>{{ order.total|money }} <small>تومان</small></strong></div>{% if order.status == 'در انتظار بررسی' %}<form method="post" action="{{ url_for('cancel_order', order_id=order.id) }}" onsubmit="return confirm('آیا از لغو این سفارش مطمئن هستید؟');"><button type="submit" class="btn btn-danger"><i class="fa-solid fa-ban"></i> لغو سفارش</button></form>{% endif %}</div>
+</article>{% endfor %}</div>
+{% else %}<div class="empty-orders-card"><div class="empty-orders-icon"><i class="fa-solid fa-box-open"></i></div><span class="section-kicker">سفارش‌های من</span><h2>هنوز سفارشی ثبت نکرده‌ای</h2><p>محصولات موردنظرت را پیدا کن و اولین سفارش خودت را ثبت کن.</p><a href="{{ url_for('home') }}" class="btn"><i class="fa-solid fa-cart-shopping"></i> شروع خرید</a></div>{% endif %}
+</div></section>
 {% endblock %}

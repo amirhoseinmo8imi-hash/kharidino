@@ -8,6 +8,9 @@ SQLAlchemy transaction as the order.
 """
 from __future__ import annotations
 
+import os
+import time
+
 from flask import abort, request, session
 
 _TABLE = "kharidino_product_inventory"
@@ -83,7 +86,7 @@ def _reserve_managed_stock() -> None:
             {
                 "product_id": product_id,
                 "quantity": quantity,
-                "updated_at": __import__("time").time(),
+                "updated_at": time.time(),
             },
         )
         if result.rowcount != 1:
@@ -92,31 +95,34 @@ def _reserve_managed_stock() -> None:
 
 
 def _admin_set_inventory():
-    from app import db
+    from app import admin_required, db
     from sqlalchemy import text
-    import time
 
-    try:
-        product_id = int(request.form.get("product_id", ""))
-        quantity = int(request.form.get("quantity", ""))
-    except (TypeError, ValueError):
-        abort(400, description="شناسه کالا یا موجودی نامعتبر است.")
-    if product_id <= 0 or quantity < 0 or quantity > 2_147_483_647:
-        abort(400, description="مقدار موجودی نامعتبر است.")
+    @admin_required
+    def _handler():
+        try:
+            product_id = int(request.form.get("product_id", ""))
+            quantity = int(request.form.get("quantity", ""))
+        except (TypeError, ValueError):
+            abort(400, description="شناسه کالا یا موجودی نامعتبر است.")
+        if product_id <= 0 or quantity < 0 or quantity > 2_147_483_647:
+            abort(400, description="مقدار موجودی نامعتبر است.")
 
-    db.session.execute(
-        text(f"""
-            INSERT INTO {_TABLE} (product_id, quantity, managed, updated_at)
-            VALUES (:product_id, :quantity, 1, :updated_at)
-            ON CONFLICT(product_id) DO UPDATE SET
-                quantity = excluded.quantity,
-                managed = 1,
-                updated_at = excluded.updated_at
-        """),
-        {"product_id": product_id, "quantity": quantity, "updated_at": time.time()},
-    )
-    db.session.commit()
-    return {"ok": True, "product_id": product_id, "quantity": quantity}
+        db.session.execute(
+            text(f"""
+                INSERT INTO {_TABLE} (product_id, quantity, managed, updated_at)
+                VALUES (:product_id, :quantity, 1, :updated_at)
+                ON CONFLICT(product_id) DO UPDATE SET
+                    quantity = excluded.quantity,
+                    managed = 1,
+                    updated_at = excluded.updated_at
+            """),
+            {"product_id": product_id, "quantity": quantity, "updated_at": time.time()},
+        )
+        db.session.commit()
+        return {"ok": True, "product_id": product_id, "quantity": quantity}
+
+    return _handler()
 
 
 def apply_inventory_security(app) -> None:
@@ -127,7 +133,7 @@ def apply_inventory_security(app) -> None:
         _ensure_table(app)
     except Exception:
         app.logger.exception("Unable to initialize product inventory table")
-        if app.config.get("ENV") == "production":
+        if os.environ.get("FLASK_ENV", "").lower() == "production":
             raise
         return
 
@@ -139,7 +145,7 @@ def apply_inventory_security(app) -> None:
         app.add_url_rule(
             "/admin/inventory/set",
             endpoint="admin_inventory_set",
-            view_func=app.view_functions.get("admin_inventory_set") or _admin_set_inventory,
+            view_func=_admin_set_inventory,
             methods=["POST"],
         )
 

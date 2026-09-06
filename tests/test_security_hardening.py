@@ -4,7 +4,7 @@ import os
 import pytest
 from flask import Flask
 
-from security_hardening import apply_security, csrf_token
+from security_hardening import apply_security, csrf_token, _is_safe_local_redirect
 
 
 PNG_1X1 = bytes.fromhex(
@@ -124,3 +124,26 @@ def test_mismatched_image_content_is_rejected():
         headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64},
     )
     assert response.status_code == 400
+
+
+def test_local_redirect_policy():
+    assert _is_safe_local_redirect("/cart")
+    assert _is_safe_local_redirect("/product/12?next=/cart")
+    assert not _is_safe_local_redirect("https://evil.example")
+    assert not _is_safe_local_redirect("//evil.example")
+    assert not _is_safe_local_redirect("javascript:alert(1)")
+    assert not _is_safe_local_redirect("/\\evil.example")
+
+
+def test_mobile_api_get_rate_limit():
+    app = make_app()
+
+    @app.get("/api/mobile/ping")
+    def ping():
+        return "ok"
+
+    client = app.test_client()
+    for _ in range(120):
+        response = client.get("/api/mobile/ping")
+        assert response.status_code == 200
+    assert client.get("/api/mobile/ping").status_code == 429

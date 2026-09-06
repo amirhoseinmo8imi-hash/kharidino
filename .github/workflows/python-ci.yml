@@ -28,6 +28,14 @@ jobs:
       - name: Compile Python files
         run: python -m compileall -q . -x '(^|/)\.git(/|$)'
 
+      - name: Static security audit
+        run: python security_audit.py
+
+      - name: Dependency vulnerability audit
+        run: |
+          python -m pip install pip-audit
+          python -m pip_audit -r requirements.txt
+
       - name: Run tests
         env:
           SECRET_KEY: ci-test-secret

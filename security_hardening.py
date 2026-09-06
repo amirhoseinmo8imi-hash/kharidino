@@ -33,12 +33,13 @@ def apply_security(app):
     else:
         app.config["SECRET_KEY"] = configured_key
 
-    app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
-    app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
-    app.config.setdefault("SESSION_COOKIE_SECURE", _is_production())
-    app.config.setdefault("SESSION_COOKIE_NAME", "kharidino_session")
-    app.config.setdefault("MAX_FORM_MEMORY_SIZE", 2 * 1024 * 1024)
-    app.config.setdefault("MAX_FORM_PARTS", 200)
+    # Assign explicitly because Flask already provides defaults for these keys.
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = _is_production()
+    app.config["SESSION_COOKIE_NAME"] = "kharidino_session"
+    app.config["MAX_FORM_MEMORY_SIZE"] = 2 * 1024 * 1024
+    app.config["MAX_FORM_PARTS"] = 200
 
     @app.before_request
     def _security_before_request():

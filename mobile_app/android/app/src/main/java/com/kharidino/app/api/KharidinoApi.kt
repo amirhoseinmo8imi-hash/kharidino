@@ -5,7 +5,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Path
 
-const val KHARIDINO_BASE_URL = BuildConfig.KHARIDINO_BASE_URL
+val KHARIDINO_BASE_URL: String = BuildConfig.KHARIDINO_BASE_URL
 
 data class Product(
     val id: Int,

@@ -14,7 +14,7 @@ import time
 from collections import defaultdict, deque
 from urllib.parse import urlparse
 
-from flask import abort, g, redirect, request, session, url_for
+from flask import abort, g, request, session
 
 _INSECURE_KEYS = {"", "change-this-secret-key", "dev-secret", "secret"}
 _RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
@@ -38,10 +38,6 @@ def csrf_token() -> str:
         token = secrets.token_urlsafe(48)
         session[_CSRF_SESSION_KEY] = token
     return token
-
-
-def _rotate_csrf_token() -> None:
-    session[_CSRF_SESSION_KEY] = secrets.token_urlsafe(48)
 
 
 def _csrf_valid() -> bool:
@@ -127,8 +123,6 @@ def _check_checkout_replay() -> None:
         from app import db
 
         now = time.time()
-        # Cleanup is bounded and safe because completed entries are only used
-        # for duplicate protection, not as order records.
         with db.engine.begin() as connection:
             connection.execute(
                 text("DELETE FROM kharidino_checkout_guard WHERE created_at < :cutoff"),
@@ -178,8 +172,6 @@ def _finish_checkout_replay(response) -> None:
                     {"fingerprint": fingerprint},
                 )
     except Exception:
-        # Never turn a successful order response into a 500 because the
-        # idempotency bookkeeping failed after the order was committed.
         try:
             from app import db
             db.session.rollback()
@@ -290,8 +282,6 @@ def apply_security(app):
         response.headers.setdefault("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
         if request.endpoint == "checkout" and request.method == "POST":
             _finish_checkout_replay(response)
-        if request.endpoint in {"login", "register", "logout"} and response.status_code < 400:
-            _rotate_csrf_token()
         return response
 
     @app.errorhandler(Exception)

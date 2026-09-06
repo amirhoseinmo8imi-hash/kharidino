@@ -13,7 +13,21 @@
       <div class="km-header">
         <a class="km-logo" href="{{ url_for('home') }}">خریدینو</a>
         <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ q or '' }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
-        <div class="km-user-actions">{% if session.get('user_id') %}<a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}<a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>{% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}{% if session.get('user_id') %}<a class="km-action km-action--logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>{% endif %}</div>
+        <div class="km-user-actions">
+          {% if session.get('user_id') %}
+            <a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>
+          {% else %}
+            <a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>
+          {% endif %}
+          <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
+          {% if current_user and current_user.role == 'seller' %}
+            <a class="km-action km-action--seller" href="{{ url_for('seller_dashboard') }}"><i class="fa-solid fa-store"></i><span>پنل فروشنده</span></a>
+          {% elif session.get('user_id') %}
+            <a class="km-action km-action--seller" href="{{ url_for('seller_register') }}"><i class="fa-solid fa-store"></i><span>فروشنده شوید</span></a>
+          {% endif %}
+          {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
+          {% if session.get('user_id') %}<a class="km-action km-action--logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>{% endif %}
+        </div>
       </div>
       <nav class="km-nav"><div class="km-nav-inner"><a href="#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in categories[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>
     </header>

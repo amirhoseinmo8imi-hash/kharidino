@@ -1,0 +1,13 @@
+<article class="storefront-product-card">
+  <a class="storefront-product-image" href="{{ url_for('product_detail', product_id=product.id) }}">
+    {% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}
+  </a>
+  <div class="storefront-product-content">
+    {% if product.category %}<small class="storefront-product-cat">{{ product.category.name }}</small>{% endif %}
+    <h3><a href="{{ url_for('product_detail', product_id=product.id) }}">{{ product.name }}</a></h3>
+    {% if product.description %}<p>{{ product.description }}</p>{% endif %}
+    <div class="storefront-price"><span>شروع قیمت از</span><strong>{{ lowest_price(product)|money }}</strong><small>تومان</small></div>
+    <div class="storefront-product-meta"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<em>موجود</em>{% else %}<em class="unavailable">ناموجود</em>{% endif %}</div>
+    <a class="storefront-product-action" href="{{ url_for('product_detail', product_id=product.id) }}">مشاهده و مقایسه</a>
+  </div>
+</article>

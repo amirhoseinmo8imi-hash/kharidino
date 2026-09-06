@@ -3,6 +3,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ultimate.css', v='1') }}">
 {% endblock %}
 {% block content %}
 <div class="km-home">
@@ -11,9 +12,10 @@
       <div class="km-header">
         <a class="km-logo" href="{{ url_for('home') }}">خریدینو</a>
         <form class="km-search" method="get" action="{{ url_for('home') }}">
-          <i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ q or '' }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button>
+          <i class="fa-solid fa-magnifying-glass"></i><input id="kuSearch" type="search" name="q" value="{{ q or '' }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button>
         </form>
         <div class="km-user-actions">
+          <button class="ku-theme-toggle" id="kuThemeToggle" type="button" aria-label="تغییر حالت نمایش" title="حالت تیره / روشن"><i class="fa-solid fa-moon"></i></button>
           {% if session.get('user_id') %}<a href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
           <a class="cart" href="{{ url_for('cart') }}" aria-label="سبد خرید"><i class="fa-solid fa-cart-shopping"></i>{% if cart_count %}<span class="cart-count">{{ cart_count }}</span>{% endif %}</a>
         </div>
@@ -67,6 +69,28 @@
   </div>
 </div>
 <script>
-(function(){let current=0;let timer=null;const slides=()=>document.querySelectorAll('.ki-slide');const dots=()=>document.querySelectorAll('#kiDots button');function render(){const s=slides();if(!s.length)return;s.forEach((el,i)=>el.classList.toggle('is-active',i===current));dots().forEach((el,i)=>el.classList.toggle('is-active',i===current));}window.kiGoSlide=function(i){const s=slides();if(!s.length)return;current=(i+s.length)%s.length;render();restart();};window.kiMoveSlide=function(step){kiGoSlide(current+step);};function restart(){clearInterval(timer);if(slides().length>1)timer=setInterval(()=>kiMoveSlide(1),5500);}render();restart();const slider=document.querySelector('.ki-slider');if(slider){slider.addEventListener('mouseenter',()=>clearInterval(timer));slider.addEventListener('mouseleave',restart);}})();
+(function(){
+  let current=0,timer=null;
+  const slides=()=>document.querySelectorAll('.ki-slide'),dots=()=>document.querySelectorAll('#kiDots button');
+  function render(){const s=slides();if(!s.length)return;s.forEach((el,i)=>el.classList.toggle('is-active',i===current));dots().forEach((el,i)=>el.classList.toggle('is-active',i===current));}
+  window.kiGoSlide=function(i){const s=slides();if(!s.length)return;current=(i+s.length)%s.length;render();restart();};
+  window.kiMoveSlide=function(step){kiGoSlide(current+step);};
+  function restart(){clearInterval(timer);if(slides().length>1)timer=setInterval(()=>kiMoveSlide(1),5500);}
+  render();restart();
+  const slider=document.querySelector('.ki-slider');if(slider){slider.addEventListener('mouseenter',()=>clearInterval(timer));slider.addEventListener('mouseleave',restart);}
+})();
+(function(){
+  const root=document.documentElement,btn=document.getElementById('kuThemeToggle');
+  if(!btn)return;
+  let saved='';try{saved=localStorage.getItem('kharidino-theme')||'';}catch(e){}
+  const dark=saved==='dark'||(!saved&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.classList.toggle('ku-dark',dark);
+  function paint(){const isDark=root.classList.contains('ku-dark');btn.innerHTML=isDark?'<i class="fa-solid fa-sun"></i>':'<i class="fa-solid fa-moon"></i>';btn.title=isDark?'حالت روشن':'حالت تیره';}
+  btn.addEventListener('click',function(){const isDark=!root.classList.contains('ku-dark');root.classList.toggle('ku-dark',isDark);try{localStorage.setItem('kharidino-theme',isDark?'dark':'light');}catch(e){}paint();});paint();
+})();
+(function(){
+  const input=document.getElementById('kuSearch');if(!input)return;
+  document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();input.focus();input.select();}});
+})();
 </script>
 {% endblock %}

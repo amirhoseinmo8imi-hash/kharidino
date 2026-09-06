@@ -12,12 +12,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pro.css', v='2026-store-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-global-storefront.css', v='2026-09-06-4') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-layout-fix.css', v='2026-09-06-4') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-final.css', v='2026-09-06-4') }}">
-  {% block extra_css %}{% endblock %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-final.css', v='2026-09-06-7') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-final.css', v='2026-09-06-5') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-final.css', v='2026-09-07-8') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inventory-ui.css', v='2026-09-06-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inner-final.css', v='2026-09-07-1') }}">
-  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-1') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-07-2') }}">{% endif %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inner-final.css', v='2026-09-07-2') }}">
+  {% block extra_css %}{% endblock %}
+  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-07-3') }}">{% endif %}
 </head>
 <body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
@@ -51,12 +51,7 @@
       const method = (form.getAttribute('method') || 'get').toLowerCase();
       if (method === 'get') return;
       let input = form.querySelector('input[name="csrf_token"]');
-      if (!input) {
-        input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'csrf_token';
-        form.appendChild(input);
-      }
+      if (!input) { input = document.createElement('input'); input.type = 'hidden'; input.name = 'csrf_token'; form.appendChild(input); }
       input.value = token;
     });
   }
@@ -66,42 +61,17 @@
     document.querySelectorAll('.admin-sidebar-bottom a').forEach(function (link) {
       if (link.getAttribute('href') !== logoutUrl) return;
       link.addEventListener('click', function (event) {
-        event.preventDefault();
-        const form = document.createElement('form');
-        form.method = 'post';
-        form.action = logoutUrl;
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'csrf_token';
-        input.value = token;
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
+        event.preventDefault(); const form = document.createElement('form'); form.method = 'post'; form.action = logoutUrl;
+        const input = document.createElement('input'); input.type = 'hidden'; input.name = 'csrf_token'; input.value = token; form.appendChild(input); document.body.appendChild(form); form.submit();
       });
     });
   }
-  function init() {
-    protectForms();
-    installAdminLogoutFallback();
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  function init() { protectForms(); installAdminLogoutFallback(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   document.addEventListener('submit', function (event) {
-    const form = event.target;
-    if (!(form instanceof HTMLFormElement)) return;
-    const method = (form.getAttribute('method') || 'get').toLowerCase();
-    if (method === 'get' || !token) return;
-    let input = form.querySelector('input[name="csrf_token"]');
-    if (!input) {
-      input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'csrf_token';
-      form.appendChild(input);
-    }
-    input.value = token;
+    const form = event.target; if (!(form instanceof HTMLFormElement)) return;
+    const method = (form.getAttribute('method') || 'get').toLowerCase(); if (method === 'get' || !token) return;
+    let input = form.querySelector('input[name="csrf_token"]'); if (!input) { input = document.createElement('input'); input.type = 'hidden'; input.name = 'csrf_token'; form.appendChild(input); } input.value = token;
   }, true);
 })();
 </script>

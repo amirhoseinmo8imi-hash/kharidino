@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}">{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='1') }}">
+{% endblock %}
 {% block content %}
 <div class="km-home">
   <div class="container">
@@ -30,7 +33,7 @@
     <section class="km-section" id="categories">
       <div class="km-section-head"><h2>دسته‌بندی‌های محبوب</h2><a href="#categories">مشاهده همه</a></div>
       <div class="km-categories">
-        {% for category in categories[:6] %}<a class="km-cat" href="{{ url_for('category', category_id=category.id) }}"><span class="km-cat-icon"><i class="fa-solid {{ category.icon or 'fa-box' }}"></i></span><strong>{{ category.name }}</strong></a>{% endfor %}
+        {% for category in categories[:8] %}<a class="km-cat" href="{{ url_for('category', category_id=category.id) }}"><span class="km-cat-icon"><i class="fa-solid {{ category.icon or 'fa-box' }}"></i></span><strong>{{ category.name }}</strong></a>{% endfor %}
       </div>
     </section>
 

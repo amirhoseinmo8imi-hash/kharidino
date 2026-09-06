@@ -4,9 +4,8 @@ from flask import Blueprint, jsonify, request
 def register_mobile_api(app, db, Product, Category, Store, Offer):
     """Register the mobile API once.
 
-    The main app and the Ultimate launcher may both initialize optional
-    subsystems. Keep this registration idempotent so a second initialization
-    cannot create duplicate endpoint names or conflicting blueprints.
+    The API is intentionally read-only here. Authentication can be added later
+    for account/order features without weakening the public catalog endpoints.
     """
     if "mobile_api.health" in app.view_functions:
         return app
@@ -16,7 +15,10 @@ def register_mobile_api(app, db, Product, Category, Store, Offer):
     def image_url(product):
         if not product.image:
             return ""
-        return request.host_url.rstrip("/") + "/static/" + product.image.lstrip("/")
+        return "/static/" + product.image.lstrip("/")
+
+    def clean_query(value, max_length=100):
+        return (value or "").strip()[:max_length]
 
     def product_json(product, include_offers=False):
         data = {
@@ -32,10 +34,12 @@ def register_mobile_api(app, db, Product, Category, Store, Offer):
             offers = []
             for offer in Offer.query.filter_by(product_id=product.id).order_by(Offer.price.asc()).all():
                 store = db.session.get(Store, offer.store_id)
+                if not store or not store.active:
+                    continue
                 offers.append({
                     "id": offer.id,
                     "store_id": offer.store_id,
-                    "store": store.name if store else "",
+                    "store": store.name,
                     "price": offer.price,
                     "url": offer.url or "",
                     "in_stock": bool(offer.in_stock),
@@ -61,9 +65,9 @@ def register_mobile_api(app, db, Product, Category, Store, Offer):
     def products():
         query = Product.query.filter_by(active=True)
         category_id = request.args.get("category_id", type=int)
-        search = (request.args.get("q") or "").strip()
+        search = clean_query(request.args.get("q"))
         limit = min(max(request.args.get("limit", 50, type=int), 1), 100)
-        offset = max(request.args.get("offset", 0, type=int), 0)
+        offset = min(max(request.args.get("offset", 0, type=int), 0), 100_000)
         if category_id:
             query = query.filter_by(category_id=category_id)
         if search:
@@ -84,7 +88,7 @@ def register_mobile_api(app, db, Product, Category, Store, Offer):
 
     @bp.get("/search")
     def search_products():
-        q = (request.args.get("q") or "").strip()
+        q = clean_query(request.args.get("q"))
         if not q:
             return jsonify({"items": [], "total": 0})
         rows = Product.query.filter(

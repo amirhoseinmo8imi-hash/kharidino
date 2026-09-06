@@ -1,0 +1,74 @@
+/* Kharidino home shell: keep the new marketplace header as the single source of navigation. */
+.km-home ~ * { display: none; }
+
+/* The legacy global navbar is still needed by inner pages, but must not stack above the new home header. */
+body:has(.km-home) > .navbar,
+body:has(.km-home) .navbar,
+body:has(.km-home) .mobile-bottom-nav {
+  display: none !important;
+}
+
+.km-header { align-items: center; }
+.km-user-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.km-action {
+  position: relative;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid #e6e8ed;
+  border-radius: 13px;
+  background: #fff;
+  color: #24262b;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.km-action:hover {
+  transform: translateY(-1px);
+  border-color: #d8dbe2;
+  box-shadow: 0 8px 22px rgba(20,24,35,.08);
+}
+.km-action i { font-size: 16px; }
+.km-action--cart i { color: #ef233c; }
+.km-action--admin i { color: #2463eb; }
+.km-action--logout i { color: #73757a; }
+.km-cart-badge {
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  min-width: 19px;
+  height: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ef233c;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+@media (max-width: 900px) {
+  .km-action span { display: none; }
+  .km-action { width: 42px; justify-content: center; padding: 0; }
+}
+
+@media (max-width: 640px) {
+  .km-header { gap: 8px; }
+  .km-logo { flex: 0 0 auto; }
+  .km-search { order: 3; flex: 1 0 100%; width: 100%; }
+  .km-user-actions { gap: 5px; }
+  .km-action { min-height: 40px; width: 40px; }
+}

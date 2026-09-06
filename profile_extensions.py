@@ -1,9 +1,8 @@
-from datetime import datetime
 import os
 import uuid
-from flask import request, redirect, url_for, flash
+from flask import request, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
-from app import app, db, login_required, current_user
+from app import app, db, User, login_required
 
 
 class UserProfile(db.Model):
@@ -25,6 +24,11 @@ class UserProfile(db.Model):
     user = db.relationship("User", backref=db.backref("profile", uselist=False, cascade="all, delete-orphan"))
 
 
+def get_current_user():
+    user_id = session.get("user_id")
+    return db.session.get(User, user_id) if user_id else None
+
+
 def get_or_create_profile(user):
     profile = UserProfile.query.filter_by(user_id=user.id).first()
     if profile is None:
@@ -43,22 +47,24 @@ def profile_completion(profile):
 
 @app.context_processor
 def inject_user_profile():
-    if not current_user:
+    user = get_current_user()
+    if not user:
         return {"user_profile": None, "profile_completion_percent": 0}
-    profile = get_or_create_profile(current_user)
+    profile = get_or_create_profile(user)
     return {"user_profile": profile, "profile_completion_percent": profile_completion(profile)}
 
 
 @app.post("/profile/update")
 @login_required
 def update_profile():
-    profile = get_or_create_profile(current_user)
+    user = get_current_user()
+    profile = get_or_create_profile(user)
     fields = ["first_name", "last_name", "display_name", "phone", "birth_date", "gender",
               "province", "city", "postal_code", "address", "bio"]
     for field in fields:
         setattr(profile, field, request.form.get(field, "").strip())
     if profile.display_name:
-        current_user.name = profile.display_name
+        user.name = profile.display_name
     db.session.commit()
     flash("اطلاعات حساب با موفقیت ذخیره شد.", "success")
     return redirect(url_for("profile"))
@@ -67,7 +73,8 @@ def update_profile():
 @app.post("/profile/avatar")
 @login_required
 def update_avatar():
-    profile = get_or_create_profile(current_user)
+    user = get_current_user()
+    profile = get_or_create_profile(user)
     upload = request.files.get("avatar")
     if not upload or not upload.filename:
         flash("یک تصویر برای پروفایل انتخاب کنید.", "error")
@@ -82,17 +89,18 @@ def update_avatar():
     if size > 5 * 1024 * 1024:
         flash("حجم عکس پروفایل باید حداکثر ۵ مگابایت باشد.", "error")
         return redirect(url_for("profile"))
-    folder = os.path.join(app.static_folder, "uploads", "profiles")
+    folder = os.path.abspath(os.path.join(app.static_folder, "uploads", "profiles"))
     os.makedirs(folder, exist_ok=True)
     filename = secure_filename(f"{uuid.uuid4().hex}{ext}")
-    upload.save(os.path.join(folder, filename))
+    target = os.path.abspath(os.path.join(folder, filename))
+    upload.save(target)
     if profile.avatar:
-        old_path = os.path.join(app.static_folder, profile.avatar.lstrip("/"))
-        if os.path.commonpath([os.path.abspath(old_path), os.path.abspath(folder)]) == os.path.abspath(folder) and os.path.isfile(old_path):
-            try:
+        old_path = os.path.abspath(os.path.join(app.static_folder, profile.avatar.lstrip("/")))
+        try:
+            if os.path.commonpath([old_path, folder]) == folder and os.path.isfile(old_path):
                 os.remove(old_path)
-            except OSError:
-                pass
+        except ValueError:
+            pass
     profile.avatar = f"uploads/profiles/{filename}"
     db.session.commit()
     flash("عکس پروفایل به‌روزرسانی شد.", "success")
@@ -102,14 +110,16 @@ def update_avatar():
 @app.post("/profile/avatar/remove")
 @login_required
 def remove_avatar():
-    profile = get_or_create_profile(current_user)
+    user = get_current_user()
+    profile = get_or_create_profile(user)
     if profile.avatar:
-        path = os.path.join(app.static_folder, profile.avatar.lstrip("/"))
-        if os.path.isfile(path):
-            try:
+        path = os.path.abspath(os.path.join(app.static_folder, profile.avatar.lstrip("/")))
+        folder = os.path.abspath(os.path.join(app.static_folder, "uploads", "profiles"))
+        try:
+            if os.path.commonpath([path, folder]) == folder and os.path.isfile(path):
                 os.remove(path)
-            except OSError:
-                pass
+        except ValueError:
+            pass
     profile.avatar = ""
     db.session.commit()
     flash("عکس پروفایل حذف شد.", "success")

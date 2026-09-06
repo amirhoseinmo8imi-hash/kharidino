@@ -1,10 +1,14 @@
 {% extends "base.html" %}
-{% block title %}درباره ما | {{ site_name }}{% endblock %}
+{% block title %}درباره خریدینو | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pages-v3.css', v='2026-09-06-1') }}">{% endblock %}
 {% block content %}
-<section class="page-hero"><div class="container"><span class="section-kicker">داستان خریدینو</span><h1>خرید بهتر، با مقایسه هوشمند</h1><p>خریدینو برای این ساخته شده که قبل از خرید، قیمت‌ها و فروشگاه‌ها را کنار هم ببینی و با خیال راحت تصمیم بگیری.</p></div></section>
-<section class="section"><div class="container about-grid">
-<div class="about-card featured"><div class="about-icon"><i class="fa-solid fa-bolt"></i></div><h2>ساده، سریع و شفاف</h2><p>هدف ما حذف جست‌وجوی خسته‌کننده بین فروشگاه‌هاست. محصول را پیدا کن، قیمت‌ها را مقایسه کن و انتخابت را انجام بده.</p></div>
-<div class="about-card"><div class="about-icon"><i class="fa-solid fa-shield-halved"></i></div><h3>اعتماد در خرید</h3><p>اطلاعات محصول و قیمت‌ها در یک صفحه مرتب می‌شوند تا انتخاب آگاهانه‌تری داشته باشی.</p></div>
-<div class="about-card"><div class="about-icon"><i class="fa-solid fa-people-group"></i></div><h3>برای همه</h3><p>از کاربر عادی تا مدیر فروشگاه، تجربه‌ای ساده و حرفه‌ای در اختیار شماست.</p></div>
-</div></section>
+<div class="kp-page">
+  <section class="kp-hero"><span class="kp-eyebrow"><i class="fa-solid fa-bolt"></i> داستان خریدینو</span><h1>انتخاب بهتر، قبل از خرید</h1><p>خریدینو ساخته شده تا قیمت‌ها، فروشگاه‌ها و پیشنهادهای خرید را در یک تجربه ساده و شفاف کنار هم قرار دهد؛ تا به‌جای جست‌وجوی خسته‌کننده، با آگاهی تصمیم بگیری.</p></section>
+  <section class="kp-section"><div class="kp-section-title"><h2>چرا خریدینو؟</h2><p>تجربه‌ای سریع، شفاف و کاربرمحور</p></div><div class="kp-grid">
+    <article class="kp-card"><div class="kp-icon"><i class="fa-solid fa-scale-balanced"></i></div><h3>مقایسه شفاف</h3><p>قیمت و پیشنهاد فروشگاه‌ها را کنار هم ببین و قبل از خرید بهترین گزینه را پیدا کن.</p></article>
+    <article class="kp-card"><div class="kp-icon"><i class="fa-solid fa-bolt"></i></div><h3>سریع و ساده</h3><p>محصولت را پیدا کن، اطلاعات را بررسی کن و بدون پیچیدگی به انتخاب نهایی برس.</p></article>
+    <article class="kp-card"><div class="kp-icon"><i class="fa-solid fa-shield-heart"></i></div><h3>خرید مطمئن</h3><p>هدف خریدینو این است که تصمیم خریدت بر پایه اطلاعات مرتب و قابل مقایسه باشد.</p></article>
+  </div></section>
+  <section class="kp-section"><div class="kp-grid"><article class="kp-card"><div class="kp-icon"><i class="fa-solid fa-store"></i></div><h3>برای فروشگاه‌ها</h3><p>فروشگاه‌ها می‌توانند پیشنهادهای خود را در یک فضای حرفه‌ای در معرض دید خریداران قرار دهند.</p></article><article class="kp-card"><div class="kp-icon"><i class="fa-solid fa-users"></i></div><h3>برای همه کاربران</h3><p>از خرید روزمره تا انتخاب کالاهای تخصصی، تجربه خریدینو برای تصمیم‌گیری راحت‌تر طراحی شده است.</p></article><article class="kp-card"><div class="kp-icon"><i class="fa-solid fa-heart"></i></div><h3>ساخته‌شده با تمرکز روی انتخاب</h3><p>ما به‌جای شلوغ‌کردن مسیر خرید، اطلاعات مهم را ساده و قابل فهم در اختیار تو می‌گذاریم.</p></article></div></section>
+</div>
 {% endblock %}

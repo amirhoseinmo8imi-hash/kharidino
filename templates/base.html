@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='2026-store') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pro.css', v='2026-store') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-global-storefront.css', v='2026-09-06-1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-layout-fix.css', v='2026-09-06-2') }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -24,11 +25,7 @@
           <button type="submit">جستجو</button>
         </form>
         <div class="kg-actions">
-          {% if current_user %}
-            <a class="kg-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>
-          {% else %}
-            <a class="kg-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود</span></a>
-          {% endif %}
+          {% if current_user %}<a class="kg-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="kg-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود</span></a>{% endif %}
           <a class="kg-action" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="kg-cart-badge">{{ cart_count }}</b>{% endif %}</a>
           {% if current_user and current_user.role == 'admin' %}<a class="kg-action" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
           {% if current_user %}<a class="kg-action" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span>خروج</span></a>{% endif %}
@@ -51,9 +48,7 @@
       {% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}
     {% endwith %}
 
-    <main class="kg-main">
-      {% block content %}{% endblock %}
-    </main>
+    <main class="kg-main">{% block content %}{% endblock %}</main>
 
     {% if request.endpoint != 'home' %}
     <footer class="footer">
@@ -71,7 +66,7 @@
   </div>
 
   {% if request.endpoint != 'home' %}
-  <nav class="mobile-bottom-nav" style="position:fixed;bottom:0;left:0;right:0;z-index:6000;background:#fff;border-top:1px solid #e6e8ec;display:grid;grid-template-columns:repeat(5,1fr);padding:7px 5px calc(7px + env(safe-area-inset-bottom));">
+  <nav class="mobile-bottom-nav">
     <a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a>
     <a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a>
     <a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span></a>

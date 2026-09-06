@@ -1,15 +1,71 @@
-"""Recommended launcher for Kharidino Ultimate."""
+"""Recommended launcher for Kharidino Ultimate.
+
+This launcher is intentionally the single entry point for the full application.
+It registers the AI and mobile blueprints before starting Flask and avoids the
+confusing situation where an old Python process on port 5000 answers requests
+for a newer Kharidino process.
+"""
 import os
 import socket
 
 from flask import redirect, request, render_template
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
 
+
+# Register optional subsystems exactly once when this launcher is imported.
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
+
+
+def _port_is_available(host: str, port: int) -> bool:
+    """Return True when we can bind the requested TCP port."""
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        probe.bind((host, port))
+        return True
+    except OSError:
+        return False
+    finally:
+        probe.close()
+
+
+def _select_port(host: str, requested: int) -> int:
+    """Use the requested port, or the next free port when it is occupied.
+
+    Kharidino is often started repeatedly during development. Automatically
+    selecting a free port prevents an older Flask process from receiving the
+    browser/API requests intended for the current process.
+    """
+    if _port_is_available(host, requested):
+        return requested
+
+    if os.environ.get("STRICT_PORT", "0").lower() in {"1", "true", "yes"}:
+        raise RuntimeError(
+            f"Port {requested} is already in use. Stop the old Kharidino process "
+            "or choose another PORT."
+        )
+
+    for candidate in range(requested + 1, requested + 21):
+        if _port_is_available(host, candidate):
+            print(
+                f"[Kharidino] Port {requested} is busy; using free port {candidate}."
+            )
+            return candidate
+
+    raise RuntimeError(
+        f"Ports {requested}-{requested + 20} are busy. "
+        "Stop old Python/Flask processes and try again."
+    )
 
 
 @app.get("/splash")
@@ -62,6 +118,15 @@ def splash_gate():
 
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", "5000"))
+    requested_port = int(os.environ.get("PORT", "5000"))
+    port = _select_port(host, requested_port)
     debug = os.environ.get("FLASK_DEBUG", "0").lower() in {"1", "true", "yes"}
+
+    print("=" * 50)
+    print("KHARIDINO ULTIMATE SERVER")
+    print(f"Local:  http://127.0.0.1:{port}")
+    print(f"LAN:    http://<PC-IP>:{port}")
+    print(f"AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
+    print("=" * 50)
+
     app.run(host=host, port=port, debug=debug)

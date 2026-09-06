@@ -70,6 +70,46 @@ def test_csrf_token_required_and_valid_token_allowed():
     assert valid.status_code == 200
 
 
+def test_auth_form_csrf_token_survives_get_to_post():
+    app = make_app()
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if __import__("flask").request.method == "POST":
+            return "logged-in"
+        return csrf_token()
+
+    client = app.test_client()
+    token_value = client.get("/login").get_data(as_text=True)
+    response = client.post(
+        "/login",
+        data={"csrf_token": token_value},
+        headers={"Origin": "http://localhost"},
+    )
+    assert response.status_code == 200
+
+
+def test_auth_success_does_not_rotate_csrf_token_after_response():
+    app = make_app()
+
+    @app.route("/register", methods=["GET", "POST"])
+    def register():
+        if __import__("flask").request.method == "POST":
+            return "registered"
+        return csrf_token()
+
+    client = app.test_client()
+    token_value = client.get("/register").get_data(as_text=True)
+    response = client.post(
+        "/register",
+        data={"csrf_token": token_value},
+        headers={"Origin": "http://localhost"},
+    )
+    assert response.status_code == 200
+    with client.session_transaction() as sess:
+        assert sess["_kharidino_csrf_token"] == token_value
+
+
 def test_cross_site_state_change_is_blocked():
     app = make_app()
 

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Kharidino AI | Site Doctor{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ai.css') }}">{% endblock %}
+{% block content %}
+<div class="kai-shell">
+  <header class="kai-hero">
+    <div>
+      <span class="kai-badge">🤖 KHARIDINO AI</span>
+      <h1>همکار هوشمند خریدینو</h1>
+      <p>بررسی، تشخیص، پیشنهاد و اجرای امن تغییرات با تأیید مدیر.</p>
+    </div>
+    <div class="kai-score"><span id="healthScore">{{ health.score }}</span><small>/100</small><b>سلامت سایت</b></div>
+  </header>
+
+  <section class="kai-grid kai-metrics" id="metrics">
+    <article><span>محصولات</span><strong id="products">—</strong></article>
+    <article><span>فروشگاه‌ها</span><strong id="stores">—</strong></article>
+    <article><span>پیشنهاد قیمت</span><strong id="offers">—</strong></article>
+    <article><span>بدون تصویر</span><strong id="missingImages">—</strong></article>
+  </section>
+
+  <section class="kai-grid main-grid">
+    <article class="kai-card doctor-card">
+      <div class="card-head"><div><h2>🩺 Site Doctor</h2><p>آخرین بررسی لحظه‌ای</p></div><button class="kai-btn" id="refreshHealth">بررسی مجدد</button></div>
+      <div id="healthList" class="health-list">
+        {% for item in health.checks %}<div class="health-row {{ item.status }}"><span>{{ item.name }}</span><small>{{ item.detail }}</small><b>{{ '✅' if item.status == 'ok' else ('⚠️' if item.status == 'warning' else '🔴') }}</b></div>{% endfor %}
+      </div>
+    </article>
+
+    <article class="kai-card agent-card">
+      <div class="card-head"><div><h2>🧠 AI Agent</h2><p>دستور فارسی یا انگلیسی بده</p></div><button class="voice-btn" id="voiceBtn" title="فرمان صوتی">🎙️</button></div>
+      <textarea id="command" placeholder="مثلاً: کل سایت رو بررسی کن و مشکلات موبایل رو پیدا کن..."></textarea>
+      <button class="kai-primary" id="runAgent">تحلیل دستور و ساخت برنامه</button>
+      <div id="agentResult" class="agent-result hidden"></div>
+    </article>
+  </section>
+
+  <section class="kai-card">
+    <div class="card-head"><div><h2>🛡️ حالت امن</h2><p>AI در این نسخه بدون تأیید شما فایل یا دیتابیس را تغییر نمی‌دهد.</p></div><button class="kai-btn" id="backupBtn">ساخت Snapshot</button></div>
+    <div class="safe-flow"><span>Analyze</span><i>→</i><span>Plan</span><i>→</i><span>Approval</span><i>→</i><span>Backup</span><i>→</i><span>Apply</span><i>→</i><span>Test</span><i>→</i><span>Rollback</span></div>
+    <div id="backupResult" class="kai-note"></div>
+  </section>
+
+  <section class="kai-card">
+    <div class="card-head"><div><h2>💡 پیشنهادهای هوشمند</h2><p>اولویت‌های فعلی از روی وضعیت پروژه</p></div></div>
+    <div class="suggestions">
+      <div>🛡️ <b>امنیت Production</b><span>SECRET_KEY را فقط از محیط دریافت کن و Debug را خاموش نگه دار.</span></div>
+      <div>🖼️ <b>تصاویر محصولات</b><span>محصولات بدون تصویر را با سیستم اعتبارسنجی تصویر تکمیل کن.</span></div>
+      <div>📱 <b>Mobile First</b><span>صفحات اصلی را با تست عرض‌های 320 تا 1440 پیکسل بررسی کن.</span></div>
+      <div>📊 <b>Price Intelligence</b><span>برای هر محصول min/avg/max و قیمت‌های پرت را نمایش بده.</span></div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{{ url_for('static', filename='js/kharidino-ai.js') }}"></script>{% endblock %}

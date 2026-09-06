@@ -1,0 +1,189 @@
+/* Kharidino premium marketplace header: one clean source of navigation on home. */
+body:has(.km-home) > .site-content > .navbar,
+body:has(.km-home) > .mobile-bottom-nav,
+body:has(.km-home) .mobile-bottom-nav { display:none !important; }
+
+body:has(.km-home) .km-topbar {
+  position:sticky;
+  top:0;
+  z-index:1200;
+  margin-bottom:18px;
+  background:rgba(255,255,255,.96);
+  border-bottom:1px solid #eceef2;
+  box-shadow:0 8px 28px rgba(24,31,45,.06);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+body:has(.km-home) .km-header {
+  display:grid;
+  grid-template-columns:auto minmax(260px,1fr) auto;
+  align-items:center;
+  gap:18px;
+  min-height:78px;
+  padding:12px 0;
+}
+
+body:has(.km-home) .km-logo {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:128px;
+  height:48px;
+  padding:0 18px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#ef233c,#d71936);
+  color:#fff;
+  font-size:23px;
+  font-weight:950;
+  text-decoration:none;
+  box-shadow:0 10px 24px rgba(239,35,60,.18);
+}
+
+body:has(.km-home) .km-search {
+  min-width:0;
+  height:48px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 8px 0 5px;
+  border:1px solid #e2e5ea;
+  border-radius:15px;
+  background:#f7f8fa;
+  transition:border-color .2s ease,box-shadow .2s ease,background .2s ease;
+}
+body:has(.km-home) .km-search:focus-within {
+  background:#fff;
+  border-color:#cfd4dc;
+  box-shadow:0 0 0 4px rgba(239,35,60,.06);
+}
+body:has(.km-home) .km-search input {
+  flex:1;
+  min-width:0;
+  height:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#20242b;
+  font:inherit;
+}
+body:has(.km-home) .km-search > i { color:#7a818d; margin:0 9px; }
+body:has(.km-home) .km-search button {
+  height:38px;
+  padding:0 17px;
+  border:0;
+  border-radius:11px;
+  background:#ef233c;
+  color:#fff;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+body:has(.km-home) .km-user-actions { display:flex; align-items:center; gap:7px; }
+body:has(.km-home) .km-action {
+  position:relative;
+  min-width:44px;
+  height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:0 12px;
+  border:1px solid #e4e6eb;
+  border-radius:13px;
+  background:#fff;
+  color:#30343b;
+  text-decoration:none;
+  font-size:11px;
+  font-weight:800;
+  white-space:nowrap;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+body:has(.km-home) .km-action:hover {
+  transform:translateY(-1px);
+  border-color:#d3d7df;
+  box-shadow:0 8px 22px rgba(25,31,44,.08);
+}
+body:has(.km-home) .km-action i { font-size:16px; }
+body:has(.km-home) .km-action--cart i { color:#ef233c; }
+body:has(.km-home) .km-action--admin i { color:#2463eb; }
+body:has(.km-home) .km-action--logout i { color:#6b7280; }
+body:has(.km-home) .km-cart-badge {
+  position:absolute;
+  top:-7px;
+  right:-6px;
+  min-width:20px;
+  height:20px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 5px;
+  border:2px solid #fff;
+  border-radius:999px;
+  background:#ef233c;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+}
+
+body:has(.km-home) .km-nav {
+  border-top:1px solid #f0f1f3;
+}
+body:has(.km-home) .km-nav-inner {
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+body:has(.km-home) .km-nav-inner::-webkit-scrollbar { display:none; }
+body:has(.km-home) .km-nav-inner a {
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  height:36px;
+  padding:0 12px;
+  border-radius:10px;
+  color:#59616d;
+  text-decoration:none;
+  font-size:11px;
+  font-weight:750;
+  transition:background .18s ease,color .18s ease;
+}
+body:has(.km-home) .km-nav-inner a:first-child { color:#222831; font-weight:900; }
+body:has(.km-home) .km-nav-inner a:hover { background:#f5f6f8; color:#ef233c; }
+
+@media (max-width:1100px) {
+  body:has(.km-home) .km-header { grid-template-columns:auto minmax(220px,1fr) auto; gap:10px; }
+  body:has(.km-home) .km-action span { display:none; }
+  body:has(.km-home) .km-action { width:42px; padding:0; }
+}
+
+@media (max-width:720px) {
+  body:has(.km-home) .km-topbar { margin-bottom:10px; }
+  body:has(.km-home) .km-header {
+    grid-template-columns:auto 1fr;
+    gap:9px;
+    min-height:auto;
+    padding:9px 0;
+  }
+  body:has(.km-home) .km-logo { min-width:92px; height:42px; padding:0 12px; font-size:18px; border-radius:13px; }
+  body:has(.km-home) .km-user-actions { grid-column:1 / -1; justify-content:flex-start; overflow-x:auto; padding-bottom:2px; }
+  body:has(.km-home) .km-action { width:auto; min-width:42px; height:40px; padding:0 11px; }
+  body:has(.km-home) .km-action span { display:inline; font-size:10px; }
+  body:has(.km-home) .km-search { grid-column:1 / -1; grid-row:2; height:44px; }
+  body:has(.km-home) .km-nav-inner { min-height:42px; }
+  body:has(.km-home) .km-nav-inner a { height:32px; font-size:10px; }
+}
+
+@media (max-width:430px) {
+  body:has(.km-home) .km-header { grid-template-columns:1fr; }
+  body:has(.km-home) .km-logo { width:100%; }
+  body:has(.km-home) .km-search { grid-row:auto; }
+  body:has(.km-home) .km-user-actions { grid-column:auto; width:100%; justify-content:space-between; }
+  body:has(.km-home) .km-action { flex:1 1 0; justify-content:center; }
+}

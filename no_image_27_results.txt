@@ -1,0 +1,38 @@
+===========================================================================
+KHARIDINO - GOOGLE IMAGE FINDER REPORT
+===========================================================================
+OpenAI API: NOT USED
+Products: 27
+
+12 | Lenovo IdeaPad Slim 3 | 12 candidates
+14 | Seagate Expansion Portable 2TB | 12 candidates
+16 | Baseus Simple Mini3 Wireless Charger | 13 candidates
+20 | Sony WH-1000XM5 | 14 candidates
+21 | Sony PlayStation 5 Slim | 12 candidates
+23 | Sony DualSense Wireless Controller | 13 candidates
+24 | Samsung 55 Inch 4K Smart TV | 12 candidates
+25 | LG 55 Inch 4K Smart TV | 13 candidates
+26 | Samsung Galaxy Watch 6 | 13 candidates
+27 | Apple Watch Series 9 | 15 candidates
+28 | Vidhas VIR-5637 Sandwich Maker | 15 candidates
+29 | Philips Espresso Machine | 12 candidates
+30 | Bosch Vacuum Cleaner | 13 candidates
+31 | Hiska H5107 Hair Brush | 15 candidates
+32 | Nivea Sun SPF 50 | 12 candidates
+33 | کتاب بیلیجی | 12 candidates
+34 | دفتر یادداشت 100 برگ | 10 candidates
+35 | Nike Running Shoes | 12 candidates
+36 | قمقمه ورزشی 750ml | 10 candidates
+37 | Bosch Cordless Drill | 11 candidates
+38 | Ronix Tool Set | 12 candidates
+39 | Bosch Car Air Filter | 12 candidates
+40 | Car Phone Holder | 12 candidates
+41 | تیشرت نخی مردانه | 9 candidates
+42 | کفش اسپرت مردانه | 10 candidates
+43 | قهوه فوری کلاسیک | 11 candidates
+44 | چای سیاه ایرانی | 10 candidates
+
+TOTAL CANDIDATE IMAGES: 327
+
+Candidates directory:
+C:\Users\KAFEKAF.COM\OneDrive\Desktop\New folder (3)\kharidino_ready\static\uploads\products\google_candidates\no_image_27

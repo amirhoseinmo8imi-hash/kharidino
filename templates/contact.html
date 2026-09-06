@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}تماس با خریدینو | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pages-v3.css', v='2026-09-06-1') }}">{% endblock %}
+{% block content %}
+<div class="kp-page">
+  <section class="kp-hero"><span class="kp-eyebrow"><i class="fa-solid fa-headset"></i> ارتباط با خریدینو</span><h1>چطور می‌توانیم کمکت کنیم؟</h1><p>سؤال، پیشنهاد یا انتقادت را برای ما بفرست. تلاش می‌کنیم مسیر ارتباط با خریدینو ساده و سریع باشد.</p></section>
+  <div class="kp-contact-grid">
+    <section class="kp-info"><h2>راه‌های ارتباطی</h2><div class="kp-info-item"><i class="fa-solid fa-envelope"></i><div><b>ایمیل</b><span>support@kharidino.local</span></div></div><div class="kp-info-item"><i class="fa-solid fa-headset"></i><div><b>ساعات پشتیبانی</b><span>شنبه تا پنجشنبه، ۹ تا ۱۸</span></div></div><div class="kp-info-item"><i class="fa-solid fa-location-dot"></i><div><b>مرکز پشتیبانی</b><span>پشتیبانی آنلاین خریدینو</span></div></div><div class="kp-info-item"><i class="fa-solid fa-circle-check"></i><div><b>پاسخ‌گویی</b><span>پیام شما پس از ارسال بررسی می‌شود.</span></div></div></section>
+    <section class="kp-form"><h2>پیام خود را ارسال کن</h2><form method="post"><div class="kp-form-grid"><div class="kp-field"><label for="name">نام شما</label><input id="name" name="name" placeholder="نام و نام خانوادگی" required></div><div class="kp-field"><label for="email">ایمیل</label><input id="email" name="email" type="email" placeholder="example@email.com" required></div><div class="kp-field full"><label for="message">پیام</label><textarea id="message" name="message" rows="7" placeholder="پیام، پیشنهاد یا انتقادت را بنویس..." required></textarea></div></div><button class="kp-submit" type="submit"><i class="fa-solid fa-paper-plane"></i> ارسال پیام</button></form></section>
+  </div>
+</div>
+{% endblock %}

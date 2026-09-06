@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}درباره خریدینو | {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="about-kd-page">
+  <div class="container">
+    <header class="about-kd-hero">
+      <span class="about-kd-kicker"><i class="fa-solid fa-bag-shopping"></i> درباره خریدینو</span>
+      <h1>خرید بهتر، با مقایسه‌ای هوشمندتر</h1>
+      <p>خریدینو یک پلتفرم ایرانی برای پیدا کردن محصول، مقایسه قیمت فروشگاه‌ها و انتخاب آگاهانه‌تر است؛ هدف ما این است که قبل از خرید، بهترین گزینه را راحت‌تر پیدا کنید.</p>
+    </header>
+
+    <section class="about-kd-grid">
+      <article class="about-kd-card"><i class="fa-solid fa-scale-balanced"></i><h2>مقایسه قیمت</h2><p>قیمت پیشنهادهای مختلف را کنار هم ببینید و قبل از خرید، اختلاف قیمت‌ها را بررسی کنید.</p></article>
+      <article class="about-kd-card"><i class="fa-solid fa-store"></i><h2>فروشگاه‌های مختلف</h2><p>خریدینو تلاش می‌کند پیشنهادهای فروشگاه‌های مختلف را در یک تجربه ساده و قابل مقایسه جمع‌آوری کند.</p></article>
+      <article class="about-kd-card"><i class="fa-solid fa-magnifying-glass-chart"></i><h2>انتخاب آگاهانه</h2><p>به جای جست‌وجوی پراکنده، محصول و قیمت را یکجا بررسی کنید و با اطلاعات بیشتر تصمیم بگیرید.</p></article>
+      <article class="about-kd-card"><i class="fa-solid fa-wand-magic-sparkles"></i><h2>خرید هوشمند</h2><p>خریدینو با ابزارهای هوشمند و قابلیت‌های در حال توسعه، مسیر پیدا کردن گزینه مناسب را کوتاه‌تر می‌کند.</p></article>
+    </section>
+
+    <section class="about-kd-story">
+      <span class="about-kd-kicker">چرا خریدینو؟</span>
+      <h2>ما فقط دنبال نمایش محصول نیستیم؛ دنبال بهتر کردن تصمیم خرید هستیم.</h2>
+      <p>در خرید اینترنتی، پیدا کردن یک محصول آسان است؛ اما پیدا کردن قیمت مناسب، مقایسه فروشگاه‌ها و انتخاب مطمئن‌تر همیشه ساده نیست. خریدینو برای همین مسئله ساخته شده است.</p>
+      <p>ما تلاش می‌کنیم تجربه‌ای سریع، ساده و شفاف ایجاد کنیم تا کاربر بتواند محصولات را پیدا کند، قیمت‌ها را مقایسه کند و در نهایت برای خرید از فروشگاه موردنظرش تصمیم بگیرد.</p>
+    </section>
+
+    <section class="about-kd-values">
+      <div><strong>شفافیت</strong><span>اطلاعات و قیمت‌ها را تا حد امکان واضح نمایش می‌دهیم.</span></div>
+      <div><strong>سادگی</strong><span>مقایسه باید سریع و بدون پیچیدگی اضافی باشد.</span></div>
+      <div><strong>انتخاب</strong><span>هدف ما کمک به کاربر برای انتخاب بهتر است، نه تحمیل یک گزینه.</span></div>
+      <div><strong>توسعه مداوم</strong><span>خریدینو با قابلیت‌های جدید، هوشمندتر و کاربردی‌تر می‌شود.</span></div>
+    </section>
+
+    <section class="about-kd-cta">
+      <div><h2>آماده‌ای بهتر خرید کنی؟</h2><p>محصول موردنظرت را جست‌وجو کن و قیمت‌ها را مقایسه کن.</p></div>
+      <a href="{{ url_for('home') }}" class="about-kd-button"><i class="fa-solid fa-arrow-right"></i> شروع جست‌وجو</a>
+    </section>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,2089 @@
+{% extends "base.html" %}
+
+{% block title %}مدیریت | {{ site_name }}{% endblock %}
+
+{% block content %}
+
+<div class="admin-layout">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="admin-sidebar">
+
+        <div class="admin-brand">
+            <div class="admin-brand-icon">
+                <i class="fa-solid fa-gauge-high"></i>
+            </div>
+
+            <div>
+                <strong>پنل مدیریت</strong>
+                <small>{{ site_name }}</small>
+            </div>
+        </div>
+
+
+        <nav class="admin-nav">
+
+            <a href="#dashboard">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>داشبورد</span>
+            </a>
+
+            <a href="#products-admin">
+                <i class="fa-solid fa-box"></i>
+                <span>محصولات</span>
+            </a>
+
+            <a href="#categories-admin">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>دسته‌بندی‌ها</span>
+            </a>
+
+            <a href="#stores-admin">
+                <i class="fa-solid fa-store"></i>
+                <span>فروشگاه‌ها</span>
+            </a>
+
+            <a href="#offers-admin">
+                <i class="fa-solid fa-tags"></i>
+                <span>قیمت‌ها</span>
+            </a>
+
+            <a href="#users-admin">
+                <i class="fa-solid fa-users"></i>
+                <span>کاربران</span>
+            </a>
+
+            <a href="#orders-admin">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>سفارش‌ها</span>
+            </a>
+
+            <a href="#appearance-admin">
+                <i class="fa-solid fa-palette"></i>
+                <span>ظاهر سایت</span>
+            </a>
+
+            <a href="#settings">
+                <i class="fa-solid fa-gear"></i>
+                <span>تنظیمات سایت</span>
+            </a>
+
+        </nav>
+
+
+        <div class="admin-sidebar-bottom">
+
+            <a href="{{ url_for('home') }}">
+                <i class="fa-solid fa-arrow-right"></i>
+                بازگشت به سایت
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                خروج
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <div class="admin-main container">
+
+
+        <!-- =================================================
+             DASHBOARD
+        ================================================== -->
+
+        <section id="dashboard" class="admin-section">
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        مدیریت
+                    </span>
+
+                    <h1>
+                        داشبورد سایت
+                    </h1>
+
+                    <p>
+                        مدیریت محصولات، فروشگاه‌ها، قیمت‌ها،
+                        سفارش‌ها و ظاهر سایت
+                    </p>
+
+                </div>
+
+                <a
+                    href="{{ url_for('home') }}"
+                    class="btn"
+                >
+                    <i class="fa-solid fa-globe"></i>
+                    مشاهده سایت
+                </a>
+
+            </div>
+
+
+            <div class="stat-grid">
+
+                {% for key,label,icon in [
+                    ('products','محصولات','fa-box'),
+                    ('categories','دسته‌بندی‌ها','fa-layer-group'),
+                    ('stores','فروشگاه‌ها','fa-store'),
+                    ('offers','قیمت‌ها','fa-tags'),
+                    ('users','کاربران','fa-users'),
+                    ('orders','سفارش‌ها','fa-bag-shopping')
+                ] %}
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        <i class="fa-solid {{ icon }}"></i>
+                    </div>
+
+                    <div>
+                        <strong>
+                            {{ stats[key] }}
+                        </strong>
+
+                        <span>
+                            {{ label }}
+                        </span>
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SITE SETTINGS
+        ================================================== -->
+
+        <section
+            id="settings"
+            class="admin-section admin-card"
+        >
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        تنظیمات
+                    </span>
+
+                    <h2>
+                        ⚙️ تنظیمات و متن‌های سایت
+                    </h2>
+
+                    <p>
+                        اطلاعات اصلی سایت را از این قسمت تغییر بده.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="{{ url_for('admin_settings') }}"
+                class="form-grid"
+            >
+
+                {% for key,label,placeholder in [
+
+                    ('site_name','نام سایت','خریدینو'),
+
+                    ('site_tagline',
+                    'شعار کوتاه',
+                    'مقایسه قیمت، خرید هوشمند'),
+
+                    ('hero_badge',
+                    'برچسب بالای صفحه',
+                    'خرید هوشمند'),
+
+                    ('hero_title',
+                    'عنوان اصلی',
+                    'بهترین قیمت را پیدا کن'),
+
+                    ('hero_subtitle',
+                    'توضیحات اصلی',
+                    'توضیح صفحه اصلی'),
+
+                    ('footer_text',
+                    'متن فوتر',
+                    'متن پایین سایت'),
+
+                    ('footer_copyright',
+                    'متن کپی‌رایت',
+                    'تمامی حقوق محفوظ است.'),
+
+                    ('meta_description',
+                    'توضیحات SEO',
+                    'توضیحات سایت برای موتورهای جستجو'),
+
+                    ('theme_color',
+                    'رنگ اصلی مرورگر',
+                    '#0f172a')
+
+                ] %}
+
+                <label>
+
+                    {{ label }}
+
+                    <input
+                        name="{{ key }}"
+                        value="{{ setting(key) }}"
+                        placeholder="{{ placeholder }}"
+                    >
+
+                </label>
+
+                {% endfor %}
+
+
+                <div class="form-actions wide">
+
+                    <button
+                        class="btn"
+                        type="submit"
+                    >
+
+                        <i class="fa-solid fa-floppy-disk"></i>
+
+                        ذخیره تنظیمات
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- =================================================
+             APPEARANCE / BACKGROUND
+        ================================================== -->
+
+        <section
+            id="appearance-admin"
+            class="admin-section admin-card"
+        >
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        ظاهر سایت
+                    </span>
+
+                    <h2>
+                        🎨 مدیریت بک‌گراند و ظاهر
+                    </h2>
+
+                    <p>
+                        تصویر، GIF یا ویدیوی متحرک برای پس‌زمینه سایت انتخاب کن.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- CURRENT BACKGROUND -->
+
+            <div class="background-preview">
+
+                <div class="background-preview-title">
+
+                    <i class="fa-solid fa-eye"></i>
+
+                    پیش‌نمایش تنظیمات فعلی
+
+                </div>
+
+
+                {% if background_media %}
+
+                    {% if background_mode == 'video' %}
+
+                        <video
+                            class="background-preview-media"
+                            autoplay
+                            muted
+                            loop
+                            playsinline
+                        >
+
+                            <source
+                                src="{{ url_for(
+                                    'static',
+                                    filename=background_media
+                                ) }}"
+                            >
+
+                        </video>
+
+                    {% else %}
+
+                        <img
+                            class="background-preview-media"
+                            src="{{ url_for(
+                                'static',
+                                filename=background_media
+                            ) }}"
+                            alt="پس‌زمینه سایت"
+                        >
+
+                    {% endif %}
+
+                {% else %}
+
+                    <div class="background-preview-empty">
+
+                        <i class="fa-solid fa-image"></i>
+
+                        <span>
+                            هنوز بک‌گراند اختصاصی انتخاب نشده
+                        </span>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- BACKGROUND FORM -->
+
+            <form
+                method="post"
+                action="{{ url_for('admin_background') }}"
+                enctype="multipart/form-data"
+                class="form-grid background-form"
+            >
+
+                <label>
+
+                    نوع بک‌گراند
+
+                    <select name="mode">
+
+                        <option
+                            value="css"
+                            {% if background_mode == 'css' %}
+                                selected
+                            {% endif %}
+                        >
+                            گرادیان متحرک
+                        </option>
+
+                        <option
+                            value="image"
+                            {% if background_mode == 'image' %}
+                                selected
+                            {% endif %}
+                        >
+                            تصویر
+                        </option>
+
+                        <option
+                            value="gif"
+                            {% if background_mode == 'gif' %}
+                                selected
+                            {% endif %}
+                        >
+                            GIF متحرک
+                        </option>
+
+                        <option
+                            value="video"
+                            {% if background_mode == 'video' %}
+                                selected
+                            {% endif %}
+                        >
+                            ویدیو
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    فایل بک‌گراند
+
+                    <input
+                        type="file"
+                        name="background_file"
+                        accept="
+                            image/png,
+                            image/jpeg,
+                            image/webp,
+                            image/gif,
+                            video/mp4,
+                            video/webm,
+                            video/ogg
+                        "
+                    >
+
+                    <small class="form-help">
+                        PNG / JPG / WEBP / GIF / MP4 / WEBM / OGG
+                    </small>
+
+                </label>
+
+
+                <label>
+
+                    تیرگی بک‌گراند
+
+                    <input
+                        type="range"
+                        name="overlay"
+                        min="0"
+                        max="0.9"
+                        step="0.05"
+                        value="{{ background_overlay|default('0.45') }}"
+                        oninput="this.nextElementSibling.value=this.value"
+                    >
+
+                    <output>
+                        {{ background_overlay|default('0.45') }}
+                    </output>
+
+                </label>
+
+
+                <label>
+
+                    سرعت انیمیشن
+
+                    <input
+                        type="number"
+                        name="speed"
+                        min="1"
+                        max="120"
+                        step="1"
+                        value="{{ background_speed|default('18') }}"
+                    >
+
+                    <small class="form-help">
+                        عدد کمتر = حرکت سریع‌تر
+                    </small>
+
+                </label>
+
+
+                <label>
+
+                    میزان تاری
+
+                    <input
+                        type="number"
+                        name="blur"
+                        min="0"
+                        max="30"
+                        step="1"
+                        value="{{ background_blur|default('0') }}"
+                    >
+
+                    <small class="form-help">
+                        بر حسب پیکسل
+                    </small>
+
+                </label>
+
+
+                <label>
+
+                    محل قرارگیری
+
+                    <select name="position">
+
+                        {% for value,label in [
+                            ('center','وسط'),
+                            ('center top','بالا'),
+                            ('center bottom','پایین'),
+                            ('left center','چپ'),
+                            ('right center','راست'),
+                            ('left top','بالا چپ'),
+                            ('right top','بالا راست'),
+                            ('left bottom','پایین چپ'),
+                            ('right bottom','پایین راست')
+                        ] %}
+
+                        <option
+                            value="{{ value }}"
+                            {% if background_position|default('center') == value %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ label }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    اندازه بک‌گراند
+
+                    <select name="size">
+
+                        <option
+                            value="cover"
+                            {% if background_size|default('cover') == 'cover' %}
+                                selected
+                            {% endif %}
+                        >
+                            Cover
+                        </option>
+
+                        <option
+                            value="contain"
+                            {% if background_size == 'contain' %}
+                                selected
+                            {% endif %}
+                        >
+                            Contain
+                        </option>
+
+                        <option
+                            value="100% 100%"
+                            {% if background_size == '100% 100%' %}
+                                selected
+                            {% endif %}
+                        >
+                            کشیده‌شده
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label class="check wide">
+
+                    <input
+                        type="checkbox"
+                        name="remove_background"
+                        value="1"
+                    >
+
+                    حذف بک‌گراند فعلی
+
+                </label>
+
+
+                <div class="form-actions wide">
+
+                    <button
+                        type="submit"
+                        class="btn"
+                    >
+
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+
+                        ذخیره بک‌گراند
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <!-- HELP -->
+
+            <div class="admin-help">
+
+                <div>
+
+                    <i class="fa-solid fa-circle-info"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>
+                        نکته برای ویدیوی پس‌زمینه
+                    </strong>
+
+                    <p>
+                        برای اجرای خودکار ویدیو بهتر است فایل MP4
+                        کم‌حجم و بدون صدا استفاده شود.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PRODUCTS
+        ================================================== -->
+
+        <section
+            id="products-admin"
+            class="admin-section admin-card"
+        >
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        محصولات
+                    </span>
+
+                    <h2>
+                        📦 مدیریت محصولات
+                    </h2>
+
+                    <p>
+                        محصول جدید اضافه کن یا محصولات فعلی را ویرایش کن.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- ADD PRODUCT -->
+
+            <form
+                method="post"
+                action="{{ url_for('save_product') }}"
+                enctype="multipart/form-data"
+                class="form-grid admin-form"
+            >
+
+                <input
+                    type="hidden"
+                    name="id"
+                    value=""
+                >
+
+
+                <label>
+
+                    نام محصول
+
+                    <input
+                        name="name"
+                        required
+                        placeholder="مثلاً Galaxy S24"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    قیمت پایه
+
+                    <input
+                        type="number"
+                        name="price"
+                        min="0"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    دسته‌بندی
+
+                    <select name="category_id">
+
+                        <option value="">
+                            بدون دسته
+                        </option>
+
+                        {% for c in categories %}
+
+                        <option value="{{ c.id }}">
+                            {{ c.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    عکس محصول
+
+                    <input
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                    >
+
+                </label>
+
+
+                <label class="wide">
+
+                    توضیحات
+
+                    <textarea
+                        name="description"
+                        rows="4"
+                        placeholder="توضیحات محصول"
+                    ></textarea>
+
+                </label>
+
+
+                <label class="check">
+
+                    <input
+                        type="checkbox"
+                        name="active"
+                        value="1"
+                        checked
+                    >
+
+                    نمایش محصول
+
+                </label>
+
+
+                <div class="form-actions wide">
+
+                    <button
+                        class="btn"
+                        type="submit"
+                    >
+
+                        <i class="fa-solid fa-plus"></i>
+
+                        افزودن محصول
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <!-- PRODUCT LIST -->
+
+            <div class="admin-list">
+
+                {% for p in products %}
+
+                <div class="admin-item">
+
+                    <div class="mini-image">
+
+                        {% if p.image %}
+
+                            <img
+                                src="{{ url_for(
+                                    'static',
+                                    filename=p.image
+                                ) }}"
+                                alt="{{ p.name }}"
+                            >
+
+                        {% else %}
+
+                            <i class="fa-solid fa-box"></i>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="item-main">
+
+                        <strong>
+                            {{ p.name }}
+                        </strong>
+
+                        <small>
+
+                            {{ p.category.name if p.category else 'بدون دسته' }}
+
+                            ·
+
+                            {{ p.price|money }}
+
+                            تومان
+
+                            {% if p.active %}
+
+                                · فعال
+
+                            {% else %}
+
+                                · غیرفعال
+
+                            {% endif %}
+
+                        </small>
+
+                    </div>
+
+
+                    <details class="edit-details">
+
+                        <summary>
+                            ✏️ ویرایش
+                        </summary>
+
+
+                        <form
+                            method="post"
+                            action="{{ url_for('save_product') }}"
+                            enctype="multipart/form-data"
+                            class="inline-edit"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="id"
+                                value="{{ p.id }}"
+                            >
+
+
+                            <input
+                                name="name"
+                                value="{{ p.name }}"
+                                required
+                            >
+
+
+                            <input
+                                type="number"
+                                name="price"
+                                value="{{ p.price }}"
+                                min="0"
+                            >
+
+
+                            <select name="category_id">
+
+                                <option value="">
+                                    بدون دسته
+                                </option>
+
+                                {% for c in categories %}
+
+                                <option
+                                    value="{{ c.id }}"
+                                    {% if p.category_id == c.id %}
+                                        selected
+                                    {% endif %}
+                                >
+
+                                    {{ c.name }}
+
+                                </option>
+
+                                {% endfor %}
+
+                            </select>
+
+
+                            <input
+                                type="file"
+                                name="image"
+                                accept="image/*"
+                            >
+
+
+                            <textarea
+                                name="description"
+                                rows="3"
+                            >{{ p.description }}</textarea>
+
+
+                            <label class="check">
+
+                                <input
+                                    type="checkbox"
+                                    name="active"
+                                    value="1"
+                                    {% if p.active %}
+                                        checked
+                                    {% endif %}
+                                >
+
+                                نمایش
+
+                            </label>
+
+
+                            <button
+                                class="btn"
+                                type="submit"
+                            >
+
+                                ذخیره
+
+                            </button>
+
+                        </form>
+
+                    </details>
+
+
+                    <form
+                        method="post"
+                        action="{{ url_for(
+                            'delete_product',
+                            product_id=p.id
+                        ) }}"
+                        onsubmit="return confirm('حذف محصول انجام شود؟')"
+                    >
+
+                        <button
+                            class="danger-btn"
+                            type="submit"
+                        >
+                            حذف
+                        </button>
+
+                    </form>
+
+                </div>
+
+                {% else %}
+
+                <div class="empty">
+                    هنوز محصولی ثبت نشده است.
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             CATEGORIES
+        ================================================== -->
+
+        <section
+            id="categories-admin"
+            class="admin-section admin-card"
+        >
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        دسته‌بندی
+                    </span>
+
+                    <h2>
+                        🗂️ مدیریت دسته‌بندی‌ها
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="{{ url_for('save_category') }}"
+                class="form-grid"
+            >
+
+                <input
+                    type="hidden"
+                    name="id"
+                >
+
+
+                <label>
+
+                    نام
+
+                    <input
+                        name="name"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    آیکون Font Awesome
+
+                    <input
+                        name="icon"
+                        value="fa-box"
+                    >
+
+                </label>
+
+
+                <label class="wide">
+
+                    توضیح
+
+                    <input
+                        name="description"
+                    >
+
+                </label>
+
+
+                <label class="check">
+
+                    <input
+                        type="checkbox"
+                        name="active"
+                        value="1"
+                        checked
+                    >
+
+                    فعال
+
+                </label>
+
+
+                <div class="form-actions wide">
+
+                    <button
+                        class="btn"
+                        type="submit"
+                    >
+
+                        ➕ افزودن دسته
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <div class="admin-list">
+
+                {% for c in categories %}
+
+                <div class="admin-item">
+
+                    <div class="mini-icon">
+
+                        <i class="fa-solid {{ c.icon }}"></i>
+
+                    </div>
+
+
+                    <div class="item-main">
+
+                        <strong>
+                            {{ c.name }}
+                        </strong>
+
+                        <small>
+                            {{ c.description }}
+                        </small>
+
+                    </div>
+
+
+                    <details class="edit-details">
+
+                        <summary>
+                            ✏️ ویرایش
+                        </summary>
+
+                        <form
+                            method="post"
+                            action="{{ url_for('save_category') }}"
+                            class="inline-edit"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="id"
+                                value="{{ c.id }}"
+                            >
+
+                            <input
+                                name="name"
+                                value="{{ c.name }}"
+                            >
+
+                            <input
+                                name="icon"
+                                value="{{ c.icon }}"
+                            >
+
+                            <input
+                                name="description"
+                                value="{{ c.description }}"
+                            >
+
+                            <label class="check">
+
+                                <input
+                                    type="checkbox"
+                                    name="active"
+                                    value="1"
+                                    {% if c.active %}
+                                        checked
+                                    {% endif %}
+                                >
+
+                                فعال
+
+                            </label>
+
+                            <button
+                                class="btn"
+                                type="submit"
+                            >
+                                ذخیره
+                            </button>
+
+                        </form>
+
+                    </details>
+
+
+                    <form
+                        method="post"
+                        action="{{ url_for(
+                            'delete_category',
+                            category_id=c.id
+                        ) }}"
+                        onsubmit="return confirm('دسته حذف شود؟ محصولات آن حذف نمی‌شوند.')"
+                    >
+
+                        <button
+                            class="danger-btn"
+                            type="submit"
+                        >
+                            حذف
+                        </button>
+
+                    </form>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             STORES
+        ================================================== -->
+
+        <section
+            id="stores-admin"
+            class="admin-section admin-card"
+        >
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        فروشگاه‌ها
+                    </span>
+
+                    <h2>
+                        🏪 مدیریت فروشگاه‌ها
+                    </h2>
+
+                    <p>
+                        فروشگاه، لوگو و لینک آن را مدیریت کن.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="{{ url_for('save_store') }}"
+                enctype="multipart/form-data"
+                class="form-grid"
+            >
+
+                <input
+                    type="hidden"
+                    name="id"
+                >
+
+
+                <label>
+
+                    نام فروشگاه
+
+                    <input
+                        name="name"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    آدرس سایت
+
+                    <input
+                        type="url"
+                        name="website"
+                        placeholder="https://..."
+                    >
+
+                </label>
+
+
+                <label>
+
+                    لوگو
+
+                    <input
+                        type="file"
+                        name="logo"
+                        accept="image/*"
+                    >
+
+                </label>
+
+
+                <label class="check">
+
+                    <input
+                        type="checkbox"
+                        name="active"
+                        value="1"
+                        checked
+                    >
+
+                    فعال
+
+                </label>
+
+
+                <div class="form-actions wide">
+
+                    <button
+                        class="btn"
+                        type="submit"
+                    >
+
+                        ➕ افزودن فروشگاه
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <div class="admin-list">
+
+                {% for s in stores %}
+
+                <div class="admin-item">
+
+                    <div class="mini-image">
+
+                        {% if s.logo %}
+
+                            <img
+                                src="{{ url_for(
+                                    'static',
+                                    filename=s.logo
+                                ) }}"
+                                alt="{{ s.name }}"
+                            >
+
+                        {% else %}
+
+                            <i class="fa-solid fa-store"></i>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="item-main">
+
+                        <strong>
+                            {{ s.name }}
+                        </strong>
+
+                        <small>
+                            {{ s.website }}
+                        </small>
+
+                    </div>
+
+
+                    <details class="edit-details">
+
+                        <summary>
+                            ✏️ ویرایش
+                        </summary>
+
+                        <form
+                            method="post"
+                            action="{{ url_for('save_store') }}"
+                            enctype="multipart/form-data"
+                            class="inline-edit"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="id"
+                                value="{{ s.id }}"
+                            >
+
+                            <input
+                                name="name"
+                                value="{{ s.name }}"
+                                required
+                            >
+
+                            <input
+                                name="website"
+                                value="{{ s.website }}"
+                            >
+
+                            <input
+                                type="file"
+                                name="logo"
+                                accept="image/*"
+                            >
+
+                            <label class="check">
+
+                                <input
+                                    type="checkbox"
+                                    name="active"
+                                    value="1"
+                                    {% if s.active %}
+                                        checked
+                                    {% endif %}
+                                >
+
+                                فعال
+
+                            </label>
+
+                            <button
+                                class="btn"
+                                type="submit"
+                            >
+                                ذخیره
+                            </button>
+
+                        </form>
+
+                    </details>
+
+
+                    <form
+                        method="post"
+                        action="{{ url_for(
+                            'delete_store',
+                            store_id=s.id
+                        ) }}"
+                        onsubmit="return confirm('فروشگاه و قیمت‌های آن حذف شوند؟')"
+                    >
+
+                        <button
+                            class="danger-btn"
+                            type="submit"
+                        >
+                            حذف
+                        </button>
+
+                    </form>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             OFFERS
+        ================================================== -->
+
+        <section
+            id="offers-admin"
+            class="admin-section admin-card"
+        >
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        مقایسه قیمت
+                    </span>
+
+                    <h2>
+                        💰 قیمت‌ها و لینک خرید
+                    </h2>
+
+                    <p>
+                        برای هر محصول قیمت فروشگاه‌ها را ثبت کن.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="{{ url_for('save_offer') }}"
+                class="form-grid"
+            >
+
+                <label>
+
+                    محصول
+
+                    <select
+                        name="product_id"
+                        required
+                    >
+
+                        {% for p in products %}
+
+                        <option value="{{ p.id }}">
+                            {{ p.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    فروشگاه
+
+                    <select
+                        name="store_id"
+                        required
+                    >
+
+                        {% for s in stores %}
+
+                        <option value="{{ s.id }}">
+                            {{ s.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    قیمت
+
+                    <input
+                        type="number"
+                        name="price"
+                        min="0"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    لینک خرید
+
+                    <input
+                        type="url"
+                        name="url"
+                        placeholder="https://..."
+                    >
+
+                </label>
+
+
+                <label class="check">
+
+                    <input
+                        type="checkbox"
+                        name="in_stock"
+                        value="1"
+                        checked
+                    >
+
+                    موجود است
+
+                </label>
+
+
+                <div class="form-actions wide">
+
+                    <button
+                        class="btn"
+                        type="submit"
+                    >
+
+                        ➕ ثبت قیمت
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>محصول</th>
+                            <th>فروشگاه</th>
+                            <th>قیمت</th>
+                            <th>وضعیت</th>
+                            <th>عملیات</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for o in offers %}
+
+                        <tr>
+
+                            <td>
+                                {{ o.product.name }}
+                            </td>
+
+                            <td>
+                                {{ o.store.name }}
+                            </td>
+
+                            <td>
+
+                                <strong>
+                                    {{ o.price|money }}
+                                </strong>
+
+                                تومان
+
+                            </td>
+
+                            <td>
+
+                                {% if o.in_stock %}
+
+                                    <span class="status success">
+                                        موجود
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status danger">
+                                        ناموجود
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <details>
+
+                                    <summary>
+                                        ویرایش
+                                    </summary>
+
+
+                                    <form
+                                        method="post"
+                                        action="{{ url_for('save_offer') }}"
+                                        class="table-edit"
+                                    >
+
+                                        <input
+                                            type="hidden"
+                                            name="id"
+                                            value="{{ o.id }}"
+                                        >
+
+
+                                        <select name="product_id">
+
+                                            {% for p in products %}
+
+                                            <option
+                                                value="{{ p.id }}"
+                                                {% if p.id == o.product_id %}
+                                                    selected
+                                                {% endif %}
+                                            >
+
+                                                {{ p.name }}
+
+                                            </option>
+
+                                            {% endfor %}
+
+                                        </select>
+
+
+                                        <select name="store_id">
+
+                                            {% for s in stores %}
+
+                                            <option
+                                                value="{{ s.id }}"
+                                                {% if s.id == o.store_id %}
+                                                    selected
+                                                {% endif %}
+                                            >
+
+                                                {{ s.name }}
+
+                                            </option>
+
+                                            {% endfor %}
+
+                                        </select>
+
+
+                                        <input
+                                            type="number"
+                                            name="price"
+                                            value="{{ o.price }}"
+                                            min="0"
+                                        >
+
+
+                                        <input
+                                            name="url"
+                                            value="{{ o.url }}"
+                                        >
+
+
+                                        <label>
+
+                                            <input
+                                                type="checkbox"
+                                                name="in_stock"
+                                                value="1"
+                                                {% if o.in_stock %}
+                                                    checked
+                                                {% endif %}
+                                            >
+
+                                            موجود
+
+                                        </label>
+
+
+                                        <button
+                                            class="btn"
+                                            type="submit"
+                                        >
+                                            ذخیره
+                                        </button>
+
+                                    </form>
+
+                                </details>
+
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'delete_offer',
+                                        offer_id=o.id
+                                    ) }}"
+                                    onsubmit="return confirm('قیمت حذف شود؟')"
+                                >
+
+                                    <button
+                                        class="danger-btn"
+                                        type="submit"
+                                    >
+                                        حذف
+                                    </button>
+
+                                </form>
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="5">
+                                هنوز قیمتی ثبت نشده است.
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             USERS
+        ================================================== -->
+
+        <section
+            id="users-admin"
+            class="admin-section admin-card"
+        >
+
+            <div class="admin-title">
+
+                <div>
+
+                    <span class="section-kicker">
+                        کاربران
+                    </span>
+
+                    <h2>
+                        👥 مدیریت کاربران
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>نام</th>
+                            <th>ایمیل</th>
+                            <th>نقش</th>
+                            <th>عملیات</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for u in users %}
+
+                        <tr>
+
+                            <td>
+                                {{ u.name }}
+                            </td>
+
+                            <td>
+                                {{ u.email }}
+                            </td>
+
+                            <td>
+
+                                <span class="tag">
+                                    {{ u.role }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                {% if u.id != current_user.id %}
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'change_role',
+                                        user_id=u.id
+                                    ) }}"
+                                    class="role-form"
+                                >
+
+                                    <select name="role">
+
+                                        <option
+                                            value="user"
+                                            {% if u.role == 'user' %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            کاربر
+                                        </option>
+
+                                        <option
+                                            value="admin"
+                                            {% if u.role == 'admin' %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            مدیر
+                                        </option>
+
+                                    </select>
+
+
+                                    <button
+                                        class="btn"
+                                        type="submit"
+                                    >
+                                        ذخیره
+                                    </button>
+
+                                </form>
+
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'delete_user',
+                                        user_id=u.id
+                                    ) }}"
+                                    onsubmit="return confirm('کاربر حذف شود؟')"
+                                >
+
+                                    <button
+                                        class="danger-btn"
+                                        type="submit"
+                                    >
+                                        حذف
+                                    </button>
+
+                                </form>
+
+                                {% else %}
+
+                                <small>
+                                    حساب فعلی مدیر
+                                </small>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ORDERS
+        ================================================== -->
+
+        <section
+            id="orders-admin"
+            class="admin-section"
+        >
+
+            <div class="section-head">
+
+                <div>
+
+                    <span class="section-kicker">
+                        سفارش‌ها
+                    </span>
+
+                    <h2>
+                        مدیریت سفارش‌های مشتریان
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="admin-card order-admin-list">
+
+                {% for o in orders %}
+
+                <div class="admin-order">
+
+                    <div>
+
+                        <b>
+                            #{{ o.id }}
+                            —
+                            {{ o.customer_name }}
+                        </b>
+
+                        <small>
+                            {{ o.phone }}
+                            ·
+                            {{ o.total|money }}
+                            تومان
+                        </small>
+
+                        <small>
+                            {{ o.address }}
+                        </small>
+
+                        {% if o.note %}
+
+                        <small>
+                            یادداشت:
+                            {{ o.note }}
+                        </small>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <form
+                        method="post"
+                        action="{{ url_for(
+                            'update_order_status',
+                            order_id=o.id
+                        ) }}"
+                    >
+
+                        <select name="status">
+
+                            {% for st in [
+                                'در انتظار بررسی',
+                                'تأیید شد',
+                                'در حال آماده‌سازی',
+                                'ارسال شد',
+                                'تحویل شد',
+                                'لغو شد'
+                            ] %}
+
+                            <option
+                                value="{{ st }}"
+                                {% if o.status == st %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ st }}
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+
+                        <button
+                            class="btn"
+                            type="submit"
+                        >
+
+                            <i class="fa-solid fa-check"></i>
+
+                            ذخیره
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+                {% else %}
+
+                <div class="empty">
+
+                    <i class="fa-solid fa-box-open"></i>
+
+                    هنوز سفارشی ثبت نشده است.
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+    </div>
+
+</div>
+
+{% endblock %}

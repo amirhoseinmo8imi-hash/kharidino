@@ -1,0 +1,1101 @@
+{% extends "base.html" %}
+
+{% block title %}
+سبد خرید | {{ site_name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- =========================================================
+     CART PAGE
+     ========================================================= -->
+
+<section class="cart-page-hero">
+
+    <div class="container">
+
+        <span class="section-kicker">
+            <i class="fa-solid fa-cart-shopping"></i>
+            سبد خرید
+        </span>
+
+        <h1>
+            انتخاب‌هایت آماده‌اند 🛒
+        </h1>
+
+        <p>
+            محصولات انتخاب‌شده را بررسی کن، تعداد آن‌ها را تغییر بده
+            و سپس سفارش خود را ثبت کن.
+        </p>
+
+    </div>
+
+</section>
+
+
+<section class="cart-section">
+
+    <div class="container">
+
+        {% if items %}
+
+        <div class="cart-layout">
+
+
+            <!-- =====================================================
+                 CART MAIN
+                 ===================================================== -->
+
+            <div class="cart-main">
+
+
+                <!-- =================================================
+                     TOP BAR
+                     ================================================= -->
+
+                <div class="cart-topbar">
+
+                    <div class="cart-label">
+
+                        <i class="fa-solid fa-bag-shopping"></i>
+
+                        <span>
+
+                            <strong id="top-product-count">
+                                {{ items|length }}
+                            </strong>
+
+                            محصول در سبد خرید
+
+                        </span>
+
+                    </div>
+
+
+                    <a
+                        href="{{ url_for('home') }}"
+                        class="continue-shopping"
+                    >
+
+                        ادامه خرید
+
+                        <i class="fa-solid fa-arrow-left"></i>
+
+                    </a>
+
+                </div>
+
+
+                <!-- =================================================
+                     CART FORM
+                     ================================================= -->
+
+                <form
+                    method="post"
+                    action="{{ url_for('cart_update') }}"
+                    id="cart-form"
+                >
+
+                    <!-- =================================================
+                         CART ITEMS
+                         ================================================= -->
+
+                    <div class="cart-items">
+
+                        {% for row in items %}
+
+                        <article
+                            class="cart-item"
+                            data-product-id="{{ row.product.id }}"
+                        >
+
+
+                            <!-- =========================================
+                                 PRODUCT IMAGE
+                                 ========================================= -->
+
+                            <div class="cart-thumb">
+
+                                {% if row.product.image %}
+
+                                <img
+                                    src="{{ url_for(
+                                        'static',
+                                        filename=row.product.image
+                                    ) }}"
+                                    alt="{{ row.product.name }}"
+                                    loading="lazy"
+                                >
+
+                                {% else %}
+
+                                <i class="fa-solid
+                                    {{
+                                        row.product.category.icon
+                                        if row.product.category
+                                        else 'fa-box'
+                                    }}"
+                                ></i>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <!-- =========================================
+                                 PRODUCT INFO
+                                 ========================================= -->
+
+                            <div class="cart-info">
+
+                                <a
+                                    href="{{ url_for(
+                                        'product_detail',
+                                        product_id=row.product.id
+                                    ) }}"
+                                    class="cart-product-name"
+                                >
+
+                                    {{ row.product.name }}
+
+                                </a>
+
+
+                                {% if row.product.category %}
+
+                                <span class="cart-category">
+
+                                    <i class="fa-solid fa-tag"></i>
+
+                                    {{ row.product.category.name }}
+
+                                </span>
+
+                                {% endif %}
+
+
+                                <div class="cart-unit-price">
+
+                                    <span>
+                                        قیمت واحد:
+                                    </span>
+
+                                    <strong>
+                                        {{ row.price|money }}
+                                    </strong>
+
+                                    <span>
+                                        تومان
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =========================================
+                                 QUANTITY
+                                 ========================================= -->
+
+                            <div class="quantity-box">
+
+                                <span class="quantity-label">
+                                    تعداد
+                                </span>
+
+
+                                <div class="quantity-control">
+
+
+                                    <!-- MINUS -->
+
+                                    <button
+                                        type="button"
+                                        class="qty-btn qty-minus"
+                                        onclick="changeCartQty(this, -1)"
+                                        aria-label="کاهش تعداد"
+                                    >
+
+                                        <i class="fa-solid fa-minus"></i>
+
+                                    </button>
+
+
+                                    <!-- INPUT -->
+
+                                    <input
+                                        class="qty"
+                                        type="number"
+                                        min="0"
+                                        max="99"
+                                        step="1"
+                                        name="qty_{{ row.product.id }}"
+                                        value="{{ row.quantity }}"
+                                        data-price="{{ row.price|int }}"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        aria-label="تعداد {{ row.product.name }}"
+                                    >
+
+
+                                    <!-- PLUS -->
+
+                                    <button
+                                        type="button"
+                                        class="qty-btn qty-plus"
+                                        onclick="changeCartQty(this, 1)"
+                                        aria-label="افزایش تعداد"
+                                    >
+
+                                        <i class="fa-solid fa-plus"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =========================================
+                                 SUBTOTAL
+                                 ========================================= -->
+
+                            <strong
+                                class="cart-subtotal"
+                                data-subtotal
+                            >
+
+                                {{ row.subtotal|money }}
+
+                                تومان
+
+                            </strong>
+
+
+                            <!-- =========================================
+                                 REMOVE
+                                 ========================================= -->
+
+                            <button
+                                type="submit"
+                                class="remove-cart-btn"
+                                formaction="{{ url_for(
+                                    'cart_remove',
+                                    product_id=row.product.id
+                                ) }}"
+                                formmethod="post"
+                                title="حذف محصول"
+                                aria-label="حذف {{ row.product.name }}"
+                            >
+
+                                <i class="fa-solid fa-trash"></i>
+
+                            </button>
+
+
+                        </article>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- =================================================
+                         CART ACTIONS
+                         ================================================= -->
+
+                    <div class="cart-actions">
+
+
+                        <!-- UPDATE CART -->
+
+                        <button
+                            type="submit"
+                            class="cart-update-btn"
+                            id="manual-update-cart"
+                        >
+
+                            <i class="fa-solid fa-rotate"></i>
+
+                            <span>
+                                به‌روزرسانی سبد
+                            </span>
+
+                        </button>
+
+
+                        <!-- CONTINUE SHOPPING -->
+
+                        <a
+                            href="{{ url_for('home') }}"
+                            class="btn-outline"
+                        >
+
+                            <i class="fa-solid fa-arrow-right"></i>
+
+                            ادامه خرید
+
+                        </a>
+
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- =====================================================
+                 ORDER SUMMARY
+                 ===================================================== -->
+
+            <aside class="cart-summary">
+
+
+                <!-- =================================================
+                     SUMMARY HEADER
+                     ================================================= -->
+
+                <div class="summary-header">
+
+                    <div class="summary-icon">
+
+                        <i class="fa-solid fa-receipt"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <h3>
+                            خلاصه سفارش
+                        </h3>
+
+                        <span>
+                            بررسی مبلغ نهایی
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     SUMMARY LINES
+                     ================================================= -->
+
+                <div class="summary-lines">
+
+
+                    <!-- PRODUCT TYPES -->
+
+                    <div class="summary-row">
+
+                        <span>
+                            تعداد محصولات
+                        </span>
+
+                        <strong id="summary-item-count">
+                            {{ items|length }}
+                        </strong>
+
+                    </div>
+
+
+                    <!-- TOTAL QUANTITY -->
+
+                    <div class="summary-row">
+
+                        <span>
+                            تعداد کل کالاها
+                        </span>
+
+                        <strong id="summary-quantity">
+
+                            {{ items|sum(attribute='quantity') }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- SHIPPING -->
+
+                    <div class="summary-row">
+
+                        <span>
+                            هزینه ارسال
+                        </span>
+
+                        <strong>
+                            رایگان
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- DIVIDER -->
+
+                <div class="summary-divider"></div>
+
+
+                <!-- =================================================
+                     TOTAL
+                     ================================================= -->
+
+                <div class="summary-total">
+
+                    <span>
+                        مبلغ قابل پرداخت
+                    </span>
+
+                    <strong>
+
+                        <span id="cart-total">
+                            {{ total|money }}
+                        </span>
+
+                        <small>
+                            تومان
+                        </small>
+
+                    </strong>
+
+                </div>
+
+
+                <!-- =================================================
+                     CHECKOUT BUTTON
+                     =================================================
+
+                     مهم:
+                     این دکمه به cart-form متصل است.
+                     بنابراین قبل از ورود به checkout،
+                     تعداد کالاها داخل Session ذخیره می‌شود.
+                     ================================================= -->
+
+                <button
+                    type="submit"
+                    class="checkout-btn"
+                    id="checkout-button"
+                    form="cart-form"
+                    name="go_to_checkout"
+                    value="1"
+                >
+
+                    <span>
+                        ادامه و ثبت سفارش
+                    </span>
+
+                    <i class="fa-solid fa-arrow-left"></i>
+
+                </button>
+
+
+                <!-- =================================================
+                     SECURITY
+                     ================================================= -->
+
+                <div class="summary-security">
+
+                    <i class="fa-solid fa-shield-halved"></i>
+
+                    <span>
+                        ثبت سفارش امن و مطمئن
+                    </span>
+
+                </div>
+
+
+                <!-- =================================================
+                     PRICE NOTE
+                     ================================================= -->
+
+                <div class="price-note">
+
+                    <i class="fa-solid fa-circle-info"></i>
+
+                    <span>
+                        قیمت هر محصول بر اساس کمترین قیمت
+                        ثبت‌شده از فروشگاه‌های فعال محاسبه شده است.
+                    </span>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+
+        {% else %}
+
+
+        <!-- =====================================================
+             EMPTY CART
+             ===================================================== -->
+
+        <div class="empty-cart-card">
+
+
+            <!-- ICON -->
+
+            <div class="empty-cart-icon">
+
+                <i class="fa-solid fa-cart-shopping"></i>
+
+            </div>
+
+
+            <!-- TITLE -->
+
+            <h3>
+                سبد خریدت خالیه
+            </h3>
+
+
+            <!-- DESCRIPTION -->
+
+            <p>
+
+                هنوز محصولی به سبد خرید اضافه نکرده‌ای.
+
+                <br>
+
+                محصولات مورد علاقه‌ات را پیدا کن
+                و خریدت را شروع کن.
+
+            </p>
+
+
+            <!-- BUTTON -->
+
+            <a
+                href="{{ url_for('home') }}"
+                class="checkout-btn"
+                style="max-width:260px;"
+            >
+
+                <i class="fa-solid fa-store"></i>
+
+                <span>
+                    مشاهده محصولات
+                </span>
+
+            </a>
+
+        </div>
+
+
+        {% endif %}
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     CART JAVASCRIPT
+     ========================================================= -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* =========================================================
+       FORMAT MONEY
+       ========================================================= */
+
+    function formatMoney(value) {
+
+        value = Number(value);
+
+        if (!Number.isFinite(value)) {
+            value = 0;
+        }
+
+        return Math.round(value).toLocaleString("fa-IR");
+    }
+
+
+    /* =========================================================
+       GET QUANTITY
+       ========================================================= */
+
+    function getQuantity(input) {
+
+        if (!input) {
+            return 0;
+        }
+
+        let value = parseInt(
+            input.value,
+            10
+        );
+
+        if (!Number.isFinite(value)) {
+            value = 0;
+        }
+
+        value = Math.max(
+            0,
+            Math.min(99, value)
+        );
+
+        return value;
+    }
+
+
+    /* =========================================================
+       GET PRICE
+       ========================================================= */
+
+    function getPrice(input) {
+
+        if (!input) {
+            return 0;
+        }
+
+        let price = Number(
+            input.dataset.price
+        );
+
+        if (!Number.isFinite(price)) {
+            price = 0;
+        }
+
+        return price;
+    }
+
+
+    /* =========================================================
+       CALCULATE CART
+       ========================================================= */
+
+    function calculateCart() {
+
+        let total = 0;
+
+        let totalQuantity = 0;
+
+        let productCount = 0;
+
+
+        const items = document.querySelectorAll(
+            ".cart-item"
+        );
+
+
+        items.forEach(function (item) {
+
+            const input = item.querySelector(
+                ".qty"
+            );
+
+
+            if (!input) {
+                return;
+            }
+
+
+            const quantity = getQuantity(
+                input
+            );
+
+
+            const price = getPrice(
+                input
+            );
+
+
+            const subtotal =
+                quantity * price;
+
+
+            input.value = quantity;
+
+
+            total += subtotal;
+
+            totalQuantity += quantity;
+
+
+            /*
+             * تعداد نوع محصولات
+             */
+
+            if (quantity > 0) {
+
+                productCount++;
+
+            }
+
+
+            /*
+             * جمع هر محصول
+             */
+
+            const subtotalElement =
+                item.querySelector(
+                    "[data-subtotal]"
+                );
+
+
+            if (subtotalElement) {
+
+                subtotalElement.textContent =
+                    formatMoney(subtotal) +
+                    " تومان";
+
+            }
+
+        });
+
+
+        /* =====================================================
+           TOTAL
+           ===================================================== */
+
+        const totalElement =
+            document.getElementById(
+                "cart-total"
+            );
+
+
+        if (totalElement) {
+
+            totalElement.textContent =
+                formatMoney(total);
+
+        }
+
+
+        /* =====================================================
+           TOTAL QUANTITY
+           ===================================================== */
+
+        const quantityElement =
+            document.getElementById(
+                "summary-quantity"
+            );
+
+
+        if (quantityElement) {
+
+            quantityElement.textContent =
+                formatMoney(totalQuantity);
+
+        }
+
+
+        /* =====================================================
+           PRODUCT COUNT
+           ===================================================== */
+
+        const productElement =
+            document.getElementById(
+                "summary-item-count"
+            );
+
+
+        if (productElement) {
+
+            productElement.textContent =
+                formatMoney(productCount);
+
+        }
+
+
+        /* =====================================================
+           TOP COUNT
+           ===================================================== */
+
+        const topCount =
+            document.getElementById(
+                "top-product-count"
+            );
+
+
+        if (topCount) {
+
+            topCount.textContent =
+                formatMoney(productCount);
+
+        }
+
+    }
+
+
+    /* =========================================================
+       PLUS / MINUS
+       ========================================================= */
+
+    window.changeCartQty =
+        function (button, amount) {
+
+            if (!button) {
+                return;
+            }
+
+
+            const control =
+                button.closest(
+                    ".quantity-control"
+                );
+
+
+            if (!control) {
+                return;
+            }
+
+
+            const input =
+                control.querySelector(
+                    ".qty"
+                );
+
+
+            if (!input) {
+                return;
+            }
+
+
+            let quantity =
+                getQuantity(input);
+
+
+            quantity +=
+                Number(amount) || 0;
+
+
+            quantity =
+                Math.max(
+                    0,
+                    Math.min(
+                        99,
+                        quantity
+                    )
+                );
+
+
+            input.value =
+                quantity;
+
+
+            calculateCart();
+
+        };
+
+
+    /* =========================================================
+       DIRECT INPUT
+       ========================================================= */
+
+    document.addEventListener(
+        "input",
+        function (event) {
+
+            const input =
+                event.target;
+
+
+            if (
+                !input.classList.contains(
+                    "qty"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            let value =
+                parseInt(
+                    input.value,
+                    10
+                );
+
+
+            /*
+             * اگر کاربر هنوز در حال پاک کردن
+             * مقدار ورودی است، اجازه بده.
+             */
+
+            if (
+                input.value === ""
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                !Number.isFinite(value)
+            ) {
+
+                value = 0;
+
+            }
+
+
+            value =
+                Math.max(
+                    0,
+                    Math.min(
+                        99,
+                        value
+                    )
+                );
+
+
+            input.value =
+                value;
+
+
+            calculateCart();
+
+        }
+    );
+
+
+    /* =========================================================
+       CHANGE INPUT
+       ========================================================= */
+
+    document.addEventListener(
+        "change",
+        function (event) {
+
+            const input =
+                event.target;
+
+
+            if (
+                !input.classList.contains(
+                    "qty"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            let value =
+                parseInt(
+                    input.value,
+                    10
+                );
+
+
+            if (
+                !Number.isFinite(value)
+            ) {
+
+                value = 0;
+
+            }
+
+
+            value =
+                Math.max(
+                    0,
+                    Math.min(
+                        99,
+                        value
+                    )
+                );
+
+
+            input.value =
+                value;
+
+
+            calculateCart();
+
+        }
+    );
+
+
+    /* =========================================================
+       BEFORE SUBMIT
+       =========================================================
+
+       اطمینان می‌دهد مقدارهای غیرمعتبر
+       قبل از ارسال فرم اصلاح شوند.
+       ========================================================= */
+
+    const cartForm =
+        document.getElementById(
+            "cart-form"
+        );
+
+
+    if (cartForm) {
+
+        cartForm.addEventListener(
+            "submit",
+            function () {
+
+                const inputs =
+                    cartForm.querySelectorAll(
+                        ".qty"
+                    );
+
+
+                inputs.forEach(
+                    function (input) {
+
+                        input.value =
+                            getQuantity(
+                                input
+                            );
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       INITIALIZE
+       ========================================================= */
+
+    function initializeCart() {
+
+        calculateCart();
+
+    }
+
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeCart
+        );
+
+    } else {
+
+        initializeCart();
+
+    }
+
+})();
+
+</script>
+
+
+{% endblock %}

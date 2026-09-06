@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}حساب کاربری | {{ site_name }}{% endblock %}
+{% block content %}<section class="page-hero"><div class="container"><span class="section-kicker">حساب</span><h1>{{ current_user.name }}</h1><p>{{ current_user.email }}</p></div></section>{% endblock %}

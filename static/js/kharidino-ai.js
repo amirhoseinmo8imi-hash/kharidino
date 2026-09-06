@@ -1,14 +1,20 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   const json = async (url, options = {}) => {
-    const r = await fetch(url, options);
+    const opts = { ...options, headers: { ...(options.headers || {}) } };
+    const method = (opts.method || 'GET').toUpperCase();
+    if (method !== 'GET' && method !== 'HEAD') {
+      const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (token) opts.headers['X-CSRF-Token'] = token;
+    }
+    const r = await fetch(url, opts);
     const text = await r.text();
     let data;
     try { data = JSON.parse(text); } catch (_) { throw new Error(`پاسخ نامعتبر از سرور (${r.status})`); }
     if (!r.ok) throw new Error(data.message || data.error || 'خطا در درخواست');
     return data;
   };
-  const escapeHtml = (s) => String(s ?? '').replace(/[&<>\'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const escapeHtml = (s) => String(s ?? '').replace(/[&<>\'\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
   async function loadStats() {
     try {

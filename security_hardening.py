@@ -1,9 +1,4 @@
-"""Production security hardening for Kharidino.
-
-This module is deliberately small and framework-level: it can be applied from
-both the development launcher and a production WSGI entrypoint without
-rewriting the existing route file.
-"""
+"""Production security hardening for Kharidino."""
 from __future__ import annotations
 
 import os
@@ -12,15 +7,17 @@ import time
 from collections import defaultdict, deque
 from urllib.parse import urlparse
 
-from flask import request, abort
-
+from flask import abort, request
 
 _INSECURE_KEYS = {"", "change-this-secret-key", "dev-secret", "secret"}
 _RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 
 
 def _is_production() -> bool:
-    return os.environ.get("FLASK_ENV", "").lower() == "production" or os.environ.get("KHAIDINO_PRODUCTION", "").lower() in {"1", "true", "yes"}
+    return (
+        os.environ.get("FLASK_ENV", "").lower() == "production"
+        or os.environ.get("KHARIDINO_PRODUCTION", "").lower() in {"1", "true", "yes"}
+    )
 
 
 def apply_security(app):
@@ -32,7 +29,6 @@ def apply_security(app):
     if configured_key in _INSECURE_KEYS:
         if _is_production():
             raise RuntimeError("SECRET_KEY must be set to a strong random value in production.")
-        # Never use a known constant even in development.
         app.config["SECRET_KEY"] = secrets.token_urlsafe(48)
     else:
         app.config["SECRET_KEY"] = configured_key
@@ -46,7 +42,6 @@ def apply_security(app):
 
     @app.before_request
     def _security_before_request():
-        # Never trust a browser-supplied Host when constructing security policy.
         if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             _check_same_origin()
 
@@ -66,8 +61,6 @@ def apply_security(app):
         response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
         if request.is_secure or _is_production():
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-        # Keep CSP compatible with the existing inline UI while still blocking
-        # plugins/objects and restricting unexpected network destinations.
         response.headers.setdefault(
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; media-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
@@ -79,8 +72,6 @@ def apply_security(app):
 
 
 def _client_ip() -> str:
-    # Do not trust X-Forwarded-For unless the deployment explicitly has a
-    # trusted proxy layer configured. Remote address is the safe default.
     return request.remote_addr or "unknown"
 
 
@@ -96,19 +87,13 @@ def _rate_limit(name: str, *, limit: int, window: int) -> None:
 
 
 def _check_same_origin() -> None:
-    """Reject obvious cross-site state-changing requests.
-
-    This is a defense-in-depth CSRF layer. Existing forms remain compatible;
-    requests must originate from the same host when Origin/Referer is present.
-    """
+    """Reject obvious cross-site state-changing requests."""
     origin = request.headers.get("Origin", "").strip()
     referer = request.headers.get("Referer", "").strip()
     candidate = origin or referer
     if not candidate:
-        if os.environ.get("KHAIDINO_ALLOW_ORIGINLESS_POST", "0").lower() in {"1", "true", "yes"}:
+        if os.environ.get("KHARIDINO_ALLOW_ORIGINLESS_POST", "0").lower() in {"1", "true", "yes"}:
             return
-        # Non-browser API clients can explicitly opt in with a bearer token
-        # outside this module; normal browser forms should send Origin/Referer.
         if request.path.startswith("/api/") and request.is_json:
             return
         abort(403, description="Missing Origin/Referer on state-changing request.")
@@ -116,6 +101,5 @@ def _check_same_origin() -> None:
     parsed = urlparse(candidate)
     if not parsed.netloc:
         abort(403, description="Invalid request origin.")
-    expected = request.host.lower()
-    if parsed.netloc.lower() != expected:
+    if parsed.netloc.lower() != request.host.lower():
         abort(403, description="Cross-site state-changing request blocked.")

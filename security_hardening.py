@@ -10,21 +10,18 @@ import hashlib
 import hmac
 import os
 import secrets
-import threading
 import time
 from collections import defaultdict, deque
 from urllib.parse import urlparse
 
-from flask import abort, redirect, request, session, url_for
+from flask import abort, g, redirect, request, session, url_for
 
 _INSECURE_KEYS = {"", "change-this-secret-key", "dev-secret", "secret"}
 _RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 _CSRF_SESSION_KEY = "_kharidino_csrf_token"
 _CSRF_FIELD = "csrf_token"
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024
-_CHECKOUT_WINDOW_SECONDS = 60
-_CHECKOUT_LOCK = threading.RLock()
-_CHECKOUT_RECENT: dict[str, tuple[float, str]] = {}
+_CHECKOUT_WINDOW_SECONDS = 24 * 60 * 60
 
 _IMAGE_MIME = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif"}
 _VIDEO_MIME = {"mp4": "video/mp4", "webm": "video/webm", "ogg": "video/ogg"}
@@ -94,30 +91,100 @@ def _checkout_fingerprint() -> str | None:
         return None
 
 
+def _checkout_guard_init(app) -> None:
+    """Create the small idempotency ledger without changing existing tables."""
+    try:
+        from sqlalchemy import text
+        from app import db
+
+        with db.engine.begin() as connection:
+            connection.execute(text("""
+                CREATE TABLE IF NOT EXISTS kharidino_checkout_guard (
+                    fingerprint VARCHAR(64) PRIMARY KEY,
+                    created_at REAL NOT NULL,
+                    status VARCHAR(16) NOT NULL,
+                    order_id INTEGER
+                )
+            """))
+            connection.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_kharidino_checkout_guard_created_at "
+                "ON kharidino_checkout_guard(created_at)"
+            ))
+    except Exception:
+        app.logger.exception("Unable to initialize checkout idempotency ledger")
+        if _is_production():
+            raise
+
+
 def _check_checkout_replay() -> None:
     fingerprint = _checkout_fingerprint()
     if not fingerprint:
         return
-    now = time.monotonic()
-    with _CHECKOUT_LOCK:
-        expired = [key for key, (stamp, _status) in _CHECKOUT_RECENT.items() if now - stamp > _CHECKOUT_WINDOW_SECONDS]
-        for key in expired:
-            _CHECKOUT_RECENT.pop(key, None)
-        existing = _CHECKOUT_RECENT.get(fingerprint)
-        if existing and now - existing[0] <= _CHECKOUT_WINDOW_SECONDS:
-            abort(409, description="این سفارش قبلاً در حال ثبت یا ثبت شده است.")
-        _CHECKOUT_RECENT[fingerprint] = (now, "pending")
+
+    try:
+        from sqlalchemy import text
+        from sqlalchemy.exc import IntegrityError
+        from app import db
+
+        now = time.time()
+        # Cleanup is bounded and safe because completed entries are only used
+        # for duplicate protection, not as order records.
+        with db.engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM kharidino_checkout_guard WHERE created_at < :cutoff"),
+                {"cutoff": now - _CHECKOUT_WINDOW_SECONDS},
+            )
+            try:
+                connection.execute(
+                    text("""
+                        INSERT INTO kharidino_checkout_guard
+                            (fingerprint, created_at, status, order_id)
+                        VALUES
+                            (:fingerprint, :created_at, 'pending', NULL)
+                    """),
+                    {"fingerprint": fingerprint, "created_at": now},
+                )
+            except IntegrityError:
+                abort(409, description="این سفارش قبلاً در حال ثبت یا ثبت شده است.")
+
+        g.kharidino_checkout_fingerprint = fingerprint
+    except ImportError:
+        abort(503, description="سرویس سفارش موقتاً در دسترس نیست.")
 
 
 def _finish_checkout_replay(response) -> None:
-    fingerprint = _checkout_fingerprint()
+    fingerprint = getattr(g, "kharidino_checkout_fingerprint", None)
     if not fingerprint:
         return
-    with _CHECKOUT_LOCK:
+
+    try:
+        from sqlalchemy import text
+        from app import db
+
         if response.status_code >= 400:
-            _CHECKOUT_RECENT.pop(fingerprint, None)
+            with db.engine.begin() as connection:
+                connection.execute(
+                    text("DELETE FROM kharidino_checkout_guard WHERE fingerprint = :fingerprint"),
+                    {"fingerprint": fingerprint},
+                )
         else:
-            _CHECKOUT_RECENT[fingerprint] = (time.monotonic(), "completed")
+            with db.engine.begin() as connection:
+                connection.execute(
+                    text("""
+                        UPDATE kharidino_checkout_guard
+                        SET status = 'completed'
+                        WHERE fingerprint = :fingerprint
+                    """),
+                    {"fingerprint": fingerprint},
+                )
+    except Exception:
+        # Never turn a successful order response into a 500 because the
+        # idempotency bookkeeping failed after the order was committed.
+        try:
+            from app import db
+            db.session.rollback()
+        except Exception:
+            pass
 
 
 def _validate_checkout_stock() -> None:
@@ -176,6 +243,8 @@ def apply_security(app):
     app.config["MAX_FORM_PARTS"] = 200
     app.config["MAX_CONTENT_LENGTH"] = min(int(app.config.get("MAX_CONTENT_LENGTH") or _MAX_UPLOAD_BYTES), _MAX_UPLOAD_BYTES)
 
+    _checkout_guard_init(app)
+
     app.jinja_env.globals["csrf_token"] = csrf_token
 
     @app.context_processor
@@ -227,8 +296,6 @@ def apply_security(app):
 
     @app.errorhandler(Exception)
     def _safe_unhandled_error(error):
-        # Never expose traceback/DB/OS details to the browser. Flask HTTP
-        # exceptions keep their status code; unexpected exceptions are logged.
         from werkzeug.exceptions import HTTPException
         if isinstance(error, HTTPException):
             return error

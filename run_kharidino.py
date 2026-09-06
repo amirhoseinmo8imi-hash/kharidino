@@ -6,7 +6,7 @@ from flask import redirect, request, render_template
 
 from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai
-from mobile_api import register_mobile_api
+from mobile_app.api.mobile_api import register_mobile_api
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)

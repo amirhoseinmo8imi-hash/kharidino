@@ -50,8 +50,19 @@ def _csrf_valid() -> bool:
     return hmac.compare_digest(str(expected), str(supplied))
 
 
+def _is_safe_local_redirect(target: str | None) -> bool:
+    """Allow only same-site relative paths for user-controlled redirects."""
+    if not target:
+        return False
+    target = str(target).strip()
+    if not target.startswith("/") or target.startswith("//"):
+        return False
+    parsed = urlparse(target)
+    return not parsed.scheme and not parsed.netloc and not parsed.username and not parsed.password
+
+
 def apply_security(app):
-    if getattr(app, "_kharidino_security_applied", False):
+    if getattr(app, "_kharidano_security_applied", False):
         return app
 
     configured_key = os.environ.get("SECRET_KEY", "").strip()
@@ -82,12 +93,15 @@ def apply_security(app):
         if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             _check_same_origin()
             _check_csrf()
-        if request.endpoint == "logout" and request.method == "GET":
-            _check_csrf()
         if request.path in {"/login", "/register"} and request.method == "POST":
             _rate_limit("auth", limit=10, window=300)
         if request.path.startswith("/admin/kharidino-ai/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             _rate_limit("ai", limit=30, window=60)
+        if request.endpoint == "compare_add" and request.method == "POST":
+            target = request.form.get("next", "")
+            if target and not _is_safe_local_redirect(target):
+                request.form = request.form.copy()
+                request.form.pop("next", None)
 
     @app.after_request
     def _security_headers(response):
@@ -104,7 +118,7 @@ def apply_security(app):
             _rotate_csrf_token()
         return response
 
-    app._kharidino_security_applied = True
+    app._kharidano_security_applied = True
     return app
 
 

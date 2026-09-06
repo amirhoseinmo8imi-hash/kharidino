@@ -1,0 +1,17 @@
+/* Kharidino header spacing fix — Digikala-inspired layout */
+.km-topbar{position:relative;z-index:20}
+.km-header{display:flex!important;align-items:center!important;gap:24px!important;padding:14px 22px!important}
+.km-logo{flex:0 0 auto!important;white-space:nowrap!important}
+.km-search{flex:1 1 auto!important;min-width:220px!important}
+.km-user-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex:0 0 auto!important;white-space:nowrap!important}
+.km-user-actions>a,.km-user-actions>button{margin:0!important;flex:0 0 auto!important}
+.km-user-actions>a{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;min-height:42px!important;padding:0 12px!important;border:1px solid var(--ku-line,#e5e7eb)!important;border-radius:11px!important;text-decoration:none!important}
+.km-user-actions>a.cart{width:44px!important;padding:0!important;position:relative!important}
+.km-user-actions .cart-count{position:absolute!important;top:-5px!important;right:-5px!important;min-width:19px!important;height:19px!important;padding:0 4px!important;display:grid!important;place-items:center!important;border-radius:50%!important;font-size:10px!important;line-height:1!important}
+.km-nav{border-top:1px solid var(--ku-line,#e5e7eb)!important}
+.km-nav-inner{display:flex!important;align-items:center!important;gap:8px!important;padding:10px 22px!important;overflow-x:auto!important;white-space:nowrap!important}
+.km-nav-inner a{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:38px!important;padding:7px 13px!important;border-radius:10px!important;flex:0 0 auto!important;text-decoration:none!important;transition:background .2s ease,transform .2s ease,color .2s ease!important}
+.km-nav-inner a:hover{background:rgba(239,35,60,.07)!important;transform:translateY(-1px)!important;color:var(--ku-accent,#ef233c)!important}
+.km-nav-inner a:first-child{font-weight:700!important;background:rgba(239,35,60,.06)!important}
+@media(max-width:900px){.km-header{gap:14px!important;padding:12px 16px!important}.km-user-actions>a span{display:none!important}.km-user-actions>a{width:42px!important;padding:0!important}.km-search{min-width:150px!important}.km-nav-inner{padding:8px 16px!important}}
+@media(max-width:600px){.km-header{display:grid!important;grid-template-columns:auto 1fr auto!important;gap:8px!important;padding:10px 12px!important}.km-logo{font-size:18px!important}.km-search{min-width:0!important}.km-search button{display:none!important}.km-user-actions{gap:6px!important}.km-user-actions>a,.km-user-actions>button{width:38px!important;height:38px!important;min-height:38px!important}.km-user-actions>a.cart{width:38px!important}.km-nav-inner{gap:5px!important;padding:7px 12px!important}.km-nav-inner a{min-height:34px!important;padding:6px 10px!important;font-size:12px!important}}

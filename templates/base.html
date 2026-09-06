@@ -16,8 +16,9 @@
   {% block extra_css %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-final.css', v='2026-09-06-7') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inventory-ui.css', v='2026-09-06-1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inner-final.css', v='2026-09-07-1') }}">
 </head>
-<body>
+<body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
 {% if request.endpoint != 'home' %}
 <header class="km-topbar">

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="container py-4">
+  <h1>محصولات</h1>
+  <form method="get" class="glass-card p-3 mb-4">
+    <div class="row g-2">
+      <div class="col-md-4"><input class="form-control" name="q" value="{{ q }}" placeholder="جستجوی محصول"></div>
+      <div class="col-md-2"><select class="form-select" name="brand"><option value="">همه برندها</option>{% for b in brands %}<option value="{{ b.slug }}" {% if brand_slug==b.slug %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><select class="form-select" name="category"><option value="">همه دسته‌ها</option>{% for c in categories %}<option value="{{ c.id }}" {% if category_id==c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><input class="form-control" type="number" min="0" name="min_price" value="{{ min_price or '' }}" placeholder="حداقل قیمت"></div>
+      <div class="col-md-2"><input class="form-control" type="number" min="0" name="max_price" value="{{ max_price or '' }}" placeholder="حداکثر قیمت"></div>
+      <div class="col-md-3"><select class="form-select" name="sort"><option value="newest" {% if sort=='newest' %}selected{% endif %}>جدیدترین</option><option value="price_low" {% if sort=='price_low' %}selected{% endif %}>ارزان‌ترین</option><option value="price_high" {% if sort=='price_high' %}selected{% endif %}>گران‌ترین</option><option value="name" {% if sort=='name' %}selected{% endif %}>نام</option></select></div>
+      <div class="col-md-2"><button class="btn btn-primary w-100">اعمال فیلتر</button></div>
+    </div>
+  </form>
+  <div class="row g-3">{% for product in products %}<div class="col-6 col-md-3"><a class="text-decoration-none" href="{{ url_for('product_detail', product_id=product.id) }}"><div class="card h-100 p-2"><img src="{{ url_for('static', filename=product.image) if product.image and not product.image.startswith('http') else (product.image or url_for('static', filename='img/placeholder.png')) }}" class="card-img-top" style="height:180px;object-fit:contain"><div class="card-body"><h3 class="h6">{{ product.name }}</h3><div>{{ product.price|money }} تومان</div></div></div></a></div>{% else %}<p>محصولی پیدا نشد.</p>{% endfor %}</div>
+</section>
+{% endblock %}

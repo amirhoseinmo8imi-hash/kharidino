@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 {% block title %}تحلیل فروش | {{ account.store.name }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css') }}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css', v='2026-09-07-2') }}">{% endblock %}
 {% block content %}
-<main class="km2-wrap" dir="rtl">
-  <div class="km2-head"><div><span class="km2-eyebrow">SELLER ANALYTICS</span><h1>مرکز تحلیل فروش</h1><p>نمایش عملکرد فروشگاه شما، بدون دسترسی به داده فروشندگان دیگر.</p></div><div class="km2-actions"><a class="km2-btn" href="{{ url_for('seller_dashboard') }}">داشبورد</a><a class="km2-btn" href="{{ url_for('seller_orders') }}">سفارش‌ها</a><a class="km2-btn" href="{{ url_for('seller_finance') }}">مالی</a></div></div>
-  <div class="km2-stats"><div><small>کل سفارش‌ها</small><b>{{ total_orders|money }}</b><span>زیرسفارش</span></div><div><small>تحویل‌شده</small><b>{{ delivered_orders|money }}</b><span>سفارش</span></div><div><small>محصولات فروشگاه</small><b>{{ products|money }}</b><span>محصول</span></div><div><small>درآمد تحقق‌یافته</small><b>{{ revenue|money }}</b><span>تومان</span></div></div>
-  <section class="km2-card"><div class="km2-card-title"><h2>شاخص‌های کلیدی</h2><small>محاسبه درآمد بر اساس زیرسفارش‌های تحویل‌شده</small></div><div class="km2-progress"><div><span>نرخ تحویل</span><b>{% if total_orders %}{{ ((delivered_orders / total_orders) * 100)|round(0)|int }}{% else %}0{% endif %}%</b></div><div class="km2-bar"><i style="width:{% if total_orders %}{{ ((delivered_orders / total_orders) * 100)|round(0)|int }}{% else %}0{% endif %}%"></i></div></div></section>
-</main>
+<div class="seller-workspace">
+  {% include "_seller_sidebar.html" %}
+  <main class="seller-workspace-main">
+    <div class="km2-head"><div><span class="km2-eyebrow">SELLER ANALYTICS</span><h1>مرکز تحلیل فروش</h1><p>نمایش عملکرد فروشگاه شما، بدون دسترسی به داده فروشندگان دیگر.</p></div><div class="km2-actions"><a class="km2-btn" href="{{ url_for('seller_dashboard') }}">داشبورد</a><a class="km2-btn" href="{{ url_for('seller_orders') }}">سفارش‌ها</a><a class="km2-btn" href="{{ url_for('seller_finance') }}">مالی</a></div></div>
+    <div class="km2-stats"><div><small>کل سفارش‌ها</small><b>{{ total_orders|money }}</b><span>زیرسفارش</span></div><div><small>تحویل‌شده</small><b>{{ delivered_orders|money }}</b><span>سفارش</span></div><div><small>محصولات فروشگاه</small><b>{{ products|money }}</b><span>محصول</span></div><div><small>درآمد تحقق‌یافته</small><b>{{ revenue|money }}</b><span>تومان</span></div></div>
+    <section class="km2-card"><div class="km2-card-title"><h2>شاخص‌های کلیدی</h2><small>محاسبه درآمد بر اساس زیرسفارش‌های تحویل‌شده</small></div><div class="km2-progress"><div><span>نرخ تحویل</span><b>{% if total_orders %}{{ ((delivered_orders / total_orders) * 100)|round(0)|int }}{% else %}0{% endif %}%</b></div><div class="km2-bar"><i style="width:{% if total_orders %}{{ ((delivered_orders / total_orders) * 100)|round(0)|int }}{% else %}0{% endif %}%"></i></div></div></section>
+  </main>
+</div>
 {% endblock %}

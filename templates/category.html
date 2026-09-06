@@ -1,20 +1,47 @@
 {% extends "base.html" %}
 {% block title %}{{ category.name }} | {{ site_name }}{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-category-v2.css', v='1') }}">
 {% endblock %}
 {% block content %}
-<section class="page-hero"><div class="container"><span class="section-kicker">دسته‌بندی</span><h1>{{ category.name }}</h1><p>{{ category.description }}</p></div></section>
-<section class="section"><div class="container"><div class="product-grid">
-{% for p in products %}
-<article class="product-card">
-<a class="product-image" href="{{ url_for('product_detail', product_id=p.id) }}">
-{% if p.image %}<img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}">{% else %}<i class="fa-solid {{ category.icon }}"></i>{% endif %}
-</a>
-<div class="product-body"><span class="tag">{{ category.name }}</span><h3>{{ p.name }}</h3><p>{{ p.description }}</p>
-<div class="price-row"><small>بهترین قیمت</small><strong>{{ lowest_price(p)|money }} <b>تومان</b></strong></div>
-<a class="btn full" href="{{ url_for('product_detail', product_id=p.id) }}">مشاهده و مقایسه</a></div>
-</article>
-{% else %}<div class="empty">هنوز محصولی در این دسته نیست.</div>{% endfor %}
-</div></div></section>
+<div class="kc-page">
+  <section class="kc-hero">
+    <div class="kc-breadcrumb"><a href="{{ url_for('home') }}">خانه</a><span> / </span><span>دسته‌بندی‌ها</span><span> / {{ category.name }}</span></div>
+    <div class="kc-title-row">
+      <div class="kc-icon"><i class="fa-solid {{ category.icon or 'fa-box' }}"></i></div>
+      <div><h1>{{ category.name }}</h1>{% if category.description %}<p>{{ category.description }}</p>{% else %}<p>محصولات این دسته را بررسی و بهترین گزینه را مقایسه کنید.</p>{% endif %}</div>
+    </div>
+    <div class="kc-toolbar">
+      <div class="kc-count"><strong>{{ products|length }}</strong> محصول در این دسته</div>
+      <div class="kc-sort"><i class="fa-solid fa-sliders"></i><span>مرتب‌سازی بر اساس بهترین قیمت</span></div>
+    </div>
+  </section>
+
+  <section class="kc-products-shell">
+    <div class="kc-products">
+      {% for p in products %}
+      <a class="kc-card" href="{{ url_for('product_detail', product_id=p.id) }}">
+        <div class="kc-image">
+          {% if p.image %}<img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy">{% else %}<i class="fa-solid {{ category.icon or 'fa-box-open' }}"></i>{% endif %}
+          {% if p.offers %}<span class="kc-badge">مقایسه {{ p.offers|length }} فروشگاه</span>{% endif %}
+        </div>
+        <div class="kc-body">
+          <span class="kc-tag">{{ category.name }}</span>
+          <h2 class="kc-name">{{ p.name }}</h2>
+          {% if p.description %}<p class="kc-desc">{{ p.description }}</p>{% else %}<p class="kc-desc">مشاهده مشخصات، قیمت‌ها و پیشنهادهای فروشگاه‌ها</p>{% endif %}
+          <div class="kc-bottom">
+            <span class="kc-price-label">بهترین قیمت</span>
+            <div class="kc-price"><strong>{{ lowest_price(p)|money }}</strong><small>تومان</small></div>
+            <div class="kc-offers"><span><i class="fa-solid fa-store"></i> {{ p.offers|length }} فروشگاه</span>{% if p.offers %}<span class="kc-available">موجود</span>{% endif %}</div>
+            <span class="kc-btn">مشاهده و مقایسه</span>
+          </div>
+        </div>
+      </a>
+      {% else %}
+      <div class="kc-empty"><i class="fa-regular fa-folder-open"></i><div>هنوز محصولی در این دسته نیست.</div></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
 {% endblock %}

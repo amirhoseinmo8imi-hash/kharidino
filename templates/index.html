@@ -2,7 +2,7 @@
 {% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='2') }}">
 {% endblock %}
 {% block content %}
 <div class="km-home">
@@ -21,13 +21,29 @@
       <nav class="km-nav"><div class="km-nav-inner"><a href="#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in categories[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>
     </header>
 
-    <section class="km-hero">
-      <div class="km-hero-content">
-        <span class="km-hero-badge"><i class="fa-solid fa-bolt"></i>&nbsp; خرید هوشمند با خریدینو</span>
-        <h1>{{ setting("hero_title", "بهترین قیمت را قبل از خرید پیدا کن") }}</h1>
-        <p>{{ setting("hero_subtitle", "قیمت محصولات را بین فروشگاه‌ها مقایسه کن و با آگاهی بیشتر خرید کن.") }}</p>
-        <a class="km-hero-btn" href="#products">شروع مقایسه قیمت</a>
+    <section class="ki-slider" aria-label="پیشنهادهای خریدینو">
+      <div class="ki-slides" id="kiSlides">
+        <article class="ki-slide is-active">
+          <div class="ki-slide-copy"><span class="ki-slide-badge"><i class="fa-solid fa-bolt"></i> خرید هوشمند با خریدینو</span><h1>{{ setting("hero_title", "بهترین قیمت را قبل از خرید پیدا کن") }}</h1><p>{{ setting("hero_subtitle", "قیمت محصولات را بین فروشگاه‌ها مقایسه کن و با آگاهی بیشتر خرید کن.") }}</p><a class="ki-slide-btn" href="#products">شروع مقایسه قیمت <i class="fa-solid fa-arrow-left"></i></a></div>
+          <div class="ki-slide-art"><div class="ki-art-circle"></div><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></div>
+        </article>
+        {% for product in products[:2] %}
+        <article class="ki-slide{% if loop.first %} is-next{% endif %}">
+          <div class="ki-slide-copy"><span class="ki-slide-badge"><i class="fa-solid fa-tags"></i> پیشنهاد ویژه خریدینو</span><h2>{{ product.name }}</h2><p>قیمت این محصول را بین فروشگاه‌ها مقایسه کن و بهترین پیشنهاد موجود را پیدا کن.</p><a class="ki-slide-btn" href="{{ url_for('product_detail', product_id=product.id) }}">مشاهده و مقایسه <i class="fa-solid fa-arrow-left"></i></a></div>
+          <div class="ki-slide-product">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}<div class="ki-slide-product-price">از <strong>{{ lowest_price(product)|money }}</strong> تومان</div></div>
+        </article>
+        {% endfor %}
       </div>
+      <button class="ki-slider-arrow ki-prev" type="button" aria-label="اسلاید قبلی" onclick="kiMoveSlide(-1)"><i class="fa-solid fa-chevron-right"></i></button>
+      <button class="ki-slider-arrow ki-next" type="button" aria-label="اسلاید بعدی" onclick="kiMoveSlide(1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="ki-dots" id="kiDots" aria-label="انتخاب اسلاید"><button class="is-active" type="button" onclick="kiGoSlide(0)"></button>{% for product in products[:2] %}<button type="button" onclick="kiGoSlide({{ loop.index }})"></button>{% endfor %}</div>
+    </section>
+
+    <section class="ki-feature-strip">
+      <div class="ki-feature"><span><i class="fa-solid fa-scale-balanced"></i></span><div><strong>مقایسه قیمت</strong><small>چند فروشگاه در یک نگاه</small></div></div>
+      <div class="ki-feature"><span><i class="fa-solid fa-tags"></i></span><div><strong>پیشنهادهای ویژه</strong><small>انتخاب بهتر برای خرید</small></div></div>
+      <div class="ki-feature"><span><i class="fa-solid fa-store"></i></span><div><strong>فروشگاه‌های متنوع</strong><small>پیشنهادهای مختلف</small></div></div>
+      <div class="ki-feature"><span><i class="fa-solid fa-shield-heart"></i></span><div><strong>انتخاب مطمئن</strong><small>اطلاعات شفاف قبل از خرید</small></div></div>
     </section>
 
     <section class="km-section" id="categories">
@@ -42,12 +58,15 @@
       {% for product in products %}<a class="km-product" href="{{ url_for('product_detail', product_id=product.id) }}"><div class="km-product-img">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>{% if product.category %}<small class="km-product-cat">{{ product.category.name }}</small>{% endif %}<h3>{{ product.name }}</h3><div class="km-price"><strong>{{ lowest_price(product)|money }}</strong><small>تومان</small></div><div class="km-offer"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<b>موجود</b>{% endif %}</div></a>{% endfor %}
     </div></section>
     {% else %}
-    <section class="km-section" id="products"><div class="km-section-head"><h2>پیشنهادهای خرید</h2><a href="#products">محصولات منتخب</a></div><div class="km-products">
-      {% for product in products[:8] %}<a class="km-product" href="{{ url_for('product_detail', product_id=product.id) }}"><div class="km-product-img">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>{% if product.category %}<small class="km-product-cat">{{ product.category.name }}</small>{% endif %}<h3>{{ product.name }}</h3><div class="km-price"><strong>{{ lowest_price(product)|money }}</strong><small>تومان</small></div><div class="km-offer"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<b>موجود</b>{% endif %}</div></a>{% endfor %}
+    <section class="km-section ki-special-section" id="products"><div class="km-section-head"><div><span class="ki-section-kicker">انتخاب خریدینو</span><h2>پیشنهادهای ویژه</h2></div><a href="#products">مشاهده همه</a></div><div class="km-products">
+      {% for product in products[:8] %}<a class="km-product" href="{{ url_for('product_detail', product_id=product.id) }}"><div class="km-product-img">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}<span class="ki-offer-chip">پیشنهاد ویژه</span></div>{% if product.category %}<small class="km-product-cat">{{ product.category.name }}</small>{% endif %}<h3>{{ product.name }}</h3><div class="km-price"><strong>{{ lowest_price(product)|money }}</strong><small>تومان</small></div><div class="km-offer"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<b>موجود</b>{% endif %}</div></a>{% endfor %}
     </div></section>
     {% endif %}
 
-    <section class="km-section"><div class="km-section-head"><h2>چرا خریدینو؟</h2></div><div class="km-categories"><div class="km-cat"><span class="km-cat-icon"><i class="fa-solid fa-scale-balanced"></i></span><strong>مقایسه قیمت</strong></div><div class="km-cat"><span class="km-cat-icon"><i class="fa-solid fa-tags"></i></span><strong>پیشنهاد بهتر</strong></div><div class="km-cat"><span class="km-cat-icon"><i class="fa-solid fa-store"></i></span><strong>فروشگاه‌های متنوع</strong></div><div class="km-cat"><span class="km-cat-icon"><i class="fa-solid fa-shield-heart"></i></span><strong>انتخاب مطمئن‌تر</strong></div></div></section>
+    <section class="ki-newsletter"><div><span class="ki-news-icon"><i class="fa-solid fa-bell"></i></span><div><strong>از قیمت‌های بهتر باخبر شو</strong><p>برای پیدا کردن پیشنهادهای جدید خریدینو، محصولات موردنظرت را جستجو و مقایسه کن.</p></div></div><a href="#products">دیدن پیشنهادها</a></section>
   </div>
 </div>
+<script>
+(function(){let current=0;let timer=null;const slides=()=>document.querySelectorAll('.ki-slide');const dots=()=>document.querySelectorAll('#kiDots button');function render(){const s=slides();if(!s.length)return;s.forEach((el,i)=>el.classList.toggle('is-active',i===current));dots().forEach((el,i)=>el.classList.toggle('is-active',i===current));}window.kiGoSlide=function(i){const s=slides();if(!s.length)return;current=(i+s.length)%s.length;render();restart();};window.kiMoveSlide=function(step){kiGoSlide(current+step);};function restart(){clearInterval(timer);if(slides().length>1)timer=setInterval(()=>kiMoveSlide(1),5500);}render();restart();const slider=document.querySelector('.ki-slider');if(slider){slider.addEventListener('mouseenter',()=>clearInterval(timer));slider.addEventListener('mouseleave',restart);}})();
+</script>
 {% endblock %}

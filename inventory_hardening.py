@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import time
 
-from flask import abort, flash, redirect, render_template, request, session, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 
 _TABLE = "kharidino_product_inventory"
 
@@ -67,7 +67,6 @@ def _cart() -> list[tuple[int, int]]:
 
 
 def _validate_cart_quantities(product_id=None, requested_quantity=None):
-    """Validate cart/add quantities against managed inventory before app routes run."""
     checks = []
     if product_id is not None:
         checks.append((int(product_id), int(requested_quantity)))
@@ -81,7 +80,6 @@ def _validate_cart_quantities(product_id=None, requested_quantity=None):
                 continue
             if quantity > 0:
                 checks.append((pid, quantity))
-
     for pid, quantity in checks:
         available = _available_quantity(pid)
         if available is not None and quantity > available:
@@ -90,25 +88,24 @@ def _validate_cart_quantities(product_id=None, requested_quantity=None):
 
 
 def _sync_cart_to_inventory():
-    """Keep the session cart within currently managed stock without trusting the client."""
     raw = session.get("cart", {})
     if not isinstance(raw, dict):
         return
-    changed = False
     clean = {}
+    changed = False
     for raw_pid, raw_qty in raw.items():
         try:
-            pid, qty = int(raw_pid), int(raw_qty)
+            pid, original_qty = int(raw_pid), int(raw_qty)
         except (TypeError, ValueError):
             changed = True
             continue
-        qty = max(0, min(99, qty))
+        qty = max(0, min(99, original_qty))
         available = _available_quantity(pid)
         if available is not None:
             qty = min(qty, available)
         if qty > 0:
             clean[str(pid)] = qty
-        if str(pid) != str(raw_pid) or qty != int(raw_qty):
+        if str(pid) != str(raw_pid) or qty != original_qty:
             changed = True
     if clean != raw:
         changed = True
@@ -151,6 +148,17 @@ def _reserve_managed_stock() -> None:
             )
 
 
+def _inventory_status_api(product_id):
+    from app import Product
+    product = db.session.get(Product, product_id)
+    if not product or not product.active:
+        abort(404)
+    info = inventory_info(product_id)
+    if info is None:
+        return jsonify({"managed": False, "quantity": None, "in_stock": None})
+    return jsonify(info)
+
+
 def _admin_set_inventory():
     from app import Product, admin_required, db
     from sqlalchemy import text
@@ -175,10 +183,8 @@ def _admin_set_inventory():
             """),
             {"product_id": product_id, "quantity": quantity, "updated_at": time.time()},
         )
-        db.session.execute(
-            text("UPDATE offer SET in_stock = :in_stock WHERE product_id = :product_id AND :in_stock = 0"),
-            {"product_id": product_id, "in_stock": 0 if quantity == 0 else 1},
-        )
+        if quantity == 0:
+            db.session.execute(text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"), {"product_id": product_id})
         db.session.commit()
         return redirect(url_for("admin_inventory"))
     return _handler()
@@ -214,12 +220,17 @@ def apply_inventory_security(app) -> None:
     def _inventory_before_request():
         if request.endpoint == "cart_add" and request.method == "POST":
             try:
-                ok, pid, available = _validate_cart_quantities(request.view_args.get("product_id"), int(session.get("cart", {}).get(str(request.view_args.get("product_id")), 0)) + 1)
+                pid = int(request.view_args.get("product_id"))
+                current = session.get("cart", {})
+                if not isinstance(current, dict):
+                    current = {}
+                current_qty = int(current.get(str(pid), 0) or 0)
+                ok, failed_pid, available = _validate_cart_quantities(pid, current_qty + 1)
             except (TypeError, ValueError):
                 abort(400, description="تعداد کالا نامعتبر است.")
             if not ok:
                 flash(f"موجودی این کالا فقط {available} عدد است.", "warning")
-                return redirect(request.referrer or url_for("product_detail", product_id=pid))
+                return redirect(request.referrer or url_for("product_detail", product_id=failed_pid))
         elif request.endpoint == "cart_update" and request.method == "POST":
             ok, pid, available = _validate_cart_quantities()
             if not ok:
@@ -229,6 +240,9 @@ def apply_inventory_security(app) -> None:
             _sync_cart_to_inventory()
         _reserve_managed_stock()
 
+    if not any(rule.rule == "/api/inventory/<int:product_id>" for rule in app.url_map.iter_rules()):
+        from app import db
+        app.add_url_rule("/api/inventory/<int:product_id>", endpoint="inventory_status_api", view_func=_inventory_status_api, methods=["GET"])
     if not any(rule.rule == "/admin/inventory" for rule in app.url_map.iter_rules()):
         app.add_url_rule("/admin/inventory", endpoint="admin_inventory", view_func=_admin_inventory_page, methods=["GET"])
     if not any(rule.rule == "/admin/inventory/set" for rule in app.url_map.iter_rules()):

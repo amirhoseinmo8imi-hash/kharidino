@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}مدیریت سفارش‌ها | {{ account.store.name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css') }}">{% endblock %}
+{% block content %}
+<main class="km2-wrap" dir="rtl">
+  <div class="km2-head">
+    <div><span class="km2-eyebrow">MARKETPLACE WORKSPACE</span><h1>سفارش‌های فروشگاه {{ account.store.name }}</h1><p>فقط سفارش‌های متعلق به فروشگاه شما نمایش داده می‌شود.</p></div>
+    <div class="km2-actions"><a class="km2-btn" href="{{ url_for('seller_dashboard') }}">داشبورد</a><a class="km2-btn" href="{{ url_for('seller_finance') }}">مالی</a><a class="km2-btn" href="{{ url_for('seller_analytics') }}">تحلیل فروش</a></div>
+  </div>
+  <section class="km2-card">
+    <div class="km2-card-title"><div><h2>لیست سفارش‌ها</h2><small>{{ orders|length }} زیرسفارش</small></div><form method="post" action="{{ url_for('seller_notifications_read_all') }}"><button class="km2-btn km2-btn-light" type="submit">خوانده‌شدن اعلان‌ها{% if seller_unread_notifications %} ({{ seller_unread_notifications }}){% endif %}</button></form></div>
+    {% if orders %}
+      <div class="km2-orders">
+      {% for order in orders %}
+        <article class="km2-order">
+          <div class="km2-order-top"><div><b>زیرسفارش #{{ order.id }}</b><span>سفارش اصلی #{{ order.order_id }}</span></div><span class="km2-status">{{ statuses.get(order.status, order.status) }}</span></div>
+          <div class="km2-order-grid"><div><small>مبلغ کالا</small><strong>{{ order.subtotal|money }} تومان</strong></div><div><small>کارمزد پلتفرم</small><strong>{{ order.platform_fee|money }} تومان</strong></div><div><small>سهم فروشگاه</small><strong>{{ order.seller_total|money }} تومان</strong></div><div><small>اقلام</small><strong>{{ order.items|length }}</strong></div></div>
+          <div class="km2-order-items">{% for item in order.items %}<div><span>{{ item.product_name }}</span><b>{{ item.quantity }} × {{ item.price|money }}</b></div>{% endfor %}</div>
+          <form class="km2-status-form" method="post" action="{{ url_for('seller_order_status', seller_order_id=order.id) }}"><label>تغییر وضعیت<select name="status">{% for key,label in statuses.items() %}<option value="{{ key }}" {% if key == order.status %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><button class="km2-btn km2-btn-primary" type="submit">ذخیره وضعیت</button></form>
+        </article>
+      {% endfor %}
+      </div>
+    {% else %}<div class="km2-empty">هنوز سفارشی برای این فروشگاه ایجاد نشده است.</div>{% endif %}
+  </section>
+</main>
+{% endblock %}

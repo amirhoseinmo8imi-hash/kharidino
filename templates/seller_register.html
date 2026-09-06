@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}ثبت فروشگاه | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-1') }}">{% endblock %}
+{% block content %}
+<section class="merchant-auth">
+  <div class="merchant-auth-card">
+    <div class="merchant-brand"><span><i class="fa-solid fa-store"></i></span><div><b>فروشنده خریدینو</b><small>فروشگاه خودت را داخل خریدینو بساز</small></div></div>
+    <div class="merchant-heading"><span class="merchant-kicker">Marketplace</span><h1>فروشگاهت را به خریدینو اضافه کن</h1><p>یک پنل مستقل برای فروشگاهت داشته باش؛ محصولات، قیمت و موجودی فقط توسط خودت مدیریت می‌شود.</p></div>
+    {% if current_user and current_user.role == 'seller' and current_user.merchant_account %}
+      <div class="merchant-pending"><i class="fa-solid fa-hourglass-half"></i><div><strong>درخواست فروشگاه ثبت شده</strong><p>وضعیت فعلی: <b>{{ {'pending':'در انتظار تأیید','approved':'تأیید شده','rejected':'رد شده','suspended':'تعلیق شده'}.get(current_user.merchant_account.status, current_user.merchant_account.status) }}</b></p></div></div>
+      {% if current_user.merchant_account.status == 'approved' %}<a class="merchant-primary" href="{{ url_for('seller_dashboard') }}">ورود به پنل فروشگاه <i class="fa-solid fa-arrow-left"></i></a>{% endif %}
+    {% else %}
+    <form method="post" class="merchant-form">
+      <div class="merchant-grid">
+        <label>نام و نام خانوادگی<input name="name" autocomplete="name" required></label>
+        <label>ایمیل<input type="email" name="email" autocomplete="email" required></label>
+        <label>رمز عبور<input type="password" name="password" minlength="8" autocomplete="new-password" required></label>
+        <label>نام فروشگاه<input name="store_name" placeholder="مثلاً فروشگاه امیر" required></label>
+        <label class="merchant-wide">وب‌سایت فروشگاه <small>(اختیاری)</small><input type="url" name="website" placeholder="https://example.com"></label>
+      </div>
+      <button class="merchant-primary" type="submit">ثبت درخواست فروشندگی <i class="fa-solid fa-arrow-left"></i></button>
+    </form>
+    {% endif %}
+    <div class="merchant-perks"><div><i class="fa-solid fa-box"></i><span>ثبت و مدیریت محصول</span></div><div><i class="fa-solid fa-tags"></i><span>قیمت و موجودی مستقل</span></div><div><i class="fa-solid fa-chart-line"></i><span>داشبورد اختصاصی</span></div></div>
+    <a class="merchant-back" href="{{ url_for('home') }}">بازگشت به خریدینو</a>
+  </div>
+</section>
+{% endblock %}

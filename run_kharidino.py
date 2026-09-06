@@ -19,10 +19,12 @@ except ImportError:
 from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
+from security_hardening import apply_security
 
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
+apply_security(app)
 
 
 def _port_is_available(host: str, port: int) -> bool:

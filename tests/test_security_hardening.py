@@ -1,11 +1,12 @@
 import io
 import os
+import hashlib
 
 import pytest
 from flask import Flask
 
-from security_hardening import apply_security, csrf_token, _is_safe_local_redirect, _CHECKOUT_RECENT, _CHECKOUT_LOCK
-
+from app import db
+from security_hardening import apply_security, csrf_token, _is_safe_local_redirect
 
 PNG_1X1 = bytes.fromhex(
     "89504e470d0a1a0a0000000d4948445200000001000000010806000000"
@@ -159,8 +160,7 @@ def test_login_rejects_unsafe_next_before_route_logic():
         return "login"
 
     client = app.test_client()
-    token_value = client.get("/login").status_code
-    assert token_value == 200
+    assert client.get("/login").status_code == 200
     with client.session_transaction() as sess:
         sess["_kharidino_csrf_token"] = "b" * 64
 
@@ -172,12 +172,7 @@ def test_login_rejects_unsafe_next_before_route_logic():
     assert response.status_code == 400
 
 
-def test_checkout_replay_guard_rejects_duplicate_fingerprint():
-    with _CHECKOUT_LOCK:
-        _CHECKOUT_RECENT.clear()
-
-    app = make_app()
-
+def _register_checkout_route(app):
     @app.get("/token")
     def token():
         return csrf_token()
@@ -186,27 +181,54 @@ def test_checkout_replay_guard_rejects_duplicate_fingerprint():
     def checkout():
         return "order-created"
 
-    client = app.test_client()
-    token_value = client.get("/token").get_data(as_text=True)
-    with client.session_transaction() as sess:
-        sess["user_id"] = 42
-        sess["cart"] = {"10": 1}
+
+def test_checkout_idempotency_is_database_backed_across_app_instances():
+    app1 = make_app()
+    _register_checkout_route(app1)
+    client1 = app1.test_client()
+    token1 = client1.get("/token").get_data(as_text=True)
+    with client1.session_transaction() as sess:
+        sess["user_id"] = 424242
+        sess["cart"] = {"991001": 1}
 
     data = {
-        "customer_name": "Test User",
-        "phone": "09000000000",
+        "customer_name": "Test User 424242",
+        "phone": "09000000001",
         "address": "Test Address",
-        "note": "",
-        "csrf_token": token_value,
+        "note": "database idempotency",
+        "csrf_token": token1,
     }
-    first = client.post("/checkout", data=data, headers={"Origin": "http://localhost"})
+
+    first = client1.post("/checkout", data=data, headers={"Origin": "http://localhost"})
     assert first.status_code == 200
 
-    second = client.post("/checkout", data=data, headers={"Origin": "http://localhost"})
+    app2 = make_app()
+    _register_checkout_route(app2)
+    client2 = app2.test_client()
+    token2 = client2.get("/token").get_data(as_text=True)
+    with client2.session_transaction() as sess:
+        sess["user_id"] = 424242
+        sess["cart"] = {"991001": 1}
+
+    data["csrf_token"] = token2
+    second = client2.post("/checkout", data=data, headers={"Origin": "http://localhost"})
     assert second.status_code == 409
 
-    with _CHECKOUT_LOCK:
-        _CHECKOUT_RECENT.clear()
+    payload = "|".join([
+        "424242",
+        repr(sorted((("991001", "1"),))),
+        "Test User 424242",
+        "09000000001",
+        "Test Address",
+        "database idempotency",
+    ])
+    fingerprint = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    from sqlalchemy import text
+    with db.engine.begin() as connection:
+        connection.execute(
+            text("DELETE FROM kharidino_checkout_guard WHERE fingerprint = :fingerprint"),
+            {"fingerprint": fingerprint},
+        )
 
 
 def test_upload_size_limit_is_enforced_when_content_length_is_known():
@@ -220,10 +242,9 @@ def test_upload_size_limit_is_enforced_when_content_length_is_known():
     with client.session_transaction() as sess:
         sess["_kharidino_csrf_token"] = "a" * 64
 
-    oversized = io.BytesIO(PNG_1X1)
     response = client.post(
         "/upload",
-        data={"file": (oversized, "photo.png")},
+        data={"file": (io.BytesIO(PNG_1X1), "photo.png")},
         headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64},
         content_length=101 * 1024 * 1024,
     )

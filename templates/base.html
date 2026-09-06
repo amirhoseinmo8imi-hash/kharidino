@@ -5,47 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}</title>
   <meta name="description" content="{{ setting('meta_description', site_tagline) }}">
-  <meta name="theme-color" content="#ef233c">
+  <meta name="theme-color" content="#ef4056">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='2026-store') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pro.css', v='2026-store') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-global-storefront.css', v='2026-09-06-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-layout-fix.css', v='2026-09-06-2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-global-storefront.css', v='2026-09-06-2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-layout-fix.css', v='2026-09-06-3') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-final.css', v='2026-09-06-3') }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
   <div class="site-content">
     {% if request.endpoint != 'home' %}
-    <header class="kg-header">
-      <div class="kg-header-main">
-        <a class="kg-logo" href="{{ url_for('home') }}"><span class="kg-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a>
-        <form class="kg-search" method="get" action="{{ url_for('home') }}">
+    <header class="km-topbar">
+      <div class="km-header">
+        <a class="km-logo" href="{{ url_for('home') }}">
+          <span class="km-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span>
+          <span>{{ site_name }}</span>
+        </a>
+        <form class="km-search" method="get" action="{{ url_for('home') }}">
           <i class="fa-solid fa-magnifying-glass"></i>
           <input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off">
           <button type="submit">جستجو</button>
         </form>
-        <div class="kg-actions">
-          {% if current_user %}<a class="kg-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="kg-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود</span></a>{% endif %}
-          <a class="kg-action" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="kg-cart-badge">{{ cart_count }}</b>{% endif %}</a>
-          {% if current_user and current_user.role == 'admin' %}<a class="kg-action" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
-          {% if current_user %}<a class="kg-action" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span>خروج</span></a>{% endif %}
+        <div class="km-user-actions">
+          {% if current_user %}
+          <a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>
+          {% else %}
+          <a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>
+          {% endif %}
+          <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
+          {% if current_user and current_user.role == 'admin' %}
+          <a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>
+          {% endif %}
+          {% if current_user %}
+          <a class="km-action km-action--logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>
+          {% endif %}
         </div>
       </div>
-      <nav class="kg-nav"><div class="kg-nav-inner">
-        <a class="kg-cat-menu" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>
-        <a href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i> خانه</a>
-        <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i> فروشگاه‌ها</a>
-        <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i> مقایسه{% if compare_count %} ({{ compare_count }}){% endif %}</a>
-        <a href="{{ url_for('features') }}">امکانات</a>
-        <a href="{{ url_for('my_orders') }}">سفارش‌های من</a>
-        <a href="{{ url_for('about') }}">درباره ما</a>
-        <a href="{{ url_for('contact') }}">تماس با ما</a>
-      </div></nav>
+      <nav class="km-nav">
+        <div class="km-nav-inner">
+          <a class="km-cat-menu" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>
+          {% for cat in categories[:8] %}
+          <a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>
+          {% endfor %}
+        </div>
+      </nav>
     </header>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}
+      {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}
+      </div>
+      {% endif %}
     {% endwith %}
 
     <main class="kg-main">{% block content %}{% endblock %}</main>

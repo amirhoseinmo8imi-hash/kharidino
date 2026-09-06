@@ -5,12 +5,12 @@ Order schema intact. It adds isolated seller suborders, seller-scoped earnings,
 notifications, analytics and bulk inventory operations around the existing
 checkout/order records.
 """
-from functools import wraps
 from sqlalchemy import event
-from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
+from sqlalchemy.orm import Session
+from flask import abort, flash, redirect, render_template, request, url_for
 
-from app import app, db, User, Order, OrderItem, Product, Store, Offer
-from merchant_marketplace import MerchantStore, SellerProduct, _seller_account, seller_required, _owned_product
+from app import app, db, User, Order, OrderItem, Product, Store, Offer, admin_required
+from merchant_marketplace import MerchantStore, SellerProduct, _seller_account, seller_required
 
 
 SELLER_STATUSES = {
@@ -136,7 +136,7 @@ def sync_order_to_seller_orders(order):
             ))
         sub.subtotal = subtotal
         sub.shipping_fee = 0
-        # Platform commission is intentionally conservative and configurable later.
+        # 5% is a placeholder marketplace fee and can be moved to a site setting later.
         sub.platform_fee = max(0, round(subtotal * 0.05))
         sub.seller_total = max(0, subtotal + sub.shipping_fee - sub.platform_fee)
         db.session.add(SellerLedger(
@@ -154,7 +154,7 @@ def sync_order_to_seller_orders(order):
     return created
 
 
-@event.listens_for(db.session.__class__, "after_flush")
+@event.listens_for(Session, "after_flush")
 def _seller_order_after_flush(session_obj, flush_context):
     """Automatically split newly-created master orders after checkout flush."""
     processed = session_obj.info.setdefault("kharidino_seller_split_orders", set())
@@ -213,7 +213,7 @@ def seller_order_status(seller_order_id):
 
 
 @app.post("/seller/notifications/read-all")
-@seller_required
+seller_required
 def seller_notifications_read_all():
     account = _seller_account()
     SellerNotification.query.filter_by(store_id=account.store_id, is_read=False).update({"is_read": True})
@@ -272,7 +272,7 @@ def seller_bulk_stock():
 
 
 @app.post("/admin/merchants/sync-orders")
-@__import__("app").admin_required
+@admin_required
 def admin_sync_seller_orders():
     created = 0
     for order in Order.query.order_by(Order.id.asc()).all():

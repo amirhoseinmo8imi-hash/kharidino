@@ -11,10 +11,10 @@ import commerce_runtime  # noqa: F401 - registers secure checkout/address hooks
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
-apply_security(app)
-apply_inventory_security(app)
-apply_commerce_extensions(app)
-apply_catalog_extensions(app)
 
 with app.app_context():
+    apply_security(app)
+    apply_inventory_security(app)
+    apply_commerce_extensions(app)
+    apply_catalog_extensions(app)
     db.create_all()

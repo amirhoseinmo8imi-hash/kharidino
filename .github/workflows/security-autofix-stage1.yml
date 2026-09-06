@@ -1,38 +1,11 @@
-name: Security Stage 1 Autofix
+name: Security Stage 1 Autofix (disabled)
 
 on:
-  push:
-    branches:
-      - security/audit-stage1-2026-09-06
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  autofix:
-    if: "!contains(github.event.head_commit.message, '[security-autofix]')"
+  disabled:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Apply deterministic security fixes
-        run: python tools/security_autofix_stage1.py
-
-      - name: Commit fixes
-        shell: bash
-        run: |
-          if git diff --quiet; then
-            echo 'No changes required.'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app.py
-          git commit -m 'security: fix stage1 app vulnerabilities [security-autofix]'
-          git push
+      - run: echo 'One-shot stage1 autofix has already been applied.'

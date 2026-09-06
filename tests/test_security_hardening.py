@@ -154,19 +154,28 @@ def test_login_rejects_unsafe_next_before_route_logic():
     app = make_app()
 
     @app.get("/login")
+    @app.post("/login")
     def login():
         return "login"
 
-    response = app.test_client().get("/login?next=https://evil.example")
-    assert response.status_code == 200
+    client = app.test_client()
+    token_value = client.get("/login").status_code
+    assert token_value == 200
+    with client.session_transaction() as sess:
+        sess["_kharidino_csrf_token"] = "b" * 64
 
-    # The redirect policy is enforced for login POST requests, not GET.
-    with app.test_request_context("/login?next=https://evil.example", method="POST"):
-        response = app.full_dispatch_request()
+    response = client.post(
+        "/login?next=https://evil.example",
+        data={"csrf_token": "b" * 64},
+        headers={"Origin": "http://localhost"},
+    )
     assert response.status_code == 400
 
 
 def test_checkout_replay_guard_rejects_duplicate_fingerprint():
+    with _CHECKOUT_LOCK:
+        _CHECKOUT_RECENT.clear()
+
     app = make_app()
 
     @app.get("/token")

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}آدرس‌های من{% endblock %}
+{% block content %}
+<section class="section"><div class="container"><h1>دفترچه آدرس</h1>
+<div class="card"><h2>افزودن آدرس</h2><form method="post">
+<input name="title" placeholder="عنوان" maxlength="80"><input name="recipient_name" placeholder="نام گیرنده" required maxlength="120"><input name="phone" placeholder="تلفن" required maxlength="30"><input name="province" placeholder="استان" maxlength="100"><input name="city" placeholder="شهر" required maxlength="100"><input name="postal_code" placeholder="کد پستی" maxlength="20"><textarea name="address" placeholder="آدرس" required></textarea><button class="btn" type="submit">ذخیره</button></form></div>
+{% for item in addresses %}<div class="card"><h3>{{ item.title }} {% if item.is_default %}— پیش‌فرض{% endif %}</h3><p>{{ item.recipient_name }} | {{ item.phone }}</p><p>{{ item.province }}، {{ item.city }}، {{ item.postal_code }}</p><p>{{ item.address }}</p><form method="post" action="{{ url_for('set_default_address', address_id=item.id) }}" style="display:inline"><button class="btn" type="submit">پیش‌فرض</button></form> <form method="post" action="{{ url_for('delete_address', address_id=item.id) }}" style="display:inline"><button class="btn btn-danger" type="submit">حذف</button></form></div>{% else %}<p>آدرسی ثبت نشده است.</p>{% endfor %}
+</div></section>
+{% endblock %}

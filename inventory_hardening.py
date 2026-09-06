@@ -149,7 +149,7 @@ def _reserve_managed_stock() -> None:
 
 
 def _inventory_status_api(product_id):
-    from app import Product
+    from app import Product, db
     product = db.session.get(Product, product_id)
     if not product or not product.active:
         abort(404)
@@ -241,7 +241,6 @@ def apply_inventory_security(app) -> None:
         _reserve_managed_stock()
 
     if not any(rule.rule == "/api/inventory/<int:product_id>" for rule in app.url_map.iter_rules()):
-        from app import db
         app.add_url_rule("/api/inventory/<int:product_id>", endpoint="inventory_status_api", view_func=_inventory_status_api, methods=["GET"])
     if not any(rule.rule == "/admin/inventory" for rule in app.url_map.iter_rules()):
         app.add_url_rule("/admin/inventory", endpoint="admin_inventory", view_func=_admin_inventory_page, methods=["GET"])

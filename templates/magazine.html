@@ -1,0 +1,2 @@
+{% extends "base.html" %}
+{% block content %}<section class="container py-4"><h1>مجله خریدینو</h1><div class="row g-3">{% for article in articles %}<div class="col-md-4"><article class="card h-100 p-3"><h2 class="h5">{{ article.title }}</h2>{% if article.excerpt %}<p>{{ article.excerpt }}</p>{% endif %}<a class="btn btn-outline-primary" href="{{ url_for('magazine_article', slug=article.slug) }}">ادامه مطلب</a></article></div>{% else %}<p>هنوز مقاله‌ای منتشر نشده است.</p>{% endfor %}</div></section>{% endblock %}

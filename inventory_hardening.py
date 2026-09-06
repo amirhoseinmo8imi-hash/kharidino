@@ -46,7 +46,6 @@ def _inventory_row(product_id):
 
 
 def inventory_info(product_id):
-    """Return managed inventory data, or None for legacy/unmanaged products."""
     try:
         row = _inventory_row(product_id)
     except Exception:
@@ -130,7 +129,8 @@ def _reserve_managed_stock() -> None:
     if request.endpoint != "checkout" or request.method != "POST" or not session.get("user_id"):
         return
     from sqlalchemy import text
-    from app import Order, db
+    from app import db
+    reservations = []
     for product_id, quantity in _cart():
         row = db.session.execute(
             text(f"SELECT quantity, managed FROM {_TABLE} WHERE product_id = :product_id"),
@@ -149,46 +149,17 @@ def _reserve_managed_stock() -> None:
         if result.rowcount != 1:
             db.session.rollback()
             abort(409, description="موجودی یکی از کالاها برای این تعداد کافی نیست.")
-        order = None
-        # Checkout's order does not exist yet at before_request time, so the
-        # reservation is attached after the order is flushed by the route.
-        # Store a request-local reservation list for the checkout hook below.
-        reservations = getattr(request, "_kharidino_inventory_reservations", None)
-        if reservations is None:
-            reservations = []
-            request._kharidino_inventory_reservations = reservations
         reservations.append((product_id, quantity))
         remaining = db.session.execute(
             text(f"SELECT quantity FROM {_TABLE} WHERE product_id = :product_id"),
             {"product_id": product_id},
         ).scalar_one()
         if remaining == 0:
-            db.session.execute(
-                text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"),
-                {"product_id": product_id},
-            )
-
-
-def _attach_checkout_reservations(order):
-    reservations = getattr(request, "_kharidino_inventory_reservations", None) or []
-    if not reservations:
-        return
-    from sqlalchemy import text
-    from app import db
-    now = time.time()
-    for product_id, quantity in reservations:
-        db.session.execute(
-            text(f"""
-                INSERT INTO {_RESERVATION_TABLE}
-                    (order_id, product_id, quantity, restored, updated_at)
-                VALUES (:order_id, :product_id, :quantity, 0, :updated_at)
-            """),
-            {"order_id": int(order.id), "product_id": product_id, "quantity": quantity, "updated_at": now},
-        )
+            db.session.execute(text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"), {"product_id": product_id})
+    request._kharidino_inventory_reservations = reservations
 
 
 def _restore_order_inventory(order):
-    """Return only stock that was actually reserved for this order."""
     from sqlalchemy import text
     from app import db
     rows = db.session.execute(
@@ -215,14 +186,10 @@ def _restore_order_inventory(order):
             """),
             {"order_id": int(order.id), "product_id": product_id, "updated_at": now},
         )
-        db.session.execute(
-            text("UPDATE offer SET in_stock = 1 WHERE product_id = :product_id"),
-            {"product_id": product_id},
-        )
+        db.session.execute(text("UPDATE offer SET in_stock = 1 WHERE product_id = :product_id"), {"product_id": product_id})
 
 
 def _reserve_order_inventory(order):
-    """Re-reserve stock for a previously cancelled order."""
     from sqlalchemy import text
     from app import db
     rows = db.session.execute(
@@ -252,16 +219,12 @@ def _reserve_order_inventory(order):
             """),
             {"order_id": int(order.id), "product_id": product_id, "updated_at": now},
         )
-        remaining = db.session.execute(
-            text(f"SELECT quantity FROM {_TABLE} WHERE product_id = :product_id"),
-            {"product_id": product_id},
-        ).scalar_one()
+        remaining = db.session.execute(text(f"SELECT quantity FROM {_TABLE} WHERE product_id = :product_id"), {"product_id": product_id}).scalar_one()
         if remaining == 0:
             db.session.execute(text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"), {"product_id": product_id})
 
 
 def _handle_order_status_inventory():
-    """Keep stock consistent with admin order status transitions."""
     if request.endpoint != "update_order_status" or request.method != "POST":
         return
     from app import Order, db
@@ -394,34 +357,23 @@ def apply_inventory_security(app) -> None:
             _handle_order_status_inventory()
         _reserve_managed_stock()
 
-    @app.after_request
-    def _attach_inventory_reservation(response):
-        # The checkout route commits after creating/flushing the Order. Attach
-        # reservation rows immediately before that commit via a SQLAlchemy
-        # session event instead of relying on response timing.
-        return response
-
-    from sqlalchemy import event
-    from app import db
     if not getattr(app, "_kharidino_inventory_session_hook", False):
-        @event.listens_for(db.session.__class__, "before_commit")
-        def _inventory_before_commit(session_obj):
+        from sqlalchemy import event, text
+        from sqlalchemy.orm import Session
+
+        @event.listens_for(Session, "after_flush")
+        def _persist_inventory_reservations(session_obj, flush_context):
             reservations = getattr(request, "_kharidino_inventory_reservations", None)
             if not reservations:
                 return
-            order = None
             from app import Order
-            for candidate in session_obj.new:
-                if isinstance(candidate, Order) and candidate.user_id == session.get("user_id"):
-                    order = candidate
-                    break
-            if order is None:
+            order = next((obj for obj in session_obj.new if isinstance(obj, Order)), None)
+            if order is None or order.id is None:
                 return
-            session_obj.flush()
             now = time.time()
             for product_id, quantity in reservations:
                 session_obj.execute(
-                    db.text(f"""
+                    text(f"""
                         INSERT INTO {_RESERVATION_TABLE}
                             (order_id, product_id, quantity, restored, updated_at)
                         VALUES (:order_id, :product_id, :quantity, 0, :updated_at)
@@ -429,6 +381,7 @@ def apply_inventory_security(app) -> None:
                     {"order_id": int(order.id), "product_id": product_id, "quantity": quantity, "updated_at": now},
                 )
             request._kharidino_inventory_reservations = []
+
         app._kharidino_inventory_session_hook = True
 
     if not any(rule.rule == "/api/inventory/<int:product_id>" for rule in app.url_map.iter_rules()):

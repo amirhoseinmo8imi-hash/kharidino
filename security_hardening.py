@@ -62,7 +62,7 @@ def _is_safe_local_redirect(target: str | None) -> bool:
 
 
 def apply_security(app):
-    if getattr(app, "_kharidano_security_applied", False):
+    if getattr(app, "_kharidino_security_applied", False):
         return app
 
     configured_key = os.environ.get("SECRET_KEY", "").strip()
@@ -97,6 +97,8 @@ def apply_security(app):
             _rate_limit("auth", limit=10, window=300)
         if request.path.startswith("/admin/kharidino-ai/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             _rate_limit("ai", limit=30, window=60)
+        if request.path.startswith("/api/mobile/") and request.method == "GET":
+            _rate_limit("mobile-read", limit=120, window=60)
         if request.endpoint == "compare_add" and request.method == "POST":
             target = request.form.get("next", "")
             if target and not _is_safe_local_redirect(target):
@@ -118,7 +120,7 @@ def apply_security(app):
             _rotate_csrf_token()
         return response
 
-    app._kharidano_security_applied = True
+    app._kharidino_security_applied = True
     return app
 
 

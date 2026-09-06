@@ -1,7 +1,9 @@
 import os
+import secrets
 import uuid
 from functools import wraps
 from pathlib import Path
+from urllib.parse import urlparse
 
 from flask import (
     Flask,
@@ -48,10 +50,11 @@ for folder in [
 
 app = Flask(__name__)
 
-app.config["SECRET_KEY"] = os.environ.get(
-    "SECRET_KEY",
-    "change-this-secret-key"
-)
+configured_secret = os.environ.get("SECRET_KEY", "").strip()
+if configured_secret:
+    app.config["SECRET_KEY"] = configured_secret
+else:
+    app.config["SECRET_KEY"] = secrets.token_urlsafe(48)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + str(BASE_DIR / "kharidino.db")
@@ -735,6 +738,39 @@ def admin_required(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+# =========================================================
+# SAFE REDIRECTS
+# =========================================================
+
+def safe_local_redirect(target, fallback):
+    target = (target or "").strip()
+    if not target:
+        return fallback
+    parsed = urlparse(target)
+    if (
+        target.startswith("/")
+        and not target.startswith("//")
+        and not parsed.scheme
+        and not parsed.netloc
+        and not parsed.username
+        and not parsed.password
+    ):
+        return target
+    return fallback
+
+
+def validate_external_url(value):
+    value = (value or "").strip()
+    if not value:
+        return ""
+    parsed = urlparse(value)
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("لینک باید یک آدرس معتبر http یا https باشد.")
+    if parsed.username or parsed.password:
+        raise ValueError("لینک‌های دارای نام کاربری یا رمز عبور مجاز نیستند.")
+    return value
 
 
 # =========================================================
@@ -1435,7 +1471,10 @@ def compare_add(product_id):
     session["compare"] = ids
     session.modified = True
 
-    target = request.form.get("next") or request.referrer or url_for("home")
+    fallback = url_for("home")
+    target = safe_local_redirect(request.form.get("next"), fallback)
+    if target == fallback and request.referrer:
+        target = safe_local_redirect(request.referrer, fallback)
     return redirect(target)
 
 
@@ -1837,7 +1876,7 @@ def login():
 # LOGOUT
 # =========================================================
 
-@app.route("/logout")
+@app.post("/logout")
 def logout():
 
     # سبد خرید را قبل از خروج حفظ می‌کنیم
@@ -3191,12 +3230,13 @@ def admin_fix_offers():
         )
 
 
-    except Exception as e:
+    except Exception:
 
         db.session.rollback()
+        app.logger.exception("admin_fix_offers failed")
 
         flash(
-            f"خطا هنگام تعمیر پیشنهادها: {e}",
+            "تعمیر پیشنهادها با خطا مواجه شد.",
             "danger"
         )
 
@@ -3579,10 +3619,12 @@ def save_store():
         ""
     ).strip()
 
-    store.website = request.form.get(
-        "website",
-        ""
-    ).strip()
+    try:
+        store.website = validate_external_url(request.form.get("website", ""))
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), "danger")
+        return redirect(url_for("admin") + "#stores-admin")
 
     store.active = (
         request.form.get(
@@ -3735,10 +3777,12 @@ def save_offer():
             + "#offers-admin"
         )
 
-    offer.url = request.form.get(
-        "url",
-        ""
-    ).strip()
+    try:
+        offer.url = validate_external_url(request.form.get("url", ""))
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), "danger")
+        return redirect(url_for("admin") + "#offers-admin")
 
     offer.in_stock = (
         request.form.get(
@@ -3945,16 +3989,19 @@ def seed():
 
     if not admin:
 
-        db.session.add(
-            User(
-                name="مدیر سایت",
-                email="admin@kharidino.local",
-                password=generate_password_hash(
-                    "admin12345"
-                ),
-                role="admin"
+        bootstrap_email = os.environ.get("KHARIDINO_ADMIN_EMAIL", "").strip().lower()
+        bootstrap_password = os.environ.get("KHARIDINO_ADMIN_PASSWORD", "")
+        if bootstrap_email and bootstrap_password:
+            if len(bootstrap_password) < 12:
+                raise RuntimeError("KHARIDINO_ADMIN_PASSWORD must be at least 12 characters.")
+            db.session.add(
+                User(
+                    name="مدیر سایت",
+                    email=bootstrap_email,
+                    password=generate_password_hash(bootstrap_password),
+                    role="admin"
+                )
             )
-        )
 
     # =====================================================
     # CATEGORIES
@@ -4627,5 +4674,5 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=True
+        debug=os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
     )

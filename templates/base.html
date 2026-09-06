@@ -13,80 +13,44 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-layout-fix.css', v='2026-09-06-3') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-final.css', v='2026-09-06-3') }}">
   {% block extra_css %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-final.css', v='2026-09-06-1') }}">
 </head>
 <body>
   <div class="site-content">
     {% if request.endpoint != 'home' %}
     <header class="km-topbar">
       <div class="km-header">
-        <a class="km-logo" href="{{ url_for('home') }}">
-          <span class="km-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span>
-          <span>{{ site_name }}</span>
-        </a>
-        <form class="km-search" method="get" action="{{ url_for('home') }}">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off">
-          <button type="submit">جستجو</button>
-        </form>
+        <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a>
+        <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
         <div class="km-user-actions">
-          {% if current_user %}
-          <a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>
-          {% else %}
-          <a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>
-          {% endif %}
+          {% if current_user %}<a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
           <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
-          {% if current_user and current_user.role == 'admin' %}
-          <a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>
-          {% endif %}
-          {% if current_user %}
-          <a class="km-action km-action--logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>
-          {% endif %}
+          {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
+          {% if current_user %}<a class="km-action km-action--logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>{% endif %}
         </div>
       </div>
-      <nav class="km-nav">
-        <div class="km-nav-inner">
-          <a class="km-cat-menu" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>
-          {% for cat in categories[:8] %}
-          <a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>
-          {% endfor %}
-        </div>
-      </nav>
+      <nav class="km-nav"><div class="km-nav-inner"><a class="km-cat-menu" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in categories[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>
     </header>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <div class="flash-container">
-        {% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}
-      </div>
-      {% endif %}
+      {% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}
     {% endwith %}
 
     <main class="kg-main">{% block content %}{% endblock %}</main>
 
     {% if request.endpoint != 'home' %}
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-grid">
-          <div class="footer-brand"><a href="{{ url_for('home') }}" class="brand"><span class="brand-icon"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a><p>{{ setting('footer_text','مقایسه قیمت و خرید هوشمند') }}</p></div>
-          <div class="footer-links"><h4>دسترسی سریع</h4><a href="{{ url_for('home') }}">خانه</a><a href="{{ url_for('stores') }}">فروشگاه‌ها</a><a href="{{ url_for('features') }}">امکانات</a><a href="{{ url_for('about') }}">درباره ما</a></div>
-          <div class="footer-links"><h4>حساب کاربری</h4>{% if current_user %}<a href="{{ url_for('profile') }}">پروفایل</a><a href="{{ url_for('my_orders') }}">سفارش‌های من</a><a href="{{ url_for('cart') }}">سبد خرید</a>{% else %}<a href="{{ url_for('login') }}">ورود</a><a href="{{ url_for('register') }}">ثبت‌نام</a>{% endif %}</div>
-          <div class="footer-links"><h4>پشتیبانی</h4><a href="{{ url_for('contact') }}">تماس با ما</a><a href="{{ url_for('about') }}">درباره خریدینو</a></div>
-        </div>
-        <div class="footer-bottom"><span>© {{ site_name }}</span><span>{{ setting('footer_copyright','تمامی حقوق محفوظ است.') }}</span></div>
-      </div>
-    </footer>
+    <footer class="footer"><div class="container"><div class="footer-grid">
+      <div class="footer-brand"><a href="{{ url_for('home') }}" class="brand"><span class="brand-icon"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a><p>{{ setting('footer_text','مقایسه قیمت و خرید هوشمند') }}</p></div>
+      <div class="footer-links"><h4>دسترسی سریع</h4><a href="{{ url_for('home') }}">خانه</a><a href="{{ url_for('stores') }}">فروشگاه‌ها</a><a href="{{ url_for('features') }}">امکانات</a><a href="{{ url_for('about') }}">درباره ما</a></div>
+      <div class="footer-links"><h4>حساب کاربری</h4>{% if current_user %}<a href="{{ url_for('profile') }}">پروفایل</a><a href="{{ url_for('my_orders') }}">سفارش‌های من</a><a href="{{ url_for('cart') }}">سبد خرید</a>{% else %}<a href="{{ url_for('login') }}">ورود</a><a href="{{ url_for('register') }}">ثبت‌نام</a>{% endif %}</div>
+      <div class="footer-links"><h4>پشتیبانی</h4><a href="{{ url_for('contact') }}">تماس با ما</a><a href="{{ url_for('about') }}">درباره خریدینو</a></div>
+    </div><div class="footer-bottom"><span>© {{ site_name }}</span><span>{{ setting('footer_copyright','تمامی حقوق محفوظ است.') }}</span></div></div></footer>
     {% endif %}
   </div>
 
   {% if request.endpoint != 'home' %}
-  <nav class="mobile-bottom-nav">
-    <a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a>
-    <a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a>
-    <a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span></a>
-    {% if current_user %}<a class="mobile-nav-item" href="{{ url_for('profile') }}"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}
-    <a class="mobile-nav-item" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
-  </nav>
+  <nav class="mobile-bottom-nav"><a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a><a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a><a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span></a>{% if current_user %}<a class="mobile-nav-item" href="{{ url_for('profile') }}"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}<a class="mobile-nav-item" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a></nav>
   {% endif %}
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/background.js') }}"></script>

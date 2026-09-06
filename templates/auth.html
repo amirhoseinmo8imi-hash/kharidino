@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ 'ورود' if mode == 'login' else 'ثبت‌نام' }} | {{ site_name }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-1') }}">{% endblock %}
 {% block content %}
 <section class="km-auth-page">
   <form class="km-auth-card" method="post" novalidate>
@@ -12,6 +12,7 @@
     <div class="km-field"><label for="password">رمز عبور</label><input id="password" type="password" name="password" placeholder="رمز عبور خود را وارد کنید" autocomplete="{{ 'current-password' if mode == 'login' else 'new-password' }}" required></div>
     <button class="km-submit" type="submit">{{ 'ورود به خریدینو' if mode == 'login' else 'ساخت حساب کاربری' }}</button>
     <div class="km-auth-links">{% if mode == 'login' %}<a href="#">رمز عبور را فراموش کرده‌اید؟</a><span>حساب ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></span>{% else %}<span>قبلاً حساب ساخته‌اید؟ <a href="{{ url_for('login') }}">وارد شوید</a></span><a href="{{ url_for('home') }}">بازگشت به فروشگاه</a>{% endif %}</div>
+    <div style="margin-top:18px;padding:15px;border:1px solid #e8eaf0;border-radius:15px;background:#f8fafc;text-align:center"><strong style="display:block;color:#111827">صاحب فروشگاه هستی؟</strong><a href="{{ url_for('seller_register') }}" style="display:inline-flex;gap:8px;align-items:center;margin-top:8px;font-weight:800;color:#4338ca;text-decoration:none"><i class="fa-solid fa-store"></i> ثبت فروشگاه در خریدینو</a></div>
     <p class="km-auth-note">با ورود یا ثبت‌نام، قوانین و شرایط استفاده از خریدینو را می‌پذیرید.</p>
   </form>
 </section>

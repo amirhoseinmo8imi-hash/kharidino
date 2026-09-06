@@ -20,6 +20,7 @@ from commerce_catalog import apply_catalog_extensions
 import commerce_runtime  # noqa: F401
 import profile_extensions  # noqa: F401 - registers customer profile model/routes
 import merchant_marketplace  # noqa: F401 - registers seller/store workspace and models
+import merchant_approval  # noqa: F401 - registers dedicated seller approval workspace
 import merchant_marketplace_v2  # noqa: F401 - registers suborders, finance and seller analytics
 import merchant_customer_marketplace  # noqa: F401 - customer vendor breakdown/cancellation sync
 

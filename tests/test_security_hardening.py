@@ -4,7 +4,7 @@ import os
 import pytest
 from flask import Flask
 
-from security_hardening import apply_security, csrf_token, _is_safe_local_redirect
+from security_hardening import apply_security, csrf_token, _is_safe_local_redirect, _CHECKOUT_RECENT, _CHECKOUT_LOCK
 
 
 PNG_1X1 = bytes.fromhex(
@@ -133,6 +133,7 @@ def test_local_redirect_policy():
     assert not _is_safe_local_redirect("//evil.example")
     assert not _is_safe_local_redirect("javascript:alert(1)")
     assert not _is_safe_local_redirect("/\\evil.example")
+    assert not _is_safe_local_redirect("/\x00evil")
 
 
 def test_mobile_api_get_rate_limit():
@@ -147,3 +148,74 @@ def test_mobile_api_get_rate_limit():
         response = client.get("/api/mobile/ping")
         assert response.status_code == 200
     assert client.get("/api/mobile/ping").status_code == 429
+
+
+def test_login_rejects_unsafe_next_before_route_logic():
+    app = make_app()
+
+    @app.get("/login")
+    def login():
+        return "login"
+
+    response = app.test_client().get("/login?next=https://evil.example")
+    assert response.status_code == 200
+
+    # The redirect policy is enforced for login POST requests, not GET.
+    with app.test_request_context("/login?next=https://evil.example", method="POST"):
+        response = app.full_dispatch_request()
+    assert response.status_code == 400
+
+
+def test_checkout_replay_guard_rejects_duplicate_fingerprint():
+    app = make_app()
+
+    @app.get("/token")
+    def token():
+        return csrf_token()
+
+    @app.post("/checkout")
+    def checkout():
+        return "order-created"
+
+    client = app.test_client()
+    token_value = client.get("/token").get_data(as_text=True)
+    with client.session_transaction() as sess:
+        sess["user_id"] = 42
+        sess["cart"] = {"10": 1}
+
+    data = {
+        "customer_name": "Test User",
+        "phone": "09000000000",
+        "address": "Test Address",
+        "note": "",
+        "csrf_token": token_value,
+    }
+    first = client.post("/checkout", data=data, headers={"Origin": "http://localhost"})
+    assert first.status_code == 200
+
+    second = client.post("/checkout", data=data, headers={"Origin": "http://localhost"})
+    assert second.status_code == 409
+
+    with _CHECKOUT_LOCK:
+        _CHECKOUT_RECENT.clear()
+
+
+def test_upload_size_limit_is_enforced_when_content_length_is_known():
+    app = make_app()
+
+    @app.post("/upload")
+    def upload():
+        return "ok"
+
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess["_kharidino_csrf_token"] = "a" * 64
+
+    oversized = io.BytesIO(PNG_1X1)
+    response = client.post(
+        "/upload",
+        data={"file": (oversized, "photo.png")},
+        headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64},
+        content_length=101 * 1024 * 1024,
+    )
+    assert response.status_code == 413

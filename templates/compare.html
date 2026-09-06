@@ -1,54 +1,20 @@
 {% extends "base.html" %}
-
 {% block title %}مقایسه محصولات | {{ site_name }}{% endblock %}
-
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pages-v3.css', v='2026-09-06-1') }}">{% endblock %}
 {% block content %}
-<section class="compare-page section">
-  <div class="container">
-    <div class="compare-heading">
-      <div>
-        <span class="section-eyebrow"><i class="fa-solid fa-scale-balanced"></i> مقایسه هوشمند</span>
-        <h1>مقایسه محصولات</h1>
-        <p>تا ۴ محصول را کنار هم قرار بده و قیمت فروشگاه‌ها را مقایسه کن.</p>
-      </div>
-      <a href="{{ url_for('home') }}" class="btn btn-outline"><i class="fa-solid fa-plus"></i> افزودن محصول</a>
-    </div>
-
-    {% if products %}
-    <div class="compare-table-wrap">
-      <table class="compare-table">
-        <thead>
-          <tr>
-            <th>ویژگی</th>
-            {% for p in products %}
-            <th>
-              <div class="compare-product-head">
-                {% if p.image %}<img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}">{% else %}<div class="compare-placeholder"><i class="fa-solid fa-box"></i></div>{% endif %}
-                <a href="{{ url_for('product_detail', product_id=p.id) }}">{{ p.name }}</a>
-                <form method="POST" action="{{ url_for('compare_remove', product_id=p.id) }}"><button class="compare-remove" type="submit" title="حذف"><i class="fa-solid fa-xmark"></i></button></form>
-              </div>
-            </th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>دسته‌بندی</td>{% for p in products %}<td>{{ p.category.name if p.category else '—' }}</td>{% endfor %}</tr>
-          <tr class="highlight-row"><td>بهترین قیمت</td>{% for p in products %}<td><strong class="compare-price">{{ lowest_price(p)|money }} <small>تومان</small></strong></td>{% endfor %}</tr>
-          <tr><td>تعداد فروشگاه</td>{% for p in products %}<td><i class="fa-solid fa-store"></i> {{ p.offers|length }}</td>{% endfor %}</tr>
-          <tr><td>امتیاز کاربران</td>{% for p in products %}<td><span class="stars">★</span> {{ product_rating(p) or 'بدون امتیاز' }}</td>{% endfor %}</tr>
-          <tr><td>توضیحات</td>{% for p in products %}<td class="compare-description">{{ p.description or 'توضیحی ثبت نشده است.' }}</td>{% endfor %}</tr>
-          <tr><td></td>{% for p in products %}<td><a class="btn btn-primary btn-block" href="{{ url_for('product_detail', product_id=p.id) }}">مشاهده و مقایسه قیمت‌ها</a></td>{% endfor %}</tr>
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="empty-state compare-empty">
-      <div class="empty-icon"><i class="fa-solid fa-scale-balanced"></i></div>
-      <h3>هنوز محصولی برای مقایسه انتخاب نکرده‌ای</h3>
-      <p>از کارت محصولات روی «مقایسه» بزن تا اینجا نمایش داده شوند.</p>
-      <a class="btn btn-primary" href="{{ url_for('home') }}">شروع جستجو</a>
-    </div>
-    {% endif %}
-  </div>
-</section>
+<div class="kp-page">
+  <section class="kp-hero"><span class="kp-eyebrow"><i class="fa-solid fa-scale-balanced"></i> مقایسه هوشمند</span><h1>محصولات را کنار هم مقایسه کن</h1><p>تا ۴ محصول را انتخاب کن و قیمت، دسته‌بندی، تعداد فروشگاه و امتیاز کاربران را یکجا ببین.</p></section>
+  {% if products %}
+  <section class="kp-section"><div class="kp-section-title"><h2>مقایسه انتخاب‌های تو</h2><p>{{ products|length }} محصول انتخاب شده</p></div><div class="kp-compare-shell"><table class="kp-compare"><thead><tr><th>ویژگی</th>{% for p in products %}<th><div class="kp-product">{% if p.image %}<img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}">{% else %}<div class="kp-product-placeholder"><i class="fa-solid fa-box"></i></div>{% endif %}<a href="{{ url_for('product_detail', product_id=p.id) }}">{{ p.name }}</a><form method="POST" action="{{ url_for('compare_remove', product_id=p.id) }}"><button class="kp-remove" type="submit"><i class="fa-solid fa-xmark"></i> حذف</button></form></div></th>{% endfor %}</tr></thead><tbody>
+  <tr><td>دسته‌بندی</td>{% for p in products %}<td>{{ p.category.name if p.category else '—' }}</td>{% endfor %}</tr>
+  <tr><td>بهترین قیمت</td>{% for p in products %}<td><strong class="kp-best">{{ lowest_price(p)|money }} <small>تومان</small></strong></td>{% endfor %}</tr>
+  <tr><td>فروشگاه‌ها</td>{% for p in products %}<td><i class="fa-solid fa-store"></i> {{ p.offers|length }}</td>{% endfor %}</tr>
+  <tr><td>امتیاز کاربران</td>{% for p in products %}<td>★ {{ product_rating(p) or 'بدون امتیاز' }}</td>{% endfor %}</tr>
+  <tr><td>توضیحات</td>{% for p in products %}<td>{{ p.description or 'توضیحی ثبت نشده است.' }}</td>{% endfor %}</tr>
+  <tr><td>جزئیات</td>{% for p in products %}<td><a class="btn btn-primary btn-block" href="{{ url_for('product_detail', product_id=p.id) }}">مشاهده محصول</a></td>{% endfor %}</tr>
+  </tbody></table></div></section>
+  {% else %}
+  <section class="kp-empty"><i class="fa-solid fa-scale-balanced"></i><h3>هنوز محصولی برای مقایسه انتخاب نکرده‌ای</h3><p>از کارت محصولات روی «مقایسه» بزن تا محصولات اینجا نمایش داده شوند.</p><a class="btn btn-primary" href="{{ url_for('home') }}">شروع جستجو</a></section>
+  {% endif %}
+</div>
 {% endblock %}

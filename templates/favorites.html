@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}علاقه‌مندی‌ها | {{ site_name }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pages-v3.css', v='2026-09-06-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-favorites-final.css', v='2026-09-07-1') }}">
+{% endblock %}
+{% block content %}
+<div class="kf-page">
+  <section class="kf-hero">
+    <div>
+      <span class="kf-eyebrow"><i class="fa-solid fa-heart"></i> لیست شخصی شما</span>
+      <h1>علاقه‌مندی‌ها</h1>
+      <p>محصولاتی که ذخیره کرده‌ای را یکجا ببین، قیمتشان را بررسی کن و هر زمان خواستی به سبد خرید اضافه کن.</p>
+    </div>
+    <div class="kf-hero-icon"><i class="fa-solid fa-heart"></i></div>
+  </section>
+
+  {% if products %}
+  <section class="kf-section">
+    <div class="kf-section-head">
+      <div><h2>محصولات ذخیره‌شده</h2><span>{{ products|length }} محصول</span></div>
+      <a class="kf-secondary" href="{{ url_for('home') }}"><i class="fa-solid fa-arrow-right"></i> ادامه خرید</a>
+    </div>
+    <div class="kf-grid">
+      {% for p in products %}
+      <article class="kf-card">
+        <div class="kf-image-wrap">
+          {% if p.image %}
+            <img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy">
+          {% else %}
+            <div class="kf-placeholder"><i class="fa-solid fa-box-open"></i></div>
+          {% endif %}
+          <span class="kf-heart"><i class="fa-solid fa-heart"></i></span>
+        </div>
+        <div class="kf-body">
+          {% if p.category %}<span class="kf-category">{{ p.category.name }}</span>{% endif %}
+          <h3><a href="{{ url_for('product_detail', product_id=p.id) }}">{{ p.name }}</a></h3>
+          <p class="kf-description">{{ p.description or 'برای مشاهده مشخصات کامل محصول وارد صفحه محصول شوید.' }}</p>
+          <div class="kf-price">
+            <span>بهترین قیمت</span>
+            <strong>{{ lowest_price(p)|money }} <small>تومان</small></strong>
+          </div>
+          <div class="kf-actions">
+            <a class="kf-primary" href="{{ url_for('product_detail', product_id=p.id) }}"><i class="fa-solid fa-eye"></i> مشاهده محصول</a>
+            <form method="POST" action="{{ url_for('toggle_favorite', product_id=p.id) }}">
+              <button class="kf-remove" type="submit" title="حذف از علاقه‌مندی‌ها"><i class="fa-solid fa-heart-crack"></i></button>
+            </form>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="kf-empty">
+    <div class="kf-empty-icon"><i class="fa-regular fa-heart"></i></div>
+    <h2>هنوز چیزی به علاقه‌مندی‌ها اضافه نکرده‌ای</h2>
+    <p>هر محصولی را که دوست داری با گزینه «علاقه‌مندی» ذخیره کن تا بعداً راحت پیدایش کنی.</p>
+    <a class="kf-primary kf-empty-button" href="{{ url_for('home') }}"><i class="fa-solid fa-bag-shopping"></i> رفتن به فروشگاه</a>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -16,8 +16,10 @@
   {% block extra_css %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-final.css', v='2026-09-06-7') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inventory-ui.css', v='2026-09-06-1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inner-final.css', v='2026-09-07-1') }}">
+  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-1') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-07-2') }}">{% endif %}
 </head>
-<body>
+<body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
 {% if request.endpoint != 'home' %}
 <header class="km-topbar">
@@ -43,8 +45,8 @@
 (function () {
   const meta = document.querySelector('meta[name="csrf-token"]');
   const token = meta ? meta.getAttribute('content') : '';
-  if (!token) return;
   function protectForms() {
+    if (!token) return;
     document.querySelectorAll('form').forEach(function (form) {
       const method = (form.getAttribute('method') || 'get').toLowerCase();
       if (method === 'get') return;
@@ -58,16 +60,40 @@
       input.value = token;
     });
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', protectForms);
-  } else {
+  function installAdminLogoutFallback() {
+    if (!document.body.classList.contains('kh-admin-page') || !token) return;
+    const logoutUrl = "{{ url_for('logout') }}";
+    document.querySelectorAll('.admin-sidebar-bottom a').forEach(function (link) {
+      if (link.getAttribute('href') !== logoutUrl) return;
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = logoutUrl;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'csrf_token';
+        input.value = token;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+      });
+    });
+  }
+  function init() {
     protectForms();
+    installAdminLogoutFallback();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
   document.addEventListener('submit', function (event) {
     const form = event.target;
     if (!(form instanceof HTMLFormElement)) return;
     const method = (form.getAttribute('method') || 'get').toLowerCase();
-    if (method === 'get') return;
+    if (method === 'get' || !token) return;
     let input = form.querySelector('input[name="csrf_token"]');
     if (!input) {
       input = document.createElement('input');
@@ -80,3 +106,5 @@
 })();
 </script>
 <script src="{{ url_for('static', filename='js/inventory-ui.js', v='2026-09-06-1') }}" defer></script>
+</body>
+</html>

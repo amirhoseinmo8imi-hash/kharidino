@@ -14,6 +14,10 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+
+        val baseUrl = (project.findProperty("kharidinoBaseUrl") as String?)
+            ?: "http://10.0.2.2:5000/"
+        buildConfigField("String", "KHARIDINO_BASE_URL", "\"$baseUrl\"")
     }
 
     buildFeatures {

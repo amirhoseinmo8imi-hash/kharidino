@@ -14,6 +14,7 @@
     loadAsset('link','/static/css/storefront-home.css?v=2026-storefront-1');
     loadAsset('link','/static/css/storefront-universal.css?v=2026-universal-1');
     loadAsset('script','/static/js/mobile-marketplace.js?v=2026-market-2');
+    loadAsset('script','/static/js/storefront-universal.js?v=2026-universal-1');
     const root=document.querySelector('.site-background');
     if(root){
       const media=root.querySelector('.site-background-media');

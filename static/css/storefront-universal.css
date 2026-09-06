@@ -1,0 +1,135 @@
+/* KHARIDINO UNIVERSAL STOREFRONT
+   Shared visual system for home, category, product, cart, auth,
+   compare, checkout, stores and informational pages.
+*/
+:root{
+  --kf-bg:#f6f7f9;
+  --kf-surface:#fff;
+  --kf-surface-2:#f8fafc;
+  --kf-text:#20262e;
+  --kf-muted:#6b7280;
+  --kf-border:#e5e7eb;
+  --kf-primary:#ef4056;
+  --kf-primary-dark:#d92f46;
+  --kf-success:#16a34a;
+  --kf-shadow:0 8px 28px rgba(20,25,35,.07);
+  --kf-shadow-lg:0 18px 50px rgba(20,25,35,.11);
+  --kf-radius:18px;
+  --kf-radius-sm:12px;
+  --kf-container:1280px;
+}
+html{scroll-behavior:smooth}
+body{font-family:Vazirmatn,Tahoma,Arial,sans-serif;background:var(--kf-bg);color:var(--kf-text)}
+body:has(.storefront-home),body:has(.kd-product-page),body:has(.cart-section),body:has(.compare-page),body:has(.checkout-page),body:has(.auth-page),body:has(.stores-admin-page){background:var(--kf-bg)}
+.container{width:min(var(--kf-container),calc(100% - 32px));margin-inline:auto}
+
+/* NAVIGATION */
+.navbar{background:rgba(255,255,255,.96)!important;color:var(--kf-text)!important;border-bottom:1px solid var(--kf-border)!important;box-shadow:0 1px 8px rgba(0,0,0,.04)!important;backdrop-filter:blur(14px)}
+.navbar .brand,.navbar .nav-links a,.navbar .nav-actions a,.navbar .nav-actions button{color:var(--kf-text)!important}
+.navbar .brand-icon{background:linear-gradient(135deg,var(--kf-primary),#ff6b7c)!important;color:#fff!important}
+.navbar .nav-links a:hover,.navbar .nav-links a.active{color:var(--kf-primary)!important;background:#fff1f3!important}
+.navbar .nav-actions .btn-primary,.navbar .nav-actions .primary{background:var(--kf-primary)!important;color:#fff!important}
+.navbar-scrolled{box-shadow:0 5px 22px rgba(20,25,35,.09)!important}
+
+/* GENERIC PAGE HEADERS */
+.page-hero,.cart-page-hero,.stores-admin-header{background:linear-gradient(180deg,#fff,#f8fafc)!important;border:1px solid var(--kf-border)!important;border-radius:22px!important;box-shadow:var(--kf-shadow)!important;color:var(--kf-text)!important}
+.page-hero h1,.cart-page-hero h1,.stores-admin-header h1{color:var(--kf-text)!important;font-weight:800!important}
+.page-hero p,.cart-page-hero p,.stores-admin-header p{color:var(--kf-muted)!important}
+.section,.cart-section{background:transparent!important}
+.section-kicker,.section-label,.kd-section-label,.stores-header-label{color:var(--kf-primary)!important}
+
+/* CARDS / PRODUCTS */
+.product-grid,.compare-grid,.stores-grid{align-items:stretch}
+.product-card,.kd-offer-card,.store-admin-card,.compare-card,.feature-card,.info-card,.contact-card,.auth-card,.checkout-card,.cart-main,.cart-summary{background:var(--kf-surface)!important;border:1px solid var(--kf-border)!important;box-shadow:var(--kf-shadow)!important;color:var(--kf-text)!important;border-radius:var(--kf-radius)!important}
+.product-card,.store-admin-card,.compare-card,.feature-card,.info-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.product-card:hover,.store-admin-card:hover,.compare-card:hover,.feature-card:hover,.info-card:hover{transform:translateY(-4px);box-shadow:var(--kf-shadow-lg)!important;border-color:#d7dbe1!important}
+.product-image{background:#fff!important;border-bottom:1px solid var(--kf-border)!important}
+.product-image img,.kd-product-image img,.cart-thumb img{object-fit:contain!important}
+.product-card h3,.product-card h3 a,.store-admin-card h3,.feature-card h3,.info-card h3{color:var(--kf-text)!important}
+.product-card p,.product-card small,.store-admin-card p,.feature-card p,.info-card p{color:var(--kf-muted)!important}
+.tag,.storefront-product-cat,.kd-category-badge{background:#fff1f3!important;color:var(--kf-primary)!important;border-color:#ffd6dc!important}
+.price-row strong,.product-card .price,.kd-price-main strong,.kd-offer-price strong{color:var(--kf-primary)!important}
+.btn-primary,.checkout-btn,.store-add-button,.kd-add-cart{background:var(--kf-primary)!important;border-color:var(--kf-primary)!important;color:#fff!important}
+.btn-primary:hover,.checkout-btn:hover,.store-add-button:hover,.kd-add-cart:hover{background:var(--kf-primary-dark)!important}
+.btn-outline,.continue-shopping,.store-action.edit{background:#fff!important;color:var(--kf-text)!important;border:1px solid var(--kf-border)!important}
+
+/* FORMS */
+input,select,textarea{font-family:inherit!important;background:#fff!important;color:var(--kf-text)!important;border:1px solid #dfe3e8!important;border-radius:12px!important}
+input:focus,select:focus,textarea:focus{border-color:#f39aaa!important;box-shadow:0 0 0 4px rgba(239,64,86,.10)!important;outline:none!important}
+label{color:#374151!important;font-weight:600}
+
+/* PRODUCT DETAIL */
+.kd-product-page{padding-block:24px 60px!important}
+.kd-breadcrumb{color:var(--kf-muted)!important}
+.kd-breadcrumb a{color:#4b5563!important}.kd-breadcrumb a:hover{color:var(--kf-primary)!important}
+.kd-product-image-card,.kd-product-info,.kd-price-section{background:#fff!important;border:1px solid var(--kf-border)!important;box-shadow:var(--kf-shadow)!important;border-radius:22px!important}
+.kd-product-title{color:var(--kf-text)!important;font-weight:800!important}
+.kd-product-description{color:#59636f!important;line-height:2!important}
+.kd-stat{background:#f8fafc!important;border:1px solid var(--kf-border)!important}
+.kd-best-price{background:linear-gradient(135deg,#fff7f8,#fff)!important;border:1px solid #ffd6dc!important}
+.kd-best-label strong,.kd-crown,.kd-offer-count{color:var(--kf-primary)!important}
+.kd-trust-row{border-top:1px solid var(--kf-border)!important}
+.kd-offer-card.available{border-color:#dcefe2!important}.kd-available{color:var(--kf-success)!important}.kd-best-badge{background:var(--kf-primary)!important}
+.kd-buy-button{background:var(--kf-primary)!important;color:#fff!important}.kd-see-button{background:#f3f4f6!important;color:var(--kf-text)!important}
+
+/* CART */
+.cart-page-hero,.cart-section{margin-block:20px!important}
+.cart-layout{gap:20px!important}.cart-topbar,.cart-actions{background:#fff!important;border-color:var(--kf-border)!important}
+.cart-product-name{color:var(--kf-text)!important;font-weight:700}.cart-category,.cart-unit-price,.price-note{color:var(--kf-muted)!important}
+.quantity-control{border:1px solid var(--kf-border)!important;background:#fff!important;border-radius:12px!important;overflow:hidden}
+.qty-btn{background:#fff!important;color:var(--kf-primary)!important}.cart-subtotal{color:var(--kf-primary)!important}
+.summary-header,.summary-row,.summary-total{color:var(--kf-text)!important}.summary-total{border-top:1px solid var(--kf-border)!important}
+.summary-security{background:#f0fdf4!important;color:#15803d!important;border:1px solid #dcfce7!important;border-radius:12px!important}
+.empty-cart-card,.empty{background:#fff!important;border:1px dashed #d7dce2!important;border-radius:20px!important;color:var(--kf-muted)!important}
+
+/* AUTH / CHECKOUT */
+.auth-page,.checkout-page{background:transparent!important}
+.auth-card,.checkout-card{padding:28px!important}
+.auth-card h1,.auth-card h2,.checkout-card h1,.checkout-card h2{color:var(--kf-text)!important;font-weight:800}
+.auth-card a,.checkout-card a{color:var(--kf-primary)!important}
+.checkout-steps .active,.step.active{color:var(--kf-primary)!important}
+
+/* COMPARE */
+.compare-page .compare-header,.compare-header{background:#fff!important;border:1px solid var(--kf-border)!important;border-radius:20px!important;box-shadow:var(--kf-shadow)!important}
+.compare-table,.compare-grid{background:#fff!important;border-color:var(--kf-border)!important}
+.compare-table th{background:#f8fafc!important;color:#374151!important}.compare-table td{border-color:var(--kf-border)!important;color:var(--kf-text)!important}
+
+/* STORE MANAGEMENT */
+.stores-admin-page{width:min(1180px,calc(100% - 32px));margin:28px auto 70px}
+.stores-admin-header{display:flex!important;align-items:center;justify-content:space-between;gap:20px;padding:24px!important;margin-bottom:20px}
+.store-panel{background:#fff!important;border:1px solid var(--kf-border)!important;border-radius:20px!important;box-shadow:var(--kf-shadow)!important;padding:24px!important;margin-bottom:20px!important}
+.store-panel-title{border-bottom:1px solid var(--kf-border)!important;padding-bottom:18px!important;margin-bottom:20px!important}.store-panel-title h2{color:var(--kf-text)!important}.store-panel-title p{color:var(--kf-muted)!important}
+.store-field label{display:block;margin-bottom:8px}.input-box,.file-box{background:#f8fafc!important;border:1px solid var(--kf-border)!important;border-radius:13px!important}
+.store-status.active{color:#15803d!important}.store-status.inactive{color:#b91c1c!important}
+.store-card-top{background:#fff!important}.store-logo{background:#f8fafc!important;border:1px solid var(--kf-border)!important}.store-website{color:var(--kf-primary)!important}.store-action.delete{color:#b91c1c!important;background:#fff5f5!important;border:1px solid #fee2e2!important}
+
+/* INFO PAGES */
+.features-grid,.about-grid,.contact-grid{gap:18px!important}.feature-card,.info-card,.contact-card{padding:24px!important}.feature-card i,.info-card i{color:var(--kf-primary)!important}
+
+/* FOOTER */
+footer,.site-footer{background:#fff!important;color:#4b5563!important;border-top:1px solid var(--kf-border)!important}
+footer a,.site-footer a{color:#4b5563!important}footer a:hover,.site-footer a:hover{color:var(--kf-primary)!important}
+
+/* FLASH */
+.flash-message,.alert,.flash{background:#fff!important;color:var(--kf-text)!important;border:1px solid var(--kf-border)!important;box-shadow:var(--kf-shadow)!important}
+
+/* ACCESSIBILITY / MOTION */
+button,a{font-family:inherit}.product-card img,.store-logo img{transition:transform .25s ease}.product-card:hover img{transform:scale(1.035)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+@media(max-width:768px){
+  .container{width:calc(100% - 20px)}
+  .page-hero,.cart-page-hero{margin:12px 10px!important;border-radius:16px!important;padding:20px 14px!important}
+  .page-hero h1,.cart-page-hero h1{font-size:24px!important}
+  .stores-admin-page{width:calc(100% - 20px);margin:12px auto 90px}
+  .stores-admin-header{display:block!important;padding:18px!important}.stores-header-count{margin-top:14px}
+  .store-panel{padding:16px!important;border-radius:16px!important}.store-form{grid-template-columns:1fr!important}
+  .product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .product-card{border-radius:14px!important}.product-card h3{font-size:13px!important}.product-card p{font-size:11px!important}
+  .kd-product-page{padding-top:10px!important}.kd-product-title{font-size:22px!important}
+  .kd-product-hero{grid-template-columns:1fr!important}.kd-product-visual{order:0}.kd-product-info{order:1}
+  .cart-layout{grid-template-columns:1fr!important}.cart-summary{position:static!important}.cart-item{grid-template-columns:64px 1fr!important;gap:10px!important}.quantity-box,.cart-subtotal,.remove-cart-btn{grid-column:auto!important}
+  .auth-card,.checkout-card{padding:18px!important}
+  footer,.site-footer{padding-bottom:82px!important}
+}
+@media(max-width:420px){.product-grid{grid-template-columns:1fr 1fr!important}.container{width:calc(100% - 16px)}}

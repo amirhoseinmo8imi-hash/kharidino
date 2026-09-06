@@ -1,0 +1,1 @@
+Security hardening is prepared on the fix branch. Use the production WSGI entrypoint (`wsgi:app`) so the hardening layer is always applied.

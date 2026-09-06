@@ -1,9 +1,9 @@
 """Recommended launcher for Kharidino Ultimate.
 
-This launcher is intentionally the single entry point for the full application.
-It registers the AI and mobile blueprints before starting Flask and avoids the
-confusing situation where an old Python process on port 5000 answers requests
-for a newer Kharidino process.
+This launcher is the single entry point for the full application. It registers
+all optional subsystems before starting Flask and protects development runs
+from accidentally talking to an older server already listening on the same
+port.
 """
 import os
 import socket
@@ -21,42 +21,42 @@ from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
 
 
-# Register optional subsystems exactly once when this launcher is imported.
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
 
 
 def _port_is_available(host: str, port: int) -> bool:
-    """Return True when we can bind the requested TCP port."""
+    """Return True only when no TCP server is actually answering on the port.
+
+    A bind-only probe is not reliable for this development scenario on Windows:
+    an existing listener can still make a bind probe misleading. We therefore
+    test the loopback endpoint directly. If connect() succeeds, another server
+    is definitely listening and this port must not be used.
+    """
     probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    probe.settimeout(0.25)
     try:
-        probe.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-        probe.bind((host, port))
-        return True
+        result = probe.connect_ex(("127.0.0.1", port))
+        return result != 0
     except OSError:
-        return False
+        return True
     finally:
         probe.close()
 
 
-def _select_port(host: str, requested: int) -> int:
-    """Use the requested port, or the next free port when it is occupied.
-
-    Kharidino is often started repeatedly during development. Automatically
-    selecting a free port prevents an older Flask process from receiving the
-    browser/API requests intended for the current process.
-    """
-    if _port_is_available(host, requested):
+def _select_port(requested: int) -> int:
+    """Select a genuinely unused local TCP port for the current server."""
+    if _port_is_available("0.0.0.0", requested):
         return requested
 
     if os.environ.get("STRICT_PORT", "0").lower() in {"1", "true", "yes"}:
         raise RuntimeError(
-            f"Port {requested} is already in use. Stop the old Kharidino process "
+            f"Port {requested} is already in use. Stop the old Kharidino server "
             "or choose another PORT."
         )
 
     for candidate in range(requested + 1, requested + 21):
-        if _port_is_available(host, candidate):
+        if _port_is_available("0.0.0.0", candidate):
             print(
                 f"[Kharidino] Port {requested} is busy; using free port {candidate}."
             )
@@ -119,7 +119,7 @@ def splash_gate():
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     requested_port = int(os.environ.get("PORT", "5000"))
-    port = _select_port(host, requested_port)
+    port = _select_port(requested_port)
     debug = os.environ.get("FLASK_DEBUG", "0").lower() in {"1", "true", "yes"}
 
     print("=" * 50)

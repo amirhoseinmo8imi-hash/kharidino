@@ -8,7 +8,7 @@ port.
 import os
 import socket
 
-from flask import redirect, request, render_template
+from flask import redirect, request, render_template, url_for
 
 try:
     from dotenv import load_dotenv
@@ -113,6 +113,27 @@ def phone_connection():
         "<li>آدرس بالا را در Chrome گوشی وارد کن.</li>"
         "<li>اگر باز نشد، Windows Firewall را برای Python روی Private Network مجاز کن.</li></ol>"
         "<p>برای API موبایل: <b>/api/mobile/health</b></p></div></html>"
+    )
+
+
+# A direct browser visit to /logout is a GET request, while the real logout
+# endpoint intentionally remains POST-only and CSRF-protected. Instead of
+# weakening that security rule, hand GET requests to a tiny same-origin form
+# that immediately submits the valid session CSRF token as POST.
+@app.get("/logout")
+def logout_get():
+    token_factory = app.jinja_env.globals.get("csrf_token")
+    token = token_factory() if callable(token_factory) else ""
+    action = url_for("logout")
+    return (
+        "<!doctype html><html lang='fa' dir='rtl'><head>"
+        "<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<title>خروج | خریدینو</title></head><body>"
+        f"<form id='logout-form' method='post' action='{action}'>"
+        f"<input type='hidden' name='csrf_token' value='{token}'>"
+        "<noscript><button type='submit'>خروج از حساب</button></noscript>"
+        "</form><script>document.getElementById('logout-form').submit();</script>"
+        "</body></html>"
     )
 
 

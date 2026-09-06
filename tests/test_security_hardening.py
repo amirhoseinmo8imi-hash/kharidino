@@ -9,7 +9,7 @@ from security_hardening import apply_security, csrf_token
 
 PNG_1X1 = bytes.fromhex(
     "89504e470d0a1a0a0000000d4948445200000001000000010806000000"
-    "1f15c4890000000d49444154789c6360f8cf000000020001e221bc33"
+    "1f15c4890000000d49444154789c63f8cfc0f01f00050001ff89993d1d"
     "0000000049454e44ae426082"
 )
 
@@ -25,7 +25,6 @@ def make_app():
 def test_security_headers_and_cookie_flags(monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "unit-test-secret-that-is-not-used-in-production")
     monkeypatch.delenv("FLASK_ENV", raising=False)
-
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
@@ -60,10 +59,8 @@ def test_csrf_token_required_and_valid_token_allowed():
 
     client = app.test_client()
     token_value = client.get("/token").get_data(as_text=True)
-
     missing = client.post("/mutate", headers={"Origin": "http://localhost"})
     assert missing.status_code == 403
-
     valid = client.post(
         "/mutate",
         data={"csrf_token": token_value},
@@ -79,10 +76,7 @@ def test_cross_site_state_change_is_blocked():
     def mutate():
         return "changed"
 
-    response = app.test_client().post(
-        "/mutate",
-        headers={"Origin": "https://evil.example"},
-    )
+    response = app.test_client().post("/mutate", headers={"Origin": "https://evil.example"})
     assert response.status_code == 403
 
 

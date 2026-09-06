@@ -148,6 +148,104 @@ def _reserve_managed_stock() -> None:
             )
 
 
+def _restore_order_inventory(order):
+    """Return managed stock for an order that is being cancelled."""
+    from sqlalchemy import text
+    from app import db
+
+    for item in order.items:
+        quantity = max(0, int(item.quantity or 0))
+        if quantity <= 0:
+            continue
+        db.session.execute(
+            text(f"""
+                UPDATE {_TABLE}
+                SET quantity = quantity + :quantity, updated_at = :updated_at
+                WHERE product_id = :product_id AND managed = 1
+            """),
+            {"product_id": int(item.product_id), "quantity": quantity, "updated_at": time.time()},
+        )
+        db.session.execute(
+            text("""
+                UPDATE offer
+                SET in_stock = 1
+                WHERE product_id = :product_id
+            """),
+            {"product_id": int(item.product_id)},
+        )
+
+
+def _reserve_order_inventory(order):
+    """Re-reserve managed stock when a cancelled order is reopened."""
+    from sqlalchemy import text
+    from app import db
+
+    for item in order.items:
+        quantity = max(0, int(item.quantity or 0))
+        if quantity <= 0:
+            continue
+        result = db.session.execute(
+            text(f"""
+                UPDATE {_TABLE}
+                SET quantity = quantity - :quantity, updated_at = :updated_at
+                WHERE product_id = :product_id AND managed = 1 AND quantity >= :quantity
+            """),
+            {"product_id": int(item.product_id), "quantity": quantity, "updated_at": time.time()},
+        )
+        if result.rowcount != 1:
+            db.session.rollback()
+            abort(409, description="موجودی برای فعال‌سازی دوباره سفارش کافی نیست.")
+        remaining = db.session.execute(
+            text(f"SELECT quantity FROM {_TABLE} WHERE product_id = :product_id"),
+            {"product_id": int(item.product_id)},
+        ).scalar_one()
+        if remaining == 0:
+            db.session.execute(
+                text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"),
+                {"product_id": int(item.product_id)},
+            )
+
+
+def _handle_order_status_inventory():
+    """Keep stock consistent with admin order status transitions."""
+    if request.endpoint != "update_order_status" or request.method != "POST":
+        return
+    from app import Order, db
+    order_id = request.view_args.get("order_id") if request.view_args else None
+    if not order_id:
+        return
+    order = db.session.get(Order, int(order_id))
+    if not order:
+        return
+    new_status = request.form.get("status", "")
+    old_status = order.status
+    if old_status != "لغو شد" and new_status == "لغو شد":
+        _restore_order_inventory(order)
+    elif old_status == "لغو شد" and new_status != "لغو شد":
+        _reserve_order_inventory(order)
+
+
+def _user_cancel_order(order_id):
+    from app import Order, login_required, db
+
+    @login_required
+    def _handler():
+        order = db.session.get(Order, order_id)
+        if not order:
+            abort(404)
+        if order.user_id != session.get("user_id"):
+            abort(403)
+        if order.status != "در انتظار بررسی":
+            flash("این سفارش دیگر قابل لغو نیست.", "warning")
+            return redirect(url_for("my_orders"))
+        _restore_order_inventory(order)
+        order.status = "لغو شد"
+        db.session.commit()
+        flash("سفارش لغو شد و موجودی کالاها به انبار برگشت. ✅", "success")
+        return redirect(url_for("my_orders"))
+    return _handler()
+
+
 def _inventory_status_api(product_id):
     from app import Product, db
     product = db.session.get(Product, product_id)
@@ -238,6 +336,8 @@ def apply_inventory_security(app) -> None:
                 return redirect(url_for("cart"))
         elif request.endpoint == "cart":
             _sync_cart_to_inventory()
+        elif request.endpoint == "update_order_status":
+            _handle_order_status_inventory()
         _reserve_managed_stock()
 
     if not any(rule.rule == "/api/inventory/<int:product_id>" for rule in app.url_map.iter_rules()):
@@ -246,4 +346,6 @@ def apply_inventory_security(app) -> None:
         app.add_url_rule("/admin/inventory", endpoint="admin_inventory", view_func=_admin_inventory_page, methods=["GET"])
     if not any(rule.rule == "/admin/inventory/set" for rule in app.url_map.iter_rules()):
         app.add_url_rule("/admin/inventory/set", endpoint="admin_inventory_set", view_func=_admin_set_inventory, methods=["POST"])
+    if not any(rule.rule == "/orders/<int:order_id>/cancel" for rule in app.url_map.iter_rules()):
+        app.add_url_rule("/orders/<int:order_id>/cancel", endpoint="cancel_order", view_func=_user_cancel_order, methods=["POST"])
     app._kharidino_inventory_applied = True

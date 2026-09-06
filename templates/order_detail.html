@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}جزئیات سفارش #{{ order.id }}{% endblock %}
+{% block content %}
+<section class="section"><div class="container">
+<h1>جزئیات سفارش #{{ order.id }}</h1>
+<p>وضعیت: {{ order.status }}</p>
+<div class="card"><h2>محصولات</h2>
+{% for item in order.items %}<div class="order-item"><strong>{{ item.product_name }}</strong><span>تعداد: {{ item.quantity }}</span><strong>{{ (item.price * item.quantity)|money }} تومان</strong></div>{% endfor %}
+<hr><strong>مبلغ کل: {{ order.total|money }} تومان</strong></div>
+<div class="card"><h2>تاریخچه</h2>{% for item in order.status_history|sort(attribute='created_at') %}<p>{{ item.created_at.strftime('%Y/%m/%d %H:%M') }} — {{ item.new_status }}</p>{% else %}<p>تاریخچه‌ای ثبت نشده است.</p>{% endfor %}</div>
+<a class="btn" href="{{ url_for('orders') }}">بازگشت</a>
+</div></section>
+{% endblock %}

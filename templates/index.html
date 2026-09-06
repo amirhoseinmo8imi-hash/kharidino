@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='2') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-home-shell.css', v='2026-09-06') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-final.css', v='2026-09-06-1') }}">
 {% endblock %}
 {% block content %}
 <div class="km-home">
@@ -16,13 +17,13 @@
         </form>
         <div class="km-user-actions">
           {% if session.get('user_id') %}
-          <a class="km-action" href="{{ url_for('account') if 'account' in url_for.__globals__ else '#' }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>
+          <a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>
           {% else %}
           <a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>
           {% endif %}
-          <a class="km-action km-action--cart" href="/cart" aria-label="سبد خرید"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
-          {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="/admin" aria-label="مدیریت سایت"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
-          {% if session.get('user_id') %}<a class="km-action km-action--logout" href="/logout" aria-label="خروج"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>{% endif %}
+          <a class="km-action km-action--cart" href="{{ url_for('cart') }}" aria-label="سبد خرید"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
+          {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}" aria-label="مدیریت سایت"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
+          {% if session.get('user_id') %}<a class="km-action km-action--logout" href="{{ url_for('logout') }}" aria-label="خروج"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>{% endif %}
         </div>
       </div>
       <nav class="km-nav"><div class="km-nav-inner"><a href="#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in categories[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>

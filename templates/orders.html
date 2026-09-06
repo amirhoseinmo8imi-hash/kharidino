@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}سفارش‌های من | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css') }}">{% endblock %}
 {% block content %}
 <section class="page-hero orders-page-hero"><div class="container"><span class="section-kicker"><i class="fa-solid fa-box-open"></i> حساب کاربری</span><h1>سفارش‌های من</h1><p>سفارش‌های ثبت‌شده و وضعیت آن‌ها را اینجا مشاهده کن.</p></div></section>
 <section class="section orders-section"><div class="container">

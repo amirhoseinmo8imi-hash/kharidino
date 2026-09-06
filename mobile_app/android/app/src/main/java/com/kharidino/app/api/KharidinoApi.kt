@@ -1,10 +1,11 @@
 package com.kharidino.app.api
 
+import com.kharidino.app.BuildConfig
 import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Path
 
-const val KHARIDINO_BASE_URL = "http://10.0.2.2:5000/"
+const val KHARIDINO_BASE_URL = BuildConfig.KHARIDINO_BASE_URL
 
 data class Product(
     val id: Int,

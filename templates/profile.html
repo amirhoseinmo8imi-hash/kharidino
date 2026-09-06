@@ -1,3 +1,59 @@
 {% extends "base.html" %}
 {% block title %}حساب کاربری | {{ site_name }}{% endblock %}
-{% block content %}<section class="page-hero"><div class="container"><span class="section-kicker">حساب</span><h1>{{ current_user.name }}</h1><p>{{ current_user.email }}</p></div></section>{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-profile-final.css') }}?v=2026-09-07-1">{% endblock %}
+{% block content %}
+<section class="kh-profile-page">
+  <div class="container kh-profile-wrap">
+    <div class="kh-profile-head">
+      <div class="kh-profile-title"><h1>حساب کاربری</h1><p>اطلاعات حساب، مشخصات شخصی و نشانی خودت را یکجا مدیریت کن.</p></div>
+      <a class="kh-profile-btn" href="{{ url_for('orders') }}"><i class="fa-solid fa-box"></i> سفارش‌های من</a>
+    </div>
+    <div class="kh-profile-grid">
+      <aside class="kh-profile-card kh-avatar-card">
+        {% if user_profile and user_profile.avatar %}<img class="kh-avatar" src="{{ url_for('static', filename=user_profile.avatar) }}" alt="عکس پروفایل">
+        {% else %}<div class="kh-avatar-fallback">{{ (current_user.name or 'ک')[:1]|upper }}</div>{% endif %}
+        <div class="kh-profile-name">{{ user_profile.display_name or current_user.name }}</div>
+        <div class="kh-profile-email">{{ current_user.email }}</div>
+        <form class="kh-upload" method="post" action="{{ url_for('update_avatar') }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="file" name="avatar" accept="image/png,image/jpeg,image/webp,image/gif" required>
+          <button class="kh-profile-btn primary" type="submit" style="width:100%;margin-top:10px"><i class="fa-solid fa-camera"></i> تغییر عکس</button>
+        </form>
+        {% if user_profile and user_profile.avatar %}<form class="kh-mini-actions" method="post" action="{{ url_for('remove_avatar') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="kh-profile-btn danger" type="submit">حذف عکس پروفایل</button></form>{% endif %}
+        <div class="kh-completion"><div class="kh-completion-row"><span>تکمیل پروفایل</span><span>{{ profile_completion_percent }}٪</span></div><div class="kh-progress"><span style="width:{{ profile_completion_percent }}%"></span></div></div>
+        <div class="kh-profile-note">برای امنیت، اطلاعات حساس مثل رمز عبور، شماره کارت و مدارک هویتی در این صفحه ذخیره نمی‌شوند.</div>
+      </aside>
+      <main>
+        <div class="kh-stats">
+          <a class="kh-stat" href="{{ url_for('orders') }}"><strong>—</strong><span>سفارش‌های من</span></a>
+          <a class="kh-stat" href="{{ url_for('favorites') }}"><strong>{{ favorite_ids|length }}</strong><span>علاقه‌مندی‌ها</span></a>
+          <a class="kh-stat" href="{{ url_for('compare') }}"><strong>{{ compare_count }}</strong><span>مقایسه‌ها</span></a>
+        </div>
+        <form class="kh-profile-card" method="post" action="{{ url_for('update_profile') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <h2 class="kh-section-title">اطلاعات شخصی</h2>
+          <div class="kh-form-grid">
+            <div class="kh-field"><label>نام</label><input name="first_name" value="{{ user_profile.first_name or '' }}" autocomplete="given-name"></div>
+            <div class="kh-field"><label>نام خانوادگی</label><input name="last_name" value="{{ user_profile.last_name or '' }}" autocomplete="family-name"></div>
+            <div class="kh-field"><label>نام نمایشی</label><input name="display_name" value="{{ user_profile.display_name or current_user.name or '' }}" maxlength="120"></div>
+            <div class="kh-field"><label>ایمیل</label><input value="{{ current_user.email }}" readonly dir="ltr"></div>
+            <div class="kh-field"><label>شماره موبایل</label><input name="phone" value="{{ user_profile.phone or '' }}" inputmode="tel" autocomplete="tel" placeholder="09xxxxxxxxx"></div>
+            <div class="kh-field"><label>تاریخ تولد</label><input name="birth_date" value="{{ user_profile.birth_date or '' }}" placeholder="مثلاً 1378/05/20"></div>
+            <div class="kh-field"><label>جنسیت</label><select name="gender"><option value="">انتخاب نشده</option><option value="مرد" {% if user_profile.gender == 'مرد' %}selected{% endif %}>مرد</option><option value="زن" {% if user_profile.gender == 'زن' %}selected{% endif %}>زن</option><option value="ترجیح می‌دهم نگویم" {% if user_profile.gender == 'ترجیح می‌دهم نگویم' %}selected{% endif %}>ترجیح می‌دهم نگویم</option></select></div>
+            <div class="kh-field"><label>استان</label><input name="province" value="{{ user_profile.province or '' }}" autocomplete="address-level1"></div>
+            <div class="kh-field"><label>شهر</label><input name="city" value="{{ user_profile.city or '' }}" autocomplete="address-level2"></div>
+            <div class="kh-field"><label>کد پستی</label><input name="postal_code" value="{{ user_profile.postal_code or '' }}" inputmode="numeric" autocomplete="postal-code"></div>
+            <div class="kh-field full"><label>آدرس کامل</label><textarea name="address" autocomplete="street-address" placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد...">{{ user_profile.address or '' }}</textarea></div>
+            <div class="kh-field full"><label>درباره من</label><textarea name="bio" maxlength="1000" placeholder="اگر دوست داشتی چند خط درباره خودت بنویس...">{{ user_profile.bio or '' }}</textarea></div>
+          </div>
+          <div class="kh-form-actions"><button class="kh-profile-btn primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> ذخیره تغییرات</button></div>
+        </form>
+        <div class="kh-profile-links">
+          <a class="kh-profile-link" href="{{ url_for('orders') }}"><i class="fa-solid fa-box-open"></i> سفارش‌های من</a>
+          <a class="kh-profile-link" href="{{ url_for('favorites') }}"><i class="fa-regular fa-heart"></i> علاقه‌مندی‌ها</a>
+          <a class="kh-profile-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i> لیست مقایسه</a>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+{% endblock %}

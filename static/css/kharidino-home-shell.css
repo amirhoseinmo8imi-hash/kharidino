@@ -1,74 +1,41 @@
 /* Kharidino home shell: keep the new marketplace header as the single source of navigation. */
 .km-home ~ * { display: none; }
-
-/* The legacy global navbar is still needed by inner pages, but must not stack above the new home header. */
 body:has(.km-home) > .navbar,
 body:has(.km-home) .navbar,
-body:has(.km-home) .mobile-bottom-nav {
-  display: none !important;
-}
-
+body:has(.km-home) .mobile-bottom-nav { display: none !important; }
 .km-header { align-items: center; }
-.km-user-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex: 0 0 auto;
-}
-.km-action {
-  position: relative;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 13px;
-  border: 1px solid #e6e8ed;
-  border-radius: 13px;
-  background: #fff;
-  color: #24262b;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
-.km-action:hover {
-  transform: translateY(-1px);
-  border-color: #d8dbe2;
-  box-shadow: 0 8px 22px rgba(20,24,35,.08);
-}
-.km-action i { font-size: 16px; }
-.km-action--cart i { color: #ef233c; }
-.km-action--admin i { color: #2463eb; }
-.km-action--logout i { color: #73757a; }
-.km-cart-badge {
-  position: absolute;
-  top: -7px;
-  right: -6px;
-  min-width: 19px;
-  height: 19px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: #ef233c;
-  color: #fff;
-  border: 2px solid #fff;
-  font-size: 10px;
-  line-height: 1;
-}
+.km-user-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex:0 0 auto; }
+.km-action { position:relative; min-height:44px; display:inline-flex; align-items:center; gap:8px; padding:0 13px; border:1px solid #e6e8ed; border-radius:13px; background:#fff; color:#24262b; text-decoration:none; font-size:12px; font-weight:700; white-space:nowrap; transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
+.km-action:hover { transform:translateY(-1px); border-color:#d8dbe2; box-shadow:0 8px 22px rgba(20,24,35,.08); }
+.km-action i { font-size:16px; }
+.km-action--cart i { color:#ef233c; }
+.km-action--admin i { color:#2463eb; }
+.km-action--logout i { color:#73757a; }
+.km-cart-badge { position:absolute; top:-7px; right:-6px; min-width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center; padding:0 5px; border-radius:999px; background:#ef233c; color:#fff; border:2px solid #fff; font-size:10px; line-height:1; }
+@media (max-width:900px){.km-action span{display:none}.km-action{width:42px;justify-content:center;padding:0}}
+@media (max-width:640px){.km-header{gap:8px}.km-logo{flex:0 0 auto}.km-search{order:3;flex:1 0 100%;width:100%}.km-user-actions{gap:5px}.km-action{min-height:40px;width:40px}}
 
-@media (max-width: 900px) {
-  .km-action span { display: none; }
-  .km-action { width: 42px; justify-content: center; padding: 0; }
-}
-
-@media (max-width: 640px) {
-  .km-header { gap: 8px; }
-  .km-logo { flex: 0 0 auto; }
-  .km-search { order: 3; flex: 1 0 100%; width: 100%; }
-  .km-user-actions { gap: 5px; }
-  .km-action { min-height: 40px; width: 40px; }
-}
+/* =========================================================
+   KHARIDINO PREMIUM FOOTER
+   ========================================================= */
+body:has(.km-home) .footer { display:block !important; position:relative; margin-top:34px; background:#fff; color:#252a34; border-top:1px solid #e8ebf0; box-shadow:0 -12px 40px rgba(20,28,45,.05); overflow:hidden; }
+body:has(.km-home) .footer::before { content:"خریدینو؛ انتخاب هوشمند، مقایسه شفاف، خرید مطمئن"; display:block; padding:28px 22px 20px; text-align:center; font-size:20px; font-weight:900; color:#1f2430; background:linear-gradient(180deg,#fff 0%,#fbfcfe 100%); }
+body:has(.km-home) .footer::after { content:"ما در خریدینو تلاش می‌کنیم قبل از اینکه خرید کنی، بهترین قیمت و بهترین انتخاب را جلوی چشمت بگذاریم؛ قیمت‌ها را بین فروشگاه‌ها مقایسه کن، تفاوت‌ها را ببین و با آگاهی تصمیم بگیر. خریدینو برای خرید بهتر ساخته شده است، نه فقط خرید بیشتر."; display:block; max-width:900px; margin:-10px auto 0; padding:0 24px 24px; text-align:center; color:#69707d; font-size:13px; line-height:2.1; }
+body:has(.km-home) .footer .container { width:min(1220px,calc(100% - 32px)); margin:0 auto; }
+body:has(.km-home) .footer-grid { display:grid; grid-template-columns:minmax(300px,1.55fr) repeat(3,minmax(150px,1fr)); gap:34px; padding:30px 0 34px; border-top:1px solid #eef0f3; }
+body:has(.km-home) .footer-brand { padding-left:22px; }
+body:has(.km-home) .footer-brand .brand { display:inline-flex; align-items:center; gap:11px; color:#ef233c; text-decoration:none; font-weight:950; font-size:24px; }
+body:has(.km-home) .footer-brand .brand-icon { width:48px; height:48px; border-radius:15px; display:inline-flex; align-items:center; justify-content:center; color:#fff; background:linear-gradient(135deg,#ef233c,#c91631); box-shadow:0 10px 24px rgba(239,35,60,.18); }
+body:has(.km-home) .footer-brand p { max-width:430px; margin:16px 0 0; color:#626a77; font-size:13px; line-height:2.15; }
+body:has(.km-home) .footer-brand p::after { content:"\A\Aمقایسه قیمت از چند فروشگاه، نمایش ارزان‌ترین پیشنهاد و کمک به انتخاب آگاهانه؛ این همان کاری است که خریدینو هر روز برایت انجام می‌دهد."; white-space:pre-line; color:#7a828e; }
+body:has(.km-home) .footer-links { display:flex; flex-direction:column; align-items:flex-start; gap:11px; }
+body:has(.km-home) .footer-links h4 { position:relative; margin:2px 0 8px; padding-bottom:9px; color:#202530; font-size:15px; font-weight:900; }
+body:has(.km-home) .footer-links h4::after { content:""; position:absolute; right:0; bottom:0; width:32px; height:3px; border-radius:99px; background:#ef233c; }
+body:has(.km-home) .footer-links a { color:#68717e; text-decoration:none; font-size:12px; line-height:1.8; transition:color .18s ease,transform .18s ease; }
+body:has(.km-home) .footer-links a:hover { color:#ef233c; transform:translateX(-3px); }
+body:has(.km-home) .footer-links:nth-child(2) h4::before { content:"🛒  "; }
+body:has(.km-home) .footer-links:nth-child(3) h4::before { content:"👤  "; }
+body:has(.km-home) .footer-links:nth-child(4) h4::before { content:"💬  "; }
+body:has(.km-home) .footer-bottom { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0 22px; border-top:1px solid #eef0f3; color:#8a919c; font-size:11px; }
+@media (max-width:850px){body:has(.km-home) .footer-grid{grid-template-columns:1fr 1fr;gap:28px 22px}body:has(.km-home) .footer-brand{grid-column:1/-1;padding-left:0}body:has(.km-home) .footer-brand p{max-width:720px}}
+@media (max-width:560px){body:has(.km-home) .footer::before{padding:24px 18px 16px;font-size:17px}body:has(.km-home) .footer::after{padding:0 18px 20px;font-size:12px}body:has(.km-home) .footer .container{width:min(100% - 24px,1220px)}body:has(.km-home) .footer-grid{grid-template-columns:1fr 1fr;padding:24px 0 28px;gap:24px 16px}body:has(.km-home) .footer-links a{font-size:11px}body:has(.km-home) .footer-bottom{flex-direction:column;align-items:flex-start}}

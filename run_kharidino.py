@@ -1,9 +1,12 @@
 """Production-safe launcher for Kharidino Ultimate."""
+import io
 import os
 import socket
 
 from flask import redirect, request, render_template
+from PIL import Image, UnidentifiedImageError
 
+import app as kharidino_app
 from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
@@ -60,6 +63,47 @@ def splash_gate():
     return None
 
 
+@app.after_request
+def security_headers(response):
+    """Apply safe browser defaults without breaking the existing frontend."""
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
+    if request.is_secure:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
+
+
+def _secure_save_upload(file, folder, allowed_extensions):
+    """Validate image bytes before delegating to the original uploader."""
+    if not file or not getattr(file, "filename", ""):
+        return kharidino_app.save_upload(file, folder, allowed_extensions)
+
+    extension = kharidino_app.get_extension(file.filename)
+    if extension in kharidino_app.ALLOWED_IMAGES:
+        try:
+            position = file.stream.tell()
+            payload = file.stream.read()
+            file.stream.seek(position)
+            with Image.open(io.BytesIO(payload)) as image:
+                image.verify()
+        except (UnidentifiedImageError, OSError, ValueError):
+            raise ValueError("محتوای فایل تصویر معتبر نیست.")
+        finally:
+            try:
+                file.stream.seek(0)
+            except (AttributeError, OSError):
+                pass
+
+    return _ORIGINAL_SAVE_UPLOAD(file, folder, allowed_extensions)
+
+
+_ORIGINAL_SAVE_UPLOAD = kharidino_app.save_upload
+kharidino_app.save_upload = _secure_save_upload
+
+
 def validate_runtime_config():
     """Fail fast when the production runtime is missing required secrets."""
     secret = os.environ.get("SECRET_KEY", "").strip()
@@ -72,6 +116,11 @@ def validate_runtime_config():
         app.logger.warning("Using development SECRET_KEY configuration; do not use this in production.")
     if len(secret) < 32 and not debug:
         raise RuntimeError("SECRET_KEY must contain at least 32 characters in production.")
+
+    if not debug and os.environ.get("KHARIDINO_ADMIN_PASSWORD", "").strip() in {"", "admin12345"}:
+        app.logger.warning(
+            "KHARIDINO_ADMIN_PASSWORD is not configured. Do not rely on a default administrator password."
+        )
 
 
 if __name__ == "__main__":

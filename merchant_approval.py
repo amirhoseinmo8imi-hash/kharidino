@@ -1,4 +1,6 @@
 """Dedicated admin workspace for approving and managing seller applications."""
+import re
+
 from flask import abort, flash, redirect, render_template, url_for, request
 
 from app import app, db, admin_required
@@ -75,15 +77,14 @@ def admin_merchant_request_pending(account_id: int):
 
 @app.after_request
 def inject_seller_approval_into_admin_sidebar(response):
-    """Add seller approval as a real item inside the main admin sidebar."""
+    """Add seller approval to the actual admin sidebar, not the first nav on the page."""
     if request.path.rstrip("/") != "/admin" or not response.content_type or "text/html" not in response.content_type:
         return response
 
     try:
         body = response.get_data(as_text=True)
-        marker = "</nav>"
         entry_id = "kharidino-seller-approval-nav-entry"
-        if marker not in body or entry_id in body:
+        if entry_id in body:
             return response
 
         pending_count = MerchantStore.query.filter_by(status="pending").count()
@@ -92,19 +93,31 @@ def inject_seller_approval_into_admin_sidebar(response):
             if pending_count
             else ""
         )
-        entry = """
-<a id="kharidino-seller-approval-nav-entry" href="/admin/merchant-requests" class="kharidino-seller-approval-nav" aria-label="تأیید فروشندگان">
+        entry = f"""
+<a id="{entry_id}" href="/admin/merchant-requests" class="kharidino-seller-approval-nav" aria-label="تأیید فروشندگان">
     <i class="fa-solid fa-user-check"></i>
     <span>تأیید فروشندگان</span>
     {badge}
 </a>
 <style>
-.kharidino-seller-approval-nav{position:relative}
-.kharidino-seller-approval-nav .ksa-nav-badge{margin-right:auto;min-width:24px;height:24px;padding:0 7px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:#ef4444;color:#fff;font-size:11px;font-weight:800;line-height:1}
-.kharidino-seller-approval-nav:hover{transform:translateX(-2px)}
+.kharidino-seller-approval-nav{{position:relative}}
+.kharidino-seller-approval-nav .ksa-nav-badge{{margin-right:auto;min-width:24px;height:24px;padding:0 7px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:#ef4444;color:#fff;font-size:11px;font-weight:800;line-height:1}}
+.kharidino-seller-approval-nav:hover{{transform:translateX(-2px)}}
 </style>
-""".format(badge=badge)
-        response.set_data(body.replace(marker, entry + marker, 1))
+"""
+
+        nav_pattern = re.compile(
+            r'(<nav\b[^>]*\bclass=["\'][^"\']*\badmin-nav\b[^"\']*["\'][^>]*>)(.*?)(</nav>)',
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        match = nav_pattern.search(body)
+        if not match:
+            return response
+
+        replacement = f"{match.group(1)}{match.group(2)}{entry}{match.group(3)}"
+        new_body = body[:match.start()] + replacement + body[match.end():]
+        response.set_data(new_body)
         return response
     except Exception:
         return response

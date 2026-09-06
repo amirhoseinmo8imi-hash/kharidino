@@ -20,6 +20,7 @@ from commerce_catalog import apply_catalog_extensions
 import commerce_runtime  # noqa: F401
 import profile_extensions  # noqa: F401 - registers customer profile model/routes
 import merchant_marketplace  # noqa: F401 - registers seller/store workspace and models
+import merchant_marketplace_v2  # noqa: F401 - registers suborders, finance and seller analytics
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)

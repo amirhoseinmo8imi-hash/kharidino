@@ -114,7 +114,7 @@ def seller_register():
 
 
 @app.route("/seller")
-seller_required
+@seller_required
 def seller_dashboard():
     account = _seller_account()
     products = _seller_products(account.store_id)
@@ -133,7 +133,7 @@ def seller_dashboard():
 
 
 @app.post("/seller/store/save")
-seller_required
+@seller_required
 def seller_store_save():
     account = _seller_account(); store = account.store
     name = _store_name(request.form.get("name", "")); website = request.form.get("website", "").strip()
@@ -156,7 +156,7 @@ def seller_store_save():
 
 
 @app.post("/seller/product/save")
-seller_required
+@seller_required
 def seller_product_save():
     account = _seller_account()
     pid = request.form.get("id", "").strip(); name = request.form.get("name", "").strip()
@@ -196,7 +196,7 @@ def seller_product_save():
 
 
 @app.post("/seller/product/delete/<int:product_id>")
-seller_required
+@seller_required
 def seller_product_delete(product_id):
     account = _seller_account(); product = _owned_product(account.store_id, product_id)
     if Offer.query.filter(Offer.product_id == product.id, Offer.store_id != account.store_id).count():
@@ -211,7 +211,7 @@ def seller_product_delete(product_id):
 
 
 @app.post("/seller/offer/toggle/<int:product_id>")
-seller_required
+@seller_required
 def seller_offer_toggle(product_id):
     account = _seller_account(); product = _owned_product(account.store_id, product_id)
     offer = Offer.query.filter_by(product_id=product.id, store_id=account.store_id).first()

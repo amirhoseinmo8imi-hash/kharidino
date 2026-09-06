@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import time
 
-from flask import abort, redirect, render_template, request, session, url_for
+from flask import abort, flash, redirect, render_template, request, session, url_for
 
 _TABLE = "kharidino_product_inventory"
 
@@ -24,6 +24,32 @@ def _ensure_table(app) -> None:
         connection.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{_TABLE}_managed ON {_TABLE}(managed)"))
 
 
+def _inventory_row(product_id):
+    from sqlalchemy import text
+    from app import db
+    return db.session.execute(
+        text(f"SELECT quantity, managed FROM {_TABLE} WHERE product_id = :product_id"),
+        {"product_id": int(product_id)},
+    ).mappings().first()
+
+
+def inventory_info(product_id):
+    """Return managed inventory data, or None for legacy/unmanaged products."""
+    try:
+        row = _inventory_row(product_id)
+    except Exception:
+        return None
+    if not row or not bool(row["managed"]):
+        return None
+    quantity = max(0, int(row["quantity"]))
+    return {"managed": True, "quantity": quantity, "in_stock": quantity > 0}
+
+
+def _available_quantity(product_id):
+    info = inventory_info(product_id)
+    return None if info is None else info["quantity"]
+
+
 def _cart() -> list[tuple[int, int]]:
     raw_cart = session.get("cart", {})
     if not isinstance(raw_cart, dict):
@@ -38,6 +64,57 @@ def _cart() -> list[tuple[int, int]]:
             abort(400, description="تعداد کالا نامعتبر است.")
         result.append((product_id, quantity))
     return result
+
+
+def _validate_cart_quantities(product_id=None, requested_quantity=None):
+    """Validate cart/add quantities against managed inventory before app routes run."""
+    checks = []
+    if product_id is not None:
+        checks.append((int(product_id), int(requested_quantity)))
+    else:
+        for raw_key, raw_value in request.form.items():
+            if not raw_key.startswith("qty_"):
+                continue
+            try:
+                pid, quantity = int(raw_key[4:]), int(raw_value)
+            except (TypeError, ValueError):
+                continue
+            if quantity > 0:
+                checks.append((pid, quantity))
+
+    for pid, quantity in checks:
+        available = _available_quantity(pid)
+        if available is not None and quantity > available:
+            return False, pid, available
+    return True, None, None
+
+
+def _sync_cart_to_inventory():
+    """Keep the session cart within currently managed stock without trusting the client."""
+    raw = session.get("cart", {})
+    if not isinstance(raw, dict):
+        return
+    changed = False
+    clean = {}
+    for raw_pid, raw_qty in raw.items():
+        try:
+            pid, qty = int(raw_pid), int(raw_qty)
+        except (TypeError, ValueError):
+            changed = True
+            continue
+        qty = max(0, min(99, qty))
+        available = _available_quantity(pid)
+        if available is not None:
+            qty = min(qty, available)
+        if qty > 0:
+            clean[str(pid)] = qty
+        if str(pid) != str(raw_pid) or qty != int(raw_qty):
+            changed = True
+    if clean != raw:
+        changed = True
+    if changed:
+        session["cart"] = clean
+        session.modified = True
 
 
 def _reserve_managed_stock() -> None:
@@ -98,8 +175,10 @@ def _admin_set_inventory():
             """),
             {"product_id": product_id, "quantity": quantity, "updated_at": time.time()},
         )
-        if quantity == 0:
-            db.session.execute(text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"), {"product_id": product_id})
+        db.session.execute(
+            text("UPDATE offer SET in_stock = :in_stock WHERE product_id = :product_id AND :in_stock = 0"),
+            {"product_id": product_id, "in_stock": 0 if quantity == 0 else 1},
+        )
         db.session.commit()
         return redirect(url_for("admin_inventory"))
     return _handler()
@@ -129,8 +208,25 @@ def apply_inventory_security(app) -> None:
             raise
         return
 
+    app.jinja_env.globals["inventory_info"] = inventory_info
+
     @app.before_request
     def _inventory_before_request():
+        if request.endpoint == "cart_add" and request.method == "POST":
+            try:
+                ok, pid, available = _validate_cart_quantities(request.view_args.get("product_id"), int(session.get("cart", {}).get(str(request.view_args.get("product_id")), 0)) + 1)
+            except (TypeError, ValueError):
+                abort(400, description="تعداد کالا نامعتبر است.")
+            if not ok:
+                flash(f"موجودی این کالا فقط {available} عدد است.", "warning")
+                return redirect(request.referrer or url_for("product_detail", product_id=pid))
+        elif request.endpoint == "cart_update" and request.method == "POST":
+            ok, pid, available = _validate_cart_quantities()
+            if not ok:
+                flash(f"موجودی کالا برای این تعداد کافی نیست؛ حداکثر {available} عدد قابل انتخاب است.", "warning")
+                return redirect(url_for("cart"))
+        elif request.endpoint == "cart":
+            _sync_cart_to_inventory()
         _reserve_managed_stock()
 
     if not any(rule.rule == "/admin/inventory" for rule in app.url_map.iter_rules()):

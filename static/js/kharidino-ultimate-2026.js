@@ -6,11 +6,7 @@
   const candidateCache = new Map();
 
   function slug(value) {
-    return String(value || '')
-      .normalize('NFKC')
-      .trim()
-      .replace(/[^\p{L}\p{N}]+/gu, '-')
-      .replace(/^-+|-+$/g, '');
+    return String(value || '').normalize('NFKC').trim().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
   }
 
   function productIdFromHref(href) {
@@ -24,9 +20,7 @@
     if (candidateCache.has(key)) return candidateCache.get(key);
     const folder = `${id}_${slug(name)}`;
     const urls = [];
-    for (let n = 1; n <= 15; n++) {
-      urls.push(`${ROOT}${encodeURIComponent(folder)}/candidate_${String(n).padStart(2, '0')}.jpg`);
-    }
+    for (let n = 1; n <= 15; n++) urls.push(`${ROOT}${encodeURIComponent(folder)}/candidate_${String(n).padStart(2, '0')}.jpg`);
     candidateCache.set(key, urls);
     return urls;
   }
@@ -46,17 +40,19 @@
     });
   }
 
-  function getCardMeta(card) {
-    const link = card.querySelector('a[href*="/product/"]');
+  function getCardMeta(card, box) {
+    const scope = box && box.closest('.ki-slide') ? box.closest('.ki-slide') : (card || box);
+    const link = scope?.querySelector('a[href*="/product/"]');
     const href = link ? link.getAttribute('href') : '';
     const id = productIdFromHref(href);
-    const title = card.querySelector('h1,h2,h3,.item-main strong');
-    const name = title ? title.textContent.trim() : (card.querySelector('img[alt]')?.alt || '');
+    const title = scope?.querySelector('h1,h2,h3,.item-main strong');
+    const name = title ? title.textContent.trim() : (box?.querySelector('img[alt]')?.alt || '');
     return { id, name };
   }
 
   async function enhanceImageBox(box, id, name) {
-    if (!box || !id || !name) return;
+    if (!box || !id || !name || box.dataset.kduImageDone === '1') return;
+    box.dataset.kduImageDone = '1';
     const current = box.querySelector('img');
     if (current) {
       current.addEventListener('error', async function () {
@@ -67,11 +63,9 @@
       }, { once: true });
       return;
     }
-
     const icon = box.querySelector('i');
     const fallback = await probeFirst(candidateUrls(id, name));
     if (!fallback) return;
-
     if (icon) icon.remove();
     const img = document.createElement('img');
     img.src = fallback;
@@ -84,15 +78,10 @@
   }
 
   function enhanceStorefrontImages() {
-    const selectors = [
-      '.km-product-img',
-      '.ki-slide-product',
-      '.storefront-product-image',
-      '.kc-image'
-    ];
+    const selectors = ['.km-product-img', '.ki-slide-product', '.storefront-product-image', '.kc-image'];
     document.querySelectorAll(selectors.join(',')).forEach((box) => {
-      const card = box.closest('.km-product,.ki-slide-product,article.storefront-product-card,.kc-card');
-      const meta = getCardMeta(card || box);
+      const card = box.closest('.km-product,article.storefront-product-card,.kc-card');
+      const meta = getCardMeta(card, box);
       if (meta.id && meta.name) enhanceImageBox(box, meta.id, meta.name);
     });
   }
@@ -124,7 +113,7 @@
       const store = card.querySelector('.kd-store-details strong')?.textContent.trim() || 'فروشگاه';
       const amount = card.querySelector('.kd-offer-price strong')?.textContent.trim() || '—';
       const status = card.classList.contains('available') ? 'موجود' : 'ناموجود';
-      return `<div class="kdu-offer-mini"><span>${store}</span><strong>${amount} تومان</strong><em>${status}</em></div>`;
+      return `<div class="kdu-offer-mini"><span>${escapeHtml(store)}</span><strong>${escapeHtml(amount)} تومان</strong><em>${status}</em></div>`;
     }).join('');
 
     const panel = document.createElement('section');
@@ -155,7 +144,12 @@
       </div>
       <div class="kdu-pane" data-pane="reviews">
         <div class="kdu-review-head"><div><span class="kdu-kicker">بازخورد مشتری</span><h2>امتیاز محصول</h2></div><div class="kdu-rating-big"><strong>${escapeHtml(rating)}</strong><span>از ۵</span></div></div>
-        <div class="kdu-review-empty"><i class="fa-regular fa-star"></i><strong>نظرها در حال تکمیل هستند</strong><span>فرم ثبت نظر موجود است؛ پس از ثبت نظر، امتیاز و متن آن در همین بخش قابل مشاهده خواهد بود.</span><a href="#product-review-form">ثبت نظر</a></div>
+        <div class="kdu-review-empty"><i class="fa-regular fa-star"></i><strong>نظر خودت را ثبت کن</strong><span>امتیاز و متن نظر از همین صفحه ثبت می‌شود و بعد از ارسال در سیستم خریدینو ذخیره خواهد شد.</span></div>
+        <form class="kdu-review-form" method="post" action="${escapeHtml(window.location.pathname)}">
+          <label>امتیاز <select name="rating"><option value="5">۵ - عالی</option><option value="4">۴ - خوب</option><option value="3">۳ - متوسط</option><option value="2">۲ - ضعیف</option><option value="1">۱ - خیلی ضعیف</option></select></label>
+          <label class="kdu-review-text">متن نظر <textarea name="text" rows="4" required placeholder="تجربه‌ات از این محصول را بنویس..."></textarea></label>
+          <button type="submit"><i class="fa-solid fa-paper-plane"></i> ثبت نظر</button>
+        </form>
       </div>
       <div class="kdu-pane" data-pane="offers">
         <div class="kdu-offer-mini-list">${offerRows || '<div class="kdu-review-empty"><i class="fa-solid fa-store-slash"></i><strong>هنوز پیشنهاد فروشگاهی ثبت نشده</strong></div>'}</div>
@@ -181,8 +175,7 @@
   }
 
   function enhanceAdminWorkspace() {
-    const admin = document.querySelector('.kh-admin-page');
-    if (!admin) return;
+    if (!document.querySelector('.kh-admin-page')) return;
     document.querySelectorAll('.admin-section').forEach((section) => {
       if (section.dataset.kduEnhanced) return;
       const list = section.querySelector('.admin-list');

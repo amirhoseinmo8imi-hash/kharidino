@@ -1,6 +1,8 @@
 """Recommended launcher for Kharidino Ultimate."""
 import os
 import socket
+from pathlib import Path
+from zipfile import ZipFile
 
 from flask import redirect, request, render_template, url_for
 
@@ -9,6 +11,57 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+BASE_DIR = Path(__file__).resolve().parent
+PRODUCTS_DIR = BASE_DIR / "static" / "uploads" / "products"
+PRODUCTS_ARCHIVE = PRODUCTS_DIR / "products.zip"
+
+
+def _install_bundled_product_images():
+    """Extract products.zip placed inside static/uploads/products safely.
+
+    The archive supplied with Kharidino has a top-level `products/` folder;
+    its contents are merged into the real product upload directory.
+    Existing files are left intact, so the operation is safe to repeat.
+    """
+    if not PRODUCTS_ARCHIVE.is_file():
+        return
+
+    PRODUCTS_DIR.mkdir(parents=True, exist_ok=True)
+    root = PRODUCTS_DIR.resolve()
+    extracted = 0
+
+    try:
+        with ZipFile(PRODUCTS_ARCHIVE) as archive:
+            for info in archive.infolist():
+                name = info.filename.replace("\\", "/").lstrip("/")
+                parts = [part for part in name.split("/") if part not in {"", "."}]
+                if parts and parts[0].lower() == "products":
+                    parts = parts[1:]
+                if not parts:
+                    continue
+
+                target = (PRODUCTS_DIR / Path(*parts)).resolve()
+                if root != target and root not in target.parents:
+                    continue
+
+                if info.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+                    continue
+
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not target.exists():
+                    with archive.open(info) as src, target.open("wb") as dst:
+                        dst.write(src.read())
+                    extracted += 1
+
+        if extracted:
+            print(f"[Kharidino] Installed {extracted} bundled product image files.")
+    except Exception as exc:
+        print(f"[Kharidino] Product image archive was not installed: {exc}")
+
+
+_install_bundled_product_images()
 
 from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai

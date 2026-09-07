@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inner-final.css', v='2026-09-07-2') }}">
   {% block extra_css %}{% endblock %}
   {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-07-3') }}">{% endif %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-mega-menu.css', v='2026-09-07-1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-mega-menu.css', v='2026-09-07-2') }}">
 </head>
 <body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
@@ -37,7 +37,7 @@
   <nav class="km-nav"><div class="km-nav-inner"><a class="km-cat-menu" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in (categories|default([]))[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>
 </header>
 {% endif %}
-{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}{% endwith %}
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}{% endif %}{% endwith %}
 <main class="kg-main">{% block content %}{% endblock %}</main>
 <footer class="footer kh-footer"><div class="container"><div class="kh-footer-top"><div class="kh-footer-brand"><a href="{{ url_for('home') }}" class="kh-footer-logo"><span class="kh-footer-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a><h3>خریدینو؛ انتخاب هوشمند، مقایسه شفاف، خرید مطمئن</h3><p>{{ setting('footer_text','قیمت‌ها را مقایسه کن، فروشگاه‌ها را بشناس و با آگاهی بیشتر خرید کن.') }}</p><div class="kh-footer-badges"><span><i class="fa-solid fa-scale-balanced"></i> مقایسه قیمت</span><span><i class="fa-solid fa-store"></i> فروشگاه‌های متنوع</span><span><i class="fa-solid fa-shield-heart"></i> انتخاب مطمئن</span></div></div><div class="kh-footer-links"><h4>دسترسی سریع</h4><a href="{{ url_for('home') }}">خانه</a><a href="{{ url_for('stores') }}">فروشگاه‌ها</a><a href="{{ url_for('features') }}">امکانات خریدینو</a><a href="{{ url_for('compare') }}">مقایسه محصولات</a><a href="{{ url_for('about') }}">درباره ما</a></div><div class="kh-footer-links"><h4>حساب کاربری</h4>{% if current_user %}<a href="{{ url_for('profile') }}">پروفایل من</a><a href="{{ url_for('my_orders') }}">سفارش‌های من</a>{% else %}<a href="{{ url_for('login') }}">ورود به حساب</a><a href="{{ url_for('register') }}">ثبت‌نام</a>{% endif %}<a href="{{ url_for('cart') }}">سبد خرید</a></div><div class="kh-footer-links"><h4>پشتیبانی و راهنما</h4><a href="{{ url_for('contact') }}">تماس با ما</a><a href="{{ url_for('about') }}">درباره خریدینو</a><a href="{{ url_for('features') }}">راهنمای امکانات</a><div class="kh-footer-support"><i class="fa-solid fa-headset"></i><span>پشتیبانی خریدینو<br><small>همراه شما در مسیر انتخاب</small></span></div></div></div><div class="kh-footer-stats"><div><strong>۸+</strong><span>فروشگاه</span></div><div><strong>{{ (categories|default([]))|length }}+</strong><span>دسته‌بندی</span></div><div><strong>۳۵۰+</strong><span>پیشنهاد قیمت</span></div><div><strong>۲۴/۷</strong><span>دسترسی آنلاین</span></div></div><div class="footer-bottom kh-footer-bottom"><span>© {{ site_name }} — تمامی حقوق محفوظ است.</span><span>{{ setting('footer_copyright','خریدینو؛ برای یک انتخاب بهتر.') }}</span></div></div></footer>
 </div>
@@ -77,6 +77,6 @@
 })();
 </script>
 <script src="{{ url_for('static', filename='js/inventory-ui.js', v='2026-09-06-1') }}" defer></script>
-<script src="{{ url_for('static', filename='js/kharidino-mega-menu.js', v='2026-09-07-1') }}" defer></script>
+<script src="{{ url_for('static', filename='js/kharidino-mega-menu.js', v='2026-09-07-2') }}" defer></script>
 </body>
 </html>

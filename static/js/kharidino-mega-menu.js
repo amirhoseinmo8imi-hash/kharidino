@@ -9,10 +9,23 @@
       var href = cat.href || '#categories';
       var name = escapeText(cat.name);
       var icon = escapeText(cat.icon || 'fa-box');
-      return '<a class="km-category-mega-link" href="'+href+'">'
+      return '<a class="km-category-mega-link" role="menuitem" href="'+href+'">'
         + '<span class="km-category-mega-icon"><i class="fa-solid '+icon+'"></i></span>'
         + '<span>'+name+'</span></a>';
     }).join('');
+  }
+
+  function positionMenu(wrapper){
+    var trigger=wrapper.querySelector('.km-cat-menu-trigger');
+    if(!trigger) return;
+    var r=trigger.getBoundingClientRect();
+    var panelWidth=Math.min(900,window.innerWidth-32);
+    var right=Math.max(16,window.innerWidth-r.right);
+    if(window.innerWidth<=430) right=10;
+    if(window.innerWidth<=720) panelWidth=window.innerWidth-(right*2);
+    wrapper.style.setProperty('--km-mega-top',Math.max(8,r.bottom+2)+'px');
+    wrapper.style.setProperty('--km-mega-right',right+'px');
+    wrapper.style.setProperty('--km-mega-width',Math.max(0,panelWidth)+'px');
   }
 
   function buildMenu(wrapper, categories){
@@ -23,39 +36,52 @@
     if(trigger){
       trigger.setAttribute('aria-haspopup','true');
       trigger.setAttribute('aria-expanded','false');
+      trigger.setAttribute('role','button');
       trigger.addEventListener('click',function(event){
         if(window.matchMedia('(max-width: 720px)').matches){
           event.preventDefault();
+          positionMenu(wrapper);
           var open = wrapper.classList.toggle('is-open');
           trigger.setAttribute('aria-expanded',open?'true':'false');
         }
       });
+      trigger.addEventListener('keydown',function(event){
+        if(event.key==='Enter' || event.key===' '){
+          event.preventDefault();
+          positionMenu(wrapper);
+          var open=wrapper.classList.toggle('is-open');
+          trigger.setAttribute('aria-expanded',open?'true':'false');
+        }
+        if(event.key==='Escape'){
+          wrapper.classList.remove('is-open');
+          trigger.setAttribute('aria-expanded','false');
+          trigger.blur();
+        }
+      });
     }
-    wrapper.addEventListener('mouseenter',function(){ if(trigger) trigger.setAttribute('aria-expanded','true'); });
+    wrapper.addEventListener('mouseenter',function(){ positionMenu(wrapper); if(trigger) trigger.setAttribute('aria-expanded','true'); });
     wrapper.addEventListener('mouseleave',function(){ if(trigger) trigger.setAttribute('aria-expanded','false'); });
     wrapper.addEventListener('focusout',function(){
       setTimeout(function(){ if(!wrapper.contains(document.activeElement) && trigger) trigger.setAttribute('aria-expanded','false'); },0);
     });
   }
 
+  function readCategoriesFromDocument(doc){
+    return Array.prototype.slice.call(doc.querySelectorAll('.km-categories .km-cat')).map(function(el){
+      var a=el.closest('a') || el;
+      var icon=el.querySelector('.km-cat-icon i');
+      return {href:a.getAttribute('href'),name:(el.querySelector('strong')||{}).textContent||'',icon:icon ? icon.className.replace(/^fa-solid\s+/,'') : 'fa-box'};
+    });
+  }
+
   function getHomeCategories(){
-    var local = Array.prototype.slice.call(document.querySelectorAll('.km-home .km-categories .km-cat'));
-    if(local.length){
-      return Promise.resolve(local.map(function(el){
-        var a=el.closest('a') || el;
-        var icon=el.querySelector('.km-cat-icon i');
-        return {href:a.getAttribute('href'),name:(el.querySelector('strong')||{}).textContent||'',icon:icon ? icon.className.replace('fa-solid ','') : 'fa-box'};
-      }));
-    }
+    var local = readCategoriesFromDocument(document);
+    if(local.length) return Promise.resolve(local);
     return fetch('/',{credentials:'same-origin',headers:{'X-Kharidino-Category-Menu':'1'}})
       .then(function(r){return r.ok?r.text():'';})
       .then(function(html){
-        var doc=new DOMParser().parseFromString(html,'text/html');
-        return Array.prototype.slice.call(doc.querySelectorAll('.km-categories .km-cat')).map(function(el){
-          var a=el.closest('a') || el;
-          var icon=el.querySelector('.km-cat-icon i');
-          return {href:a.getAttribute('href'),name:(el.querySelector('strong')||{}).textContent||'',icon:icon ? icon.className.replace('fa-solid ','') : 'fa-box'};
-        });
+        if(!html) return [];
+        return readCategoriesFromDocument(new DOMParser().parseFromString(html,'text/html'));
       }).catch(function(){return [];});
   }
 
@@ -77,22 +103,19 @@
       panel.innerHTML='<div class="km-category-mega-empty">در حال بارگذاری دسته‌بندی‌ها…</div>';
       wrapper.appendChild(trigger); wrapper.appendChild(panel);
       link.replaceWith(wrapper);
-      getHomeCategories().then(function(categories){buildMenu(wrapper,categories);});
+      positionMenu(wrapper);
+      getHomeCategories().then(function(categories){buildMenu(wrapper,categories);positionMenu(wrapper);});
       document.addEventListener('click',function(event){
         if(!wrapper.contains(event.target)){wrapper.classList.remove('is-open');trigger.setAttribute('aria-expanded','false');}
       });
     });
+    window.addEventListener('resize',function(){document.querySelectorAll('.km-cat-menu-wrap').forEach(positionMenu);},{passive:true});
+    window.addEventListener('scroll',function(){document.querySelectorAll('.km-cat-menu-wrap').forEach(function(w){
+      if(w.matches(':hover') || w.classList.contains('is-open')) positionMenu(w);
+    });},{passive:true});
     document.querySelectorAll('.km-topbar').forEach(function(topbar){
       topbar.addEventListener('scroll',function(){document.querySelectorAll('.km-cat-menu-wrap.is-open').forEach(function(w){w.classList.remove('is-open');});},{passive:true});
     });
-    function setMegaTop(){
-      document.querySelectorAll('.km-cat-menu-wrap').forEach(function(w){
-        var r=w.getBoundingClientRect();
-        w.style.setProperty('--km-mega-top',Math.max(10,r.bottom+2)+'px');
-      });
-    }
-    window.addEventListener('resize',setMegaTop,{passive:true});
-    setMegaTop();
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();

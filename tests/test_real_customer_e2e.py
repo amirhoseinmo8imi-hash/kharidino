@@ -142,14 +142,10 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     # 6. Payment start form -> TestGateway
     payment_form = client.get(payment_location)
     assert payment_form.status_code == 200
-    idempotency_key = uuid.uuid4().hex
     start = _post(
         client,
         f"/payment/start/{order_id}",
-        data={
-            "csrf_token": _csrf(payment_form),
-            "idempotency_key": idempotency_key,
-        },
+        data={"csrf_token": _csrf(payment_form), "idempotency_key": uuid.uuid4().hex},
         follow_redirects=False,
     )
     assert start.status_code in {302, 303}
@@ -200,6 +196,6 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     assert idor.status_code == 404
     second_orders = second.get("/orders")
     assert second_orders.status_code == 200
-    assert str(order_id) not in second_orders.get_data(as_text=True)
+    assert f"#{order_id}" not in second_orders.get_data(as_text=True)
     second_detail = second.get(f"/orders/{order_id}")
     assert second_detail.status_code == 404

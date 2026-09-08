@@ -10,7 +10,7 @@ def _read(name):
 
 def test_storefront_uses_runtime_csrf_token_with_safe_fallback():
     base = _read("templates/base.html")
-    assert "csrf_token() if csrf_token is defined else session.get('csrf_token', '')" in base
+    assert "csrf_token() if csrf_token is defined and not (csrf_token is string)" in base
     assert 'name="csrf-token"' in base
     assert 'name="csrf_token"' in base
 

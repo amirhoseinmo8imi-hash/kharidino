@@ -5,7 +5,7 @@ import hashlib
 import pytest
 from flask import Flask
 
-from app import db
+from app import BASE_DIR, db
 from security_hardening import apply_security, csrf_token, _is_safe_local_redirect
 
 PNG_1X1 = bytes.fromhex(
@@ -19,6 +19,14 @@ def make_app():
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = "unit-test-secret"
+    # Security's checkout guard is intentionally shared across app instances.
+    # Bind every synthetic test app to the same SQLite database used by app.py
+    # so the cross-instance idempotency test exercises the real persistence path.
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(BASE_DIR / "kharidino.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
+    with app.app_context():
+        db.create_all()
     apply_security(app)
     return app
 
@@ -286,6 +294,6 @@ def test_upload_size_limit_is_enforced_when_content_length_is_known():
         "/upload",
         data={"file": (io.BytesIO(PNG_1X1), "photo.png")},
         headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64},
-        content_length=101 * 1024 * 1024,
+        environ_overrides={"CONTENT_LENGTH": str(101 * 1024 * 1024)},
     )
     assert response.status_code == 413

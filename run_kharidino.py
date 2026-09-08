@@ -58,6 +58,7 @@ from mobile_app.api.mobile_api import register_mobile_api
 from security_hardening import apply_security
 from redirect_hardening import apply_redirect_hardening
 from catalog_security import apply_catalog_security
+from catalog_ux_api import apply_catalog_ux_api
 from inventory_hardening import apply_inventory_security
 from checkout_preflight import apply_checkout_preflight
 from commerce_extensions_v2 import apply_commerce_extensions
@@ -82,6 +83,7 @@ with app.app_context():
     apply_security(app)
     apply_redirect_hardening(app)
     apply_catalog_security(app)
+    apply_catalog_ux_api(app, db, Product, Category, Offer, Store)
     # Checkout preflight deliberately runs before inventory reservation.
     apply_checkout_preflight(app)
     apply_inventory_security(app)

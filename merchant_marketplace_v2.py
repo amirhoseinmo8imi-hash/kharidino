@@ -161,7 +161,6 @@ def _seller_order_after_flush(session_obj, flush_context):
     for obj in list(session_obj.new) + list(session_obj.dirty):
         if not isinstance(obj, Order) or not obj.id or obj.id in processed:
             continue
-        # Never expose seller orders/ledger entries for an unpaid order.
         if obj.status != "تأیید شد":
             continue
         processed.add(obj.id)
@@ -199,11 +198,15 @@ def seller_order_status(seller_order_id):
     order.status = new_status
     ledger = SellerLedger.query.filter_by(seller_order_id=order.id).first()
     if ledger:
+        # Seller delivery is operationally important, but it is NOT proof that
+        # the customer received the master order. Only the master-order delivery
+        # event may release funds to available (financial_accounting.py).
         if new_status == "delivered":
-            ledger.status = "available"
+            if order.order and order.order.status == "تحویل شد":
+                ledger.status = "available"
         elif new_status == "cancelled":
             ledger.status = "cancelled"
-        elif ledger.status != "paid":
+        elif ledger.status not in {"paid", "cancelled"}:
             ledger.status = "pending"
     db.session.add(SellerNotification(
         store_id=account.store_id, seller_order_id=order.id,

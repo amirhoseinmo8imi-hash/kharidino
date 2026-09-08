@@ -1,4 +1,4 @@
-"""Runtime 0->100 customer journey through the production WSGI wiring.
+"""Runtime 0->100 customer journey against the Flask application.
 
 This suite deliberately uses the in-process TestGateway only. It must never
 contact a real bank provider or require production credentials.
@@ -13,11 +13,21 @@ from urllib.parse import parse_qs, urlsplit
 os.environ["PAYMENT_PROVIDER"] = "disabled"
 os.environ["PAYMENT_TEST_MODE"] = "1"
 
-from wsgi import app
-from app import Product, User, Order, db
+from app import Product, User, Order, db, app
+from payment import apply_payment
+from security_hardening import apply_security
+
+# Register the runtime layers before any test request is handled. This mirrors
+a# production initialization order without importing the broader WSGI bridge
+# (which also installs unrelated SQLAlchemy event listeners used by other tests).
+with app.app_context():
+    apply_payment(app, db, Order, User)
+    apply_security(app)
+    db.create_all()
 
 
 CSRF_RE = re.compile(r'name=["\']csrf-token["\']\s+content=["\']([^"\']+)', re.I)
+ORIGIN = "http://localhost"
 
 
 def _csrf(response):
@@ -26,17 +36,23 @@ def _csrf(response):
     return match.group(1)
 
 
+def _post(client, path, *, data=None, **kwargs):
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.setdefault("Origin", ORIGIN)
+    return client.post(path, data=data, headers=headers, **kwargs)
+
+
 def _register_and_login(client, email, password):
     response = client.get("/register")
     assert response.status_code == 200
-    token = _csrf(response)
-    response = client.post(
+    response = _post(
+        client,
         "/register",
         data={
             "name": "E2E Customer",
             "email": email,
             "password": password,
-            "csrf_token": token,
+            "csrf_token": _csrf(response),
         },
         follow_redirects=False,
     )
@@ -44,7 +60,8 @@ def _register_and_login(client, email, password):
 
     response = client.get("/login")
     assert response.status_code == 200
-    response = client.post(
+    response = _post(
+        client,
         "/login",
         data={
             "email": email,
@@ -84,11 +101,12 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     assert "محصول" in product_page.get_data(as_text=True) or "قیمت" in product_page.get_data(as_text=True)
 
     # 3. CSRF must block a state-changing request without a token.
-    blocked = client.post(f"/cart/add/{product_id}", follow_redirects=False)
+    blocked = _post(client, f"/cart/add/{product_id}", follow_redirects=False)
     assert blocked.status_code == 403
 
     # 4. Product -> Cart
-    added = client.post(
+    added = _post(
+        client,
         f"/cart/add/{product_id}",
         data={"csrf_token": _csrf(product_page)},
         follow_redirects=False,
@@ -101,7 +119,8 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     # 5. Cart -> Checkout -> payment start bridge
     checkout = client.get("/checkout")
     assert checkout.status_code == 200
-    checkout_post = client.post(
+    checkout_post = _post(
+        client,
         "/checkout",
         data={
             "csrf_token": _csrf(checkout),
@@ -121,7 +140,8 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     payment_form = client.get(payment_location)
     assert payment_form.status_code == 200
     idempotency_key = uuid.uuid4().hex
-    start = client.post(
+    start = _post(
+        client,
         f"/payment/start/{order_id}",
         data={
             "csrf_token": _csrf(payment_form),
@@ -167,10 +187,12 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     assert replay.status_code in {302, 303}
 
     # 10. Replay: reusing the same idempotency key after payment is safe.
-    replay_start = client.post(
+    replay_form = client.get(f"/payment/start/{order_id}")
+    replay_start = _post(
+        client,
         f"/payment/start/{order_id}",
         data={
-            "csrf_token": _csrf(client.get(f"/payment/start/{order_id}")),
+            "csrf_token": _csrf(replay_form),
             "idempotency_key": idempotency_key,
         },
         follow_redirects=False,

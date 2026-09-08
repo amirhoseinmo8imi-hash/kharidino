@@ -8,10 +8,12 @@ from app import app, db, Product, Category, Store, Offer, User, admin_required, 
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
 from marketplace import register as register_marketplace
+from store_admin import register as register_store_admin
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
 register_marketplace(app, db, Product, Category, Store, Offer, User, login_required, admin_required)
+register_store_admin(app, db, Store, admin_required, __import__("app").save_store_logo, __import__("app").remove_upload)
 
 
 @app.get("/splash")

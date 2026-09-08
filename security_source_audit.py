@@ -12,6 +12,7 @@ import re
 
 BASE_DIR = Path(__file__).resolve().parent
 EXCLUDED_DIRS = {".git", "venv", ".venv", "__pycache__", "node_modules"}
+EXCLUDED_FILES = {Path(__file__).name}
 
 PYTHON_PATTERNS = {
     "render_template_string": re.compile(r"\brender_template_string\s*\("),
@@ -30,7 +31,7 @@ def _iter_files(suffixes: tuple[str, ...]):
     for path in BASE_DIR.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in suffixes:
             continue
-        if any(part in EXCLUDED_DIRS for part in path.parts):
+        if path.name in EXCLUDED_FILES or any(part in EXCLUDED_DIRS for part in path.parts):
             continue
         yield path
 

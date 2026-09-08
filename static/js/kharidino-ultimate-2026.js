@@ -174,6 +174,98 @@
     return String(value || '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   }
 
+  function postAction(action, productId, nextUrl) {
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = action.replace('__PRODUCT_ID__', encodeURIComponent(String(productId)));
+    form.style.display = 'none';
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'csrf_token';
+      input.value = token;
+      form.appendChild(input);
+    }
+    if (nextUrl) {
+      const next = document.createElement('input');
+      next.type = 'hidden';
+      next.name = 'next';
+      next.value = nextUrl;
+      form.appendChild(next);
+    }
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  function addQuickActions() {
+    const cards = document.querySelectorAll('.km-product, .storefront-product-card, .kc-card');
+    cards.forEach((card) => {
+      if (card.dataset.kduActions === '1') return;
+      const link = card.querySelector('a[href*="/product/"]');
+      if (!link) return;
+      const id = productIdFromHref(link.getAttribute('href'));
+      if (!id) return;
+      card.dataset.kduActions = '1';
+      const actions = document.createElement('div');
+      actions.className = 'kdu-card-actions';
+      actions.innerHTML = `<button type="button" class="kdu-card-action" data-kdu-action="favorite" aria-label="افزودن به علاقه‌مندی"><i class="fa-regular fa-heart"></i><span>علاقه‌مندی</span></button><button type="button" class="kdu-card-action" data-kdu-action="compare" aria-label="افزودن به مقایسه"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه</span></button>`;
+      actions.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-kdu-action]');
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const action = button.dataset.kduAction;
+        if (action === 'favorite') postAction('/favorite/__PRODUCT_ID__', id, window.location.href);
+        if (action === 'compare') postAction('/compare/add/__PRODUCT_ID__', id, window.location.href);
+      });
+      card.appendChild(actions);
+    });
+  }
+
+  function addProductPageActions() {
+    const page = document.querySelector('.kd-product-page');
+    if (!page || page.dataset.kduActions === '1') return;
+    const gallery = page.querySelector('.kd-gallery');
+    const id = gallery?.dataset.productId;
+    if (!id) return;
+    page.dataset.kduActions = '1';
+    const host = page.querySelector('.kd-product-title')?.parentElement || page.querySelector('.kd-product-info') || page;
+    const actions = document.createElement('div');
+    actions.className = 'kdu-product-actions';
+    actions.innerHTML = `<button type="button" class="kdu-primary-action" data-kdu-action="favorite"><i class="fa-regular fa-heart"></i> افزودن به علاقه‌مندی</button><button type="button" class="kdu-secondary-action" data-kdu-action="compare"><i class="fa-solid fa-scale-balanced"></i> مقایسه محصول</button>`;
+    actions.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-kdu-action]');
+      if (!button) return;
+      const action = button.dataset.kduAction;
+      if (action === 'favorite') postAction('/favorite/__PRODUCT_ID__', id, window.location.href);
+      if (action === 'compare') postAction('/compare/add/__PRODUCT_ID__', id, window.location.href);
+    });
+    host.appendChild(actions);
+  }
+
+  function guardImportantForms() {
+    document.querySelectorAll('form').forEach((form) => {
+      if (form.dataset.kduGuarded === '1') return;
+      const method = (form.getAttribute('method') || 'get').toLowerCase();
+      if (method !== 'post') return;
+      const action = form.getAttribute('action') || '';
+      const important = /checkout|payment\/start|cart_update|cart_remove|order|review/.test(action) || form.classList.contains('kdu-review-form');
+      if (!important) return;
+      form.dataset.kduGuarded = '1';
+      form.addEventListener('submit', () => {
+        if (form.dataset.kduSubmitted === '1') return;
+        form.dataset.kduSubmitted = '1';
+        const button = form.querySelector('button[type="submit"]:not([disabled])');
+        if (button) {
+          button.disabled = true;
+          button.dataset.kduOriginalText = button.textContent.trim();
+          button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال پردازش...';
+        }
+      }, { capture: true });
+    });
+  }
+
   function enhanceAdminWorkspace() {
     if (!document.querySelector('.kh-admin-page')) return;
     document.querySelectorAll('.admin-section').forEach((section) => {
@@ -209,10 +301,15 @@
     enhanceStorefrontImages();
     enhanceAdminProductImages();
     buildRichProductPanel();
+    addQuickActions();
+    addProductPageActions();
+    guardImportantForms();
     enhanceAdminWorkspace();
     window.setTimeout(() => {
       enhanceStorefrontImages();
       enhanceAdminProductImages();
+      addQuickActions();
+      guardImportantForms();
     }, 900);
   }
 

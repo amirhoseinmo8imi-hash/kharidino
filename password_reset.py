@@ -18,6 +18,12 @@ from app import app, db, User, Setting
 
 TOKEN_MAX_AGE = 1800
 RESET_VERSION_PREFIX = "password_reset_version:"
+_BIDI_MARKS = "\u061c\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+
+
+def _clean_email(value):
+    """Remove invisible bidi/control marks that can break SMTP addresses."""
+    return "".join(ch for ch in str(value or "").strip() if ch not in _BIDI_MARKS and ch.isprintable())
 
 
 def _serializer():
@@ -86,9 +92,9 @@ def _send_reset_email(user, link):
     account with 2-Step Verification enabled and a Google App Password.
     """
     host = os.environ.get("SMTP_HOST", "smtp.gmail.com").strip()
-    username = os.environ.get("SMTP_USERNAME", "").strip()
+    username = _clean_email(os.environ.get("SMTP_USERNAME", ""))
     password = os.environ.get("SMTP_PASSWORD", "")
-    sender = os.environ.get("MAIL_FROM", username).strip()
+    sender = _clean_email(os.environ.get("MAIL_FROM", username))
 
     try:
         port = int(os.environ.get("SMTP_PORT", "465"))
@@ -99,17 +105,18 @@ def _send_reset_email(user, link):
         "1", "true", "yes", "on"
     }
 
-    if not host or not sender or not username or not password:
+    recipient = _clean_email(user.email)
+    if not host or not sender or not username or not password or not recipient:
         app.logger.error(
-            "Password reset SMTP is not configured: host=%s sender=%s username_set=%s password_set=%s",
-            bool(host), bool(sender), bool(username), bool(password),
+            "Password reset SMTP is not configured: host=%s sender=%s username_set=%s password_set=%s recipient_set=%s",
+            bool(host), bool(sender), bool(username), bool(password), bool(recipient),
         )
         return False
 
     message = EmailMessage()
     message["Subject"] = "بازیابی رمز عبور حساب خریدینو"
     message["From"] = sender
-    message["To"] = user.email
+    message["To"] = recipient
     message.set_content(
         f"سلام {user.name or ''}\n\n"
         "درخواست بازیابی رمز عبور حساب خریدینو ثبت شده است.\n\n"
@@ -137,7 +144,7 @@ def _send_reset_email(user, link):
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+        email = _clean_email(request.form.get("email", "")).lower()
         user = User.query.filter_by(email=email).first() if email else None
         sent = False
         app.logger.info("Password reset requested: account_found=%s", bool(user))
@@ -159,8 +166,6 @@ def forgot_password():
                     dev_reset_url=link,
                 )
 
-        # Deliberately identical for known/unknown addresses: no account
-        # enumeration through the recovery endpoint.
         flash(
             "اگر این ایمیل در خریدینو ثبت شده باشد، لینک بازیابی رمز عبور برای شما ارسال می‌شود.",
             "success",

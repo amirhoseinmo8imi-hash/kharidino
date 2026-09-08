@@ -36,9 +36,10 @@ def test_nextpay_start_uses_provider_contract(monkeypatch):
     assert calls[0][1]["order_id"] == "txn-123"
     assert calls[0][1]["amount"] == 125000
     assert calls[0][1]["currency"] == "IRT"
+    assert calls[0][1]["auto_verify"] == "no"
 
 
-def test_nextpay_verify_requires_matching_transaction_and_amount(monkeypatch):
+def test_nextpay_verify_uses_provider_token_and_binds_order_and_amount(monkeypatch):
     monkeypatch.setenv("NEXTPAY_API_KEY", "test-key")
     calls = []
 
@@ -53,13 +54,14 @@ def test_nextpay_verify_requires_matching_transaction_and_amount(monkeypatch):
 
     monkeypatch.setattr("payment_gateways.requests.post", fake_post)
     gateway = NextPayGateway()
-    result = gateway.verify("txn-123", 125000, {"trans_id": "txn-123", "amount": "125000"})
+    result = gateway.verify("txn-123", 125000, {"trans_id": "np-token-123", "amount": "125000"})
 
     assert result.paid is True
     assert result.reference == "ref-456"
     assert calls[0][1]["api_key"] == "test-key"
-    assert calls[0][1]["trans_id"] == "txn-123"
+    assert calls[0][1]["trans_id"] == "np-token-123"
     assert calls[0][1]["amount"] == 125000
+    assert calls[0][1]["currency"] == "IRT"
 
 
 def test_nextpay_verify_rejects_provider_order_mismatch(monkeypatch):
@@ -69,7 +71,18 @@ def test_nextpay_verify_rejects_provider_order_mismatch(monkeypatch):
         return FakeResponse({"code": 0, "amount": 125000, "order_id": "other-txn", "Shaparak_Ref_Id": "ref"})
 
     monkeypatch.setattr("payment_gateways.requests.post", fake_post)
-    result = NextPayGateway().verify("txn-123", 125000, {"trans_id": "txn-123", "amount": "125000"})
+    result = NextPayGateway().verify("txn-123", 125000, {"trans_id": "np-token-123", "amount": "125000"})
+    assert result.paid is False
+
+
+def test_nextpay_verify_rejects_missing_provider_order(monkeypatch):
+    monkeypatch.setenv("NEXTPAY_API_KEY", "test-key")
+
+    def fake_post(url, data, timeout):
+        return FakeResponse({"code": 0, "amount": 125000, "Shaparak_Ref_Id": "ref"})
+
+    monkeypatch.setattr("payment_gateways.requests.post", fake_post)
+    result = NextPayGateway().verify("txn-123", 125000, {"trans_id": "np-token-123", "amount": "125000"})
     assert result.paid is False
 
 
@@ -81,6 +94,6 @@ def test_nextpay_network_failure_fails_closed(monkeypatch):
         raise requests.Timeout()
 
     monkeypatch.setattr("payment_gateways.requests.post", fake_post)
-    result = NextPayGateway().verify("txn-123", 125000, {"trans_id": "txn-123", "amount": "125000"})
+    result = NextPayGateway().verify("txn-123", 125000, {"trans_id": "np-token-123", "amount": "125000"})
     assert result.paid is False
     assert "شبکه" in result.message

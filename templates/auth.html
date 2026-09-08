@@ -2,9 +2,10 @@
 {% block title %}{{ 'ورود' if mode == 'login' else 'ثبت‌نام' }} | {{ site_name }}{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-1') }}">{% endblock %}
 {% block content %}
+{% set _auth_csrf = csrf_token() if csrf_token is defined and not (csrf_token is string) else (csrf_token|default('', true)) %}
 <section class="km-auth-page">
   <form class="km-auth-card" method="post" novalidate>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ _auth_csrf }}">
     <div class="km-auth-brand"><div class="km-auth-brand-mark"><i class="fa-solid fa-bag-shopping"></i></div><h1>{{ site_name }}</h1><p>{{ 'برای ادامه وارد حساب کاربری خود شوید' if mode == 'login' else 'حساب کاربری خود را در خریدینو بسازید' }}</p></div>
     <h2 class="km-auth-title">{{ 'ورود به حساب کاربری' if mode == 'login' else 'ثبت‌نام در خریدینو' }}</h2>
     {% if mode == 'register' %}<div class="km-field"><label for="name">نام و نام خانوادگی</label><input id="name" name="name" placeholder="نام و نام خانوادگی" autocomplete="name" maxlength="120" required></div>{% endif %}

@@ -1,13 +1,14 @@
-"""Secure password reset flow for Kharidino.
+"""Production-ready password recovery for Kharidino.
 
-Reset tokens are short-lived, signed, and single-use. SMTP delivery is optional
-for local development; when SMTP is not configured, a reset link is exposed
-only while FLASK_DEBUG=1.
+The recovery link is signed, short-lived and single-use. Delivery uses standard
+SMTP so Kharidino can use a free mailbox such as Gmail/Outlook without a paid
+SMS gateway. SMTP credentials must stay in environment variables.
 """
 import os
 import secrets
 import smtplib
 from email.message import EmailMessage
+from urllib.parse import urljoin
 
 from flask import flash, redirect, render_template, request, url_for
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -20,7 +21,10 @@ RESET_VERSION_PREFIX = "password_reset_version:"
 
 
 def _serializer():
-    return URLSafeTimedSerializer(app.config["SECRET_KEY"], salt="kharidino-password-reset-v2")
+    return URLSafeTimedSerializer(
+        app.config["SECRET_KEY"],
+        salt="kharidino-password-reset-v2",
+    )
 
 
 def _version_key(user_id):
@@ -57,6 +61,7 @@ def _user_from_token(token, max_age=TOKEN_MAX_AGE):
         data = _serializer().loads(token, max_age=max_age)
     except (BadSignature, SignatureExpired, TypeError, ValueError):
         return None
+
     try:
         user = db.session.get(User, int(data.get("uid")))
         if not user or int(data.get("ver", -1)) != _current_version(user):
@@ -66,16 +71,35 @@ def _user_from_token(token, max_age=TOKEN_MAX_AGE):
         return None
 
 
+def _reset_link(token):
+    path = url_for("reset_password", token=token)
+    base_url = os.environ.get("PUBLIC_BASE_URL", "").strip()
+    if base_url:
+        return urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
+    return url_for("reset_password", token=token, _external=True)
+
+
 def _send_reset_email(user, link):
-    host = os.environ.get("SMTP_HOST", "").strip()
-    try:
-        port = int(os.environ.get("SMTP_PORT", "587"))
-    except ValueError:
-        port = 587
+    """Send a real reset email over SMTP.
+
+    Defaults are compatible with Gmail SMTP. For Gmail, use a free Google
+    account with 2-Step Verification enabled and a Google App Password.
+    """
+    host = os.environ.get("SMTP_HOST", "smtp.gmail.com").strip()
     username = os.environ.get("SMTP_USERNAME", "").strip()
     password = os.environ.get("SMTP_PASSWORD", "")
     sender = os.environ.get("MAIL_FROM", username).strip()
-    if not host or not sender:
+
+    try:
+        port = int(os.environ.get("SMTP_PORT", "465"))
+    except ValueError:
+        port = 465
+
+    use_ssl = os.environ.get("SMTP_USE_SSL", "1").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+
+    if not host or not sender or not username or not password:
         return False
 
     message = EmailMessage()
@@ -84,16 +108,25 @@ def _send_reset_email(user, link):
     message["To"] = user.email
     message.set_content(
         f"سلام {user.name or ''}\n\n"
-        "برای تغییر رمز عبور حساب خریدینو روی لینک زیر کلیک کنید. "
-        "این لینک فقط ۳۰ دقیقه معتبر و پس از استفاده یک‌بارمصرف است:\n"
+        "درخواست بازیابی رمز عبور حساب خریدینو ثبت شده است.\n\n"
+        "برای انتخاب رمز جدید از لینک زیر استفاده کنید:\n"
         f"{link}\n\n"
+        "این لینک فقط ۳۰ دقیقه معتبر است و پس از تغییر موفق رمز، دیگر قابل استفاده نیست.\n\n"
         "اگر این درخواست توسط شما انجام نشده است، این پیام را نادیده بگیرید."
     )
-    with smtplib.SMTP(host, port, timeout=15) as smtp:
-        smtp.starttls()
-        if username:
+
+    if use_ssl:
+        with smtplib.SMTP_SSL(host, port, timeout=20) as smtp:
             smtp.login(username, password)
-        smtp.send_message(message)
+            smtp.send_message(message)
+    else:
+        with smtplib.SMTP(host, port, timeout=20) as smtp:
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.ehlo()
+            smtp.login(username, password)
+            smtp.send_message(message)
+
     return True
 
 
@@ -102,19 +135,32 @@ def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         user = User.query.filter_by(email=email).first() if email else None
-        token = _token_for(user) if user else None
         sent = False
-        if user and token:
-            link = url_for("reset_password", token=token, _external=True)
+
+        if user:
+            token = _token_for(user)
+            link = _reset_link(token)
             try:
                 sent = _send_reset_email(user, link)
-            except Exception:
+            except (OSError, smtplib.SMTPException):
                 app.logger.exception("Password reset email delivery failed")
-            if not sent and app.debug:
-                return render_template("forgot_password.html", dev_reset_url=link)
+            except Exception:
+                app.logger.exception("Unexpected password reset delivery failure")
 
-        flash("اگر این ایمیل در خریدینو ثبت شده باشد، لینک بازیابی رمز عبور برای شما ارسال می‌شود.", "success")
+            if not sent and app.debug:
+                return render_template(
+                    "forgot_password.html",
+                    dev_reset_url=link,
+                )
+
+        # Deliberately identical for known/unknown addresses: no account
+        # enumeration through the recovery endpoint.
+        flash(
+            "اگر این ایمیل در خریدینو ثبت شده باشد، لینک بازیابی رمز عبور برای شما ارسال می‌شود.",
+            "success",
+        )
         return redirect(url_for("forgot_password"))
+
     return render_template("forgot_password.html")
 
 
@@ -122,15 +168,20 @@ def forgot_password():
 def reset_password(token):
     user = _user_from_token(token)
     if not user:
-        flash("لینک بازیابی نامعتبر، منقضی یا قبلاً استفاده شده است. دوباره درخواست بازیابی کنید.", "danger")
+        flash(
+            "لینک بازیابی نامعتبر، منقضی یا قبلاً استفاده شده است. دوباره درخواست بازیابی کنید.",
+            "danger",
+        )
         return redirect(url_for("forgot_password"))
 
     if request.method == "POST":
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
+
         if len(password) < 8:
             flash("رمز عبور باید حداقل ۸ کاراکتر باشد.", "warning")
             return render_template("reset_password.html")
+
         if password != confirm:
             flash("تکرار رمز عبور با رمز جدید یکسان نیست.", "warning")
             return render_template("reset_password.html")
@@ -138,7 +189,10 @@ def reset_password(token):
         user.password = generate_password_hash(password)
         _bump_version(user)
         db.session.commit()
-        flash("رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد حساب خود شوید. ✅", "success")
+        flash(
+            "رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد حساب خود شوید. ✅",
+            "success",
+        )
         return redirect(url_for("login"))
 
     return render_template("reset_password.html")

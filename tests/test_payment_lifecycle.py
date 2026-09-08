@@ -1,5 +1,3 @@
-import os
-
 from payment import DisabledGateway, PAYMENT_STATUSES, TestGateway, _idempotency_key, _gateway
 
 

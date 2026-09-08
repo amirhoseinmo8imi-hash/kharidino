@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-inspired.css', v='3') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-home-shell.css', v='2026-09-06-2') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-final.css', v='2026-09-06-2') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ui-polish.css', v='2026-09-08-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ui-polish.css', v='2026-09-08-2') }}">
 {% endblock %}
 {% block content %}
 <div class="km-home">
@@ -27,7 +27,7 @@
             <a class="km-action km-action--seller" href="{{ url_for('seller_register') }}"><i class="fa-solid fa-store"></i><span>فروشنده شوید</span></a>
           {% endif %}
           {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
-          {% if session.get('user_id') %}<a class="km-action km-action--logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></a>{% endif %}
+          {% if session.get('user_id') %}<form class="km-action km-action--logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="km-logout-button"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></button></form>{% endif %}
         </div>
       </div>
       <nav class="km-nav"><div class="km-nav-inner"><a href="#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in categories[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>

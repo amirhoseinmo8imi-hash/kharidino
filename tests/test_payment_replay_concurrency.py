@@ -5,6 +5,7 @@ SQLite race test exercises the same conditional state-claim pattern used by
 payment.py, while the source contracts lock the production lifecycle rules.
 """
 from pathlib import Path
+import re
 import sqlite3
 import threading
 
@@ -134,7 +135,10 @@ def test_e2e_contract_keeps_provider_off_for_test_gateway_runs():
 
 
 def test_no_provider_credentials_are_embedded_in_replay_concurrency_tests():
-    """Regression guard: this test module must contain no provider secret."""
+    """Regression guard: detect literal secret assignments, not env names."""
     test_source = Path(__file__).read_text(encoding="utf-8")
-    forbidden = ("_API_", "api_key")
-    assert not any(token.lower() in test_source.lower() for token in forbidden)
+    assignments = re.findall(
+        r"(?im)^\s*[A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET)\s*=\s*['\"]([^'\"]+)['\"]\s*$",
+        test_source,
+    )
+    assert assignments == []

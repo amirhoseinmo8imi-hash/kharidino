@@ -71,6 +71,7 @@ import merchant_customer_marketplace  # noqa: F401
 import accounting  # noqa: F401 - platform and seller accounting workspace
 import system_health  # noqa: F401 - deployment and consistency probes
 from inventory_atomicity import apply_inventory_atomicity
+from financial_accounting import apply_financial_accounting
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
@@ -85,6 +86,9 @@ with app.app_context():
     apply_commerce_extensions(app)
     apply_catalog_extensions(app)
     apply_payment(app, db, __import__("app").Order, User)
+    from merchant_marketplace_v2 import SellerLedger
+    from accounting import SellerSettlement
+    apply_financial_accounting(app, db, __import__("app").Order, SellerLedger, SellerSettlement)
     db.create_all()
 
 
@@ -170,7 +174,7 @@ if __name__ == "__main__":
     print("KHARIDINO ULTIMATE SERVER")
     print(f"Local:  http://127.0.0.1:{port}")
     print(f"LAN:    http://<PC-IP>:{port}")
-    print(f"AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
+    print("AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
     print("Accounting: /admin/accounting | /seller/accounting")
     print("Health: /healthz | /admin/system-health")
     print("=" * 50)

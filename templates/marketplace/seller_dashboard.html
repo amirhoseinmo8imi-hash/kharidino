@@ -12,12 +12,12 @@
   <section style="padding:22px;border-radius:22px;background:#ffffff0c;margin-bottom:20px">
     <h2>افزودن/ویرایش محصول فروشگاه</h2>
     <form method="post" action="{{ url_for('seller_listing_create') }}" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px">
-      <select name="product_id" required style="padding:12px;border-radius:10px"><option value="">انتخاب محصول موجود در کاتالوگ</option>{% for p in listings %}<option value="{{ p.product_id }}">{{ p.product.name }}</option>{% endfor %}</select>
+      <select name="product_id" required style="padding:12px;border-radius:10px"><option value="">انتخاب محصول</option>{% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select>
       <input name="price" type="number" min="0" required placeholder="قیمت" style="padding:12px;border-radius:10px">
       <input name="stock" type="number" min="0" required placeholder="موجودی" style="padding:12px;border-radius:10px">
       <button type="submit" style="padding:12px 18px;border:0;border-radius:10px;cursor:pointer">ذخیره</button>
     </form>
-    <p style="opacity:.65">نسخه فعلی فقط محصولات موجود در کاتالوگ مرکزی را به فروشگاه اختصاص می‌دهد؛ مرحله بعد می‌تواند کاتالوگ مستقل و مشخصات کامل کالا را اضافه کند.</p>
+    <p style="opacity:.65">هر فروشنده فقط رکوردهای خودش را می‌تواند ایجاد یا ویرایش کند و برای هر محصول یک listing یکتا دارد.</p>
   </section>
   <section style="padding:22px;border-radius:22px;background:#ffffff0c">
     <h2>محصولات من</h2>

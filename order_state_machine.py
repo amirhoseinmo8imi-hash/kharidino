@@ -45,10 +45,12 @@ def apply_order_state_machine(app) -> None:
         if request.endpoint != "update_order_status" or request.method != "POST":
             return None
 
-        from app import Order
+        from app import Order, db
 
         order_id = request.view_args.get("order_id") if request.view_args else None
-        order = Order.query.get_or_404(order_id)
+        order = db.session.get(Order, order_id)
+        if not order:
+            abort(404)
         new_status = request.form.get("status", "").strip()
 
         if new_status not in ORDER_STATUSES:

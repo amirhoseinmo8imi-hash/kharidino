@@ -1,9 +1,6 @@
 """Secure, isolated commerce extensions for Kharidino."""
 from datetime import datetime
 from decimal import Decimal
-import hashlib
-import os
-import secrets
 from flask import jsonify, flash, redirect, render_template, request, session, url_for, abort
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
@@ -24,10 +21,6 @@ class Coupon(db.Model):
 class CouponRedemption(db.Model):
     __tablename__="kharidino_coupon_redemption"
     id=db.Column(db.Integer,primary_key=True); coupon_id=db.Column(db.Integer,db.ForeignKey("kharidino_coupon.id"),nullable=False,index=True); user_id=db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False,index=True); order_id=db.Column(db.Integer,db.ForeignKey("order.id"),nullable=False,unique=True); discount=db.Column(db.Integer,nullable=False,default=0); created_at=db.Column(db.DateTime,nullable=False,default=datetime.utcnow); coupon=db.relationship("Coupon",backref=db.backref("redemptions",lazy=True))
-
-class PaymentTransaction(db.Model):
-    __tablename__="kharidino_payment_transaction"
-    id=db.Column(db.Integer,primary_key=True); order_id=db.Column(db.Integer,db.ForeignKey("order.id"),nullable=False,index=True); gateway=db.Column(db.String(40),nullable=False,default="manual"); status=db.Column(db.String(30),nullable=False,default="pending",index=True); amount=db.Column(db.Integer,nullable=False,default=0); authority=db.Column(db.String(120),unique=True); created_at=db.Column(db.DateTime,nullable=False,default=datetime.utcnow); updated_at=db.Column(db.DateTime,nullable=False,default=datetime.utcnow,onupdate=datetime.utcnow); order=db.relationship("Order",backref=db.backref("payments",lazy=True,cascade="all, delete-orphan"))
 
 class Notification(db.Model):
     __tablename__="kharidino_notification"
@@ -84,7 +77,7 @@ def order_detail(order_id):
 @login_required
 def order_detail_api(order_id):
     order=_owned_order(order_id)
-    if not order:return jsonify({"error":"not_found"}),404
+    if not order:return ("Not Found",404)
     return jsonify({"id":order.id,"status":order.status,"total":order.total,"created_at":order.created_at.isoformat() if order.created_at else None,"customer":{"name":order.customer_name,"phone":order.phone,"address":order.address},"items":[{"product_id":i.product_id,"name":i.product_name,"price":i.price,"quantity":i.quantity} for i in order.items],"history":[{"old_status":h.old_status,"new_status":h.new_status,"note":h.note,"created_at":h.created_at.isoformat()} for h in order.status_history]})
 
 @app.post("/coupon/apply")
@@ -101,64 +94,6 @@ def apply_coupon():
 @login_required
 def remove_coupon():
     session.pop("coupon_code",None); return jsonify({"ok":True})
-
-# ---------------- PAYMENT DOMAIN ----------------
-class PaymentGateway:
-    name="base"
-    def start(self,tx):raise NotImplementedError
-    def verify(self,tx,payload):raise NotImplementedError
-
-class ManualPaymentGateway(PaymentGateway):
-    """Development gateway. Production must provide a real adapter."""
-    name="manual"
-    def start(self,tx):
-        tx.authority=f"MANUAL-{tx.id}-{secrets.token_urlsafe(12)}"; return tx.authority
-    def verify(self,tx,payload):
-        approved=payload.get("confirm")=="1"
-        tx.status="paid" if approved else "failed"
-        return approved
-
-PAYMENT_GATEWAYS={"manual":ManualPaymentGateway()}
-
-def _payment_gateway():
-    requested=os.environ.get("PAYMENT_GATEWAY","manual").strip().lower()
-    return PAYMENT_GATEWAYS.get(requested,PAYMENT_GATEWAYS["manual"])
-
-def _payment_key():
-    raw=(request.form.get("idempotency_key") or request.headers.get("Idempotency-Key") or "").strip()
-    if not raw or len(raw)>128: abort(400,description="کلید idempotency الزامی و حداکثر ۱۲۸ کاراکتر است.")
-    return hashlib.sha256(raw.encode()).hexdigest()[:40]
-
-def _find_payment(order_id,key):
-    marker=f"IDEMP-{key}"
-    return PaymentTransaction.query.filter_by(order_id=order_id).filter(PaymentTransaction.authority.like(marker+"%")).order_by(PaymentTransaction.id.desc()).first()
-
-@app.post("/orders/<int:order_id>/payment/start")
-@login_required
-def payment_start(order_id):
-    order=_owned_order(order_id)
-    if not order:return ("Not Found",404)
-    if order.status=="لغو شد" or int(order.total or 0)<=0:return jsonify({"ok":False,"error":"سفارش قابل پرداخت نیست."}),409
-    key=_payment_key(); tx=_find_payment(order.id,key)
-    if tx:
-        if tx.status=="paid":return jsonify({"ok":True,"status":"paid","transaction_id":tx.id})
-        return jsonify({"ok":True,"status":tx.status,"transaction_id":tx.id,"authority":tx.authority})
-    tx=PaymentTransaction(order_id=order.id,amount=int(order.total),gateway=_payment_gateway().name,status="pending"); db.session.add(tx); db.session.flush()
-    gateway=_payment_gateway(); authority=gateway.start(tx); tx.authority=f"IDEMP-{key}-{authority}"; tx.status="redirect"; db.session.commit()
-    return jsonify({"ok":True,"transaction_id":tx.id,"authority":tx.authority,"gateway":tx.gateway,"status":tx.status})
-
-@app.post("/orders/<int:order_id>/payment/verify")
-@login_required
-def payment_verify(order_id):
-    order=_owned_order(order_id)
-    if not order:return ("Not Found",404)
-    tx=PaymentTransaction.query.filter_by(order_id=order.id).order_by(PaymentTransaction.id.desc()).first()
-    if not tx:return jsonify({"ok":False,"error":"تراکنش یافت نشد."}),404
-    if tx.status=="paid":return jsonify({"ok":True,"status":"paid","transaction_id":tx.id})
-    tx.status="verifying"; db.session.commit()
-    ok=_payment_gateway().verify(tx,request.form)
-    db.session.commit()
-    return jsonify({"ok":ok,"status":tx.status,"transaction_id":tx.id}),(200 if ok else 400)
 
 @app.get("/account/notifications")
 @login_required

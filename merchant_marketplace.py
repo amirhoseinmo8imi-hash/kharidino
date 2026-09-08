@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash
 
 from app import (
     app, db, User, Store, Product, Offer, Category,
-    admin_required, save_image, remove_upload, lowest_price,
+    Review, admin_required, save_image, remove_upload, lowest_price,
 )
 
 
@@ -76,6 +76,59 @@ def _store_name(name):
     return " ".join((name or "").split())[:200]
 
 
+@app.context_processor
+def inject_store_directory_metrics():
+    """Expose real marketplace metrics to the admin seller directory only.
+
+    Product ownership comes from SellerProduct, reviews come from those products,
+    and sales come only from the authoritative SellerOrder ledger. No estimates
+    or fake counters are generated.
+    """
+    if request.path != "/stores":
+        return {}
+
+    try:
+        from merchant_marketplace_v2 import SellerOrder
+    except Exception:
+        SellerOrder = None
+
+    stats = {}
+    for store in Store.query.order_by(Store.id.asc()).all():
+        links = SellerProduct.query.filter_by(store_id=store.id).all()
+        product_ids = {link.product_id for link in links if link.product_id}
+        products = [link.product for link in links if link.product]
+        offers = Offer.query.filter_by(store_id=store.id).all()
+        in_stock = sum(1 for offer in offers if offer.in_stock)
+
+        ratings = [int(review.rating or 0) for product in products for review in product.reviews]
+        rating = round(sum(ratings) / len(ratings), 1) if ratings else 0
+
+        orders_count = 0
+        delivered_orders = 0
+        sales_amount = 0
+        if SellerOrder is not None:
+            seller_orders = SellerOrder.query.filter_by(store_id=store.id).all()
+            orders_count = len(seller_orders)
+            delivered = [order for order in seller_orders if order.status == "delivered"]
+            delivered_orders = len(delivered)
+            sales_amount = sum(int(order.seller_total or 0) for order in delivered)
+
+        account = MerchantStore.query.filter_by(store_id=store.id).first()
+        stats[store.id] = {
+            "products": len(product_ids),
+            "offers": len(offers),
+            "in_stock": in_stock,
+            "rating": rating,
+            "reviews": len(ratings),
+            "orders": orders_count,
+            "delivered": delivered_orders,
+            "sales": sales_amount,
+            "seller_name": account.user.name if account and account.user else "",
+            "seller_status": account.status if account else "",
+        }
+    return {"seller_stats": stats}
+
+
 @app.route("/seller/register", methods=["GET", "POST"])
 def seller_register():
     if session.get("user_id"):
@@ -120,10 +173,6 @@ def seller_dashboard():
     products = _seller_products(account.store_id)
     offers = Offer.query.filter_by(store_id=account.store_id).order_by(Offer.id.desc()).all()
     categories = Category.query.filter_by(active=True).order_by(Category.name.asc()).all()
-
-    # Never derive seller order history from Product IDs alone: a global catalog
-    # product may be offered by several stores. The SellerOrder/SellerOrderItem
-    # ownership chain is the authoritative tenant boundary for seller data.
     from merchant_marketplace_v2 import SellerOrder, SellerOrderItem
     order_items = (
         SellerOrderItem.query
@@ -212,16 +261,9 @@ def seller_product_save():
 def seller_product_delete(product_id):
     account = _seller_account()
     product = _owned_product(account.store_id, product_id)
-
-    # Product is a global catalog entity, not a seller-owned row. Never delete it
-    # from a seller action: historical OrderItem/Review/Favorite rows may still
-    # reference it and another seller may publish an offer later. Remove only this
-    # seller's ownership link and offer; deactivate the global product only when
-    # no other active offers remain.
     SellerProduct.query.filter_by(store_id=account.store_id, product_id=product.id).delete()
     Offer.query.filter_by(store_id=account.store_id, product_id=product.id).delete()
     db.session.flush()
-
     other_active_offers = Offer.query.filter(
         Offer.product_id == product.id,
         Offer.in_stock.is_(True),
@@ -229,7 +271,6 @@ def seller_product_delete(product_id):
     ).count()
     if other_active_offers == 0:
         product.active = False
-
     db.session.commit()
     flash("محصول از فروشگاه شما حذف شد؛ سابقه سفارش و کاتالوگ اصلی حفظ شد. 🗑️", "success")
     return redirect(url_for("seller_dashboard") + "#products")

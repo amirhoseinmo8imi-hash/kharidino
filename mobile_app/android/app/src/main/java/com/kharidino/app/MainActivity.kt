@@ -3,7 +3,6 @@ package com.kharidino.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +24,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storefront
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private val Background = Color(0xFF070B14)
-private val Surface = Color(0xFF101827)
+private val SurfaceColor = Color(0xFF101827)
 private val Surface2 = Color(0xFF172235)
 private val Primary = Color(0xFF38BDF8)
 private val Muted = Color(0xFF94A3B8)
@@ -84,37 +84,30 @@ fun KharidinoApp() {
     val labels = listOf("خانه", "جستجو", "سبد", "فروشگاه‌ها", "حساب")
     val icons = listOf(Icons.Default.Home, Icons.Default.Search, Icons.Default.ShoppingCart, Icons.Default.Storefront, Icons.Default.Person)
 
-    ScaffoldContainer {
-        when (selected) {
-            0 -> HomeScreen()
-            1 -> SearchScreen()
-            2 -> PlaceholderScreen("سبد خرید", "محصولات انتخابی شما اینجا نمایش داده می‌شوند.", Icons.Default.ShoppingCart)
-            3 -> StoresScreen()
-            else -> PlaceholderScreen("حساب کاربری", "ورود، سفارش‌ها، آدرس‌ها و تنظیمات حساب.", Icons.Default.Person)
-        }
-    }
-
-    Surface(color = Surface, modifier = Modifier.fillMaxWidth()) {
-        NavigationBar(containerColor = Surface) {
-            labels.forEachIndexed { index, label ->
-                NavigationBarItem(
-                    selected = selected == index,
-                    onClick = { selected = index },
-                    icon = { Icon(icons[index], label) },
-                    label = { Text(label) }
-                )
+    Scaffold(
+        containerColor = Background,
+        bottomBar = {
+            NavigationBar(containerColor = SurfaceColor) {
+                labels.forEachIndexed { index, label ->
+                    NavigationBarItem(
+                        selected = selected == index,
+                        onClick = { selected = index },
+                        icon = { Icon(icons[index], label) },
+                        label = { Text(label) }
+                    )
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun ScaffoldContainer(content: @Composable () -> Unit) {
-    androidx.compose.material3.Scaffold(
-        containerColor = Background,
-        bottomBar = { Spacer(Modifier.height(0.dp)) }
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) { content() }
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            when (selected) {
+                0 -> HomeScreen()
+                1 -> SearchScreen()
+                2 -> PlaceholderScreen("سبد خرید", "محصولات انتخابی شما اینجا نمایش داده می‌شوند.", Icons.Default.ShoppingCart)
+                3 -> StoresScreen()
+                else -> PlaceholderScreen("حساب کاربری", "ورود، سفارش‌ها، آدرس‌ها و تنظیمات حساب.", Icons.Default.Person)
+            }
+        }
     }
 }
 
@@ -132,7 +125,7 @@ private fun HomeScreen() {
             products = ApiClient.service.products(limit = 60).items
             categories = ApiClient.service.categories().items
             error = null
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             error = "اتصال به سرور خریدینو برقرار نشد."
         } finally { loading = false }
     }
@@ -141,7 +134,7 @@ private fun HomeScreen() {
         modifier = Modifier.fillMaxSize().background(Background).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item { HomeHeader(search, { search = it }) }
+        item { HomeHeader(search) { search = it } }
         item { HeroBanner() }
         item {
             SectionTitle("دسته‌بندی‌ها", "همه")
@@ -152,7 +145,9 @@ private fun HomeScreen() {
                 }
             }
         }
-        if (loading) item { CircularProgressIndicator(color = Primary, modifier = Modifier.padding(32.dp).size(34.dp).align(Alignment.CenterHorizontally)) }
+        if (loading) item {
+            CircularProgressIndicator(color = Primary, modifier = Modifier.padding(32.dp).size(34.dp).align(Alignment.CenterHorizontally))
+        }
         if (error != null) item { Text(error!!, color = Color(0xFFFF8A8A)) }
         if (!loading && error == null) {
             val filtered = products.filter {
@@ -204,11 +199,7 @@ private fun HomeHeader(search: String, onSearch: (String) -> Unit) {
 
 @Composable
 private fun HeroBanner() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF11243A))
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF11243A))) {
         Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("خرید هوشمند، یک قدم جلوتر", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
@@ -226,7 +217,9 @@ private fun CategoryChip(name: String, selected: Boolean, onClick: () -> Unit) {
         modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick),
         color = if (selected) Primary else Surface2,
         shape = RoundedCornerShape(16.dp)
-    ) { Text(name, color = if (selected) Background else Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 15.dp, vertical = 11.dp)) }
+    ) {
+        Text(name, color = if (selected) Background else Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 15.dp, vertical = 11.dp))
+    }
 }
 
 @Composable
@@ -253,12 +246,8 @@ private fun AnimatedProductCard(product: Product, index: Int) {
     var favorite by remember { mutableStateOf(false) }
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
-    val scale by animateFloatAsState(if (visible) 1f else 0.94f, label = "product-scale")
-    Card(
-        modifier = Modifier.width(190.dp).height(270.dp).scale(scale),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface)
-    ) {
+    val scale by animateFloatAsState(if (visible) 1f else 0.94f, label = "product-scale-$index")
+    Card(modifier = Modifier.width(190.dp).height(270.dp).scale(scale), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = SurfaceColor)) {
         Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Box(Modifier.fillMaxWidth().height(132.dp).clip(RoundedCornerShape(17.dp)).background(Surface2)) {
                 Icon(Icons.Default.ShoppingCart, null, tint = Primary, modifier = Modifier.size(48.dp).align(Alignment.Center))
@@ -278,7 +267,7 @@ private fun AnimatedProductCard(product: Product, index: Int) {
 
 @Composable
 private fun StoresPreview() {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Surface), modifier = Modifier.fillMaxWidth()) {
+    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = SurfaceColor), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle("فروشگاه‌های منتخب خریدینو", "مشاهده همه")
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -326,9 +315,7 @@ private fun SearchScreen() {
 
     LazyColumn(Modifier.fillMaxSize().background(Background).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Text("جستجوی خریدینو", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold) }
-        item {
-            OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("نام محصول را وارد کن") }, leadingIcon = { Icon(Icons.Default.Search, null, tint = Primary) })
-        }
+        item { OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("نام محصول را وارد کن") }, leadingIcon = { Icon(Icons.Default.Search, null, tint = Primary) }) }
         if (loading) item { CircularProgressIndicator(color = Primary) }
         if (searched && !loading) {
             item { Text("${results.size} نتیجه", color = Muted) }
@@ -339,7 +326,7 @@ private fun SearchScreen() {
 
 @Composable
 private fun SearchResultCard(product: Product) {
-    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Surface), modifier = Modifier.fillMaxWidth()) {
+    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = SurfaceColor), modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(84.dp).clip(RoundedCornerShape(15.dp)).background(Surface2), contentAlignment = Alignment.Center) { Icon(Icons.Default.ShoppingCart, null, tint = Primary) }
             Column(Modifier.padding(start = 12.dp).weight(1f)) {
@@ -357,7 +344,7 @@ private fun StoresScreen() {
     LazyColumn(Modifier.fillMaxSize().background(Background).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("فروشگاه‌های منتخب خریدینو", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold) }
         items((1..8).toList()) { number ->
-            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Surface), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = SurfaceColor), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(64.dp).clip(CircleShape).background(Surface2), contentAlignment = Alignment.Center) { Icon(Icons.Default.Storefront, null, tint = Primary) }
                     Column(Modifier.padding(start = 12.dp).weight(1f)) {

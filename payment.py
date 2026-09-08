@@ -31,6 +31,7 @@ class GatewayVerifyResult:
 
 class PaymentGateway(ABC):
     name = "abstract"
+    callback_signature_required = True
 
     @abstractmethod
     def start(self, transaction_id: str, amount: int, callback_url: str) -> GatewayStartResult:
@@ -53,6 +54,7 @@ class DisabledGateway(PaymentGateway):
 
 class TestGateway(PaymentGateway):
     name = "test"
+    callback_signature_required = False
 
     def start(self, transaction_id: str, amount: int, callback_url: str) -> GatewayStartResult:
         authority = secrets.token_urlsafe(24)
@@ -72,8 +74,16 @@ class TestGateway(PaymentGateway):
 
 
 def _gateway() -> PaymentGateway:
+    """Select the configured provider; production fails closed."""
     if os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}:
         return TestGateway()
+    provider = os.environ.get("PAYMENT_PROVIDER", "disabled").strip().lower()
+    if provider == "nextpay":
+        try:
+            from payment_gateways import NextPayGateway
+            return NextPayGateway()
+        except (ImportError, RuntimeError):
+            return DisabledGateway()
     return DisabledGateway()
 
 
@@ -118,10 +128,7 @@ def apply_payment(app, db, Order, User):
     checkout_view = app.view_functions.get("checkout")
     if checkout_view and not getattr(checkout_view, "_kharidino_payment_wrapped", False):
         def checkout_payment_wrapper(*args, **kwargs):
-            before_ids = {
-                order.id
-                for order in Order.query.filter_by(user_id=session.get("user_id")).all()
-            }
+            before_ids = {order.id for order in Order.query.filter_by(user_id=session.get("user_id")).all()}
             response = checkout_view(*args, **kwargs)
             if request.method == "POST" and session.get("user_id"):
                 after_orders = Order.query.filter_by(user_id=session["user_id"]).order_by(Order.id.desc()).all()
@@ -156,7 +163,8 @@ def apply_payment(app, db, Order, User):
                 flash("این سفارش قبلاً پرداخت شده است.", "success")
                 return redirect(url_for("my_orders"))
         else:
-            tx = PaymentTransaction(order_id=order.id, user_id=session["user_id"], amount=int(order.total), gateway=_gateway().name, idempotency_key=key)
+            gateway = _gateway()
+            tx = PaymentTransaction(order_id=order.id, user_id=session["user_id"], amount=int(order.total), gateway=gateway.name, idempotency_key=key)
             db.session.add(tx)
             try:
                 db.session.flush()
@@ -176,6 +184,7 @@ def apply_payment(app, db, Order, User):
             db.session.commit()
             abort(503, description="درگاه پرداخت در دسترس نیست.")
         tx.status = "redirect"
+        tx.gateway = gateway.name
         tx.authority = result.authority
         db.session.commit()
         return redirect(result.payment_url)
@@ -186,18 +195,17 @@ def apply_payment(app, db, Order, User):
         gateway = _gateway()
         signature = str(request.values.get("signature", "") or request.headers.get("X-Payment-Signature", "")).strip()
 
-        if gateway.name != "test":
-            if not _valid_callback_signature(tx.public_id, signature):
-                abort(403, description="امضای callback نامعتبر است.")
-        elif os.environ.get("PAYMENT_TEST_MODE", "0").lower() not in {"1", "true", "yes"}:
-            abort(503, description="حالت آزمایشی پرداخت فعال نیست.")
+        if gateway.callback_signature_required and not _valid_callback_signature(tx.public_id, signature):
+            abort(403, description="امضای callback نامعتبر است.")
 
         if tx.status == "paid":
             return redirect(url_for("my_orders"))
         if tx.status in {"cancelled", "refunded"}:
             abort(409, description="این تراکنش دیگر قابل تأیید نیست.")
 
-        returned_authority = str(request.values.get("authority", "")).strip()
+        returned_authority = str(request.values.get("authority", request.values.get("trans_id", ""))).strip()
+        if gateway.name == "nextpay":
+            returned_authority = str(request.values.get("trans_id", "")).strip()
         if not returned_authority or not tx.authority or not hmac.compare_digest(tx.authority, returned_authority):
             abort(409, description="شناسه پرداخت با تراکنش تطابق ندارد.")
 
@@ -312,11 +320,6 @@ def apply_payment(app, db, Order, User):
         key = uuid.uuid4().hex
         token_factory = app.jinja_env.globals.get("csrf_token")
         token = str(token_factory()) if callable(token_factory) else ""
-        return render_template(
-            "payment_start.html",
-            order=order,
-            csrf_token=token,
-            idempotency_key=key,
-        )
+        return render_template("payment_start.html", order=order, csrf_token=token, idempotency_key=key)
 
     app._kharidino_payment = True

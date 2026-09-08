@@ -1,69 +1,102 @@
 {% extends "base.html" %}
 {% block title %}مدیریت فروشگاه‌ها | {{ site_name }}{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css') }}?v=1">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css') }}?v=2026-09-08-2">{% endblock %}
 {% block content %}
-<div class="stores-page">
-  <div class="page-hero">
-    <h1>فروشگاه‌های خریدینو</h1>
-    <p>فروشگاه‌ها را مدیریت کنید و ویترین هر فروشنده را یکجا ببینید.</p>
-  </div>
+<div class="stores-page" dir="rtl">
+  <header class="stores-hero">
+    <div>
+      <span class="stores-eyebrow">MARKETPLACE / STORES</span>
+      <h1>مدیریت فروشگاه‌ها</h1>
+      <p>اطلاعات، وضعیت و ویترین فروشگاه‌های متصل به خریدینو را از یک محیط یکپارچه مدیریت کنید.</p>
+    </div>
+    <a class="stores-primary" href="#add-store">＋ افزودن فروشگاه</a>
+  </header>
 
-  <div class="card store-create">
-    <div class="stores-heading"><h2>🏪 افزودن فروشگاه</h2><span>فروشگاه جدید را به مارکت‌پلیس اضافه کنید</span></div>
+  <section class="stores-stats" aria-label="آمار فروشگاه‌ها">
+    <div class="store-stat"><span class="store-stat-icon">🏪</span><div><b>{{ stores|length }}</b><small>کل فروشگاه‌ها</small></div></div>
+    <div class="store-stat"><span class="store-stat-icon">●</span><div><b>{{ stores|selectattr('active')|list|length }}</b><small>فروشگاه فعال</small></div></div>
+    <div class="store-stat"><span class="store-stat-icon">○</span><div><b>{{ stores|rejectattr('active')|list|length }}</b><small>غیرفعال</small></div></div>
+  </section>
+
+  <section class="store-create-panel" id="add-store">
+    <div class="panel-heading"><div><span class="panel-kicker">NEW STORE</span><h2>افزودن فروشگاه جدید</h2></div><span>اطلاعات اولیه فروشگاه را ثبت کنید.</span></div>
     <form class="store-create-form" action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
       <input type="hidden" name="id" value="">
-      <input type="text" name="name" required placeholder="نام فروشگاه">
-      <input type="url" name="website" placeholder="آدرس سایت">
-      <input type="file" name="logo" accept="image/*">
-      <label><input type="checkbox" name="active" checked> فعال</label>
+      <label>نام فروشگاه<input type="text" name="name" required placeholder="مثلاً فروشگاه دیجیتال ایرانی"></label>
+      <label>وب‌سایت<input type="url" name="website" placeholder="https://example.com"></label>
+      <label>لوگو<input type="file" name="logo" accept="image/*"></label>
+      <label class="store-check"><input type="checkbox" name="active" checked> فعال</label>
       <button type="submit">افزودن فروشگاه</button>
     </form>
-  </div>
+  </section>
 
-  <div class="stores-heading">
-    <h2>🏪 فروشگاه‌های منتخب خریدینو</h2>
-    <span>۸ فروشگاه</span>
-  </div>
+  <section class="stores-toolbar">
+    <div><span class="panel-kicker">STORE DIRECTORY</span><h2>فهرست فروشگاه‌ها</h2></div>
+    <div class="store-tools">
+      <label class="store-search"><span>⌕</span><input id="storeSearch" type="search" placeholder="جستجوی نام یا وب‌سایت…" autocomplete="off"></label>
+      <select id="storeFilter" aria-label="فیلتر وضعیت"><option value="all">همه</option><option value="active">فعال</option><option value="inactive">غیرفعال</option></select>
+    </div>
+  </section>
 
-  <div class="store-grid">
-    {% for store in stores[:8] %}
-    <article class="store-card" id="store-{{ store.id }}">
+  <div class="store-grid" id="storeGrid">
+    {% for store in stores %}
+    <article class="store-card" data-name="{{ store.name|lower }}" data-website="{{ (store.website or '')|lower }}" data-status="{{ 'active' if store.active else 'inactive' }}">
       <div class="store-card-top">
-        <div class="store-logo">
-          {% if store.logo %}
-            <img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" loading="lazy">
-          {% else %}
-            <span class="store-logo-placeholder">🏪</span>
-          {% endif %}
+        <div class="store-card-head">
+          <div class="store-logo">
+            {% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="لوگوی {{ store.name }}" loading="lazy">{% else %}<span class="store-logo-placeholder">🏪</span>{% endif %}
+          </div>
+          <span class="store-status {{ 'active' if store.active else 'inactive' }}"><i></i>{{ 'فعال' if store.active else 'غیرفعال' }}</span>
         </div>
         <h3 class="store-name" title="{{ store.name }}">{{ store.name }}</h3>
-        <div class="store-meta">
-          <span>🛍️ فروشگاه خریدینو</span>
-          <span class="store-status {{ 'active' if store.active else 'inactive' }}">● {{ 'فعال' if store.active else 'غیرفعال' }}</span>
-        </div>
-        {% if store.website %}<a class="store-site" href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% endif %}
+        <div class="store-meta"><span>شناسه فروشگاه #{{ store.id }}</span></div>
+        {% if store.website %}<a class="store-site" href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% else %}<span class="store-site store-site-empty">وب‌سایت ثبت نشده</span>{% endif %}
       </div>
 
       <div class="store-card-actions">
         <details class="store-edit">
-          <summary class="store-action">✏️ ویرایش</summary>
+          <summary class="store-action edit">✏️ ویرایش اطلاعات</summary>
           <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
             <input type="hidden" name="id" value="{{ store.id }}">
-            <input type="text" name="name" required value="{{ store.name }}">
-            <input type="url" name="website" value="{{ store.website or '' }}">
-            <input type="file" name="logo" accept="image/*">
-            <label><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال</label>
+            <label>نام فروشگاه<input type="text" name="name" required value="{{ store.name }}"></label>
+            <label>وب‌سایت<input type="url" name="website" value="{{ store.website or '' }}"></label>
+            <label>تغییر لوگو<input type="file" name="logo" accept="image/*"></label>
+            <label class="store-check"><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فروشگاه فعال باشد</label>
             <button type="submit">ذخیره تغییرات</button>
           </form>
         </details>
-        <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');">
+        <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از غیرفعال‌سازی/حذف این فروشگاه مطمئن هستید؟');">
           <button type="submit" class="store-action delete">🗑️ حذف</button>
         </form>
       </div>
     </article>
     {% else %}
-      <div class="card store-empty">هنوز فروشگاهی ثبت نشده است.</div>
+      <div class="store-empty">هنوز فروشگاهی ثبت نشده است.</div>
     {% endfor %}
   </div>
+  <div id="storeNoResults" class="store-empty" hidden>فروشگاهی با این جستجو پیدا نشد.</div>
 </div>
+
+<script>
+(() => {
+  const search = document.getElementById('storeSearch');
+  const filter = document.getElementById('storeFilter');
+  const cards = [...document.querySelectorAll('#storeGrid .store-card')];
+  const empty = document.getElementById('storeNoResults');
+  const apply = () => {
+    const q = (search.value || '').trim().toLowerCase();
+    const status = filter.value;
+    let visible = 0;
+    cards.forEach(card => {
+      const matchesText = !q || `${card.dataset.name} ${card.dataset.website}`.includes(q);
+      const matchesStatus = status === 'all' || card.dataset.status === status;
+      card.hidden = !(matchesText && matchesStatus);
+      if (!card.hidden) visible++;
+    });
+    empty.hidden = visible !== 0;
+  };
+  search.addEventListener('input', apply);
+  filter.addEventListener('change', apply);
+})();
+</script>
 {% endblock %}

@@ -33,7 +33,19 @@ def test_checkout_to_payment_bridge_is_explicit_and_owned():
     assert 'session.get("checkout_payment_order_id")' in block
     assert 'order.user_id == session.get("user_id")' in block
     assert 'response.status_code = 303' in block
-    assert 'url_for("payment_start", order_id=order.id)' in block
+    assert 'url_for("payment_start_form", order_id=order.id)' in block
+
+
+def test_payment_start_uses_branded_template_without_changing_post_flow():
+    payment = _read("payment.py")
+    start = payment.index('def payment_start_form(')
+    end = payment.index('\n\n    app._kharidino_payment', start)
+    block = payment[start:end]
+    assert 'render_template(' in block
+    assert '"payment_start.html"' in block
+    assert 'csrf_token=token' in block
+    assert 'idempotency_key=key' in block
+    assert 'uuid.uuid4().hex' in block
 
 
 def test_payment_start_has_no_secret_or_test_gateway_fallback_in_route():

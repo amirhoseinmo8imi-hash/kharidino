@@ -210,15 +210,28 @@ def seller_product_save():
 @app.post("/seller/product/delete/<int:product_id>")
 @seller_required
 def seller_product_delete(product_id):
-    account = _seller_account(); product = _owned_product(account.store_id, product_id)
-    if Offer.query.filter(Offer.product_id == product.id, Offer.store_id != account.store_id).count():
-        flash("این محصول در فروشگاه‌های دیگر هم استفاده شده و حذف کامل آن مجاز نیست.", "warning")
-        return redirect(url_for("seller_dashboard") + "#products")
-    if product.image: remove_upload(product.image)
+    account = _seller_account()
+    product = _owned_product(account.store_id, product_id)
+
+    # Product is a global catalog entity, not a seller-owned row. Never delete it
+    # from a seller action: historical OrderItem/Review/Favorite rows may still
+    # reference it and another seller may publish an offer later. Remove only this
+    # seller's ownership link and offer; deactivate the global product only when
+    # no other active offers remain.
     SellerProduct.query.filter_by(store_id=account.store_id, product_id=product.id).delete()
     Offer.query.filter_by(store_id=account.store_id, product_id=product.id).delete()
-    db.session.delete(product); db.session.commit()
-    flash("محصول از فروشگاه حذف شد. 🗑️", "success")
+    db.session.flush()
+
+    other_active_offers = Offer.query.filter(
+        Offer.product_id == product.id,
+        Offer.in_stock.is_(True),
+        Offer.price > 0,
+    ).count()
+    if other_active_offers == 0:
+        product.active = False
+
+    db.session.commit()
+    flash("محصول از فروشگاه شما حذف شد؛ سابقه سفارش و کاتالوگ اصلی حفظ شد. 🗑️", "success")
     return redirect(url_for("seller_dashboard") + "#products")
 
 

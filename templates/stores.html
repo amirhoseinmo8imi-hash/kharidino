@@ -1,29 +1,61 @@
 {% extends "base.html" %}
 {% block title %}فروشندگان خریدینو | {{ site_name }}{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css') }}?v=2026-09-08-5">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css') }}?v=2026-09-08-6">{% endblock %}
 {% block content %}
 <div class="stores-page" dir="rtl">
+  <div class="stores-breadcrumb"><a href="{{ url_for('home') }}">خانه</a><i class="fa-solid fa-chevron-left"></i><span>فروشندگان</span></div>
   <header class="stores-hero">
-    <div><span class="stores-eyebrow">KHARIDINO / SELLERS</span><h1>فروشندگان خریدینو</h1><p>مدیریت فروشندگان، بررسی عملکرد و ورود مستقیم به ویترین هر فروشگاه؛ همه‌چیز در یک نمای حرفه‌ای.</p></div>
-    <a class="stores-primary" href="#add-store">＋ افزودن فروشگاه</a>
+    <div class="stores-hero-copy">
+      <span class="stores-eyebrow"><i class="fa-solid fa-store"></i> KHARIDINO SELLERS</span>
+      <h1>فروشگاه‌های خریدینو</h1>
+      <p>فروشنده موردنظرت را پیدا کن، اعتبار و عملکردش را ببین و وارد ویترین اختصاصی آن شو.</p>
+      <div class="stores-hero-pills"><span><i class="fa-solid fa-circle-check"></i> فروشندگان فعال</span><span><i class="fa-solid fa-chart-line"></i> آمار واقعی فروش</span><span><i class="fa-solid fa-shield-heart"></i> انتخاب آگاهانه</span></div>
+    </div>
+    <a class="stores-primary" href="#add-store"><i class="fa-solid fa-plus"></i> افزودن فروشگاه</a>
   </header>
 
-  <section class="stores-stats"><div class="store-stat"><span class="store-stat-icon">🏪</span><div><b>{{ stores|length }}</b><small>کل فروشگاه‌ها</small></div></div><div class="store-stat"><span class="store-stat-icon">●</span><div><b>{{ stores|selectattr('active')|list|length }}</b><small>فعال</small></div></div><div class="store-stat"><span class="store-stat-icon">↗</span><div><b>{{ seller_stats.values()|sum(attribute='products') }}</b><small>محصولات فروشندگان</small></div></div><div class="store-stat"><span class="store-stat-icon">✓</span><div><b>{{ seller_stats.values()|sum(attribute='delivered') }}</b><small>فروش تحویل‌شده</small></div></div></section>
+  <section class="stores-stats">
+    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-store"></i></span><div><b>{{ stores|length }}</b><small>کل فروشگاه‌ها</small></div></div>
+    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-circle-check"></i></span><div><b>{{ stores|selectattr('active')|list|length }}</b><small>فروشگاه فعال</small></div></div>
+    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-boxes-stacked"></i></span><div><b>{{ seller_stats.values()|sum(attribute='products') }}</b><small>محصول فروشندگان</small></div></div>
+    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-bag-shopping"></i></span><div><b>{{ seller_stats.values()|sum(attribute='delivered') }}</b><small>سفارش تحویل‌شده</small></div></div>
+  </section>
 
-  <section class="store-create-panel" id="add-store"><div class="panel-heading"><div><span class="panel-kicker">NEW SELLER</span><h2>افزودن فروشگاه</h2></div><span>اطلاعات اولیه فروشنده را ثبت کنید.</span></div><form class="store-create-form" action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value=""><label>نام فروشگاه<input type="text" name="name" required placeholder="نام فروشگاه"></label><label>وب‌سایت<input type="url" name="website" placeholder="https://example.com"></label><label>لوگو<input type="file" name="logo" accept="image/*"></label><label class="store-check"><input type="checkbox" name="active" checked> فعال</label><button type="submit">افزودن فروشگاه</button></form></section>
+  <section class="store-create-panel" id="add-store">
+    <div class="panel-heading"><div><span class="panel-kicker">NEW SELLER</span><h2>افزودن فروشگاه</h2></div><span>اطلاعات اولیه فروشنده را ثبت کنید.</span></div>
+    <form class="store-create-form" action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="id" value="">
+      <label>نام فروشگاه<input type="text" name="name" required placeholder="مثلاً فروشگاه دیجیتال امیر"></label>
+      <label>وب‌سایت<input type="url" name="website" placeholder="https://example.com"></label>
+      <label>لوگو<input type="file" name="logo" accept="image/*"></label>
+      <label class="store-check"><input type="checkbox" name="active" checked> فعال</label>
+      <button type="submit"><i class="fa-solid fa-plus"></i> افزودن فروشگاه</button>
+    </form>
+  </section>
 
-  <section class="stores-toolbar"><div><span class="panel-kicker">SELLER DIRECTORY</span><h2>فهرست فروشندگان</h2></div><div class="store-tools"><label class="store-search"><span>⌕</span><input id="storeSearch" type="search" placeholder="جستجوی فروشگاه یا وب‌سایت…" autocomplete="off"></label><select id="storeFilter"><option value="all">همه</option><option value="active">فعال</option><option value="inactive">غیرفعال</option></select></div></section>
+  <section class="stores-toolbar">
+    <div><span class="panel-kicker">SELLER DIRECTORY</span><h2>فهرست فروشندگان</h2><p>ویترین‌ها و آمار هر فروشنده را در یک نگاه ببین.</p></div>
+    <div class="store-tools"><label class="store-search"><i class="fa-solid fa-magnifying-glass"></i><input id="storeSearch" type="search" placeholder="جستجوی فروشگاه…" autocomplete="off"></label><select id="storeFilter"><option value="all">همه فروشندگان</option><option value="active">فعال</option><option value="inactive">غیرفعال</option></select></div>
+  </section>
 
   <div class="store-grid" id="storeGrid">
     {% for store in stores %}
     {% set metric = seller_stats.get(store.id, {}) %}
     <article class="store-card" data-name="{{ store.name|lower }}" data-website="{{ (store.website or '')|lower }}" data-status="{{ 'active' if store.active else 'inactive' }}">
-      <div class="store-card-top"><div class="store-card-head"><div class="store-logo">{% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="لوگوی {{ store.name }}" loading="lazy">{% else %}<span class="store-logo-placeholder">🏪</span>{% endif %}</div><span class="store-status {{ 'active' if store.active else 'inactive' }}"><i></i>{{ 'فعال' if store.active else 'غیرفعال' }}</span></div><h3 class="store-name">{{ store.name }}</h3>{% if metric.seller_name %}<div class="store-owner">مدیر: {{ metric.seller_name }}</div>{% endif %}<div class="store-meta">شناسه فروشگاه #{{ store.id }}</div>{% if store.website %}<a class="store-site" href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% else %}<span class="store-site store-site-empty">وب‌سایت ثبت نشده</span>{% endif %}</div>
-      <div class="store-metrics"><div><b>{{ metric.products|default(0) }}</b><span>کالا</span></div><div><b>{{ metric.offers|default(0) }}</b><span>پیشنهاد</span></div><div><b>{% if metric.rating %}{{ metric.rating }}★{% else %}—{% endif %}</b><span>امتیاز</span></div><div><b>{{ metric.delivered|default(0) }}</b><span>فروش</span></div></div>
-      <div class="store-card-actions"><a class="store-action storefront-link" href="{{ url_for('storefront', store_id=store.id) }}">👁 ویترین</a><details class="store-edit"><summary class="store-action edit">✏️ ویرایش</summary><form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="{{ store.id }}"><label>نام فروشگاه<input type="text" name="name" required value="{{ store.name }}"></label><label>وب‌سایت<input type="url" name="website" value="{{ store.website or '' }}"></label><label>تغییر لوگو<input type="file" name="logo" accept="image/*"></label><label class="store-check"><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال باشد</label><button type="submit">ذخیره تغییرات</button></form></details><form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete">🗑️ حذف</button></form></div>
+      <div class="store-card-cover"><span class="store-cover-label">{% if store.active %}<i class="fa-solid fa-bolt"></i> فروشنده فعال{% else %}غیرفعال{% endif %}</span></div>
+      <div class="store-card-top">
+        <div class="store-card-head"><div class="store-logo">{% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="لوگوی {{ store.name }}" loading="lazy">{% else %}<span class="store-logo-placeholder"><i class="fa-solid fa-store"></i></span>{% endif %}</div><span class="store-status {{ 'active' if store.active else 'inactive' }}"><i></i>{{ 'فعال' if store.active else 'غیرفعال' }}</span></div>
+        <h3 class="store-name">{{ store.name }}</h3>
+        {% if metric.seller_name %}<div class="store-owner"><i class="fa-regular fa-user"></i> {{ metric.seller_name }}</div>{% endif %}
+        <div class="store-meta">فروشگاه #{{ store.id }}</div>
+        {% if store.website %}<a class="store-site" href="{{ store.website }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ store.website }}</a>{% else %}<span class="store-site store-site-empty">وب‌سایت ثبت نشده</span>{% endif %}
+      </div>
+      <div class="store-metrics"><div><b>{{ metric.products|default(0) }}</b><span>کالا</span></div><div><b>{{ metric.offers|default(0) }}</b><span>پیشنهاد</span></div><div><b>{% if metric.rating %}{{ metric.rating }}<small>★</small>{% else %}—{% endif %}</b><span>امتیاز</span></div><div><b>{{ metric.delivered|default(0) }}</b><span>فروش</span></div></div>
+      <div class="store-card-actions"><a class="store-action storefront-link" href="{{ url_for('storefront', store_id=store.id) }}"><i class="fa-solid fa-store"></i> مشاهده ویترین</a><details class="store-edit"><summary class="store-action edit"><i class="fa-solid fa-pen"></i> ویرایش</summary><form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="{{ store.id }}"><label>نام فروشگاه<input type="text" name="name" required value="{{ store.name }}"></label><label>وب‌سایت<input type="url" name="website" value="{{ store.website or '' }}"></label><label>تغییر لوگو<input type="file" name="logo" accept="image/*"></label><label class="store-check"><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال باشد</label><button type="submit">ذخیره تغییرات</button></form></details><form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete"><i class="fa-solid fa-trash"></i> حذف</button></form></div>
     </article>
-    {% else %}<div class="store-empty">هنوز فروشگاهی ثبت نشده است.</div>{% endfor %}
-  </div><div id="storeNoResults" class="store-empty" hidden>فروشگاهی با این جستجو پیدا نشد.</div>
+    {% else %}<div class="store-empty"><i class="fa-solid fa-store-slash"></i><strong>هنوز فروشگاهی ثبت نشده است.</strong><span>اولین فروشگاه را از بخش افزودن فروشگاه ایجاد کنید.</span></div>{% endfor %}
+  </div>
+  <div id="storeNoResults" class="store-empty" hidden><i class="fa-solid fa-magnifying-glass"></i><strong>فروشگاهی پیدا نشد</strong><span>عبارت جستجو یا فیلتر را تغییر بده.</span></div>
 </div>
-<script>(()=>{const s=document.getElementById('storeSearch'),f=document.getElementById('storeFilter'),cards=[...document.querySelectorAll('#storeGrid .store-card')],e=document.getElementById('storeNoResults');function apply(){const q=(s.value||'').trim().toLowerCase(),st=f.value;let n=0;cards.forEach(c=>{const ok=(!q||`${c.dataset.name} ${c.dataset.website}`.includes(q))&&(st==='all'||c.dataset.status===st);c.hidden=!ok;if(ok)n++});e.hidden=n!==0}s.addEventListener('input',apply);f.addEventListener('change',apply)})();</script>
+<script>(()=>{const s=document.getElementById('storeSearch'),f=document.getElementById('storeFilter'),cards=[...document.querySelectorAll('#storeGrid .store-card')],e=document.getElementById('storeNoResults');function apply(){const q=(s.value||'').trim().toLowerCase(),st=f.value;let n=0;cards.forEach(c=>{const ok=(!q||`${c.dataset.name} ${c.dataset.website}`.includes(q))&&(st==='all'||c.dataset.status===st);c.hidden=!ok;if(ok)n++});e.hidden=n!==0}if(s)s.addEventListener('input',apply);if(f)f.addEventListener('change',apply)})();</script>
 {% endblock %}

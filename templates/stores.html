@@ -1,27 +1,69 @@
 {% extends "base.html" %}
 {% block title %}مدیریت فروشگاه‌ها | {{ site_name }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css') }}?v=1">{% endblock %}
 {% block content %}
-<div class="container">
-  <div class="page-hero"><h1>مدیریت فروشگاه‌ها</h1><p>مدیریت فروشگاه‌ها و اطلاعات آن‌ها</p></div>
-  <div class="card"><form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="id" value="">
-    <input name="name" required placeholder="نام فروشگاه"><input name="website" placeholder="آدرس سایت"><input type="file" name="logo" accept="image/*"><label><input type="checkbox" name="active" checked> فعال</label><button type="submit">افزودن فروشگاه</button>
-  </form></div>
-  {% for store in stores %}
-  <div class="card" id="store-{{ store.id }}">
-    {% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" style="width:72px;height:72px;object-fit:contain">{% endif %}
-    <h3>{{ store.name }}</h3>
-    {% if store.website %}<a href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% endif %}
-    <div class="store-card-actions">
-      <details><summary class="store-action edit">✏️ ویرایش</summary>
-        <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
-          <input type="hidden" name="id" value="{{ store.id }}">
-          <input name="name" required value="{{ store.name }}"><input name="website" value="{{ store.website or '' }}"><input type="file" name="logo" accept="image/*"><label><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال</label><button type="submit">ذخیره تغییرات</button>
-        </form>
-      </details>
-      <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete">🗑️ حذف</button></form>
-    </div>
+<div class="stores-page">
+  <div class="page-hero">
+    <h1>فروشگاه‌های خریدینو</h1>
+    <p>فروشگاه‌ها را مدیریت کنید و ویترین هر فروشنده را یکجا ببینید.</p>
   </div>
-  {% else %}<div class="card">فروشگاهی ثبت نشده است.</div>{% endfor %}
+
+  <div class="card store-create">
+    <div class="stores-heading"><h2>🏪 افزودن فروشگاه</h2><span>فروشگاه جدید را به مارکت‌پلیس اضافه کنید</span></div>
+    <form class="store-create-form" action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="id" value="">
+      <input type="text" name="name" required placeholder="نام فروشگاه">
+      <input type="url" name="website" placeholder="آدرس سایت">
+      <input type="file" name="logo" accept="image/*">
+      <label><input type="checkbox" name="active" checked> فعال</label>
+      <button type="submit">افزودن فروشگاه</button>
+    </form>
+  </div>
+
+  <div class="stores-heading">
+    <h2>🏪 فروشگاه‌های منتخب خریدینو</h2>
+    <span>۸ فروشگاه</span>
+  </div>
+
+  <div class="store-grid">
+    {% for store in stores[:8] %}
+    <article class="store-card" id="store-{{ store.id }}">
+      <div class="store-card-top">
+        <div class="store-logo">
+          {% if store.logo %}
+            <img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" loading="lazy">
+          {% else %}
+            <span class="store-logo-placeholder">🏪</span>
+          {% endif %}
+        </div>
+        <h3 class="store-name" title="{{ store.name }}">{{ store.name }}</h3>
+        <div class="store-meta">
+          <span>🛍️ فروشگاه خریدینو</span>
+          <span class="store-status {{ 'active' if store.active else 'inactive' }}">● {{ 'فعال' if store.active else 'غیرفعال' }}</span>
+        </div>
+        {% if store.website %}<a class="store-site" href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% endif %}
+      </div>
+
+      <div class="store-card-actions">
+        <details class="store-edit">
+          <summary class="store-action">✏️ ویرایش</summary>
+          <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="id" value="{{ store.id }}">
+            <input type="text" name="name" required value="{{ store.name }}">
+            <input type="url" name="website" value="{{ store.website or '' }}">
+            <input type="file" name="logo" accept="image/*">
+            <label><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال</label>
+            <button type="submit">ذخیره تغییرات</button>
+          </form>
+        </details>
+        <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');">
+          <button type="submit" class="store-action delete">🗑️ حذف</button>
+        </form>
+      </div>
+    </article>
+    {% else %}
+      <div class="card store-empty">هنوز فروشگاهی ثبت نشده است.</div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

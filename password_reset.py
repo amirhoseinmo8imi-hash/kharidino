@@ -100,6 +100,10 @@ def _send_reset_email(user, link):
     }
 
     if not host or not sender or not username or not password:
+        app.logger.error(
+            "Password reset SMTP is not configured: host=%s sender=%s username_set=%s password_set=%s",
+            bool(host), bool(sender), bool(username), bool(password),
+        )
         return False
 
     message = EmailMessage()
@@ -136,12 +140,14 @@ def forgot_password():
         email = request.form.get("email", "").strip().lower()
         user = User.query.filter_by(email=email).first() if email else None
         sent = False
+        app.logger.info("Password reset requested: account_found=%s", bool(user))
 
         if user:
             token = _token_for(user)
             link = _reset_link(token)
             try:
                 sent = _send_reset_email(user, link)
+                app.logger.info("Password reset email delivery result: sent=%s", sent)
             except (OSError, smtplib.SMTPException):
                 app.logger.exception("Password reset email delivery failed")
             except Exception:

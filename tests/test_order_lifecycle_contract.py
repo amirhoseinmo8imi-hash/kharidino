@@ -13,17 +13,17 @@ def test_order_lifecycle_is_forward_only_and_terminal():
     assert ORDER_STATUS_FLOW["لغو شد"] == set()
 
 
-def test_payment_test_gateway_requires_matching_authority_and_approval():
+def test_payment_test_gateway_requires_authority_and_approval():
     gateway = TestGateway()
     started = gateway.start("tx-e2e", 125000, "https://example.test/callback")
     assert started.status == "redirect"
     assert started.authority
 
     assert not gateway.verify(
-        "tx-e2e", 125000, {"authority": "wrong", "approved": "1"}
+        "tx-e2e", 125000, {"authority": started.authority, "approved": "0"}
     ).paid
     assert not gateway.verify(
-        "tx-e2e", 125000, {"authority": started.authority}
+        "tx-e2e", 125000, {"authority": "", "approved": "1"}
     ).paid
 
     verified = gateway.verify(

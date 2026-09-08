@@ -53,13 +53,21 @@ class NextPayGateway:
             response.raise_for_status()
             body = response.json()
         except (requests.RequestException, ValueError) as exc:
-            logger.warning("NextPay start failed for transaction=%s: %s", self._safe_transaction(transaction_id), type(exc).__name__)
+            logger.warning(
+                "NextPay start failed for transaction=%s: %s",
+                self._safe_transaction(transaction_id),
+                type(exc).__name__,
+            )
             return GatewayStartResult("failed", "", "")
 
         code = body.get("code")
         trans_id = str(body.get("trans_id", "")).strip()
         if code != -1 or not trans_id:
-            logger.warning("NextPay token rejected for transaction=%s code=%r", self._safe_transaction(transaction_id), code)
+            logger.warning(
+                "NextPay token rejected for transaction=%s code=%r",
+                self._safe_transaction(transaction_id),
+                code,
+            )
             return GatewayStartResult("failed", "", "")
 
         return GatewayStartResult(
@@ -71,11 +79,12 @@ class NextPayGateway:
     def verify(self, transaction_id: str, amount: int, payload: dict):
         from payment import GatewayVerifyResult
 
+        # NextPay's trans_id is a provider-generated token and is deliberately
+        # different from our internal transaction/order identifier. The
+        # callback layer already binds this token to tx.authority before verify.
         trans_id = str(payload.get("trans_id", "")).strip()
         if not trans_id:
             return GatewayVerifyResult(False, "", "درگاه شناسه تراکنش را برنگرداند.")
-        if trans_id != transaction_id:
-            return GatewayVerifyResult(False, "", "شناسه تراکنش با سفارش تطابق ندارد.")
 
         requested_amount = int(amount)
         provider_amount = str(payload.get("amount", "")).strip()
@@ -93,24 +102,32 @@ class NextPayGateway:
             response.raise_for_status()
             body = response.json()
         except (requests.RequestException, ValueError) as exc:
-            logger.warning("NextPay verify failed for transaction=%s: %s", self._safe_transaction(transaction_id), type(exc).__name__)
+            logger.warning(
+                "NextPay verify failed for transaction=%s: %s",
+                self._safe_transaction(transaction_id),
+                type(exc).__name__,
+            )
             return GatewayVerifyResult(False, "", "استعلام درگاه با خطای شبکه مواجه شد؛ پرداخت دوباره قابل تلاش است.")
 
         code = body.get("code")
         provider_order = str(body.get("order_id", "")).strip()
         returned_amount = body.get("amount")
         if code != 0:
-            logger.info("NextPay verify rejected for transaction=%s code=%r", self._safe_transaction(transaction_id), code)
+            logger.info(
+                "NextPay verify rejected for transaction=%s code=%r",
+                self._safe_transaction(transaction_id),
+                code,
+            )
             return GatewayVerifyResult(False, "", "پرداخت توسط درگاه تأیید نشد.")
-        if provider_order and provider_order != transaction_id:
+        if not provider_order or provider_order != transaction_id:
             return GatewayVerifyResult(False, "", "شماره سفارش درگاه با تراکنش داخلی تطابق ندارد.")
         try:
-            if returned_amount is not None and int(returned_amount) != requested_amount:
+            if returned_amount is None or int(returned_amount) != requested_amount:
                 return GatewayVerifyResult(False, "", "مبلغ تأییدشده درگاه با سفارش تطابق ندارد.")
         except (TypeError, ValueError):
             return GatewayVerifyResult(False, "", "مبلغ پاسخ درگاه نامعتبر است.")
 
         reference = str(body.get("Shaparak_Ref_Id", "")).strip()
         if not reference:
-            reference = str(body.get("trans_id", trans_id)).strip()
+            return GatewayVerifyResult(False, "", "درگاه مرجع پرداخت معتبری برنگرداند.")
         return GatewayVerifyResult(True, reference[:200])

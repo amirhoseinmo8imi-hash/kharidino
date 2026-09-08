@@ -4,12 +4,14 @@ import socket
 
 from flask import redirect, request, render_template
 
-from app import app, db, Product, Category, Store, Offer, User, admin_required
+from app import app, db, Product, Category, Store, Offer, User, admin_required, login_required
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
+from marketplace import register as register_marketplace
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
+register_marketplace(app, db, Product, Category, Store, Offer, User, login_required, admin_required)
 
 
 @app.get("/splash")

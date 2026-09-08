@@ -153,7 +153,7 @@ def _validate_checkout_stock() -> None:
     if request.endpoint != "checkout" or not session.get("user_id"):
         return
     try:
-        from app import Product, Offer, Store
+        from app import db, Product, Offer, Store
         cart = session.get("cart", {})
         if not isinstance(cart, dict):
             cart = {}
@@ -165,7 +165,7 @@ def _validate_checkout_stock() -> None:
                 abort(400, description="سبد خرید نامعتبر است.")
             if quantity < 1 or quantity > 99:
                 abort(400, description="تعداد کالا نامعتبر است.")
-            product = Product.query.get(product_id)
+            product = db.session.get(Product, product_id)
             # Business-layer checkout remains the source of truth for product existence.
             # Security validation must not manufacture a failure for synthetic/test routes
             # or carts whose product is resolved by a different checkout backend.

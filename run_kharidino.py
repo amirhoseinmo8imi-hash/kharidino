@@ -66,6 +66,7 @@ import merchant_approval  # noqa: F401
 import merchant_marketplace_v2  # noqa: F401
 import merchant_customer_marketplace  # noqa: F401
 import accounting  # noqa: F401 - platform and seller accounting workspace
+import system_health  # noqa: F401 - deployment and consistency probes
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
@@ -143,7 +144,8 @@ def logout_get():
 @app.before_request
 def splash_gate():
     if (request.path.startswith("/static/") or request.path.startswith("/splash") or request.path.startswith("/phone")
-            or request.path.startswith("/api/mobile/") or request.path.startswith("/admin/kharidino-ai/api/")):
+            or request.path.startswith("/api/mobile/") or request.path.startswith("/admin/kharidino-ai/api/")
+            or request.path == "/healthz"):
         return None
     if request.cookies.get("kharidino_splash") != "1":
         return redirect("/splash")
@@ -161,5 +163,6 @@ if __name__ == "__main__":
     print(f"LAN:    http://<PC-IP>:{port}")
     print(f"AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
     print("Accounting: /admin/accounting | /seller/accounting")
+    print("Health: /healthz | /admin/system-health")
     print("=" * 50)
     app.run(host=host, port=port, debug=debug)

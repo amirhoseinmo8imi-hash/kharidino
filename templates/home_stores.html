@@ -1,32 +1,41 @@
-<section class="ki-sellers-section" id="sellers">
+<section class="ki-sellers-section" id="sellers" aria-labelledby="home-sellers-title">
   <div class="ki-sellers-head">
     <div>
       <span class="ki-section-kicker">انتخاب مطمئن‌تر</span>
-      <h2>فروشندگان خریدینو</h2>
-      <p>فروشگاه‌های فعال را بشناس، پیشنهادهایشان را مقایسه کن و با خیال راحت‌تر انتخاب کن.</p>
+      <h2 id="home-sellers-title">فروشندگان خریدینو</h2>
+      <p>فروشگاه‌های فعال را بشناس و قبل از خرید، انتخاب مناسب‌تری داشته باش.</p>
     </div>
     <span class="ki-sellers-count">{{ stores|length }} فروشگاه فعال</span>
   </div>
+
   <div class="ki-sellers-rail">
     {% for store in stores[:8] %}
       <article class="ki-seller-card">
         <a class="ki-seller-main" href="{{ store.website or '#sellers' }}" {% if store.website %}target="_blank" rel="noopener noreferrer"{% endif %}>
           <div class="ki-seller-logo">
-            {% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" loading="lazy">{% else %}<i class="fa-solid fa-store"></i>{% endif %}
+            {% if store.logo %}
+              <img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" loading="lazy">
+            {% else %}
+              <i class="fa-solid fa-store"></i>
+            {% endif %}
           </div>
           <div class="ki-seller-info">
             <h3>{{ store.name }}</h3>
             <span><i class="fa-solid fa-circle-check"></i> فروشگاه فعال</span>
           </div>
-          <i class="fa-solid fa-chevron-left ki-seller-arrow"></i>
+          <i class="fa-solid fa-chevron-left ki-seller-arrow" aria-hidden="true"></i>
         </a>
         <div class="ki-seller-meta">
-          <span><i class="fa-solid fa-tags"></i> {{ store.offers|length }} پیشنهاد</span>
-          <span><i class="fa-solid fa-shield-halved"></i> قابل مقایسه</span>
+          <span><i class="fa-solid fa-shop"></i> فروشگاه معتبر</span>
+          <span><i class="fa-solid fa-shield-halved"></i> انتخاب مطمئن</span>
         </div>
       </article>
     {% else %}
-      <div class="ki-sellers-empty">هنوز فروشگاه فعالی برای نمایش ثبت نشده است.</div>
+      <div class="ki-sellers-empty">
+        <i class="fa-solid fa-store-slash"></i>
+        <strong>هنوز فروشگاه فعالی ثبت نشده است.</strong>
+        <span>به‌زودی فروشندگان خریدینو در این بخش نمایش داده می‌شوند.</span>
+      </div>
     {% endfor %}
   </div>
 </section>

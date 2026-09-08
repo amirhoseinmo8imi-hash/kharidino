@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}پرداخت سفارش #{{ order.id }} | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero checkout-page-hero">
+  <div class="container">
+    <span class="section-kicker"><i class="fa-solid fa-credit-card"></i> پرداخت امن</span>
+    <h1>پرداخت سفارش #{{ order.id }}</h1>
+    <p>مبلغ سفارش را بررسی کن و برای ادامه به درگاه پرداخت برو.</p>
+  </div>
+</section>
+<section class="section checkout-section payment-start-section">
+  <div class="container">
+    <div class="checkout-layout payment-start-layout">
+      <form class="checkout-form checkout-main payment-start-card" method="post" action="{{ url_for('payment_start', order_id=order.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+        <div class="checkout-card-header">
+          <div class="checkout-header-icon"><i class="fa-solid fa-lock"></i></div>
+          <div><span>درگاه پرداخت</span><h2>آماده پرداخت هستی؟</h2></div>
+        </div>
+        <div class="checkout-form-body">
+          <div class="payment-amount-card">
+            <span>مبلغ قابل پرداخت</span>
+            <strong>{{ order.total|money }} <small>تومان</small></strong>
+          </div>
+          <div class="payment-note">
+            <div class="payment-note-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div><strong>پرداخت امن</strong><span>اطلاعات کارت در اختیار خریدینو قرار نمی‌گیرد و تراکنش پس از تأیید درگاه ثبت می‌شود.</span></div>
+          </div>
+          <button class="btn full checkout-submit" type="submit"><i class="fa-solid fa-arrow-left"></i> ادامه به درگاه پرداخت</button>
+          <div class="checkout-safe"><i class="fa-solid fa-lock"></i> این درخواست فقط برای سفارش متعلق به حساب فعلی معتبر است.</div>
+        </div>
+      </form>
+      <aside class="summary-card checkout-summary">
+        <div class="summary-header"><span><i class="fa-solid fa-receipt"></i> خلاصه سفارش</span><div class="summary-icon"><i class="fa-solid fa-bag-shopping"></i></div></div>
+        <div class="summary-row"><span>شماره سفارش</span><strong>#{{ order.id }}</strong></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row"><span>وضعیت</span><strong>در انتظار پرداخت</strong></div>
+        <div class="summary-divider"></div>
+        <div class="summary-total"><span>مبلغ نهایی</span><strong>{{ order.total|money }} <small>تومان</small></strong></div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

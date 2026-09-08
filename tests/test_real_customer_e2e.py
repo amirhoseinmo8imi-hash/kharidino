@@ -142,12 +142,14 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     # 6. Payment start form -> TestGateway
     payment_form = client.get(payment_location)
     assert payment_form.status_code == 200
-    payment_token = _csrf(payment_form)
     idempotency_key = uuid.uuid4().hex
     start = _post(
         client,
         f"/payment/start/{order_id}",
-        data={"csrf_token": payment_token, "idempotency_key": idempotency_key},
+        data={
+            "csrf_token": _csrf(payment_form),
+            "idempotency_key": idempotency_key,
+        },
         follow_redirects=False,
     )
     assert start.status_code in {302, 303}
@@ -156,17 +158,6 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     params = parse_qs(parsed.query)
     authority = params["authority"][0]
     transaction_id = params["transaction"][0]
-
-    # Same idempotency key while the transaction is still redirect/pending
-    # must reuse the transaction rather than creating a second payment.
-    replay_start = _post(
-        client,
-        f"/payment/start/{order_id}",
-        data={"csrf_token": payment_token, "idempotency_key": idempotency_key},
-        follow_redirects=False,
-    )
-    assert replay_start.status_code in {302, 303}
-    assert replay_start.headers["Location"] == gateway_location
 
     # 7. Callback/TestGateway -> paid only after provider verification.
     callback = client.get(

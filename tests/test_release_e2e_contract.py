@@ -15,8 +15,6 @@ def _read(name):
 def test_customer_journey_contract_is_present():
     app = _read("app.py")
     payment = _read("payment.py")
-    # Some customer routes are registered by extension modules, so the
-    # contract checks the route vocabulary rather than assuming one decorator.
     for route in ("/login", "/product/", "/cart", "/checkout", "/orders"):
         assert route in app or route in payment
     assert '@app.post("/payment/start/<int:order_id>")' in payment
@@ -57,7 +55,7 @@ def test_payment_start_has_no_secret_or_test_gateway_fallback_in_route():
     assert 'PAYMENT_TEST_MODE' not in block
 
 
-def test_production_gateway_selection_is_fail_closed():
+def test_production_gateway_selection_is_fail_closed_and_provider_selectable():
     payment = _read("payment.py")
     start = payment.index('def _gateway()')
     end = payment.index('\n\n\ndef _idempotency_key', start)
@@ -65,6 +63,19 @@ def test_production_gateway_selection_is_fail_closed():
     assert 'TestGateway()' in block
     assert 'return DisabledGateway()' in block
     assert 'PAYMENT_TEST_MODE' in block
+    assert 'PAYMENT_PROVIDER' in block
+    assert 'provider == "nextpay"' in block
+    assert 'NextPayGateway' in block
+
+
+def test_nextpay_adapter_is_present_and_provider_neutral_layer_remains():
+    gateway = _read("payment_gateways.py")
+    assert 'class NextPayGateway' in gateway
+    assert 'NEXTPAY_API_KEY' in gateway
+    assert 'PAYMENT_HTTP_TIMEOUT' in gateway
+    assert 'https://nextpay.org/nx/gateway/token' in gateway
+    assert 'https://nextpay.org/nx/gateway/verify' in gateway
+    assert 'Shaparak_Ref_Id' in gateway
 
 
 def test_callback_requires_provider_verification_before_paid_transition():
@@ -77,10 +88,12 @@ def test_callback_requires_provider_verification_before_paid_transition():
     assert 'tx.gateway_reference = result.reference[:200]' in block
 
 
-def test_environment_template_documents_secret_only_configuration():
+def test_environment_template_documents_provider_secrets_only():
     env = ROOT / ".env.example"
-    if env.exists():
-        source = env.read_text(encoding="utf-8")
-        assert "PAYMENT_CALLBACK_SECRET" in source
-        assert "PAYMENT_TEST_MODE" in source
-        assert "SECRET_KEY" in source
+    assert env.exists()
+    source = env.read_text(encoding="utf-8")
+    assert "PAYMENT_PROVIDER" in source
+    assert "PAYMENT_CALLBACK_SECRET" in source
+    assert "PAYMENT_TEST_MODE" in source
+    assert "NEXTPAY_API_KEY" in source
+    assert "SECRET_KEY" in source

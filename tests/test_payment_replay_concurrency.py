@@ -136,5 +136,5 @@ def test_e2e_contract_keeps_provider_off_for_test_gateway_runs():
 def test_no_provider_credentials_are_embedded_in_replay_concurrency_tests():
     """Regression guard: this test module must contain no provider secret."""
     test_source = Path(__file__).read_text(encoding="utf-8")
-    assert "API_KEY" not in test_source
-    assert "api_key" not in test_source.lower()
+    forbidden = ("_API_", "api_key")
+    assert not any(token.lower() in test_source.lower() for token in forbidden)

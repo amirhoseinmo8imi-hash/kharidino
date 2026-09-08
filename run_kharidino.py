@@ -71,6 +71,7 @@ import merchant_marketplace  # noqa: F401
 import merchant_approval  # noqa: F401
 import merchant_marketplace_v2  # noqa: F401
 import merchant_customer_marketplace  # noqa: F401
+import seller_storefront  # noqa: F401 - public seller storefront
 import accounting  # noqa: F401 - platform and seller accounting workspace
 import system_health  # noqa: F401 - deployment and consistency probes
 from inventory_atomicity import apply_inventory_atomicity

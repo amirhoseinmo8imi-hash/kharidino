@@ -116,10 +116,6 @@ def apply_payment(app, db, Order, User):
 
     app.extensions["kharidino_payment_transaction"] = PaymentTransaction
 
-    # Wrap the existing checkout endpoint so the payment bridge receives the
-    # exact order created by that request instead of guessing from the latest
-    # order belonging to the user. This keeps payment binding correct even when
-    # the user has multiple recent orders.
     checkout_view = app.view_functions.get("checkout")
     if checkout_view and not getattr(checkout_view, "_kharidino_payment_wrapped", False):
         def checkout_payment_wrapper(*args, **kwargs):
@@ -191,10 +187,6 @@ def apply_payment(app, db, Order, User):
         gateway = _gateway()
         signature = str(request.values.get("signature", "") or request.headers.get("X-Payment-Signature", "")).strip()
 
-        # A gateway callback is not a browser-session action. Real gateways may
-        # return from a different browser/device, so session ownership is not an
-        # authorization mechanism here. In production the callback must carry the
-        # server-to-server HMAC signature configured for the gateway integration.
         if gateway.name != "test":
             if not _valid_callback_signature(tx.public_id, signature):
                 abort(403, description="امضای callback نامعتبر است.")
@@ -212,27 +204,59 @@ def apply_payment(app, db, Order, User):
 
         if tx.amount <= 0:
             abort(409, description="مبلغ تراکنش نامعتبر است.")
-        tx.status = "verifying"
+
+        # Atomically claim the callback before contacting the gateway. Without
+        # this conditional update, two concurrent callbacks could both enter
+        # verification and race to create the same paid transaction/reference.
+        claim = PaymentTransaction.query.filter(
+            PaymentTransaction.id == tx.id,
+            PaymentTransaction.status.in_({"pending", "redirect", "failed"}),
+        ).update({"status": "verifying"}, synchronize_session=False)
+        if claim != 1:
+            db.session.rollback()
+            current = db.session.get(PaymentTransaction, tx.id)
+            if current and current.status == "paid":
+                return redirect(url_for("my_orders"))
+            abort(409, description="این callback هم‌زمان در حال پردازش است.")
         db.session.commit()
+        tx = db.session.get(PaymentTransaction, tx.id)
+
         result = gateway.verify(tx.public_id, tx.amount, request.values.to_dict())
         if not result.paid:
-            tx.status = "failed"
-            tx.failed_at = db.func.now()
+            failed = PaymentTransaction.query.filter(
+                PaymentTransaction.id == tx.id,
+                PaymentTransaction.status == "verifying",
+            ).update({"status": "failed", "failed_at": db.func.now()}, synchronize_session=False)
+            if failed != 1:
+                db.session.rollback()
+                current = db.session.get(PaymentTransaction, tx.id)
+                if current and current.status == "paid":
+                    return redirect(url_for("my_orders"))
+                abort(409, description="وضعیت تراکنش هنگام ثبت نتیجه تغییر کرده است.")
             db.session.commit()
             flash(result.message or "پرداخت ناموفق بود.", "danger")
             return redirect(url_for("my_orders"))
         if not result.reference:
+            db.session.rollback()
             abort(502, description="درگاه مرجع پرداخت معتبری برنگرداند.")
 
-        tx.status = "paid"
-        tx.gateway_reference = result.reference[:200]
-        tx.paid_at = db.func.now()
         order = db.session.get(Order, tx.order_id)
         if not order or order.user_id != tx.user_id or int(order.total or 0) != tx.amount:
             db.session.rollback()
             abort(409, description="سفارش با تراکنش پرداخت تطابق ندارد.")
+
+        tx.status = "paid"
+        tx.gateway_reference = result.reference[:200]
+        tx.paid_at = db.func.now()
         order.status = "تأیید شد"
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            current = db.session.get(PaymentTransaction, tx.id)
+            if current and current.status == "paid":
+                return redirect(url_for("my_orders"))
+            abort(409, description="ثبت هم‌زمان نتیجه پرداخت ممکن نشد.")
         flash("پرداخت با موفقیت تأیید شد. 💳", "success")
         return redirect(url_for("my_orders"))
 

@@ -217,21 +217,23 @@ def apply_payment(app, db, Order, User):
         order = db.session.get(Order, tx.order_id)
         if not order:
             abort(409, description="سفارش مرتبط با تراکنش پیدا نشد.")
-        # Until a dedicated returns/chargeback workflow exists, refunds are
-        # intentionally limited to paid orders that have not shipped. This keeps
-        # inventory, seller payable and the financial journal consistent.
         if order.status not in {"تأیید شد", "در حال آماده‌سازی"}:
             abort(409, description="پس از ارسال، استرداد از مسیر مرجوعی انجام می‌شود.")
+
         tx.status = "refunded"
         order.status = "لغو شد"
         # A refunded order must never later become payable just because a seller
-        # marks its suborder delivered. The seller layer checks the master status,
-        # and these rows are explicitly cancelled here as an additional invariant.
-        for seller_order in list(getattr(order, "seller_orders", []) or []):
-            if seller_order.status not in {"delivered", "cancelled"}:
-                seller_order.status = "cancelled"
-            for ledger in list(getattr(seller_order, "ledger", []) or []):
-                ledger.status = "cancelled"
+        # marks its suborder delivered. The seller layer also checks master status.
+        try:
+            from merchant_marketplace_v2 import SellerLedger
+            for seller_order in list(getattr(order, "seller_orders", []) or []):
+                if seller_order.status not in {"delivered", "cancelled"}:
+                    seller_order.status = "cancelled"
+                ledger = SellerLedger.query.filter_by(seller_order_id=seller_order.id).first()
+                if ledger and ledger.status not in {"paid", "cancelled"}:
+                    ledger.status = "cancelled"
+        except ImportError:
+            pass
         db.session.commit()
         return redirect(url_for("admin"))
 

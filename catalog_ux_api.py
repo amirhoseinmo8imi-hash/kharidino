@@ -5,7 +5,7 @@ storefront markup. The API follows common ecommerce discovery patterns: keyword
 search, category, price range, stock, sorting, pagination and result counts.
 """
 from flask import jsonify, request
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 
 def apply_catalog_ux_api(app, db, Product, Category, Offer, Store):
@@ -35,21 +35,37 @@ def apply_catalog_ux_api(app, db, Product, Category, Offer, Store):
         query = Product.query.filter(Product.active.is_(True))
         if q:
             pattern = f"%{q}%"
-            query = query.filter(db.or_(Product.name.ilike(pattern), Product.description.ilike(pattern)))
+            query = query.filter(
+                or_(Product.name.ilike(pattern), Product.description.ilike(pattern))
+            )
         if category_id is not None:
             query = query.filter(Product.category_id == category_id)
 
-        # Use the product's base price for cheap SQL-side filtering. The response
-        # still reports the real lowest active offer price.
+        # Filter and sort by the same price users see: the lowest active offer
+        # from an active store. Products without an offer fall back to base price.
+        lowest_offer_price = (
+            db.session.query(func.min(Offer.price))
+            .join(Store, Offer.store_id == Store.id)
+            .filter(
+                Offer.product_id == Product.id,
+                Offer.in_stock.is_(True),
+                Store.active.is_(True),
+                Offer.price > 0,
+            )
+            .correlate(Product)
+            .scalar_subquery()
+        )
+        effective_price = func.coalesce(lowest_offer_price, Product.price)
+
         if min_price is not None:
-            query = query.filter(Product.price >= min_price)
+            query = query.filter(effective_price >= min_price)
         if max_price is not None:
-            query = query.filter(Product.price <= max_price)
+            query = query.filter(effective_price <= max_price)
 
         if sort == "price_low":
-            query = query.order_by(Product.price.asc(), Product.id.desc())
+            query = query.order_by(effective_price.asc(), Product.id.desc())
         elif sort == "price_high":
-            query = query.order_by(Product.price.desc(), Product.id.desc())
+            query = query.order_by(effective_price.desc(), Product.id.desc())
         elif sort == "name":
             query = query.order_by(Product.name.asc(), Product.id.desc())
         else:

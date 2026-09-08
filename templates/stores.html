@@ -13,12 +13,7 @@
     <h3>{{ store.name }}</h3>
     {% if store.website %}<a href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% endif %}
     <div class="store-card-actions">
-      <details><summary class="store-action edit">✏️ ویرایش</summary>
-        <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
-          <input type="hidden" name="id" value="{{ store.id }}">
-          <input name="name" required value="{{ store.name }}"><input name="website" value="{{ store.website or '' }}"><input type="file" name="logo" accept="image/*"><label><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال</label><button type="submit">ذخیره تغییرات</button>
-        </form>
-      </details>
+      <a href="{{ url_for('admin') }}#store-{{ store.id }}" class="store-action edit">✏️ ویرایش</a>
       <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete">🗑️ حذف</button></form>
     </div>
   </div>

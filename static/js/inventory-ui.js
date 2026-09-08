@@ -1,6 +1,45 @@
 (function () {
   "use strict";
 
+  // Product pages may contain legacy Google-candidate discovery code. Those
+  // candidate assets are local/build-time data and are not part of the
+  // storefront release, so probing them created 404 noise for every product.
+  // Keep native Image behavior for every other image and ignore only this
+  // legacy candidate namespace. The verified product.image remains canonical.
+  (function suppressLegacyCandidateProbes() {
+    var NativeImage = window.Image;
+    if (!NativeImage || window.__kharidinoCandidateProbeGuard) return;
+
+    window.__kharidinoCandidateProbeGuard = true;
+    window.Image = function () {
+      var image = new NativeImage(...arguments);
+      var descriptor = Object.getOwnPropertyDescriptor(
+        HTMLImageElement.prototype,
+        "src"
+      );
+
+      if (!descriptor || !descriptor.set || !descriptor.get) return image;
+
+      Object.defineProperty(image, "src", {
+        configurable: true,
+        enumerable: true,
+        get: function () {
+          return descriptor.get.call(image);
+        },
+        set: function (value) {
+          var source = String(value || "");
+          if (source.indexOf("/google_candidates/no_image_27/") !== -1) {
+            return;
+          }
+          descriptor.set.call(image, value);
+        }
+      });
+
+      return image;
+    };
+    window.Image.prototype = NativeImage.prototype;
+  })();
+
   function productIdFromHref(href) {
     if (!href) return null;
     const match = href.match(/\/product\/(\d+)/);

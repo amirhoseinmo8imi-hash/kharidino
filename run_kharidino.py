@@ -74,6 +74,7 @@ import merchant_customer_marketplace  # noqa: F401
 import seller_storefront  # noqa: F401 - public seller storefront
 import seller_introduction  # noqa: F401 - seller acquisition landing page
 import terms  # noqa: F401 - public terms and conditions page
+import password_reset  # noqa: F401 - password recovery and reset
 import accounting  # noqa: F401 - platform and seller accounting workspace
 import system_health  # noqa: F401 - deployment and consistency probes
 from inventory_atomicity import apply_inventory_atomicity
@@ -87,7 +88,6 @@ with app.app_context():
     apply_redirect_hardening(app)
     apply_catalog_security(app)
     apply_catalog_ux_api(app, db, Product, Category, Offer, Store)
-    # Checkout preflight deliberately runs before inventory reservation.
     apply_checkout_preflight(app)
     apply_inventory_security(app)
     apply_inventory_atomicity(app)

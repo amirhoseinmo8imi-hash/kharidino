@@ -18,19 +18,12 @@ PRODUCTS_ARCHIVE = PRODUCTS_DIR / "products.zip"
 
 
 def _install_bundled_product_images():
-    """Extract products.zip placed inside static/uploads/products safely.
-
-    The archive supplied with Kharidino has a top-level `products/` folder;
-    its contents are merged into the real product upload directory.
-    Existing files are left intact, so the operation is safe to repeat.
-    """
+    """Extract products.zip placed inside static/uploads/products safely."""
     if not PRODUCTS_ARCHIVE.is_file():
         return
-
     PRODUCTS_DIR.mkdir(parents=True, exist_ok=True)
     root = PRODUCTS_DIR.resolve()
     extracted = 0
-
     try:
         with ZipFile(PRODUCTS_ARCHIVE) as archive:
             for info in archive.infolist():
@@ -40,21 +33,17 @@ def _install_bundled_product_images():
                     parts = parts[1:]
                 if not parts:
                     continue
-
                 target = (PRODUCTS_DIR / Path(*parts)).resolve()
                 if root != target and root not in target.parents:
                     continue
-
                 if info.is_dir():
                     target.mkdir(parents=True, exist_ok=True)
                     continue
-
                 target.parent.mkdir(parents=True, exist_ok=True)
                 if not target.exists():
                     with archive.open(info) as src, target.open("wb") as dst:
                         dst.write(src.read())
                     extracted += 1
-
         if extracted:
             print(f"[Kharidino] Installed {extracted} bundled product image files.")
     except Exception as exc:
@@ -71,11 +60,12 @@ from inventory_hardening import apply_inventory_security
 from commerce_extensions_v2 import apply_commerce_extensions
 from commerce_catalog import apply_catalog_extensions
 import commerce_runtime  # noqa: F401
-import profile_extensions  # noqa: F401 - registers customer profile model/routes
-import merchant_marketplace  # noqa: F401 - registers seller/store workspace and models
-import merchant_approval  # noqa: F401 - registers dedicated seller approval workspace
-import merchant_marketplace_v2  # noqa: F401 - registers suborders, finance and seller analytics
-import merchant_customer_marketplace  # noqa: F401 - customer vendor breakdown/cancellation sync
+import profile_extensions  # noqa: F401
+import merchant_marketplace  # noqa: F401
+import merchant_approval  # noqa: F401
+import merchant_marketplace_v2  # noqa: F401
+import merchant_customer_marketplace  # noqa: F401
+import accounting  # noqa: F401 - platform and seller accounting workspace
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
@@ -170,5 +160,6 @@ if __name__ == "__main__":
     print(f"Local:  http://127.0.0.1:{port}")
     print(f"LAN:    http://<PC-IP>:{port}")
     print(f"AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
+    print("Accounting: /admin/accounting | /seller/accounting")
     print("=" * 50)
     app.run(host=host, port=port, debug=debug)

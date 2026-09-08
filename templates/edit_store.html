@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش فروشگاه | {{ site_name }}{% endblock %}
+
+{% block content %}
+<style>
+.store-edit-page{max-width:900px;margin:40px auto;padding:0 18px}
+.store-edit-card{background:var(--card-bg,#fff);border:1px solid rgba(0,0,0,.08);border-radius:24px;padding:28px;box-shadow:0 18px 50px rgba(0,0,0,.08)}
+.store-edit-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:28px}
+.store-edit-title{display:flex;align-items:center;gap:14px}.store-edit-icon{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:rgba(255,100,0,.1);font-size:28px}
+.store-edit-head h1{margin:0 0 6px;font-size:28px}.store-edit-head p{margin:0;opacity:.7}
+.store-edit-back{display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:11px 16px;border-radius:12px;border:1px solid rgba(0,0,0,.1)}
+.store-edit-form{display:grid;gap:20px}.store-field{display:grid;gap:8px}.store-field label{font-weight:700}.store-field input[type=text],.store-field input[type=url]{width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid rgba(0,0,0,.14);border-radius:13px;background:transparent;font:inherit}
+.store-logo-preview{display:flex;align-items:center;gap:16px;padding:16px;border:1px dashed rgba(0,0,0,.15);border-radius:16px}.store-logo-preview img{width:78px;height:78px;object-fit:contain;border-radius:14px;background:#f7f7f7}.store-logo-empty{width:78px;height:78px;border-radius:14px;display:grid;place-items:center;background:#f7f7f7;font-size:30px}
+.store-file{padding:14px;border:1px solid rgba(0,0,0,.1);border-radius:13px}.store-remove-logo{display:flex;align-items:center;gap:9px;font-weight:600}.store-status{display:flex;align-items:center;gap:10px;padding:15px;border-radius:14px;background:rgba(0,0,0,.035)}
+.store-edit-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}.store-save,.store-cancel{display:inline-flex;align-items:center;justify-content:center;padding:13px 20px;border-radius:13px;border:0;font:inherit;font-weight:800;cursor:pointer;text-decoration:none}.store-save{background:#ff6200;color:#fff}.store-cancel{border:1px solid rgba(0,0,0,.12)}
+@media(max-width:650px){.store-edit-head{align-items:flex-start;flex-direction:column}.store-edit-card{padding:20px}.store-edit-head h1{font-size:23px}}
+</style>
+
+<div class="store-edit-page">
+  <section class="store-edit-card">
+    <div class="store-edit-head">
+      <div class="store-edit-title">
+        <div class="store-edit-icon">🏪</div>
+        <div>
+          <h1>ویرایش فروشگاه</h1>
+          <p>اطلاعات فروشگاه «{{ store.name }}» را مدیریت کنید.</p>
+        </div>
+      </div>
+      <a class="store-edit-back" href="{{ url_for('stores') }}">← بازگشت به فروشگاه‌ها</a>
+    </div>
+
+    <form class="store-edit-form" method="POST" enctype="multipart/form-data">
+      <div class="store-field">
+        <label for="store-name">نام فروشگاه</label>
+        <input id="store-name" type="text" name="name" value="{{ store.name }}" maxlength="200" required autocomplete="off">
+      </div>
+
+      <div class="store-field">
+        <label for="store-website">آدرس سایت</label>
+        <input id="store-website" type="url" name="website" value="{{ store.website or '' }}" maxlength="500" placeholder="https://example.com">
+      </div>
+
+      <div class="store-field">
+        <label>لوگوی فعلی</label>
+        <div class="store-logo-preview">
+          {% if store.logo %}
+            <img src="{{ url_for('static', filename=store.logo) }}" alt="لوگوی {{ store.name }}">
+          {% else %}
+            <div class="store-logo-empty">🏪</div>
+          {% endif %}
+          <div>
+            <strong>{{ 'لوگوی ثبت‌شده' if store.logo else 'لوگویی ثبت نشده است' }}</strong>
+            <p>با انتخاب فایل جدید، لوگوی قبلی به‌صورت امن حذف می‌شود.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="store-field">
+        <label for="store-logo">لوگوی جدید</label>
+        <input class="store-file" id="store-logo" type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.gif">
+      </div>
+
+      {% if store.logo %}
+      <label class="store-remove-logo">
+        <input type="checkbox" name="remove_logo" value="1">
+        حذف لوگوی فعلی (اگر فایل جدید انتخاب نشده باشد)
+      </label>
+      {% endif %}
+
+      <label class="store-status">
+        <input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}>
+        <span><strong>فروشگاه فعال باشد</strong><br><small>در صورت غیرفعال بودن، در فهرست فروشگاه‌های عمومی نمایش داده نمی‌شود.</small></span>
+      </label>
+
+      <div class="store-edit-actions">
+        <button class="store-save" type="submit">💾 ذخیره تغییرات</button>
+        <a class="store-cancel" href="{{ url_for('stores') }}">انصراف</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

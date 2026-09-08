@@ -68,6 +68,7 @@ import merchant_marketplace_v2  # noqa: F401
 import merchant_customer_marketplace  # noqa: F401
 import accounting  # noqa: F401 - platform and seller accounting workspace
 import system_health  # noqa: F401 - deployment and consistency probes
+from inventory_atomicity import apply_inventory_atomicity
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
@@ -77,6 +78,9 @@ with app.app_context():
     # Checkout preflight deliberately runs before inventory reservation.
     apply_checkout_preflight(app)
     apply_inventory_security(app)
+    # Inventory status mutations run inside the same SQLAlchemy transaction as
+    # the order-status change, after the business route accepts the transition.
+    apply_inventory_atomicity(app)
     apply_commerce_extensions(app)
     apply_catalog_extensions(app)
     db.create_all()

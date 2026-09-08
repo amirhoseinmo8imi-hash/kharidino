@@ -1,6 +1,6 @@
-"""Runtime 0->100 customer journey against the real Flask application.
+"""Runtime 0->100 customer journey through the production WSGI wiring.
 
-This suite deliberately uses the in-process TestGateway only.  It must never
+This suite deliberately uses the in-process TestGateway only. It must never
 contact a real bank provider or require production credentials.
 """
 from __future__ import annotations
@@ -13,7 +13,8 @@ from urllib.parse import parse_qs, urlsplit
 os.environ["PAYMENT_PROVIDER"] = "disabled"
 os.environ["PAYMENT_TEST_MODE"] = "1"
 
-from app import Product, User, Order, db, app
+from wsgi import app
+from app import Product, User, Order, db
 
 
 CSRF_RE = re.compile(r'name=["\']csrf-token["\']\s+content=["\']([^"\']+)', re.I)
@@ -25,38 +26,17 @@ def _csrf(response):
     return match.group(1)
 
 
-def _ensure_runtime_security_and_payment():
-    """Exercise the same runtime wiring used by production startup.
-
-    Older application entrypoints may import these modules lazily.  The E2E
-    test wires them when the routes are not already present, without changing
-    production configuration or enabling a real gateway.
-    """
-    if "payment_start" not in app.view_functions:
-        from payment import apply_payment
-
-        with app.app_context():
-            apply_payment(app, db, Order, User)
-            db.create_all()
-
-    if not getattr(app, "_kharidino_security", False):
-        from security_hardening import apply_security
-
-        apply_security(app)
-        app._kharidino_security = True
-
-
-
 def _register_and_login(client, email, password):
     response = client.get("/register")
     assert response.status_code == 200
+    token = _csrf(response)
     response = client.post(
         "/register",
         data={
             "name": "E2E Customer",
             "email": email,
             "password": password,
-            "csrf_token": _csrf(client.get("/register")),
+            "csrf_token": token,
         },
         follow_redirects=False,
     )
@@ -69,7 +49,7 @@ def _register_and_login(client, email, password):
         data={
             "email": email,
             "password": password,
-            "csrf_token": _csrf(client.get("/login")),
+            "csrf_token": _csrf(response),
         },
         follow_redirects=False,
     )
@@ -77,9 +57,7 @@ def _register_and_login(client, email, password):
 
 
 def test_real_0_to_100_customer_journey_with_security_and_payment():
-    _ensure_runtime_security_and_payment()
-    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
-
+    app.config.update(TESTING=True)
     client = app.test_client()
     email = f"e2e-{uuid.uuid4().hex}@example.test"
     password = "E2E-password-2026!"
@@ -110,10 +88,9 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     assert blocked.status_code == 403
 
     # 4. Product -> Cart
-    token = _csrf(product_page)
     added = client.post(
         f"/cart/add/{product_id}",
-        data={"csrf_token": token},
+        data={"csrf_token": _csrf(product_page)},
         follow_redirects=False,
     )
     assert added.status_code in {302, 303}
@@ -124,11 +101,10 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     # 5. Cart -> Checkout -> payment start bridge
     checkout = client.get("/checkout")
     assert checkout.status_code == 200
-    checkout_token = _csrf(checkout)
     checkout_post = client.post(
         "/checkout",
         data={
-            "csrf_token": checkout_token,
+            "csrf_token": _csrf(checkout),
             "customer_name": "E2E Customer",
             "phone": "09120000000",
             "address": "آدرس تست ۱، پلاک ۱",
@@ -144,12 +120,11 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     # 6. Payment start form -> TestGateway
     payment_form = client.get(payment_location)
     assert payment_form.status_code == 200
-    payment_token = _csrf(payment_form)
     idempotency_key = uuid.uuid4().hex
     start = client.post(
         f"/payment/start/{order_id}",
         data={
-            "csrf_token": payment_token,
+            "csrf_token": _csrf(payment_form),
             "idempotency_key": idempotency_key,
         },
         follow_redirects=False,
@@ -204,7 +179,6 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     assert "/orders" in replay_start.headers.get("Location", "")
 
     # 11. IDOR: a second user cannot access the first user's payment form/order.
-    client.get("/logout") if False else None
     second = app.test_client()
     second_email = f"e2e-{uuid.uuid4().hex}@example.test"
     _register_and_login(second, second_email, password)

@@ -8,12 +8,14 @@
 - [x] Checkout preflight regression coverage
 - [x] Checkout replay/idempotency protection covered
 - [x] Payment lifecycle and callback security contracts covered
+- [x] Replay/concurrency regression suite passes, including real SQLite two-connection claim race
 - [x] Order lifecycle/state-machine contracts covered
 - [x] Inventory atomicity and rollback contracts covered
 - [x] IDOR/security hardening covered
 - [x] Redirect hardening covered
 - [x] Upload limits and security audits covered
 - [x] Production secret policy covered by security checks
+- [x] PWA manifest, install icons and static-only service-worker wiring covered
 
 ## Release-path audit
 
@@ -36,6 +38,10 @@
 - [ ] Browser-based mobile smoke on a real Android/iOS device
 - [ ] Production environment variables/secrets installed outside Git
 - [ ] Final merge only after the manual production gates above are complete
+
+## Current release state
+
+CI and automated replay/concurrency gates are green. The PWA installability wiring is now present, including a manifest, install icons, root scope and a service worker registered from the base template. Full browser E2E, real NextPay smoke, final security/accounting audit and real-device mobile QA remain release gates.
 
 ## Important
 

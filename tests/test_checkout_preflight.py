@@ -1,12 +1,11 @@
 from flask import Flask
 
-from app import BASE_DIR, db
+from app import db
 from checkout_preflight import apply_checkout_preflight
 from security_hardening import apply_security, csrf_token
 
 
-# Use a deliberately synthetic product id so this contract test is not affected
-# by products that may exist in the developer's persistent kharidino.db.
+# Keep this contract test isolated from any developer or seeded database state.
 _SYNTHETIC_PRODUCT_ID = "2147483647"
 
 
@@ -14,7 +13,7 @@ def make_app():
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = "checkout-preflight-test-secret"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(BASE_DIR / "kharidino.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
     with app.app_context():

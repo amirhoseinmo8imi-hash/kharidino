@@ -30,6 +30,28 @@ def test_seller_order_mutation_is_store_scoped():
     assert "Offer.store_id == account.store_id" in source
 
 
+def test_seller_cannot_delete_global_catalog_product():
+    source = _read("merchant_marketplace.py")
+    start = source.index('def seller_product_delete(')
+    end = source.index('\n\n@app.post("/seller/offer/toggle/', start)
+    block = source[start:end]
+    assert "SellerProduct.query.filter_by(store_id=account.store_id, product_id=product.id).delete()" in block
+    assert "Offer.query.filter_by(store_id=account.store_id, product_id=product.id).delete()" in block
+    assert "db.session.delete(product)" not in block
+    assert "product.active = False" in block
+
+
+def test_admin_refund_requires_admin_and_matching_order():
+    source = _read("payment.py")
+    start = source.index('def payment_refund(')
+    end = source.index('\n\n    @app.after_request', start)
+    block = source[start:end]
+    assert 'if not user or user.role != "admin":' in block
+    assert 'if tx.status != "paid":' in block
+    assert 'if not order:' in block
+    assert 'tx.status = "refunded"' in block
+
+
 def test_mobile_catalog_is_read_only_and_public_catalog_is_active_only():
     source = _read("mobile_app/api/mobile_api.py")
     assert "@bp.get(\"/products/<int:product_id>\")" in source

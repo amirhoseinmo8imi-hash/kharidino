@@ -16,13 +16,16 @@ os.environ["PAYMENT_TEST_MODE"] = "1"
 from app import Product, User, Order, db, app
 from payment import apply_payment
 from security_hardening import apply_security
+from commerce_extensions_v2 import apply_commerce_extensions
+import commerce_runtime  # noqa: F401 - registers secure checkout/address bridge
 
-# Register the runtime layers before any test request is handled. This mirrors
-# production initialization order without importing the broader WSGI bridge
-# (which also installs unrelated SQLAlchemy event listeners used by other tests).
+# Register the same runtime layers required by production before any test
+# request is handled. This intentionally avoids importing the WSGI module so
+# unrelated SQLAlchemy integrations do not leak into isolated test apps.
 with app.app_context():
     apply_payment(app, db, Order, User)
     apply_security(app)
+    apply_commerce_extensions(app)
     db.create_all()
 
 
@@ -174,10 +177,13 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
         assert tx.status == "paid"
         assert tx.gateway_reference.startswith("TEST-")
 
-    # 8. Orders
+    # 8. Orders + order detail
     orders = client.get("/orders")
     assert orders.status_code == 200
     assert str(order_id) in orders.get_data(as_text=True)
+    detail = client.get(f"/orders/{order_id}")
+    assert detail.status_code == 200
+    assert str(order_id) in detail.get_data(as_text=True)
 
     # 9. Replay: paid callback is idempotent and does not downgrade state.
     replay = client.get(
@@ -209,3 +215,5 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
     second_orders = second.get("/orders")
     assert second_orders.status_code == 200
     assert str(order_id) not in second_orders.get_data(as_text=True)
+    second_detail = second.get(f"/orders/{order_id}")
+    assert second_detail.status_code == 404

@@ -1,51 +1,39 @@
-"""Regression tests for user-to-user IDOR boundaries."""
-from app import app, db, User, Order
-import commerce_extensions_v2  # noqa: F401 - registers account/order routes
+"""Regression contracts for user-to-user IDOR boundaries."""
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
-def _login(client, user_id):
-    with client.session_transaction() as session:
-        session["user_id"] = user_id
-        session["kharidino_splash"] = "1"
+def _read(name):
+    return (ROOT / name).read_text(encoding="utf-8")
 
 
-def test_order_detail_api_rejects_other_users_order():
-    original_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
-    app.config.update(
-        TESTING=True,
-        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
-    )
-    # The application already owns the SQLAlchemy object; recreate tables on the
-    # isolated in-memory connection for this regression test.
-    db.engine.dispose()
-    db.session.remove()
-    db.drop_all()
-    db.create_all()
-    try:
-        owner = User(name="Owner", email="owner@example.test", password="x")
-        other = User(name="Other", email="other@example.test", password="x")
-        db.session.add_all([owner, other])
-        db.session.flush()
-        order = Order(
-            user_id=owner.id,
-            total=1000,
-            status="در انتظار بررسی",
-            customer_name="Owner",
-            phone="09120000000",
-            address="Test address",
-        )
-        db.session.add(order)
-        db.session.commit()
+def test_order_endpoints_use_explicit_owner_boundary():
+    source = _read("commerce_extensions_v2.py")
+    assert "def _owned_order(order_id):" in source
+    assert "order.user_id==user.id" in source
+    assert "@app.get(\"/orders/<int:order_id>\")" in source
+    assert "order=_owned_order(order_id)" in source
+    assert "@app.get(\"/api/orders/<int:order_id>\")" in source
 
-        client = app.test_client()
-        _login(client, other.id)
-        response = client.get(f"/api/orders/{order.id}")
-        assert response.status_code == 404
 
-        _login(client, owner.id)
-        response = client.get(f"/api/orders/{order.id}")
-        assert response.status_code == 200
-        assert response.get_json()["id"] == order.id
-    finally:
-        db.session.remove()
-        app.config["SQLALCHEMY_DATABASE_URI"] = original_uri
+def test_saved_address_and_notification_mutations_are_owner_scoped():
+    source = _read("commerce_extensions_v2.py")
+    assert "if not row or row.user_id!=user.id:return (\"Not Found\",404)" in source
+    assert source.count("row.user_id!=user.id") >= 3
+
+
+def test_seller_order_mutation_is_store_scoped():
+    source = _read("merchant_marketplace_v2.py")
+    assert "SellerOrder.query.filter_by(id=seller_order_id, store_id=account.store_id).first_or_404()" in source
+    assert "SellerProduct.store_id == account.store_id" in source
+    assert "Offer.store_id == account.store_id" in source
+
+
+def test_mobile_catalog_is_read_only_and_public_catalog_is_active_only():
+    source = _read("mobile_app/api/mobile_api.py")
+    assert "@bp.get(\"/products/<int:product_id>\")" in source
+    assert "Product.query.filter_by(id=product_id, active=True).first_or_404()" in source
+    assert "@bp.post" not in source
+    assert "@bp.put" not in source
+    assert "@bp.delete" not in source

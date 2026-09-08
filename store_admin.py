@@ -1,15 +1,12 @@
-"""Admin store management routes for Kharidino.
+"""Admin store management routes for Kharidino."""
 
-Kept in a small registration module so the core app.py does not need to be
-rewritten just to add the store editor. The routes are registered against the
-same Flask application and database/models.
-"""
+from functools import wraps
 
 from flask import flash, redirect, render_template, request, url_for
 
 
 def register(app, db, Store, admin_required, save_store_logo, remove_upload):
-    """Register the admin store editor route."""
+    """Register the admin store editor and protect the store manager."""
 
     @app.route("/admin/store/edit/<int:store_id>", methods=["GET", "POST"])
     @admin_required
@@ -27,8 +24,8 @@ def register(app, db, Store, admin_required, save_store_logo, remove_upload):
                 flash("نام فروشگاه الزامی است.", "warning")
                 return render_template("edit_store.html", store=store)
 
-            new_logo = ""
             try:
+                new_logo = ""
                 uploaded_logo = request.files.get("logo")
                 if uploaded_logo and uploaded_logo.filename:
                     new_logo = save_store_logo(uploaded_logo)
@@ -58,10 +55,16 @@ def register(app, db, Store, admin_required, save_store_logo, remove_upload):
 
         return render_template("edit_store.html", store=store)
 
-    # Replace the public management page with an admin-only management page.
-    # The existing endpoint remains `stores`, so existing navigation keeps working.
-    view = app.view_functions.get("stores")
-    if view is not None and not getattr(view, "_kharidino_store_admin_wrapped", False):
-        protected_view = admin_required(view)
-        protected_view._kharidino_store_admin_wrapped = True
-        app.view_functions["stores"] = protected_view
+    # The existing /stores route is the admin management screen. Keep its
+    # endpoint name unchanged so all existing navigation remains valid, but
+    # replace its view with an admin-only version that lists inactive stores too.
+    original_stores_view = app.view_functions.get("stores")
+
+    if original_stores_view is not None:
+        @wraps(original_stores_view)
+        @admin_required
+        def protected_stores(*args, **kwargs):
+            stores = Store.query.order_by(Store.name.asc()).all()
+            return render_template("stores.html", stores=stores)
+
+        app.view_functions["stores"] = protected_stores

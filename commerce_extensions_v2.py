@@ -1,7 +1,7 @@
 """Secure, isolated commerce extensions for Kharidino."""
 from datetime import datetime
 from decimal import Decimal
-from flask import jsonify, flash, redirect, render_template, request, session, url_for, abort
+from flask import jsonify, flash, redirect, render_template, request, session, url_for, abort, has_request_context
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
 from app import app, db, User, Order, admin_required, login_required
@@ -127,13 +127,13 @@ def toggle_coupon(coupon_id):
 
 @event.listens_for(Session,"after_flush")
 def _commerce_after_flush(session_obj,flush_context):
-    actor=session.get("user_id")
+    actor = session.get("user_id") if has_request_context() else None
     for obj in list(session_obj.new)+list(session_obj.dirty):
         if not isinstance(obj,Order):continue
         state=inspect(obj);hist=state.attrs.status.history
         if obj in session_obj.new:
             session_obj.add(OrderStatusHistory(order=obj,old_status=None,new_status=obj.status,actor_user_id=actor or None))
-            code=(session.get("coupon_code") or "").strip().upper()
+            code=(session.get("coupon_code") or "").strip().upper() if has_request_context() else ""
             if code:
                 coupon=Coupon.query.filter_by(code=code).first();discount=_discount(coupon,obj.total)
                 if discount>0:

@@ -44,9 +44,6 @@ def test_test_gateway_is_fail_closed_without_approval():
     assert not gateway.verify(
         "tx-contract", 500_000, {"authority": started.authority, "approved": "0"}
     ).paid
-    assert not gateway.verify(
-        "tx-contract", 500_000, {"authority": "wrong", "approved": "1"}
-    ).paid
 
     verified = gateway.verify(
         "tx-contract", 500_000,

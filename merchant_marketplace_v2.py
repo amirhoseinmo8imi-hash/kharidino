@@ -102,8 +102,8 @@ def _offer_for_order_item(item):
 
 
 def sync_order_to_seller_orders(order):
-    """Build seller suborders for an existing master order, idempotently."""
-    if not order or not order.items:
+    """Build seller suborders only after the master order is payment-confirmed."""
+    if not order or order.status != "تأیید شد" or not order.items:
         return []
     created = []
     existing_item_ids = {
@@ -127,7 +127,6 @@ def sync_order_to_seller_orders(order):
         sub.subtotal = subtotal
         sub.platform_fee = max(0, round(subtotal * 0.05))
         sub.seller_total = max(0, subtotal + sub.shipping_fee - sub.platform_fee)
-
         for item, _offer in rows:
             db.session.add(SellerOrderItem(
                 seller_order=sub,
@@ -150,7 +149,7 @@ def sync_order_to_seller_orders(order):
             store_id=store_id,
             seller_order_id=None,
             title="سفارش جدید",
-            body=f"یک سفارش جدید برای فروشگاه شما ثبت شده است. سفارش اصلی #{order.id}",
+            body=f"پرداخت سفارش اصلی #{order.id} تأیید شد و سفارش فروشگاهی ایجاد شد.",
         ))
         created.append(sub)
     return created
@@ -159,10 +158,14 @@ def sync_order_to_seller_orders(order):
 @event.listens_for(Session, "after_flush")
 def _seller_order_after_flush(session_obj, flush_context):
     processed = session_obj.info.setdefault("kharidino_seller_split_orders", set())
-    for obj in list(session_obj.new):
-        if isinstance(obj, Order) and obj.id and obj.id not in processed:
-            processed.add(obj.id)
-            sync_order_to_seller_orders(obj)
+    for obj in list(session_obj.new) + list(session_obj.dirty):
+        if not isinstance(obj, Order) or not obj.id or obj.id in processed:
+            continue
+        # Never expose seller orders/ledger entries for an unpaid order.
+        if obj.status != "تأیید شد":
+            continue
+        processed.add(obj.id)
+        sync_order_to_seller_orders(obj)
 
 
 @app.context_processor
@@ -278,7 +281,7 @@ def seller_bulk_stock():
 @admin_required
 def admin_sync_seller_orders():
     created = 0
-    for order in Order.query.order_by(Order.id.asc()).all():
+    for order in Order.query.filter_by(status="تأیید شد").order_by(Order.id.asc()).all():
         created += len(sync_order_to_seller_orders(order))
     db.session.commit()
     flash(f"{created} زیرسفارش فروشنده‌ای همگام شد. ✅", "success")

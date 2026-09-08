@@ -139,3 +139,56 @@ def test_payment_reference_cannot_be_reused_across_transactions():
     source = _read("payment.py")
     assert 'gateway_reference = db.Column(db.String(200), unique=True' in source
     assert 'authority = db.Column(db.String(200), unique=True' in source
+
+
+def test_failed_verification_can_retry_but_paid_or_refunded_cannot_be_reverified():
+    source = _read("payment.py")
+    start = source.index('def payment_callback(')
+    end = source.index('\n\n    @app.post("/payment/refund/', start)
+    block = source[start:end]
+    assert 'status.in_({"pending", "redirect", "failed"})' in block
+    assert 'if tx.status == "paid":' in block
+    assert 'if tx.status in {"cancelled", "refunded"}:' in block
+    assert 'PaymentTransaction.status == "verifying"' in block
+    assert 'failed_at": db.func.now()' in block
+
+
+def test_refund_rejects_non_refundable_and_post_delivery_states():
+    source = _read("payment.py")
+    start = source.index('def payment_refund(')
+    end = source.index('\n\n    @app.after_request', start)
+    block = source[start:end]
+    assert 'if tx.status != "paid":' in block
+    assert 'order.status not in {"تأیید شد", "در حال آماده‌سازی"}' in block
+    assert 'پس از ارسال، استرداد از مسیر مرجوعی انجام می‌شود' in block
+
+
+def test_seller_status_machine_cannot_skip_delivery_or_reopen_cancelled_orders():
+    source = _read("merchant_marketplace_v2.py")
+    assert '"shipped": {"delivered"}' in source
+    assert '"delivered": set()' in source
+    assert '"cancelled": set()' in source
+    assert 'new_status not in STATUS_FLOW.get(order.status, set())' in source
+
+
+def test_seller_split_is_payment_confirmed_and_duplicate_item_safe():
+    source = _read("merchant_marketplace_v2.py")
+    start = source.index('def sync_order_to_seller_orders(')
+    end = source.index('\n\n\n@event.listens_for', start)
+    block = source[start:end]
+    assert 'order.status != "تأیید شد"' in block
+    assert 'existing_item_ids' in block
+    assert 'item.id in existing_item_ids' in block
+    assert 'SellerLedger(' in block
+    assert 'status="pending"' in block
+
+
+def test_accounting_release_is_not_triggered_by_seller_delivery_alone():
+    accounting = _read("financial_accounting.py")
+    marketplace = _read("merchant_marketplace_v2.py")
+    assert 'delivered_orders = session_obj.query(Order).filter_by(status="تحویل شد").all()' in accounting
+    assert 'if order.order and order.order.status == "تحویل شد":' in marketplace
+    assert 'ledger.status = "available"' in accounting
+    # Seller sub-order delivery must not itself release funds.
+    seller_block = marketplace[marketplace.index('def seller_order_status('):]
+    assert seller_block.index('if new_status == "delivered":') < seller_block.index('if order.order and order.order.status == "تحویل شد":')

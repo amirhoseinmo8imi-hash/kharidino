@@ -199,8 +199,6 @@ def apply_payment(app, db, Order, User):
         if not order or order.user_id != tx.user_id or int(order.total or 0) != tx.amount:
             db.session.rollback()
             abort(409, description="سفارش با تراکنش پرداخت تطابق ندارد.")
-        # Payment confirmation is the single point at which the marketplace
-        # may move the master order forward and create seller suborders.
         order.status = "تأیید شد"
         db.session.commit()
         flash("پرداخت با موفقیت تأیید شد. 💳", "success")
@@ -216,7 +214,24 @@ def apply_payment(app, db, Order, User):
             abort(403)
         if tx.status != "paid":
             abort(409, description="فقط تراکنش پرداخت‌شده قابل استرداد است.")
+        order = db.session.get(Order, tx.order_id)
+        if not order:
+            abort(409, description="سفارش مرتبط با تراکنش پیدا نشد.")
+        # Until a dedicated returns/chargeback workflow exists, refunds are
+        # intentionally limited to paid orders that have not shipped. This keeps
+        # inventory, seller payable and the financial journal consistent.
+        if order.status not in {"تأیید شد", "در حال آماده‌سازی"}:
+            abort(409, description="پس از ارسال، استرداد از مسیر مرجوعی انجام می‌شود.")
         tx.status = "refunded"
+        order.status = "لغو شد"
+        # A refunded order must never later become payable just because a seller
+        # marks its suborder delivered. The seller layer checks the master status,
+        # and these rows are explicitly cancelled here as an additional invariant.
+        for seller_order in list(getattr(order, "seller_orders", []) or []):
+            if seller_order.status not in {"delivered", "cancelled"}:
+                seller_order.status = "cancelled"
+            for ledger in list(getattr(seller_order, "ledger", []) or []):
+                ledger.status = "cancelled"
         db.session.commit()
         return redirect(url_for("admin"))
 

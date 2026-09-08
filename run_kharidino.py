@@ -174,7 +174,7 @@ if __name__ == "__main__":
     print("KHARIDINO ULTIMATE SERVER")
     print(f"Local:  http://127.0.0.1:{port}")
     print(f"LAN:    http://<PC-IP>:{port}")
-    print("AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
+    print(f"AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
     print("Accounting: /admin/accounting | /seller/accounting")
     print("Health: /healthz | /admin/system-health")
     print("=" * 50)

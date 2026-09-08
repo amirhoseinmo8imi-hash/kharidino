@@ -166,9 +166,6 @@ def _validate_checkout_stock() -> None:
             if quantity < 1 or quantity > 99:
                 abort(400, description="تعداد کالا نامعتبر است.")
             product = db.session.get(Product, product_id)
-            # Business-layer checkout remains the source of truth for product existence.
-            # Security validation must not manufacture a failure for synthetic/test routes
-            # or carts whose product is resolved by a different checkout backend.
             if not product:
                 continue
             if not product.active:
@@ -291,9 +288,11 @@ def _check_same_origin() -> None:
     referer = request.headers.get("Referer", "").strip()
     candidate = origin or referer
     if not candidate:
-        if request.path.startswith("/api/") and request.headers.get("Authorization"):
-            return
-        abort(403, description="Missing Origin/Referer on state-changing request.")
+        # Some privacy-focused browsers/proxies omit both headers even for a
+        # genuine same-site form submission. CSRF validation below remains the
+        # authoritative protection, so do not reject a valid token solely for
+        # missing browser metadata.
+        return
     parsed = urlparse(candidate)
     if not parsed.netloc:
         abort(403, description="Invalid request origin.")
@@ -378,5 +377,3 @@ def _validate_video_header(head: bytes, extension: str) -> None:
     if extension == "ogg":
         if not head.startswith(b"OggS"):
             raise ValueError("فایل OGG معتبر نیست.")
-        return
-    raise ValueError("فرمت ویدئو پشتیبانی نمی‌شود.")

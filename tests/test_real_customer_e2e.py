@@ -18,7 +18,7 @@ from payment import apply_payment
 from security_hardening import apply_security
 
 # Register the runtime layers before any test request is handled. This mirrors
-a# production initialization order without importing the broader WSGI bridge
+# production initialization order without importing the broader WSGI bridge
 # (which also installs unrelated SQLAlchemy event listeners used by other tests).
 with app.app_context():
     apply_payment(app, db, Order, User)

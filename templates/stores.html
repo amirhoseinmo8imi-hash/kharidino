@@ -1,50 +1,27 @@
 {% extends "base.html" %}
 {% block title %}مدیریت فروشگاه‌ها | {{ site_name }}{% endblock %}
 {% block content %}
-<div class="container" style="padding:28px 0 50px">
-  <div class="page-hero" style="margin-bottom:24px">
-    <h1>مدیریت فروشگاه‌ها</h1>
-    <p>افزودن، ویرایش و مدیریت وضعیت فروشگاه‌های خریدینو</p>
-  </div>
-
-  <div class="card" style="padding:24px;margin-bottom:24px">
-    <h2 style="margin-top:0">افزودن فروشگاه</h2>
-    <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data" style="display:grid;gap:14px">
-      <input type="hidden" name="id" value="">
-      <input name="name" required maxlength="200" placeholder="نام فروشگاه">
-      <input name="website" maxlength="500" placeholder="https://example.com">
-      <label>لوگو <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif"></label>
-      <label><input type="checkbox" name="active" value="1" checked> فعال</label>
-      <button type="submit" class="btn btn-primary">افزودن فروشگاه</button>
-    </form>
-  </div>
-
-  <div class="stores-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px">
-    {% for store in stores %}
-    <article class="card" style="padding:20px">
-      <div style="display:flex;gap:14px;align-items:center;margin-bottom:16px">
-        {% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" style="width:64px;height:64px;object-fit:contain;border-radius:14px">{% endif %}
-        <div><h3 style="margin:0">{{ store.name }}</h3><small>{{ 'فعال' if store.active else 'غیرفعال' }}</small></div>
-      </div>
-      {% if store.website %}<div style="margin-bottom:14px"><a href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a></div>{% endif %}
-      <details>
-        <summary style="cursor:pointer;font-weight:800">✏️ ویرایش فروشگاه</summary>
-        <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data" style="display:grid;gap:12px;padding-top:14px">
+<div class="container">
+  <div class="page-hero"><h1>مدیریت فروشگاه‌ها</h1><p>مدیریت فروشگاه‌ها و اطلاعات آن‌ها</p></div>
+  <div class="card"><form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="">
+    <input name="name" required placeholder="نام فروشگاه"><input name="website" placeholder="آدرس سایت"><input type="file" name="logo" accept="image/*"><label><input type="checkbox" name="active" checked> فعال</label><button type="submit">افزودن فروشگاه</button>
+  </form></div>
+  {% for store in stores %}
+  <div class="card">
+    {% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" style="width:72px;height:72px;object-fit:contain">{% endif %}
+    <h3>{{ store.name }}</h3>
+    {% if store.website %}<a href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% endif %}
+    <div class="store-card-actions">
+      <details><summary class="store-action edit">✏️ ویرایش</summary>
+        <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
           <input type="hidden" name="id" value="{{ store.id }}">
-          <input name="name" required maxlength="200" value="{{ store.name }}" placeholder="نام فروشگاه">
-          <input name="website" maxlength="500" value="{{ store.website or '' }}" placeholder="https://example.com">
-          <label>تعویض لوگو <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif"></label>
-          <label><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال</label>
-          <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+          <input name="name" required value="{{ store.name }}"><input name="website" value="{{ store.website or '' }}"><input type="file" name="logo" accept="image/*"><label><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال</label><button type="submit">ذخیره تغییرات</button>
         </form>
       </details>
-      <form action="{{ url_for('delete_store', store_id=store.id) }}" method="post" style="margin-top:12px" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');">
-        <button type="submit" class="btn btn-danger">🗑️ حذف فروشگاه</button>
-      </form>
-    </article>
-    {% else %}
-    <div class="card" style="padding:24px">هنوز فروشگاهی ثبت نشده است.</div>
-    {% endfor %}
+      <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete">🗑️ حذف</button></form>
+    </div>
   </div>
+  {% else %}<div class="card">فروشگاهی ثبت نشده است.</div>{% endfor %}
 </div>
 {% endblock %}

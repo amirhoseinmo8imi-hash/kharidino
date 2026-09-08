@@ -6,374 +6,221 @@
 
 <div class="stores-admin-page">
 
-    <!-- =====================================================
-         HEADER
-         ===================================================== -->
-
     <section class="stores-admin-header">
-
         <div class="stores-header-info">
-
-            <div class="stores-header-icon">
-                🏪
-            </div>
-
+            <div class="stores-header-icon">🏪</div>
             <div>
-                <span class="stores-header-label">
-                    مدیریت
-                </span>
-
-                <h1>
-                    فروشگاه‌ها
-                </h1>
-
-                <p>
-                    فروشگاه‌های متصل به خریدینو را مدیریت کنید.
-                </p>
+                <span class="stores-header-label">مدیریت</span>
+                <h1>فروشگاه‌ها</h1>
+                <p>فروشگاه‌های متصل به خریدینو را مدیریت کنید.</p>
             </div>
-
         </div>
-
         <div class="stores-header-count">
             <strong>{{ stores|length }}</strong>
             <span>فروشگاه</span>
         </div>
-
     </section>
-
-
-    <!-- =====================================================
-         ADD STORE
-         ===================================================== -->
 
     <section class="store-panel">
-
         <div class="store-panel-title">
-
-            <div class="panel-title-icon">
-                ➕
-            </div>
-
+            <div class="panel-title-icon">➕</div>
             <div>
-                <h2>
-                    افزودن فروشگاه جدید
-                </h2>
-
-                <p>
-                    اطلاعات فروشگاه را وارد کنید.
-                </p>
+                <h2>افزودن فروشگاه جدید</h2>
+                <p>اطلاعات فروشگاه را وارد کنید.</p>
             </div>
-
         </div>
 
-
-        <form
-            action="{{ url_for('save_store') }}"
-            method="POST"
-            enctype="multipart/form-data"
-            class="store-form"
-        >
-
-            <!-- نام -->
+        <form action="{{ url_for('save_store') }}" method="POST" enctype="multipart/form-data" class="store-form">
             <div class="store-field">
-
-                <label for="store-name">
-                    نام فروشگاه
-                </label>
-
+                <label for="store-name">نام فروشگاه</label>
                 <div class="input-box">
-
-                    <span class="input-icon">
-                        🏪
-                    </span>
-
-                    <input
-                        id="store-name"
-                        type="text"
-                        name="name"
-                        placeholder="مثلاً دیجی‌کالا"
-                        required
-                        autocomplete="off"
-                    >
-
+                    <span class="input-icon">🏪</span>
+                    <input id="store-name" type="text" name="name" placeholder="مثلاً دیجی‌کالا" required autocomplete="off">
                 </div>
-
             </div>
 
-
-            <!-- آدرس -->
             <div class="store-field">
-
-                <label for="store-website">
-                    آدرس سایت
-                </label>
-
+                <label for="store-website">آدرس سایت</label>
                 <div class="input-box">
-
-                    <span class="input-icon">
-                        🌐
-                    </span>
-
-                    <input
-                        id="store-website"
-                        type="url"
-                        name="website"
-                        placeholder="https://example.com"
-                    >
-
+                    <span class="input-icon">🌐</span>
+                    <input id="store-website" type="url" name="website" placeholder="https://example.com">
                 </div>
-
             </div>
 
-
-            <!-- لوگو -->
             <div class="store-field">
-
-                <label for="store-logo">
-                    لوگوی فروشگاه
-                </label>
-
+                <label for="store-logo">لوگوی فروشگاه</label>
                 <div class="file-box">
-
-                    <span class="file-icon">
-                        🖼️
-                    </span>
-
+                    <span class="file-icon">🖼️</span>
                     <div class="file-info">
-
-                        <strong>
-                            انتخاب لوگو
-                        </strong>
-
-                        <small>
-                            PNG، JPG، JPEG، WEBP یا GIF
-                        </small>
-
+                        <strong>انتخاب لوگو</strong>
+                        <small>PNG، JPG، JPEG، WEBP یا GIF</small>
                     </div>
-
-                    <input
-                        id="store-logo"
-                        type="file"
-                        name="logo"
-                        accept=".png,.jpg,.jpeg,.webp,.gif"
-                    >
-
+                    <input id="store-logo" type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.gif">
                 </div>
-
             </div>
 
-
-            <!-- وضعیت -->
             <div class="store-field store-status-field">
-
-                <label>
-                    وضعیت فروشگاه
-                </label>
-
+                <label>وضعیت فروشگاه</label>
                 <label class="store-switch">
-
-                    <input
-                        type="checkbox"
-                        name="active"
-                        value="1"
-                        checked
-                    >
-
+                    <input type="checkbox" name="active" value="1" checked>
                     <span class="switch-slider"></span>
-
-                    <span class="switch-text">
-                        فروشگاه فعال باشد
-                    </span>
-
+                    <span class="switch-text">فروشگاه فعال باشد</span>
                 </label>
-
             </div>
 
-
-            <!-- دکمه -->
             <div class="store-submit">
-
-                <button
-                    type="submit"
-                    class="store-add-button"
-                >
-                    <span>＋</span>
-                    افزودن فروشگاه
-                </button>
-
+                <button type="submit" class="store-add-button"><span>＋</span> افزودن فروشگاه</button>
             </div>
-
         </form>
-
     </section>
-
-
-    <!-- =====================================================
-         STORES LIST
-         ===================================================== -->
 
     <section class="store-panel stores-list-panel">
-
         <div class="store-panel-title stores-list-title">
-
-            <div class="panel-title-icon">
-                🏬
-            </div>
-
+            <div class="panel-title-icon">🏬</div>
             <div>
-                <h2>
-                    فروشگاه‌های ثبت‌شده
-                </h2>
-
-                <p>
-                    لیست فروشگاه‌های موجود در سیستم
-                </p>
+                <h2>فروشگاه‌های ثبت‌شده</h2>
+                <p>لیست فروشگاه‌های موجود در سیستم</p>
             </div>
-
         </div>
 
-
         {% if stores %}
-
             <div class="stores-grid">
-
                 {% for store in stores %}
-
                     <article class="store-admin-card">
-
-                        <!-- لوگو -->
-
                         <div class="store-card-top">
-
                             <div class="store-logo">
-
                                 {% if store.logo %}
-
-                                    <img
-                                        src="{{ url_for('static', filename=store.logo) }}"
-                                        alt="{{ store.name }}"
-                                    >
-
+                                    <img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}">
                                 {% else %}
-
-                                    <span>
-                                        🏪
-                                    </span>
-
+                                    <span>🏪</span>
                                 {% endif %}
-
                             </div>
 
-
-                            <!-- وضعیت -->
-
                             {% if store.active %}
-
-                                <span class="store-status active">
-                                    ● فعال
-                                </span>
-
+                                <span class="store-status active">● فعال</span>
                             {% else %}
-
-                                <span class="store-status inactive">
-                                    ● غیرفعال
-                                </span>
-
+                                <span class="store-status inactive">● غیرفعال</span>
                             {% endif %}
-
                         </div>
-
-
-                        <!-- اطلاعات -->
 
                         <div class="store-card-content">
-
-                            <h3>
-                                {{ store.name }}
-                            </h3>
-
+                            <h3>{{ store.name }}</h3>
                             {% if store.website %}
-
-                                <a
-                                    href="{{ store.website }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="store-website"
-                                >
-                                    🌐
-                                    {{ store.website }}
+                                <a href="{{ store.website }}" target="_blank" rel="noopener noreferrer" class="store-website">
+                                    🌐 {{ store.website }}
                                 </a>
-
                             {% else %}
-
-                                <span class="store-no-website">
-                                    آدرس سایت ثبت نشده
-                                </span>
-
+                                <span class="store-no-website">آدرس سایت ثبت نشده</span>
                             {% endif %}
-
                         </div>
-
-
-                        <!-- عملیات -->
 
                         <div class="store-card-actions">
+                            <button type="button" class="store-action edit" onclick="toggleStoreEdit({{ store.id }})">
+                                ✏️ ویرایش
+                            </button>
 
-                            <a
-                                href="{{ url_for('edit_store', store_id=store.id) }}"
-                                class="store-action edit"
-                            >
-                                ✏️
-                                ویرایش
-                            </a>
-
-
-                            <form
-                                action="{{ url_for('delete_store', store_id=store.id) }}"
-                                method="POST"
-                                onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"
-                            >
-
-                                <button
-                                    type="submit"
-                                    class="store-action delete"
-                                >
-                                    🗑️
-                                    حذف
-                                </button>
-
+                            <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');">
+                                <button type="submit" class="store-action delete">🗑️ حذف</button>
                             </form>
-
                         </div>
 
+                        <div id="store-edit-{{ store.id }}" class="store-inline-edit" hidden>
+                            <form action="{{ url_for('save_store') }}" method="POST" enctype="multipart/form-data">
+                                <input type="hidden" name="id" value="{{ store.id }}">
+
+                                <div class="store-field">
+                                    <label for="edit-name-{{ store.id }}">نام فروشگاه</label>
+                                    <input id="edit-name-{{ store.id }}" type="text" name="name" value="{{ store.name }}" required>
+                                </div>
+
+                                <div class="store-field">
+                                    <label for="edit-website-{{ store.id }}">آدرس سایت</label>
+                                    <input id="edit-website-{{ store.id }}" type="url" name="website" value="{{ store.website or '' }}" placeholder="https://example.com">
+                                </div>
+
+                                {% if store.logo %}
+                                    <div class="store-current-logo">
+                                        <span>لوگوی فعلی</span>
+                                        <img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}">
+                                    </div>
+                                    <label class="store-check-row">
+                                        <input type="checkbox" name="remove_logo" value="1">
+                                        حذف لوگوی فعلی
+                                    </label>
+                                {% endif %}
+
+                                <div class="store-field">
+                                    <label for="edit-logo-{{ store.id }}">جایگزینی لوگو</label>
+                                    <input id="edit-logo-{{ store.id }}" type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.gif">
+                                </div>
+
+                                <label class="store-check-row">
+                                    <input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}>
+                                    فروشگاه فعال باشد
+                                </label>
+
+                                <div class="store-inline-actions">
+                                    <button type="submit" class="store-action save">💾 ذخیره تغییرات</button>
+                                    <button type="button" class="store-action cancel" onclick="toggleStoreEdit({{ store.id }})">انصراف</button>
+                                </div>
+                            </form>
+                        </div>
                     </article>
-
                 {% endfor %}
-
             </div>
-
         {% else %}
-
             <div class="stores-empty">
-
-                <div class="empty-icon">
-                    🏪
-                </div>
-
-                <h3>
-                    هنوز فروشگاهی ثبت نشده است
-                </h3>
-
-                <p>
-                    اولین فروشگاه را از فرم بالا اضافه کنید.
-                </p>
-
+                <div class="empty-icon">🏪</div>
+                <h3>هنوز فروشگاهی ثبت نشده است</h3>
+                <p>اولین فروشگاه را از فرم بالا اضافه کنید.</p>
             </div>
-
         {% endif %}
-
     </section>
-
 </div>
+
+<style>
+.store-inline-edit {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid rgba(108,92,231,.25);
+    border-radius: 16px;
+    background: rgba(108,92,231,.06);
+}
+.store-inline-edit[hidden] { display: none; }
+.store-inline-edit input[type="text"],
+.store-inline-edit input[type="url"],
+.store-inline-edit input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 7px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,.12);
+}
+.store-current-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+.store-current-logo img { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; }
+.store-check-row { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+.store-inline-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.store-action { cursor: pointer; border: 0; }
+.store-action.save { padding: 9px 14px; border-radius: 10px; }
+.store-action.cancel { padding: 9px 14px; border-radius: 10px; }
+</style>
+
+<script>
+function toggleStoreEdit(storeId) {
+    const panel = document.getElementById('store-edit-' + storeId);
+    if (!panel) return;
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) {
+        const input = panel.querySelector('input[name="name"]');
+        if (input) input.focus();
+    }
+}
+</script>
 
 {% endblock %}

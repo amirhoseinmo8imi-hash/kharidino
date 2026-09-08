@@ -91,13 +91,13 @@ def test_reactivation_fails_atomically_when_stock_is_insufficient():
         product_id = 990002
         user_id, order_id = _seed_order(product_id, quantity=4)
         try:
+            order = db.session.get(Order, order_id)
+            order.status = "لغو شد"
+            db.session.commit()
+
             db.session.execute(
                 text(f"UPDATE {INVENTORY_TABLE} SET quantity = 2 WHERE product_id = :pid"),
                 {"pid": product_id},
-            )
-            db.session.execute(
-                text(f"UPDATE {RESERVATION_TABLE} SET restored = 1 WHERE order_id = :oid"),
-                {"oid": order_id},
             )
             db.session.commit()
 

@@ -118,14 +118,21 @@ def seller_register():
 def seller_dashboard():
     account = _seller_account()
     products = _seller_products(account.store_id)
-    product_ids = [p.id for p in products]
     offers = Offer.query.filter_by(store_id=account.store_id).order_by(Offer.id.desc()).all()
     categories = Category.query.filter_by(active=True).order_by(Category.name.asc()).all()
-    order_items = []
-    from app import OrderItem, Order
-    if product_ids:
-        order_items = (OrderItem.query.join(Order, OrderItem.order_id == Order.id)
-                       .filter(OrderItem.product_id.in_(product_ids)).order_by(Order.id.desc()).limit(100).all())
+
+    # Never derive seller order history from Product IDs alone: a global catalog
+    # product may be offered by several stores. The SellerOrder/SellerOrderItem
+    # ownership chain is the authoritative tenant boundary for seller data.
+    from merchant_marketplace_v2 import SellerOrder, SellerOrderItem
+    order_items = (
+        SellerOrderItem.query
+        .join(SellerOrder, SellerOrderItem.seller_order_id == SellerOrder.id)
+        .filter(SellerOrder.store_id == account.store_id)
+        .order_by(SellerOrder.id.desc())
+        .limit(100)
+        .all()
+    )
     stats = {"products": len(products), "offers": len(offers), "in_stock": sum(1 for o in offers if o.in_stock), "orders": len(order_items)}
     return render_template("seller_dashboard.html", account=account, store=account.store, products=products,
                            offers=offers, order_items=order_items, stats=stats, categories=categories,
@@ -173,7 +180,12 @@ def seller_product_save():
     if url and not url.startswith(("http://", "https://")):
         flash("لینک خرید نامعتبر است.", "danger"); return redirect(url_for("seller_dashboard"))
     if pid:
-        product = _owned_product(account.store_id, int(pid))
+        try:
+            pid_value = int(pid)
+        except (TypeError, ValueError):
+            flash("شناسه محصول نامعتبر است.", "danger")
+            return redirect(url_for("seller_dashboard"))
+        product = _owned_product(account.store_id, pid_value)
     else:
         product = Product(name=name, description=description, price=price, category_id=category.id if category else None, active=True)
         db.session.add(product); db.session.flush(); db.session.add(SellerProduct(store_id=account.store_id, product_id=product.id))

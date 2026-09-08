@@ -5,6 +5,11 @@ from checkout_preflight import apply_checkout_preflight
 from security_hardening import apply_security, csrf_token
 
 
+# Use a deliberately synthetic product id so this contract test is not affected
+# by products that may exist in the developer's persistent kharidino.db.
+_SYNTHETIC_PRODUCT_ID = "2147483647"
+
+
 def make_app():
     app = Flask(__name__)
     app.config["TESTING"] = True
@@ -34,7 +39,7 @@ def authenticated_client(app):
     token = client.get("/token").get_data(as_text=True)
     with client.session_transaction() as sess:
         sess["user_id"] = 424243
-        sess["cart"] = {"991002": 1}
+        sess["cart"] = {_SYNTHETIC_PRODUCT_ID: 1}
     return client, token
 
 
@@ -91,7 +96,7 @@ def test_checkout_preflight_rejects_malformed_cart_quantity():
     register_checkout(app)
     client, token = authenticated_client(app)
     with client.session_transaction() as sess:
-        sess["cart"] = {"991002": "not-an-int"}
+        sess["cart"] = {_SYNTHETIC_PRODUCT_ID: "not-an-int"}
     response = client.post("/checkout", data=valid_data(token), headers={"Origin": "http://localhost"})
     assert response.status_code == 400
 

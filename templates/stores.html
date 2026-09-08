@@ -8,12 +8,17 @@
     <input name="name" required placeholder="نام فروشگاه"><input name="website" placeholder="آدرس سایت"><input type="file" name="logo" accept="image/*"><label><input type="checkbox" name="active" checked> فعال</label><button type="submit">افزودن فروشگاه</button>
   </form></div>
   {% for store in stores %}
-  <div class="card">
+  <div class="card" id="store-{{ store.id }}">
     {% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" style="width:72px;height:72px;object-fit:contain">{% endif %}
     <h3>{{ store.name }}</h3>
     {% if store.website %}<a href="{{ store.website }}" target="_blank" rel="noopener noreferrer">{{ store.website }}</a>{% endif %}
     <div class="store-card-actions">
-      <a href="{{ url_for('admin') }}#store-{{ store.id }}" class="store-action edit">✏️ ویرایش</a>
+      <details><summary class="store-action edit">✏️ ویرایش</summary>
+        <form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="id" value="{{ store.id }}">
+          <input name="name" required value="{{ store.name }}"><input name="website" value="{{ store.website or '' }}"><input type="file" name="logo" accept="image/*"><label><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال</label><button type="submit">ذخیره تغییرات</button>
+        </form>
+      </details>
       <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete">🗑️ حذف</button></form>
     </div>
   </div>

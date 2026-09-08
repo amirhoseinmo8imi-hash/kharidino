@@ -7,6 +7,8 @@
   <meta name="description" content="{{ setting('meta_description', site_tagline) }}">
   <meta name="theme-color" content="#ef4056">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='2026-09-08-1') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.svg', v='2026-09-08-1') }}" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='2026-store-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pro.css', v='2026-store-2') }}">
@@ -48,4 +50,11 @@
 {% if request.endpoint != 'home' %}<nav class="mobile-bottom-nav"><a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a><a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a><a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span></a>{% if current_user %}<a class="mobile-nav-item" href="{{ url_for('profile') }}"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}<a class="mobile-nav-item" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a></nav>{% endif %}
 <script>(function(){const meta=document.querySelector('meta[name="csrf-token"]');const token=meta?meta.getAttribute('content'):'';function protectForms(){if(!token)return;document.querySelectorAll('form').forEach(function(form){const method=(form.getAttribute('method')||'get').toLowerCase();if(method==='get')return;let input=form.querySelector('input[name="csrf_token"]');if(!input){input=document.createElement('input');input.type='hidden';input.name='csrf_token';form.appendChild(input)}input.value=token})}function installAdminLogoutFallback(){if(!document.body.classList.contains('kh-admin-page')||!token)return;const logoutUrl="{{ url_for('logout') }}";document.querySelectorAll('.admin-sidebar-bottom a').forEach(function(link){if(link.getAttribute('href')!==logoutUrl)return;link.addEventListener('click',function(event){event.preventDefault();const form=document.createElement('form');form.method='post';form.action=logoutUrl;const input=document.createElement('input');input.type='hidden';input.name='csrf_token';input.value=token;form.appendChild(input);document.body.appendChild(form);form.submit()})})}function init(){protectForms();installAdminLogoutFallback()}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();document.addEventListener('submit',function(event){const form=event.target;if(!(form instanceof HTMLFormElement))return;const method=(form.getAttribute('method')||'get').toLowerCase();if(method==='get'||!token)return;let input=form.querySelector('input[name="csrf_token"]');if(!input){input=document.createElement('input');input.type='hidden';input.name='csrf_token';form.appendChild(input)}input.value=token},true)})();</script>
 <script src="{{ url_for('static', filename='js/inventory-ui.js', v='2026-09-06-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-mega-menu.js', v='2026-09-07-2') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-ultimate-2026.js', v='2026-09-07-1') }}" defer></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js', v='2026-09-08-1') }}", {scope: '/'}).catch(function () {});
+    });
+  }
+</script>
 </body></html>

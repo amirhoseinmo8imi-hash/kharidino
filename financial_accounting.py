@@ -60,6 +60,13 @@ def apply_financial_accounting(app, db, Order, SellerLedger, SellerSettlement):
             description=description[:500],
         ))
 
+    def _seller_orders_for(session_obj, order):
+        current = list(getattr(order, "seller_orders", []) or [])
+        if current:
+            return current
+        seller_order_class = SellerLedger.seller_order.property.mapper.class_
+        return [x for x in session_obj.new if isinstance(x, seller_order_class) and x.order_id == order.id]
+
     def paid_order_journal(session_obj, tx):
         if not tx or tx.status != "paid":
             return
@@ -67,9 +74,7 @@ def apply_financial_accounting(app, db, Order, SellerLedger, SellerSettlement):
         if not order or int(order.total or 0) != int(tx.amount or 0):
             return
 
-        seller_orders = list(getattr(order, "seller_orders", []) or [])
-        # If a payment is confirmed but no approved seller offer exists, keep
-        # the customer cash/sales fact balanced without inventing seller debt.
+        seller_orders = _seller_orders_for(session_obj, order)
         gross_seller = sum(_money(x.subtotal) + _money(x.shipping_fee) for x in seller_orders)
         fee = sum(_money(x.platform_fee) for x in seller_orders)
         seller_net = sum(_money(x.seller_total) for x in seller_orders)
@@ -77,7 +82,6 @@ def apply_financial_accounting(app, db, Order, SellerLedger, SellerSettlement):
         if not seller_orders:
             seller_net = 0
             fee = int(tx.amount)
-            remainder = 0
         elif remainder:
             # Any non-seller portion (e.g. platform shipping/adjustment) is
             # treated as platform revenue so the journal remains balanced.
@@ -92,13 +96,13 @@ def apply_financial_accounting(app, db, Order, SellerLedger, SellerSettlement):
     def refunded_order_journal(session_obj, tx):
         if not tx or tx.status != "refunded":
             return
-        original = session_obj.query(FinancialJournalEntry).filter_by(reference=f"PAYMENT:{tx.public_id}:CASH").first()
+        original = session_obj.query(FinancialJournalEntry.id).filter_by(reference=f"PAYMENT:{tx.public_id}:CASH").first()
         if not original:
             return
         order = session_obj.get(Order, tx.order_id)
         if not order:
             return
-        seller_orders = list(getattr(order, "seller_orders", []) or [])
+        seller_orders = _seller_orders_for(session_obj, order)
         seller_net = sum(_money(x.seller_total) for x in seller_orders)
         fee = sum(_money(x.platform_fee) for x in seller_orders)
         if seller_orders:
@@ -137,8 +141,6 @@ def apply_financial_accounting(app, db, Order, SellerLedger, SellerSettlement):
                 add_entry(session_obj, reference=f"SETTLEMENT:{settlement.id}:CASH", event_type="settlement", account="cash", direction="credit", amount=settlement.amount, store_id=settlement.store_id, settlement_id=settlement.id, description=f"پرداخت تسویه فروشنده #{settlement.id}")
                 settlement_ids.add(settlement.id)
 
-            # Seller delivery is not enough to release funds: the master order
-            # must also be delivered. This repairs early availability changes.
             delivered_orders = session_obj.query(Order).filter_by(status="تحویل شد").all()
             delivered_ids = session_obj.info.setdefault("kharidino_financial_release_ids", set())
             for order in delivered_orders:

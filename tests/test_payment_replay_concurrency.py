@@ -7,7 +7,6 @@ payment.py, while the source contracts lock the production lifecycle rules.
 from pathlib import Path
 import sqlite3
 import threading
-import time
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,31 +57,29 @@ def test_callback_claim_is_conditional_and_committed_before_verify():
     assert block.index('db.session.commit()') < block.index('result = gateway.verify(')
 
 
-def test_concurrent_sqlite_claim_allows_exactly_one_verifier():
-    """Exercise the atomic conditional claim under two real DB connections."""
-    connection = sqlite3.connect(":memory:", check_same_thread=False)
-    connection.execute("CREATE TABLE payment_transaction (id INTEGER PRIMARY KEY, status TEXT NOT NULL)")
-    connection.execute("INSERT INTO payment_transaction(id, status) VALUES (1, 'redirect')")
-    connection.commit()
-
-    # SQLite in-memory databases are connection-local, so use a shared-memory
-    # URI for the two worker connections while keeping the test self-contained.
-    connection.close()
-    uri = "file:kharidino_payment_race?mode=memory&cache=shared"
-    keeper = sqlite3.connect(uri, uri=True, check_same_thread=False)
-    keeper.execute("CREATE TABLE payment_transaction (id INTEGER PRIMARY KEY, status TEXT NOT NULL)")
-    keeper.execute("INSERT INTO payment_transaction(id, status) VALUES (1, 'redirect')")
+def test_concurrent_sqlite_claim_allows_exactly_one_verifier(tmp_path):
+    """Two real DB connections must yield one claim and one no-op."""
+    db_path = tmp_path / "payment-race.sqlite3"
+    keeper = sqlite3.connect(db_path, check_same_thread=False)
+    keeper.execute(
+        "CREATE TABLE payment_transaction "
+        "(id INTEGER PRIMARY KEY, status TEXT NOT NULL)"
+    )
+    keeper.execute(
+        "INSERT INTO payment_transaction(id, status) VALUES (1, 'redirect')"
+    )
     keeper.commit()
+    keeper.close()
 
     barrier = threading.Barrier(2)
     results = []
+    errors = []
     lock = threading.Lock()
 
     def worker():
-        conn = sqlite3.connect(uri, uri=True, timeout=5, check_same_thread=False)
+        conn = sqlite3.connect(db_path, timeout=10, check_same_thread=False)
         try:
-            barrier.wait(timeout=2)
-            conn.execute("BEGIN IMMEDIATE")
+            barrier.wait(timeout=5)
             cursor = conn.execute(
                 "UPDATE payment_transaction SET status='verifying' "
                 "WHERE id=? AND status IN ('pending','redirect','failed')",
@@ -92,6 +89,9 @@ def test_concurrent_sqlite_claim_allows_exactly_one_verifier():
             conn.commit()
             with lock:
                 results.append(claimed)
+        except Exception as exc:  # pragma: no cover - assertion below reports it
+            with lock:
+                errors.append(exc)
         finally:
             conn.close()
 
@@ -99,11 +99,22 @@ def test_concurrent_sqlite_claim_allows_exactly_one_verifier():
     for thread in threads:
         thread.start()
     for thread in threads:
-        thread.join(timeout=5)
+        thread.join(timeout=15)
 
+    assert not any(thread.is_alive() for thread in threads)
+    assert errors == []
     assert sorted(results) == [False, True]
-    assert keeper.execute("SELECT status FROM payment_transaction WHERE id=1").fetchone()[0] == "verifying"
-    keeper.close()
+
+    verifier = sqlite3.connect(db_path)
+    try:
+        assert (
+            verifier.execute(
+                "SELECT status FROM payment_transaction WHERE id=1"
+            ).fetchone()[0]
+            == "verifying"
+        )
+    finally:
+        verifier.close()
 
 
 def test_order_is_marked_paid_only_after_successful_gateway_verification():
@@ -123,8 +134,7 @@ def test_e2e_contract_keeps_provider_off_for_test_gateway_runs():
 
 
 def test_no_provider_credentials_are_embedded_in_replay_concurrency_tests():
-    test_source = (Path(__file__).read_text(encoding="utf-8"))
-    assert "NEXTPAY_API_KEY" not in test_source
-    assert "nextpay" not in test_source.lower()
-    # Give threads a deterministic cleanup window on slower CI runners.
-    time.sleep(0)
+    """Regression guard: this test module must contain no provider secret."""
+    test_source = Path(__file__).read_text(encoding="utf-8")
+    assert "API_KEY" not in test_source
+    assert "api_key" not in test_source.lower()

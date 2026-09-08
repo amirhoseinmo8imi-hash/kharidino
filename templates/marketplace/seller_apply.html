@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}ساخت فروشگاه | {{ site_name }}{% endblock %}
+{% block content %}
+<div style="max-width:760px;margin:50px auto;padding:28px;border-radius:28px;background:rgba(20,25,40,.88);color:#fff;box-shadow:0 20px 70px #0005">
+  <div style="font-size:42px">🏪</div>
+  <h1>فروشگاه خودت را در خریدینو بساز</h1>
+  <p style="opacity:.78;line-height:2">فروشنده می‌تواند برند، محصولات و موجودی خودش را مدیریت کند و پس از تأیید مدیر، فروشگاه اختصاصی دریافت کند.</p>
+  {% if existing %}
+    <div style="padding:18px;border-radius:18px;background:#ffffff12">درخواست شما قبلاً ثبت شده است. وضعیت: <b>{{ existing.status }}</b></div>
+  {% else %}
+    <form method="post" style="display:grid;gap:16px;margin-top:24px">
+      <label>نام فروشگاه<input name="store_name" required minlength="2" maxlength="200" style="display:block;width:100%;padding:14px;margin-top:7px;border-radius:12px"></label>
+      <label>توضیح فروشگاه<textarea name="description" maxlength="2000" rows="5" style="display:block;width:100%;padding:14px;margin-top:7px;border-radius:12px"></textarea></label>
+      <button type="submit" style="padding:14px;border:0;border-radius:14px;cursor:pointer">ارسال درخواست فروشندگی</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

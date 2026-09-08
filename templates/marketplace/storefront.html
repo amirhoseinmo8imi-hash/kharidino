@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ seller.display_name }} | خریدینو{% endblock %}
+{% block content %}
+<div style="max-width:1180px;margin:30px auto;color:#fff;padding:20px">
+  <section style="padding:36px;border-radius:30px;background:linear-gradient(135deg,#151b2e,#222b48);margin-bottom:24px">
+    <span style="opacity:.7">فروشگاه رسمی در خریدینو</span><h1 style="font-size:38px;margin:8px 0">{{ seller.display_name }}</h1><p style="max-width:720px;line-height:2;opacity:.8">{{ seller.description or 'خرید امن و مستقیم از فروشنده در بستر خریدینو.' }}</p><span style="display:inline-block;padding:7px 12px;border-radius:20px;background:#ffffff12">✓ فروشنده تأییدشده</span>
+  </section>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+  {% for item in listings %}<article style="padding:18px;border-radius:22px;background:#ffffff0c"><a href="{{ url_for('product_detail', product_id=item.product.id) }}" style="text-decoration:none;color:inherit"><div style="height:180px;display:grid;place-items:center;background:#fff08;border-radius:16px;overflow:hidden">{% if item.product.image %}<img src="{{ url_for('static', filename=item.product.image) }}" style="width:100%;height:100%;object-fit:contain" loading="lazy" alt="{{ item.product.name }}">{% else %}<span style="font-size:54px">📦</span>{% endif %}</div><h3>{{ item.product.name }}</h3><strong>{{ item.seller_price|money }} تومان</strong><div style="opacity:.7;margin-top:8px">موجودی: {{ item.stock }}</div></a></article>{% else %}<p>این فروشگاه هنوز محصولی برای فروش ندارد.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

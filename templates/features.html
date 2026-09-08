@@ -1,9 +1,76 @@
 {% extends "base.html" %}
 {% block title %}امکانات | {{ site_name }}{% endblock %}
 {% block content %}
-<section class="page-hero"><div class="container"><span class="section-kicker">امکانات</span><h1>همه‌چیز برای یک خرید حرفه‌ای</h1><p>خریدینو فقط یک لیست محصول نیست؛ یک تجربه کامل برای پیدا کردن، مقایسه و سفارش است.</p></div></section>
-<section class="section"><div class="container feature-grid">
-{% set features=[('fa-magnifying-glass','جست‌وجوی سریع','محصول موردنظرت را سریع پیدا کن.'),('fa-scale-balanced','مقایسه قیمت','قیمت چند فروشگاه را کنار هم ببین.'),('fa-cart-shopping','سبد خرید','محصولاتت را جمع کن و یک‌جا سفارش بده.'),('fa-truck-fast','پیگیری سفارش','وضعیت سفارش‌هایت را از حساب کاربری ببین.'),('fa-user-shield','حساب کاربری','سفارش‌ها و اطلاعات خریدت در حساب خودت قرار می‌گیرد.'),('fa-gauge-high','مدیریت حرفه‌ای','مدیر می‌تواند محصولات، فروشگاه‌ها، قیمت‌ها و سفارش‌ها را مدیریت کند.')]
-%}{% for icon,title,desc in features %}<article class="feature-card"><div class="about-icon"><i class="fa-solid {{ icon }}"></i></div><h3>{{ title }}</h3><p>{{ desc }}</p></article>{% endfor %}
-</div></section>
+<section class="page-hero">
+  <div class="container">
+    <span class="section-kicker">امکانات خریدینو</span>
+    <h1>همه‌چیز برای یک خرید حرفه‌ای</h1>
+    <p>خریدینو فقط یک لیست محصول نیست؛ یک تجربه کامل برای پیدا کردن، مقایسه و سفارش است.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container feature-grid">
+    <a class="feature-card" href="{{ url_for('home') }}#products">
+      <div class="about-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <h3>جست‌وجوی سریع</h3>
+      <p>محصول موردنظرت را سریع پیدا کن.</p>
+      <span class="feature-card-action">شروع جست‌وجو <i class="fa-solid fa-arrow-left"></i></span>
+    </a>
+
+    <a class="feature-card" href="{{ url_for('compare') }}">
+      <div class="about-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+      <h3>مقایسه قیمت</h3>
+      <p>قیمت چند فروشگاه را کنار هم ببین.</p>
+      <span class="feature-card-action">رفتن به مقایسه <i class="fa-solid fa-arrow-left"></i></span>
+    </a>
+
+    <a class="feature-card" href="{{ url_for('cart') }}">
+      <div class="about-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+      <h3>سبد خرید</h3>
+      <p>محصولاتت را جمع کن و یک‌جا سفارش بده.</p>
+      <span class="feature-card-action">مشاهده سبد خرید <i class="fa-solid fa-arrow-left"></i></span>
+    </a>
+
+    <a class="feature-card" href="{{ url_for('login', next=url_for('my_orders')) }}">
+      <div class="about-icon"><i class="fa-solid fa-truck-fast"></i></div>
+      <h3>پیگیری سفارش</h3>
+      <p>وضعیت سفارش‌هایت را از حساب کاربری ببین.</p>
+      <span class="feature-card-action">پیگیری سفارش‌ها <i class="fa-solid fa-arrow-left"></i></span>
+    </a>
+
+    <a class="feature-card" href="{{ url_for('login', next=url_for('my_orders')) }}">
+      <div class="about-icon"><i class="fa-solid fa-user-shield"></i></div>
+      <h3>حساب کاربری</h3>
+      <p>سفارش‌ها و اطلاعات خریدت در حساب خودت قرار می‌گیرد.</p>
+      <span class="feature-card-action">ورود به حساب <i class="fa-solid fa-arrow-left"></i></span>
+    </a>
+
+    <a class="feature-card" href="{{ url_for('admin') }}">
+      <div class="about-icon"><i class="fa-solid fa-gauge-high"></i></div>
+      <h3>مدیریت حرفه‌ای</h3>
+      <p>مدیر می‌تواند محصولات، فروشگاه‌ها، قیمت‌ها و سفارش‌ها را مدیریت کند.</p>
+      <span class="feature-card-action">ورود به مدیریت <i class="fa-solid fa-arrow-left"></i></span>
+    </a>
+  </div>
+</section>
+
+<style>
+.feature-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.feature-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-weight: 700;
+}
+.feature-card:hover .feature-card-action {
+  transform: translateX(-3px);
+}
+</style>
 {% endblock %}

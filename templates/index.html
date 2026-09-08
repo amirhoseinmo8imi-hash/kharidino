@@ -53,6 +53,18 @@
       <div class="ki-feature"><span><i class="fa-solid fa-shield-heart"></i></span><div><strong>انتخاب مطمئن</strong><small>اطلاعات شفاف قبل از خرید</small></div></div>
     </section>
 
+    <section class="km-section" id="stores">
+      <div class="km-section-head"><div><span class="ki-section-kicker">Marketplace</span><h2>فروشگاه‌های خریدینو</h2></div><a href="{{ url_for('stores') }}">مشاهده همه</a></div>
+      <div class="km-products">
+        {% for store in stores[:8] %}
+        <a class="km-product" href="{{ url_for('store_detail', store_id=store.id) }}" aria-label="ورود به فروشگاه {{ store.name }}">
+          <div class="km-product-img">{% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}" loading="lazy">{% else %}<i class="fa-solid fa-store"></i>{% endif %}</div>
+          <small class="km-product-cat">فروشگاه فعال</small><h3>{{ store.name }}</h3><div class="km-offer"><span><i class="fa-solid fa-arrow-left"></i> ورود به فروشگاه</span><b>مشاهده</b></div>
+        </a>
+        {% else %}<p>هنوز فروشگاه فعالی ثبت نشده است.</p>{% endfor %}
+      </div>
+    </section>
+
     <section class="km-section" id="categories">
       <div class="km-section-head"><h2>دسته‌بندی‌های محبوب</h2><a href="#categories">مشاهده همه</a></div>
       <div class="km-categories">
@@ -70,7 +82,7 @@
     </div></section>
     {% endif %}
 
-    <section class="ki-newsletter"><div><span class="ki-news-icon"><i class="fa-solid fa-bell"></i></span><div><strong>از قیمت‌های بهتر باخبر شو</strong><p>برای پیدا کردن پیشنهادهای جدید خریدینو، محصولات موردنظرت را جستجو و مقایسه کن.</p></div></div><a href="#products">دیدن پیشنهادها</a></section>
+    <section class="ki-newsletter"><div><span class="ki-news-icon"><i class="fa-solid fa-store"></i></span><div><strong>فروشنده‌ای؟ فروشگاه خودت را بساز</strong><p>برند خودت، ویترین خودت، محصولات خودت و پنل مدیریت اختصاصی در خریدینو.</p></div></div>{% if session.get('user_id') %}<a href="{{ url_for('seller_apply') }}">شروع فروشندگی</a>{% else %}<a href="{{ url_for('login') }}?next={{ url_for('seller_apply') }}">ورود و شروع</a>{% endif %}</section>
   </div>
 </div>
 <script>

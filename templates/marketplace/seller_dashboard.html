@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}پنل فروشنده | {{ seller.display_name }}{% endblock %}
+{% block content %}
+<div style="max-width:1180px;margin:30px auto;padding:20px;color:#fff">
+  <div style="display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:24px">
+    <div><small style="opacity:.6">پنل فروشنده خریدینو</small><h1 style="margin:6px 0">{{ seller.display_name }}</h1><a href="{{ url_for('public_storefront', slug=seller.slug) }}">مشاهده فروشگاه عمومی ←</a></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px">
+      <div style="padding:18px;border-radius:18px;background:#ffffff10"><small>موجودی قابل تسویه</small><strong style="display:block;font-size:22px">{{ (wallet.balance if wallet else 0)|money }} تومان</strong></div>
+      <div style="padding:18px;border-radius:18px;background:#ffffff10"><small>در انتظار تسویه</small><strong style="display:block;font-size:22px">{{ (wallet.pending_balance if wallet else 0)|money }} تومان</strong></div>
+    </div>
+  </div>
+  <section style="padding:22px;border-radius:22px;background:#ffffff0c;margin-bottom:20px">
+    <h2>افزودن/ویرایش محصول فروشگاه</h2>
+    <form method="post" action="{{ url_for('seller_listing_create') }}" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px">
+      <select name="product_id" required style="padding:12px;border-radius:10px"><option value="">انتخاب محصول</option>{% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select>
+      <input name="price" type="number" min="0" required placeholder="قیمت" style="padding:12px;border-radius:10px">
+      <input name="stock" type="number" min="0" required placeholder="موجودی" style="padding:12px;border-radius:10px">
+      <button type="submit" style="padding:12px 18px;border:0;border-radius:10px;cursor:pointer">ذخیره</button>
+    </form>
+    <p style="opacity:.65">هر فروشنده فقط رکوردهای خودش را می‌تواند ایجاد یا ویرایش کند و برای هر محصول یک listing یکتا دارد.</p>
+  </section>
+  <section style="padding:22px;border-radius:22px;background:#ffffff0c">
+    <h2>محصولات من</h2>
+    {% for item in listings %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #ffffff12;gap:12px"><div><b>{{ item.product.name }}</b><div style="opacity:.7">{{ item.seller_price|money }} تومان · موجودی {{ item.stock }}</div></div><form method="post" action="{{ url_for('seller_listing_toggle', listing_id=item.id) }}"><button>{{ 'غیرفعال کردن' if item.active else 'فعال کردن' }}</button></form></div>
+    {% else %}<p style="opacity:.65">هنوز محصولی برای فروشگاه ثبت نشده است.</p>{% endfor %}
+  </section>
+  <section style="padding:22px;border-radius:22px;background:#ffffff0c;margin-top:20px"><h2>آخرین تراکنش‌ها</h2>{% for e in ledger %}<div style="padding:10px 0;border-bottom:1px solid #ffffff12">{{ e.entry_type }} · {{ e.amount|money }} تومان · {{ e.reference }}</div>{% else %}<p style="opacity:.65">تراکنشی ثبت نشده است.</p>{% endfor %}</section>
+</div>
+{% endblock %}

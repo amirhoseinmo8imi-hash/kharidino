@@ -18,7 +18,6 @@ def test_callback_claim_is_atomic_and_happens_before_gateway_verification():
     start = source.index('def payment_callback(')
     end = source.index('\n\n    @app.post("/payment/refund/', start)
     block = source[start:end]
-
     assert 'PaymentTransaction.status.in_({"pending", "redirect", "failed"})' in block
     assert '.update({"status": "verifying"}, synchronize_session=False)' in block
     assert 'if claim != 1:' in block
@@ -34,7 +33,6 @@ def test_payment_identity_and_amount_are_bound_to_order():
     start = source.index('def payment_callback(')
     end = source.index('\n\n    @app.post("/payment/refund/', start)
     block = source[start:end]
-
     assert 'order.user_id != tx.user_id' in block
     assert 'int(order.total or 0) != tx.amount' in block
     assert 'tx.amount <= 0' in block
@@ -47,10 +45,12 @@ def test_payment_start_has_idempotency_and_cross_order_protection():
     start = source.index('def payment_start(')
     end = source.index('\n\n    @app.route("/payment/callback/', start)
     block = source[start:end]
-
     assert 'request.form.get("idempotency_key")' in block
     assert 'request.headers.get("Idempotency-Key")' in block
-    assert 'unique=True' in source[source.index('idempotency_key'):source.index('idempotency_key') + 120]
+    model_start = source.index('class PaymentTransaction(')
+    model_end = source.index('\n\n    app.extensions["kharidino_payment_transaction"]', model_start)
+    model = source[model_start:model_end]
+    assert 'idempotency_key = db.Column(db.String(128), unique=True, nullable=False)' in model
     assert 'tx.user_id != session["user_id"] or tx.order_id != order.id' in block
     assert 'if tx.status == "paid":' in block
 
@@ -129,7 +129,6 @@ def test_idor_boundaries_cover_payment_order_and_seller_finance():
     payment = _read("payment.py")
     commerce = _read("commerce_extensions_v2.py")
     marketplace = _read("merchant_marketplace_v2.py")
-
     assert 'order.user_id != session["user_id"]' in payment
     assert 'def _owned_order(order_id):' in commerce
     assert 'SellerOrder.query.filter_by(id=seller_order_id, store_id=account.store_id)' in marketplace

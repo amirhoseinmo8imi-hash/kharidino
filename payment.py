@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from flask import abort, flash, redirect, request, session, url_for
+from markupsafe import escape
 from sqlalchemy.exc import IntegrityError
 
 PAYMENT_STATUSES = {"pending", "redirect", "verifying", "paid", "failed", "cancelled", "refunded"}
@@ -114,6 +115,29 @@ def apply_payment(app, db, Order, User):
         order = db.relationship("Order", backref=db.backref("payment_transactions", lazy=True))
 
     app.extensions["kharidino_payment_transaction"] = PaymentTransaction
+
+    # Wrap the existing checkout endpoint so the payment bridge receives the
+    # exact order created by that request instead of guessing from the latest
+    # order belonging to the user. This keeps payment binding correct even when
+    # the user has multiple recent orders.
+    checkout_view = app.view_functions.get("checkout")
+    if checkout_view and not getattr(checkout_view, "_kharidino_payment_wrapped", False):
+        def checkout_payment_wrapper(*args, **kwargs):
+            before_ids = {
+                order.id
+                for order in Order.query.filter_by(user_id=session.get("user_id")).all()
+            }
+            response = checkout_view(*args, **kwargs)
+            if request.method == "POST" and session.get("user_id"):
+                after_orders = Order.query.filter_by(user_id=session["user_id"]).order_by(Order.id.desc()).all()
+                new_orders = [order for order in after_orders if order.id not in before_ids]
+                if len(new_orders) == 1:
+                    session["checkout_payment_order_id"] = new_orders[0].id
+                    session.modified = True
+            return response
+        checkout_payment_wrapper.__name__ = getattr(checkout_view, "__name__", "checkout")
+        checkout_payment_wrapper._kharidino_payment_wrapped = True
+        app.view_functions["checkout"] = checkout_payment_wrapper
 
     @app.post("/payment/start/<int:order_id>")
     def payment_start(order_id):
@@ -247,9 +271,11 @@ def apply_payment(app, db, Order, User):
     def payment_checkout_bridge(response):
         if request.endpoint == "checkout" and request.method == "POST" and response.status_code in {301, 302, 303, 307, 308}:
             location = response.headers.get("Location", "")
-            if "/orders" in location and session.get("user_id"):
-                order = Order.query.filter_by(user_id=session["user_id"]).order_by(Order.id.desc()).first()
-                if order:
+            order_id = session.pop("checkout_payment_order_id", None)
+            session.modified = True
+            if "/orders" in location and order_id:
+                order = db.session.get(Order, int(order_id))
+                if order and order.user_id == session.get("user_id"):
                     response.status_code = 303
                     response.headers["Location"] = url_for("payment_start_form", order_id=order.id)
         return response
@@ -264,13 +290,18 @@ def apply_payment(app, db, Order, User):
         if order.status != "در انتظار بررسی" or int(order.total or 0) <= 0:
             abort(409, description="این سفارش در وضعیت قابل پرداخت نیست.")
         key = uuid.uuid4().hex
-        return ("<!doctype html><html lang='fa' dir='rtl'><meta charset='utf-8'>"
+        token_factory = app.jinja_env.globals.get("csrf_token")
+        token = str(token_factory()) if callable(token_factory) else ""
+        safe_token = escape(token)
+        safe_action = escape(url_for("payment_start", order_id=order.id))
+        return ("<!doctype html><html lang='fa' dir='rtl'><head><meta charset='utf-8'>"
                 "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-                "<title>پرداخت | خریدینو</title>"
+                "<title>پرداخت | خریدینو</title></head>"
                 f"<body style='font-family:Tahoma;max-width:560px;margin:60px auto;padding:24px'>"
                 f"<h1>پرداخت سفارش #{order.id}</h1><p>مبلغ: {int(order.total):,}</p>"
-                f"<form method='post' action='/payment/start/{order.id}'>"
-                f"<input type='hidden' name='idempotency_key' value='{key}'>"
+                f"<form method='post' action='{safe_action}'>"
+                f"<input type='hidden' name='csrf_token' value='{safe_token}'>"
+                f"<input type='hidden' name='idempotency_key' value='{escape(key)}'>"
                 "<button type='submit'>ادامه به درگاه پرداخت</button></form></body></html>")
 
     app._kharidino_payment = True

@@ -9,8 +9,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from flask import abort, flash, redirect, request, session, url_for
-from markupsafe import escape
+from flask import abort, flash, redirect, render_template, request, session, url_for
 from sqlalchemy.exc import IntegrityError
 
 PAYMENT_STATUSES = {"pending", "redirect", "verifying", "paid", "failed", "cancelled", "refunded"}
@@ -205,9 +204,6 @@ def apply_payment(app, db, Order, User):
         if tx.amount <= 0:
             abort(409, description="مبلغ تراکنش نامعتبر است.")
 
-        # Atomically claim the callback before contacting the gateway. Without
-        # this conditional update, two concurrent callbacks could both enter
-        # verification and race to create the same paid transaction/reference.
         claim = PaymentTransaction.query.filter(
             PaymentTransaction.id == tx.id,
             PaymentTransaction.status.in_({"pending", "redirect", "failed"}),
@@ -316,16 +312,11 @@ def apply_payment(app, db, Order, User):
         key = uuid.uuid4().hex
         token_factory = app.jinja_env.globals.get("csrf_token")
         token = str(token_factory()) if callable(token_factory) else ""
-        safe_token = escape(token)
-        safe_action = escape(url_for("payment_start", order_id=order.id))
-        return ("<!doctype html><html lang='fa' dir='rtl'><head><meta charset='utf-8'>"
-                "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-                "<title>پرداخت | خریدینو</title></head>"
-                f"<body style='font-family:Tahoma;max-width:560px;margin:60px auto;padding:24px'>"
-                f"<h1>پرداخت سفارش #{order.id}</h1><p>مبلغ: {int(order.total):,}</p>"
-                f"<form method='post' action='{safe_action}'>"
-                f"<input type='hidden' name='csrf_token' value='{safe_token}'>"
-                f"<input type='hidden' name='idempotency_key' value='{escape(key)}'>"
-                "<button type='submit'>ادامه به درگاه پرداخت</button></form></body></html>")
+        return render_template(
+            "payment_start.html",
+            order=order,
+            csrf_token=token,
+            idempotency_key=key,
+        )
 
     app._kharidino_payment = True

@@ -60,6 +60,7 @@ from inventory_hardening import apply_inventory_security
 from checkout_preflight import apply_checkout_preflight
 from commerce_extensions_v2 import apply_commerce_extensions
 from commerce_catalog import apply_catalog_extensions
+from order_state_machine import apply_order_state_machine
 import commerce_runtime  # noqa: F401
 import profile_extensions  # noqa: F401
 import merchant_marketplace  # noqa: F401
@@ -81,6 +82,7 @@ with app.app_context():
     # Inventory status mutations run inside the same SQLAlchemy transaction as
     # the order-status change, after the business route accepts the transition.
     apply_inventory_atomicity(app)
+    apply_order_state_machine(app)
     apply_commerce_extensions(app)
     apply_catalog_extensions(app)
     db.create_all()

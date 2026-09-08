@@ -117,7 +117,7 @@ def test_reactivation_fails_atomically_when_stock_is_insufficient():
                 text(f"SELECT restored FROM {RESERVATION_TABLE} WHERE order_id = :oid"),
                 {"oid": order_id},
             ).scalar_one()
-            assert refreshed.status == "لغو شد" or refreshed.status == "در انتظار بررسی"
+            assert refreshed.status == "لغو شد"
             assert quantity == 2
             assert restored == 1
         finally:

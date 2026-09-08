@@ -16,7 +16,9 @@
       {% if mode == 'login' %}<span>بازیابی رمز عبور در حال آماده‌سازی است.</span><span>حساب ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></span>
       {% else %}<span>قبلاً حساب ساخته‌اید؟ <a href="{{ url_for('login') }}">وارد شوید</a></span><a href="{{ url_for('home') }}">بازگشت به فروشگاه</a>{% endif %}
     </div>
+    {% if 'seller_register' in current_app.view_functions %}
     <div style="margin-top:18px;padding:15px;border:1px solid #e8eaf0;border-radius:15px;background:#f8fafc;text-align:center"><strong style="display:block;color:#111827">صاحب فروشگاه هستی؟</strong><a href="{{ url_for('seller_register') }}" style="display:inline-flex;gap:8px;align-items:center;margin-top:8px;font-weight:800;color:#4338ca;text-decoration:none"><i class="fa-solid fa-store"></i> ثبت فروشگاه در خریدینو</a></div>
+    {% endif %}
     <p class="km-auth-note">با ورود یا ثبت‌نام، قوانین و شرایط استفاده از خریدینو را می‌پذیرید.</p>
   </form>
 </section>

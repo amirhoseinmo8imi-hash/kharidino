@@ -164,18 +164,26 @@ def apply_payment(app, db, Order, User):
     @app.route("/payment/callback/<string:transaction_id>", methods=["GET", "POST"])
     def payment_callback(transaction_id):
         tx = PaymentTransaction.query.filter_by(public_id=transaction_id).first_or_404()
-        if not session.get("user_id") or tx.user_id != session["user_id"]:
-            abort(403)
+        gateway = _gateway()
+        signature = str(request.values.get("signature", "") or request.headers.get("X-Payment-Signature", "")).strip()
+
+        # A gateway callback is not a browser-session action. Real gateways may
+        # return from a different browser/device, so session ownership is not an
+        # authorization mechanism here. In production the callback must carry the
+        # server-to-server HMAC signature configured for the gateway integration.
+        if gateway.name != "test":
+            if not _valid_callback_signature(tx.public_id, signature):
+                abort(403, description="امضای callback نامعتبر است.")
+        elif os.environ.get("PAYMENT_TEST_MODE", "0").lower() not in {"1", "true", "yes"}:
+            abort(503, description="حالت آزمایشی پرداخت فعال نیست.")
+
         if tx.status == "paid":
             return redirect(url_for("my_orders"))
         if tx.status in {"cancelled", "refunded"}:
             abort(409, description="این تراکنش دیگر قابل تأیید نیست.")
 
-        gateway = _gateway()
-        if gateway.name != "test" and not _valid_callback_signature(tx.public_id, request.values.get("signature", "")):
-            abort(403, description="امضای callback نامعتبر است.")
         returned_authority = str(request.values.get("authority", "")).strip()
-        if tx.authority and returned_authority and not hmac.compare_digest(tx.authority, returned_authority):
+        if not returned_authority or not tx.authority or not hmac.compare_digest(tx.authority, returned_authority):
             abort(409, description="شناسه پرداخت با تراکنش تطابق ندارد.")
 
         if tx.amount <= 0:
@@ -222,8 +230,6 @@ def apply_payment(app, db, Order, User):
 
         tx.status = "refunded"
         order.status = "لغو شد"
-        # A refunded order must never later become payable just because a seller
-        # marks its suborder delivered. The seller layer also checks master status.
         try:
             from merchant_marketplace_v2 import SellerLedger
             for seller_order in list(getattr(order, "seller_orders", []) or []):

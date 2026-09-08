@@ -77,7 +77,7 @@ def order_detail(order_id):
 @login_required
 def order_detail_api(order_id):
     order=_owned_order(order_id)
-    if not order:return ("Not Found",404)
+    if not order:return jsonify({"error":"not_found"}),404
     return jsonify({"id":order.id,"status":order.status,"total":order.total,"created_at":order.created_at.isoformat() if order.created_at else None,"customer":{"name":order.customer_name,"phone":order.phone,"address":order.address},"items":[{"product_id":i.product_id,"name":i.product_name,"price":i.price,"quantity":i.quantity} for i in order.items],"history":[{"old_status":h.old_status,"new_status":h.new_status,"note":h.note,"created_at":h.created_at.isoformat()} for h in order.status_history]})
 
 @app.post("/coupon/apply")

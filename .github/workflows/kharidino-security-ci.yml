@@ -17,8 +17,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest
+          pip install pytest pip-audit
       - name: Compile Python
         run: python -m compileall -q .
+      - name: Source security audit
+        run: python security_audit.py
+      - name: Template and dangerous sink audit
+        run: python security_source_audit.py
+      - name: Dependency audit
+        run: pip-audit -r requirements.txt
       - name: Run tests
         run: pytest -q

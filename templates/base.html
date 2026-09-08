@@ -1,60 +1,89 @@
-<!DOCTYPE html>
+{% set _csrf_value = csrf_token() if csrf_token is defined and not (csrf_token is string) else (csrf_token|default('', true)) %}
+<!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}</title>
-  <meta name="description" content="{{ setting('meta_description', site_tagline) }}">
-  <meta name="theme-color" content="#ef4056">
-  <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else session.get('csrf_token', '') }}">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='2026-09-08-1') }}">
-  <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.svg', v='2026-09-08-1') }}" type="image/svg+xml">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='2026-store-2') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pro.css', v='2026-store-2') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-global-storefront.css', v='2026-09-06-4') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-layout-fix.css', v='2026-09-06-4') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-final.css', v='2026-09-06-5') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-final.css', v='2026-09-07-8') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inventory-ui.css', v='2026-09-06-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-inner-final.css', v='2026-09-07-2') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-polish-2026.css', v='2026-09-07-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ultimate-2026.css', v='2026-09-07-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ux-final.css', v='2026-09-08-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ui-master.css', v='2026-09-08-1') }}">
-  {% block extra_css %}{% endblock %}
-  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-07-3') }}">{% endif %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-mega-menu.css', v='2026-09-07-2') }}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="csrf-token" content="{{ _csrf_value }}">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ui-master.css') }}?v=2026-09-08">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ux-final.css') }}?v=2026-09-08">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ui-polish.css') }}?v=2026-09-08">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-ultimate-2026.css') }}?v=2026-09-08">
+  {% block head %}{% endblock %}
 </head>
-<body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
-<div class="site-content">
-{% if request.endpoint != 'home' %}
-<header class="km-topbar">
-  <div class="km-header">
-    <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a>
-    <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
-    <div class="km-user-actions">
-      {% if current_user %}<a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
-      <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
-      {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
-      {% if current_user %}<form class="km-action km-action--logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else session.get('csrf_token', '') }}"><button type="submit" class="km-logout-button"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></button></form>{% endif %}
+<body class="{{ body_class|default('') }}">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="خریدینو">خریدینو</a>
+      <form class="header-search" action="{{ url_for('search') }}" method="get" role="search">
+        <input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جست‌وجوی محصول، برند یا دسته‌بندی" aria-label="جست‌وجو">
+        <button type="submit">جست‌وجو</button>
+      </form>
+      <nav class="header-actions" aria-label="ناوبری اصلی">
+        {% if session.get('user_id') %}
+          <a href="{{ url_for('profile') }}">حساب من</a>
+          <a href="{{ url_for('orders') }}">سفارش‌ها</a>
+          <a href="{{ url_for('cart') }}">سبد خرید</a>
+          {% if session.get('is_admin') %}<a href="{{ url_for('admin') }}">مدیریت</a>{% endif %}
+          <form action="{{ url_for('logout') }}" method="post" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ _csrf_value }}">
+            <button type="submit" class="link-button">خروج</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login') }}">ورود</a>
+          <a href="{{ url_for('register') }}">ثبت‌نام</a>
+          <a href="{{ url_for('cart') }}">سبد خرید</a>
+        {% endif %}
+      </nav>
     </div>
-  </div>
-  <nav class="km-nav"><div class="km-nav-inner"><a class="km-cat-menu" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in (categories|default([]))[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>
-</header>
-{% endif %}
-{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}{% endwith %}
-<main class="kg-main">{% block content %}{% endblock %}</main>
-<footer class="footer kh-footer"><div class="container"><div class="kh-footer-top"><div class="kh-footer-brand"><a href="{{ url_for('home') }}" class="kh-footer-logo"><span class="kh-footer-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a><h3>خریدینو؛ انتخاب هوشمند، مقایسه شفاف، خرید مطمئن</h3><p>{{ setting('footer_text','قیمت‌ها را مقایسه کن، فروشگاه‌ها را بشناس و با آگاهی بیشتر خرید کن.') }}</p><div class="kh-footer-badges"><span><i class="fa-solid fa-scale-balanced"></i> مقایسه قیمت</span><span><i class="fa-solid fa-store"></i> فروشگاه‌های متنوع</span><span><i class="fa-solid fa-shield-heart"></i> انتخاب مطمئن</span></div></div><div class="kh-footer-links"><h4>دسترسی سریع</h4><a href="{{ url_for('home') }}">خانه</a><a href="{{ url_for('stores') }}">فروشگاه‌ها</a><a href="{{ url_for('features') }}">امکانات خریدینو</a><a href="{{ url_for('compare') }}">مقایسه محصولات</a><a href="{{ url_for('about') }}">درباره ما</a></div><div class="kh-footer-links"><h4>حساب کاربری</h4>{% if current_user %}<a href="{{ url_for('profile') }}">پروفایل من</a><a href="{{ url_for('my_orders') }}">سفارش‌های من</a>{% else %}<a href="{{ url_for('login') }}">ورود به حساب</a><a href="{{ url_for('register') }}">ثبت‌نام</a>{% endif %}<a href="{{ url_for('cart') }}">سبد خرید</a></div><div class="kh-footer-links"><h4>پشتیبانی و راهنما</h4><a href="{{ url_for('contact') }}">تماس با ما</a><a href="{{ url_for('about') }}">درباره خریدینو</a><a href="{{ url_for('features') }}">راهنمای امکانات</a><div class="kh-footer-support"><i class="fa-solid fa-headset"></i><span>پشتیبانی خریدینو<br><small>همراه شما در مسیر انتخاب</small></span></div></div></div><div class="kh-footer-stats"><div><strong>۸+</strong><span>فروشگاه</span></div><div><strong>{{ (categories|default([]))|length }}+</strong><span>دسته‌بندی</span></div><div><strong>۳۵۰+</strong><span>پیشنهاد قیمت</span></div><div><strong>۲۴/۷</strong><span>دسترسی آنلاین</span></div></div><div class="footer-bottom kh-footer-bottom"><span>© {{ site_name }} — تمامی حقوق محفوظ است.</span><span>{{ setting('footer_copyright','خریدینو؛ برای یک انتخاب بهتر.') }}</span></div></div></footer>
-</div>
-{% if request.endpoint != 'home' %}<nav class="mobile-bottom-nav"><a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a><a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a><a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span></a>{% if current_user %}<a class="mobile-nav-item" href="{{ url_for('profile') }}"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}<a class="mobile-nav-item" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a></nav>{% endif %}
-<script>(function(){const meta=document.querySelector('meta[name="csrf-token"]');const token=meta?meta.getAttribute('content'):'';function protectForms(){if(!token)return;document.querySelectorAll('form').forEach(function(form){const method=(form.getAttribute('method')||'get').toLowerCase();if(method==='get')return;let input=form.querySelector('input[name="csrf_token"]');if(!input){input=document.createElement('input');input.type='hidden';input.name='csrf_token';form.appendChild(input)}input.value=token})}function installAdminLogoutFallback(){if(!document.body.classList.contains('kh-admin-page')||!token)return;const logoutUrl="{{ url_for('logout') }}";document.querySelectorAll('.admin-sidebar-bottom a').forEach(function(link){if(link.getAttribute('href')!==logoutUrl)return;link.addEventListener('click',function(event){event.preventDefault();const form=document.createElement('form');form.method='post';form.action=logoutUrl;const input=document.createElement('input');input.type='hidden';input.name='csrf_token';input.value=token;form.appendChild(input);document.body.appendChild(form);form.submit()})})}function init(){protectForms();installAdminLogoutFallback()}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();document.addEventListener('submit',function(event){const form=event.target;if(!(form instanceof HTMLFormElement))return;const method=(form.getAttribute('method')||'get').toLowerCase();if(method==='get'||!token)return;let input=form.querySelector('input[name="csrf_token"]');if(!input){input=document.createElement('input');input.type='hidden';input.name='csrf_token';form.appendChild(input)}input.value=token},true)})();</script>
-<script src="{{ url_for('static', filename='js/inventory-ui.js', v='2026-09-06-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-mega-menu.js', v='2026-09-07-2') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-ultimate-2026.js', v='2026-09-07-1') }}" defer></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js', v='2026-09-08-1') }}", {scope: '/'}).catch(function () {});
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container flash-stack" aria-live="polite">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div><strong>خریدینو</strong><p>بازار آنلاین امن برای خرید و فروش.</p></div>
+      <nav aria-label="پیوندهای فوتر">
+        <a href="{{ url_for('about') }}">درباره ما</a>
+        <a href="{{ url_for('contact') }}">تماس با ما</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    window.KHARIDINO_CSRF = {{ _csrf_value|tojson }};
+    document.addEventListener('submit', function (event) {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (!['post', 'put', 'patch', 'delete'].includes((form.method || 'get').toLowerCase())) return;
+      if (!form.querySelector('input[name="csrf_token"]')) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'csrf_token';
+        input.value = window.KHARIDINO_CSRF || '';
+        form.appendChild(input);
+      }
     });
-  }
-</script>
-</body></html>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/static/sw.js').catch(() => {}));
+    }
+  </script>
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

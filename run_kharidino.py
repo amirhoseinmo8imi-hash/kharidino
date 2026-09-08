@@ -56,6 +56,7 @@ from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
 from security_hardening import apply_security
+from redirect_hardening import apply_redirect_hardening
 from inventory_hardening import apply_inventory_security
 from checkout_preflight import apply_checkout_preflight
 from commerce_extensions_v2 import apply_commerce_extensions
@@ -78,6 +79,7 @@ register_mobile_api(app, db, Product, Category, Store, Offer)
 
 with app.app_context():
     apply_security(app)
+    apply_redirect_hardening(app)
     # Checkout preflight deliberately runs before inventory reservation.
     apply_checkout_preflight(app)
     apply_inventory_security(app)

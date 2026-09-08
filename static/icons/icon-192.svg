@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="خریدینو">
+  <rect width="192" height="192" rx="42" fill="#050816"/>
+  <circle cx="96" cy="96" r="68" fill="#6c5ce7"/>
+  <path d="M55 66h12l8 58h50l14-42H73" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="86" cy="143" r="7" fill="#fff"/><circle cx="124" cy="143" r="7" fill="#fff"/>
+</svg>

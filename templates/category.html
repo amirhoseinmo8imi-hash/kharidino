@@ -14,7 +14,13 @@
     </div>
     <div class="kc-toolbar">
       <div class="kc-count"><strong>{{ products|length }}</strong> محصول در این دسته</div>
-      <div class="kc-sort"><i class="fa-solid fa-sliders"></i><span>مرتب‌سازی بر اساس بهترین قیمت</span></div>
+      <div class="kc-sort" role="group" aria-label="مرتب‌سازی محصولات">
+        <i class="fa-solid fa-arrow-down-wide-short"></i><span>مرتب‌سازی:</span>
+        <a class="kc-sort-option{% if sort == 'newest' %} is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='newest') }}">جدیدترین</a>
+        <a class="kc-sort-option{% if sort == 'price_low' %} is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='price_low') }}">ارزان‌ترین</a>
+        <a class="kc-sort-option{% if sort == 'price_high' %} is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='price_high') }}">گران‌ترین</a>
+        <a class="kc-sort-option{% if sort == 'name' %} is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='name') }}">الفبایی</a>
+      </div>
     </div>
   </section>
 
@@ -34,12 +40,12 @@
             <span class="kc-price-label">بهترین قیمت</span>
             <div class="kc-price"><strong>{{ lowest_price(p)|money }}</strong><small>تومان</small></div>
             <div class="kc-offers"><span><i class="fa-solid fa-store"></i> {{ p.offers|length }} فروشگاه</span>{% if p.offers %}<span class="kc-available">موجود</span>{% endif %}</div>
-            <span class="kc-btn">مشاهده و مقایسه</span>
+            <span class="kc-btn">مشاهده و مقایسه <i class="fa-solid fa-arrow-left"></i></span>
           </div>
         </div>
       </a>
       {% else %}
-      <div class="kc-empty"><i class="fa-regular fa-folder-open"></i><div>هنوز محصولی در این دسته نیست.</div></div>
+      <div class="kc-empty"><i class="fa-regular fa-folder-open"></i><div>هنوز محصولی در این دسته نیست.</div><a href="{{ url_for('home') }}">بازگشت به محصولات</a></div>
       {% endfor %}
     </div>
   </section>

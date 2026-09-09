@@ -5,7 +5,7 @@ import hashlib
 import pytest
 from flask import Flask
 
-from app import db
+from app import BASE_DIR, db
 from security_hardening import apply_security, csrf_token, _is_safe_local_redirect
 
 PNG_1X1 = bytes.fromhex(
@@ -19,7 +19,12 @@ def make_app():
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = "unit-test-secret"
-    apply_security(app)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(BASE_DIR / "kharidino.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
+    with app.app_context():
+        db.create_all()
+        apply_security(app)
     return app
 
 
@@ -29,7 +34,8 @@ def test_security_headers_and_cookie_flags(monkeypatch):
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
-    apply_security(app)
+    with app.app_context():
+        apply_security(app)
 
     @app.get("/")
     def home():
@@ -62,11 +68,7 @@ def test_csrf_token_required_and_valid_token_allowed():
     token_value = client.get("/token").get_data(as_text=True)
     missing = client.post("/mutate", headers={"Origin": "http://localhost"})
     assert missing.status_code == 403
-    valid = client.post(
-        "/mutate",
-        data={"csrf_token": token_value},
-        headers={"Origin": "http://localhost"},
-    )
+    valid = client.post("/mutate", data={"csrf_token": token_value}, headers={"Origin": "http://localhost"})
     assert valid.status_code == 200
 
 
@@ -81,11 +83,7 @@ def test_auth_form_csrf_token_survives_get_to_post():
 
     client = app.test_client()
     token_value = client.get("/login").get_data(as_text=True)
-    response = client.post(
-        "/login",
-        data={"csrf_token": token_value},
-        headers={"Origin": "http://localhost"},
-    )
+    response = client.post("/login", data={"csrf_token": token_value}, headers={"Origin": "http://localhost"})
     assert response.status_code == 200
 
 
@@ -100,11 +98,7 @@ def test_auth_success_does_not_rotate_csrf_token_after_response():
 
     client = app.test_client()
     token_value = client.get("/register").get_data(as_text=True)
-    response = client.post(
-        "/register",
-        data={"csrf_token": token_value},
-        headers={"Origin": "http://localhost"},
-    )
+    response = client.post("/register", data={"csrf_token": token_value}, headers={"Origin": "http://localhost"})
     assert response.status_code == 200
     with client.session_transaction() as sess:
         assert sess["_kharidino_csrf_token"] == token_value
@@ -139,12 +133,7 @@ def test_real_image_content_is_accepted():
     client = app.test_client()
     with client.session_transaction() as sess:
         sess["_kharidino_csrf_token"] = "a" * 64
-
-    response = client.post(
-        "/upload",
-        data={"file": (io.BytesIO(PNG_1X1), "photo.png")},
-        headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64},
-    )
+    response = client.post("/upload", data={"file": (io.BytesIO(PNG_1X1), "photo.png")}, headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64})
     assert response.status_code == 200
 
 
@@ -158,12 +147,7 @@ def test_mismatched_image_content_is_rejected():
     client = app.test_client()
     with client.session_transaction() as sess:
         sess["_kharidino_csrf_token"] = "a" * 64
-
-    response = client.post(
-        "/upload",
-        data={"file": (io.BytesIO(PNG_1X1), "photo.jpg")},
-        headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64},
-    )
+    response = client.post("/upload", data={"file": (io.BytesIO(PNG_1X1), "photo.jpg")}, headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64})
     assert response.status_code == 400
 
 
@@ -203,12 +187,7 @@ def test_login_rejects_unsafe_next_before_route_logic():
     assert client.get("/login").status_code == 200
     with client.session_transaction() as sess:
         sess["_kharidino_csrf_token"] = "b" * 64
-
-    response = client.post(
-        "/login?next=https://evil.example",
-        data={"csrf_token": "b" * 64},
-        headers={"Origin": "http://localhost"},
-    )
+    response = client.post("/login?next=https://evil.example", data={"csrf_token": "b" * 64}, headers={"Origin": "http://localhost"})
     assert response.status_code == 400
 
 
@@ -230,15 +209,7 @@ def test_checkout_idempotency_is_database_backed_across_app_instances():
     with client1.session_transaction() as sess:
         sess["user_id"] = 424242
         sess["cart"] = {"991001": 1}
-
-    data = {
-        "customer_name": "Test User 424242",
-        "phone": "09000000001",
-        "address": "Test Address",
-        "note": "database idempotency",
-        "csrf_token": token1,
-    }
-
+    data = {"customer_name": "Test User 424242", "phone": "09000000001", "address": "Test Address", "note": "database idempotency", "csrf_token": token1}
     first = client1.post("/checkout", data=data, headers={"Origin": "http://localhost"})
     assert first.status_code == 200
 
@@ -249,26 +220,16 @@ def test_checkout_idempotency_is_database_backed_across_app_instances():
     with client2.session_transaction() as sess:
         sess["user_id"] = 424242
         sess["cart"] = {"991001": 1}
-
     data["csrf_token"] = token2
     second = client2.post("/checkout", data=data, headers={"Origin": "http://localhost"})
     assert second.status_code == 409
 
-    payload = "|".join([
-        "424242",
-        repr(sorted((("991001", "1"),))),
-        "Test User 424242",
-        "09000000001",
-        "Test Address",
-        "database idempotency",
-    ])
+    payload = "|".join(["424242", repr(sorted((("991001", "1"),))), "Test User 424242", "09000000001", "Test Address", "database idempotency"])
     fingerprint = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     from sqlalchemy import text
-    with db.engine.begin() as connection:
-        connection.execute(
-            text("DELETE FROM kharidino_checkout_guard WHERE fingerprint = :fingerprint"),
-            {"fingerprint": fingerprint},
-        )
+    with app1.app_context():
+        with db.engine.begin() as connection:
+            connection.execute(text("DELETE FROM kharidino_checkout_guard WHERE fingerprint = :fingerprint"), {"fingerprint": fingerprint})
 
 
 def test_upload_size_limit_is_enforced_when_content_length_is_known():
@@ -281,11 +242,5 @@ def test_upload_size_limit_is_enforced_when_content_length_is_known():
     client = app.test_client()
     with client.session_transaction() as sess:
         sess["_kharidino_csrf_token"] = "a" * 64
-
-    response = client.post(
-        "/upload",
-        data={"file": (io.BytesIO(PNG_1X1), "photo.png")},
-        headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64},
-        content_length=101 * 1024 * 1024,
-    )
+    response = client.post("/upload", data={"file": (io.BytesIO(PNG_1X1), "photo.png")}, headers={"Origin": "http://localhost", "X-CSRF-Token": "a" * 64}, environ_overrides={"CONTENT_LENGTH": str(101 * 1024 * 1024)})
     assert response.status_code == 413

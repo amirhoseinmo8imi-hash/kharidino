@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash
 
 from app import (
     app, db, User, Store, Product, Offer, Category,
-    admin_required, save_image, remove_upload, lowest_price,
+    Review, admin_required, save_image, remove_upload, lowest_price,
 )
 
 
@@ -76,6 +76,59 @@ def _store_name(name):
     return " ".join((name or "").split())[:200]
 
 
+@app.context_processor
+def inject_store_directory_metrics():
+    """Expose real marketplace metrics to the admin seller directory only.
+
+    Product ownership comes from SellerProduct, reviews come from those products,
+    and sales come only from the authoritative SellerOrder ledger. No estimates
+    or fake counters are generated.
+    """
+    if request.path != "/stores":
+        return {}
+
+    try:
+        from merchant_marketplace_v2 import SellerOrder
+    except Exception:
+        SellerOrder = None
+
+    stats = {}
+    for store in Store.query.order_by(Store.id.asc()).all():
+        links = SellerProduct.query.filter_by(store_id=store.id).all()
+        product_ids = {link.product_id for link in links if link.product_id}
+        products = [link.product for link in links if link.product]
+        offers = Offer.query.filter_by(store_id=store.id).all()
+        in_stock = sum(1 for offer in offers if offer.in_stock)
+
+        ratings = [int(review.rating or 0) for product in products for review in product.reviews]
+        rating = round(sum(ratings) / len(ratings), 1) if ratings else 0
+
+        orders_count = 0
+        delivered_orders = 0
+        sales_amount = 0
+        if SellerOrder is not None:
+            seller_orders = SellerOrder.query.filter_by(store_id=store.id).all()
+            orders_count = len(seller_orders)
+            delivered = [order for order in seller_orders if order.status == "delivered"]
+            delivered_orders = len(delivered)
+            sales_amount = sum(int(order.seller_total or 0) for order in delivered)
+
+        account = MerchantStore.query.filter_by(store_id=store.id).first()
+        stats[store.id] = {
+            "products": len(product_ids),
+            "offers": len(offers),
+            "in_stock": in_stock,
+            "rating": rating,
+            "reviews": len(ratings),
+            "orders": orders_count,
+            "delivered": delivered_orders,
+            "sales": sales_amount,
+            "seller_name": account.user.name if account and account.user else "",
+            "seller_status": account.status if account else "",
+        }
+    return {"seller_stats": stats}
+
+
 @app.route("/seller/register", methods=["GET", "POST"])
 def seller_register():
     if session.get("user_id"):
@@ -118,14 +171,17 @@ def seller_register():
 def seller_dashboard():
     account = _seller_account()
     products = _seller_products(account.store_id)
-    product_ids = [p.id for p in products]
     offers = Offer.query.filter_by(store_id=account.store_id).order_by(Offer.id.desc()).all()
     categories = Category.query.filter_by(active=True).order_by(Category.name.asc()).all()
-    order_items = []
-    from app import OrderItem, Order
-    if product_ids:
-        order_items = (OrderItem.query.join(Order, OrderItem.order_id == Order.id)
-                       .filter(OrderItem.product_id.in_(product_ids)).order_by(Order.id.desc()).limit(100).all())
+    from merchant_marketplace_v2 import SellerOrder, SellerOrderItem
+    order_items = (
+        SellerOrderItem.query
+        .join(SellerOrder, SellerOrderItem.seller_order_id == SellerOrder.id)
+        .filter(SellerOrder.store_id == account.store_id)
+        .order_by(SellerOrder.id.desc())
+        .limit(100)
+        .all()
+    )
     stats = {"products": len(products), "offers": len(offers), "in_stock": sum(1 for o in offers if o.in_stock), "orders": len(order_items)}
     return render_template("seller_dashboard.html", account=account, store=account.store, products=products,
                            offers=offers, order_items=order_items, stats=stats, categories=categories,
@@ -173,7 +229,12 @@ def seller_product_save():
     if url and not url.startswith(("http://", "https://")):
         flash("لینک خرید نامعتبر است.", "danger"); return redirect(url_for("seller_dashboard"))
     if pid:
-        product = _owned_product(account.store_id, int(pid))
+        try:
+            pid_value = int(pid)
+        except (TypeError, ValueError):
+            flash("شناسه محصول نامعتبر است.", "danger")
+            return redirect(url_for("seller_dashboard"))
+        product = _owned_product(account.store_id, pid_value)
     else:
         product = Product(name=name, description=description, price=price, category_id=category.id if category else None, active=True)
         db.session.add(product); db.session.flush(); db.session.add(SellerProduct(store_id=account.store_id, product_id=product.id))
@@ -198,15 +259,20 @@ def seller_product_save():
 @app.post("/seller/product/delete/<int:product_id>")
 @seller_required
 def seller_product_delete(product_id):
-    account = _seller_account(); product = _owned_product(account.store_id, product_id)
-    if Offer.query.filter(Offer.product_id == product.id, Offer.store_id != account.store_id).count():
-        flash("این محصول در فروشگاه‌های دیگر هم استفاده شده و حذف کامل آن مجاز نیست.", "warning")
-        return redirect(url_for("seller_dashboard") + "#products")
-    if product.image: remove_upload(product.image)
+    account = _seller_account()
+    product = _owned_product(account.store_id, product_id)
     SellerProduct.query.filter_by(store_id=account.store_id, product_id=product.id).delete()
     Offer.query.filter_by(store_id=account.store_id, product_id=product.id).delete()
-    db.session.delete(product); db.session.commit()
-    flash("محصول از فروشگاه حذف شد. 🗑️", "success")
+    db.session.flush()
+    other_active_offers = Offer.query.filter(
+        Offer.product_id == product.id,
+        Offer.in_stock.is_(True),
+        Offer.price > 0,
+    ).count()
+    if other_active_offers == 0:
+        product.active = False
+    db.session.commit()
+    flash("محصول از فروشگاه شما حذف شد؛ سابقه سفارش و کاتالوگ اصلی حفظ شد. 🗑️", "success")
     return redirect(url_for("seller_dashboard") + "#products")
 
 

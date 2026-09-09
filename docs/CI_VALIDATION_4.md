@@ -1,0 +1,1 @@
+Release validation remains gated on CI. The implementation branch is isolated so the stable working branch remains recoverable.

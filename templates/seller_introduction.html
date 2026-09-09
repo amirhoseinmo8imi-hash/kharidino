@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}فروشنده خریدینو شوید | {{ site_name }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-seller-introduction.css', v='2026-09-08-1') }}">
+{% endblock %}
+{% block content %}
+<main class="ki-seller-page">
+  <section class="ki-seller-hero">
+    <div class="ki-seller-hero__glow"></div>
+    <div class="ki-seller-hero__content">
+      <span class="ki-seller-eyebrow"><i class="fa-solid fa-store"></i> فروشندگی در خریدینو</span>
+      <h1>فروشگاهت را به <strong>خریدینو</strong> بیاور</h1>
+      <p>ویترین حرفه‌ای خودت را بساز، محصولاتت را مدیریت کن و فروش را از یک پنل یکپارچه دنبال کن.</p>
+      <div class="ki-seller-hero__actions">
+        <a class="ki-seller-btn ki-seller-btn--primary" href="{{ url_for('seller_register') }}">شروع ثبت‌نام فروشنده <i class="fa-solid fa-arrow-left"></i></a>
+        <a class="ki-seller-btn ki-seller-btn--ghost" href="#how-it-works">چطور کار می‌کند؟</a>
+      </div>
+      <div class="ki-seller-trust"><i class="fa-solid fa-shield-halved"></i><span>فرآیند فروش شفاف و پنل اختصاصی فروشنده</span></div>
+    </div>
+    <div class="ki-seller-hero__visual" aria-hidden="true">
+      <div class="ki-seller-dashboard-card">
+        <div class="ki-mini-head"><span></span><span></span><span></span></div>
+        <div class="ki-mini-chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="ki-mini-stats"><b>{{ seller_metrics.products }}</b><span>کالای ثبت‌شده</span><b>{{ seller_metrics.offers }}</b><span>پیشنهاد فعال</span></div>
+      </div>
+      <div class="ki-float-card ki-float-card--orders"><i class="fa-solid fa-bag-shopping"></i><div><b>سفارش جدید</b><small>مدیریت از پنل فروشنده</small></div></div>
+      <div class="ki-float-card ki-float-card--store"><i class="fa-solid fa-store"></i><div><b>ویترین اختصاصی</b><small>برای برند تو</small></div></div>
+    </div>
+  </section>
+
+  <section class="ki-seller-stats" aria-label="آمار خریدینو">
+    <div><strong>{{ seller_metrics.stores }}</strong><span>فروشگاه فعال</span></div>
+    <div><strong>{{ seller_metrics.products }}</strong><span>محصول فعال</span></div>
+    <div><strong>{{ seller_metrics.offers }}</strong><span>پیشنهاد موجود</span></div>
+    <div><strong>{{ seller_metrics.sellers }}</strong><span>فروشنده تأییدشده</span></div>
+  </section>
+
+  <section class="ki-seller-section">
+    <div class="ki-section-heading"><span>چرا خریدینو؟</span><h2>ابزارهایی برای فروش حرفه‌ای</h2><p>همه چیز از ثبت محصول تا پیگیری فروش، در یک مسیر ساده و فارسی.</p></div>
+    <div class="ki-benefit-grid">
+      <article><i class="fa-solid fa-store"></i><h3>ویترین اختصاصی</h3><p>فروشگاهت با نام، لوگو و محصولات خودت در مارکت‌پلیس دیده می‌شود.</p></article>
+      <article><i class="fa-solid fa-boxes-stacked"></i><h3>مدیریت محصول</h3><p>قیمت، موجودی، تصویر و مشخصات محصولات را از پنل فروشنده کنترل کن.</p></article>
+      <article><i class="fa-solid fa-chart-line"></i><h3>گزارش و عملکرد</h3><p>سفارش‌ها و عملکرد فروشگاه را یکجا ببین و تصمیم دقیق‌تری بگیر.</p></article>
+      <article><i class="fa-solid fa-tags"></i><h3>قیمت‌گذاری مستقل</h3><p>برای کالاهای فروشگاهت پیشنهاد و قیمت مستقل ثبت کن و رقابت‌پذیر بمان.</p></article>
+      <article><i class="fa-solid fa-truck-fast"></i><h3>مسیر ارسال شفاف</h3><p>سفارش‌ها را در جریان مشخص فروشنده دنبال کن؛ از تأیید تا ارسال و تحویل.</p></article>
+      <article><i class="fa-solid fa-headset"></i><h3>تجربه یکپارچه</h3><p>فروشگاه، محصول و سفارش در اکوسیستم واحد خریدینو مدیریت می‌شوند.</p></article>
+    </div>
+  </section>
+
+  <section class="ki-seller-showcase">
+    <div class="ki-showcase-copy"><span class="ki-section-label">ویترین فروشنده</span><h2>فقط یک حساب نساز؛ یک فروشگاه واقعی بساز.</h2><p>صفحه فروشنده می‌تواند هویت فروشگاه، محصولات، پیشنهادها و شاخص‌های عملکرد را در یک تجربه منسجم نمایش دهد.</p><ul><li><i class="fa-solid fa-circle-check"></i> صفحه اختصاصی فروشگاه</li><li><i class="fa-solid fa-circle-check"></i> محصولات و پیشنهادهای قابل مدیریت</li><li><i class="fa-solid fa-circle-check"></i> وضعیت سفارش و عملکرد فروش</li></ul></div>
+    <div class="ki-showcase-window"><div class="ki-window-top"><b>ویترین فروشگاه</b><span>خریدینو</span></div><div class="ki-window-body"><div class="ki-store-avatar"><i class="fa-solid fa-store"></i></div><div><b>فروشگاه شما</b><small>فروشنده تأییدشده</small></div><div class="ki-window-pills"><span>محصولات</span><span>پیشنهادها</span><span>امتیاز</span></div></div></div>
+  </section>
+
+  <section class="ki-seller-section ki-seller-section--soft" id="how-it-works">
+    <div class="ki-section-heading"><span>شروع همکاری</span><h2>در چند قدم ساده فروش را شروع کن</h2></div>
+    <div class="ki-steps">
+      <article><b>۱</b><h3>ثبت درخواست</h3><p>مشخصات خودت و فروشگاهت را در فرم فروشندگی وارد کن.</p></article>
+      <article><b>۲</b><h3>بررسی و تأیید</h3><p>درخواست توسط مدیریت بررسی می‌شود و وضعیت فروشگاه مشخص خواهد شد.</p></article>
+      <article><b>۳</b><h3>ساخت ویترین</h3><p>محصول، قیمت، موجودی و اطلاعات فروشگاه را از پنل وارد کن.</p></article>
+      <article><b>۴</b><h3>شروع فروش</h3><p>پس از فعال‌شدن فروشگاه، محصولاتت در مارکت‌پلیس قابل عرضه هستند.</p></article>
+    </div>
+  </section>
+
+  <section class="ki-seller-docs">
+    <div><span class="ki-section-label">قبل از ثبت‌نام</span><h2>چه اطلاعاتی لازم است؟</h2><p>برای شروع، اطلاعات هویتی و اطلاعات پایه فروشگاه را آماده داشته باش.</p></div>
+    <div class="ki-doc-list"><span><i class="fa-solid fa-user"></i> نام و نام خانوادگی</span><span><i class="fa-solid fa-envelope"></i> ایمیل معتبر</span><span><i class="fa-solid fa-store"></i> نام فروشگاه</span><span><i class="fa-solid fa-link"></i> وب‌سایت، در صورت وجود</span></div>
+  </section>
+
+  <section class="ki-seller-faq">
+    <div class="ki-section-heading"><span>پرسش‌های متداول</span><h2>قبل از شروع بدان</h2></div>
+    <details><summary>بعد از ثبت‌نام چه اتفاقی می‌افتد؟ <i class="fa-solid fa-chevron-down"></i></summary><p>درخواست شما در وضعیت بررسی قرار می‌گیرد. پس از تأیید، فروشگاه فعال شده و می‌توانید از پنل فروشنده محصولات و پیشنهادها را مدیریت کنید.</p></details>
+    <details><summary>آیا قیمت محصولات را خودم تعیین می‌کنم؟ <i class="fa-solid fa-chevron-down"></i></summary><p>بله. هر فروشنده برای پیشنهاد خود قیمت و وضعیت موجودی مستقل دارد.</p></details>
+    <details><summary>آیا فروشگاه صفحه اختصاصی دارد؟ <i class="fa-solid fa-chevron-down"></i></summary><p>بله. خریدینو برای فروشندگان تأییدشده ویترین عمومی فروشگاه و نمایش محصولات را در نظر گرفته است.</p></details>
+    <details><summary>از کجا مدیریت فروش را انجام می‌دهم؟ <i class="fa-solid fa-chevron-down"></i></summary><p>پس از تأیید، پنل اختصاصی فروشنده در مسیر حساب فروشندگی در دسترس است.</p></details>
+  </section>
+
+  <section class="ki-seller-cta"><div><span>آماده‌ای؟</span><h2>فروشگاهت را در خریدینو شروع کن.</h2><p>همین حالا درخواست فروشندگی را ثبت کن و اولین قدم را بردار.</p></div><a class="ki-seller-btn ki-seller-btn--primary" href="{{ url_for('seller_register') }}">ثبت‌نام فروشنده <i class="fa-solid fa-arrow-left"></i></a></section>
+</main>
+{% endblock %}

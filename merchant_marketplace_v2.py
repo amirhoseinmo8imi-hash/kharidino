@@ -102,15 +102,28 @@ def _offer_for_order_item(item):
 
 
 def sync_order_to_seller_orders(order):
-    """Build seller suborders for an existing master order, idempotently."""
-    if not order or not order.items:
+    """Build seller suborders only after the master order is payment-confirmed.
+
+    The operation is idempotent at both item and store level. This matters when
+    an admin manually resyncs a paid order after a partial/failed previous sync:
+    missing items are appended to the existing seller suborder instead of
+    creating a second suborder and second ledger entry for the same store.
+    """
+    if not order or order.status != "تأیید شد" or not order.items:
         return []
-    created = []
-    existing_item_ids = {
-        x.order_item_id
-        for x in SellerOrderItem.query.join(SellerOrder)
-        .filter(SellerOrder.order_id == order.id).all()
+
+    existing_items = (
+        SellerOrderItem.query
+        .join(SellerOrder)
+        .filter(SellerOrder.order_id == order.id)
+        .all()
+    )
+    existing_item_ids = {x.order_item_id for x in existing_items}
+    existing_by_store = {
+        sub.store_id: sub
+        for sub in SellerOrder.query.filter_by(order_id=order.id).order_by(SellerOrder.id.asc()).all()
     }
+
     grouped = {}
     for item in order.items:
         if item.id in existing_item_ids:
@@ -119,14 +132,44 @@ def sync_order_to_seller_orders(order):
         if offer:
             grouped.setdefault(offer.store_id, []).append((item, offer))
 
+    created = []
     for store_id, rows in grouped.items():
-        sub = SellerOrder(order_id=order.id, store_id=store_id, status="new")
-        db.session.add(sub)
-        subtotal = sum(int(item.price or 0) * int(item.quantity or 0) for item, _ in rows)
-        sub.shipping_fee = 0
-        sub.subtotal = subtotal
-        sub.platform_fee = max(0, round(subtotal * 0.05))
-        sub.seller_total = max(0, subtotal + sub.shipping_fee - sub.platform_fee)
+        sub = existing_by_store.get(store_id)
+        if sub is None:
+            sub = SellerOrder(order_id=order.id, store_id=store_id, status="new")
+            db.session.add(sub)
+            db.session.flush()
+            created.append(sub)
+            ledger = SellerLedger(
+                seller_order=sub,
+                store_id=store_id,
+                gross=0,
+                shipping=0,
+                platform_fee=0,
+                net=0,
+                status="pending",
+            )
+            db.session.add(ledger)
+        else:
+            ledger = SellerLedger.query.filter_by(seller_order_id=sub.id).first()
+            if ledger is None:
+                ledger = SellerLedger(
+                    seller_order=sub,
+                    store_id=store_id,
+                    gross=0,
+                    shipping=0,
+                    platform_fee=0,
+                    net=0,
+                    status="pending",
+                )
+                db.session.add(ledger)
+
+        added_subtotal = sum(int(item.price or 0) * int(item.quantity or 0) for item, _ in rows)
+        sub.subtotal = int(sub.subtotal or 0) + added_subtotal
+        sub.shipping_fee = int(sub.shipping_fee or 0)
+        # Keep the fee deterministic at 5% of the complete seller subtotal.
+        sub.platform_fee = max(0, round(sub.subtotal * 0.05))
+        sub.seller_total = max(0, sub.subtotal + sub.shipping_fee - sub.platform_fee)
 
         for item, _offer in rows:
             db.session.add(SellerOrderItem(
@@ -137,32 +180,35 @@ def sync_order_to_seller_orders(order):
                 price=item.price,
                 quantity=item.quantity,
             ))
-        db.session.add(SellerLedger(
-            seller_order=sub,
-            store_id=store_id,
-            gross=subtotal,
-            shipping=sub.shipping_fee,
-            platform_fee=sub.platform_fee,
-            net=sub.seller_total,
-            status="pending",
-        ))
+            existing_item_ids.add(item.id)
+
+        ledger.gross = sub.subtotal
+        ledger.shipping = sub.shipping_fee
+        ledger.platform_fee = sub.platform_fee
+        ledger.net = sub.seller_total
+        if ledger.status not in {"paid", "cancelled"}:
+            ledger.status = "pending"
+
         db.session.add(SellerNotification(
             store_id=store_id,
-            seller_order_id=None,
+            seller_order_id=sub.id,
             title="سفارش جدید",
-            body=f"یک سفارش جدید برای فروشگاه شما ثبت شده است. سفارش اصلی #{order.id}",
+            body=f"پرداخت سفارش اصلی #{order.id} تأیید شد و سفارش فروشگاهی #{sub.id} ایجاد/به‌روزرسانی شد.",
         ))
-        created.append(sub)
+
     return created
 
 
 @event.listens_for(Session, "after_flush")
 def _seller_order_after_flush(session_obj, flush_context):
     processed = session_obj.info.setdefault("kharidino_seller_split_orders", set())
-    for obj in list(session_obj.new):
-        if isinstance(obj, Order) and obj.id and obj.id not in processed:
-            processed.add(obj.id)
-            sync_order_to_seller_orders(obj)
+    for obj in list(session_obj.new) + list(session_obj.dirty):
+        if not isinstance(obj, Order) or not obj.id or obj.id in processed:
+            continue
+        if obj.status != "تأیید شد":
+            continue
+        processed.add(obj.id)
+        sync_order_to_seller_orders(obj)
 
 
 @app.context_processor
@@ -197,10 +243,11 @@ def seller_order_status(seller_order_id):
     ledger = SellerLedger.query.filter_by(seller_order_id=order.id).first()
     if ledger:
         if new_status == "delivered":
-            ledger.status = "available"
+            if order.order and order.order.status == "تحویل شد":
+                ledger.status = "available"
         elif new_status == "cancelled":
             ledger.status = "cancelled"
-        elif ledger.status != "paid":
+        elif ledger.status not in {"paid", "cancelled"}:
             ledger.status = "pending"
     db.session.add(SellerNotification(
         store_id=account.store_id, seller_order_id=order.id,
@@ -278,7 +325,7 @@ def seller_bulk_stock():
 @admin_required
 def admin_sync_seller_orders():
     created = 0
-    for order in Order.query.order_by(Order.id.asc()).all():
+    for order in Order.query.filter_by(status="تأیید شد").order_by(Order.id.asc()).all():
         created += len(sync_order_to_seller_orders(order))
     db.session.commit()
     flash(f"{created} زیرسفارش فروشنده‌ای همگام شد. ✅", "success")

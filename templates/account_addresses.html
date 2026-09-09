@@ -1,9 +1,48 @@
 {% extends "base.html" %}
-{% block title %}آدرس‌های من{% endblock %}
+{% block title %}آدرس‌های من | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pages-v3.css', v='2026-09-06-1') }}">{% endblock %}
 {% block content %}
-<section class="section"><div class="container"><h1>دفترچه آدرس</h1>
-<div class="card"><h2>افزودن آدرس</h2><form method="post">
-<input name="title" placeholder="عنوان" maxlength="80"><input name="recipient_name" placeholder="نام گیرنده" required maxlength="120"><input name="phone" placeholder="تلفن" required maxlength="30"><input name="province" placeholder="استان" maxlength="100"><input name="city" placeholder="شهر" required maxlength="100"><input name="postal_code" placeholder="کد پستی" maxlength="20"><textarea name="address" placeholder="آدرس" required></textarea><button class="btn" type="submit">ذخیره</button></form></div>
-{% for item in addresses %}<div class="card"><h3>{{ item.title }} {% if item.is_default %}— پیش‌فرض{% endif %}</h3><p>{{ item.recipient_name }} | {{ item.phone }}</p><p>{{ item.province }}، {{ item.city }}، {{ item.postal_code }}</p><p>{{ item.address }}</p><form method="post" action="{{ url_for('set_default_address', address_id=item.id) }}" style="display:inline"><button class="btn" type="submit">پیش‌فرض</button></form> <form method="post" action="{{ url_for('delete_address', address_id=item.id) }}" style="display:inline"><button class="btn btn-danger" type="submit">حذف</button></form></div>{% else %}<p>آدرسی ثبت نشده است.</p>{% endfor %}
-</div></section>
+<section class="kp-page">
+  <div class="kp-hero"><span class="kp-eyebrow"><i class="fa-solid fa-location-dot"></i> حساب کاربری</span><h1>دفترچه آدرس</h1><p>آدرس‌های ارسال خودت را مدیریت کن تا هنگام خرید سریع‌تر و دقیق‌تر ادامه بدهی.</p></div>
+  <section class="kp-section">
+    <div class="kp-contact-grid">
+      <div class="kp-form">
+        <h2>افزودن آدرس جدید</h2>
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="kp-form-grid">
+            <div class="kp-field"><label for="address-title">عنوان</label><input id="address-title" name="title" placeholder="مثلاً خانه" maxlength="80" autocomplete="off"></div>
+            <div class="kp-field"><label for="recipient-name">نام گیرنده</label><input id="recipient-name" name="recipient_name" placeholder="نام و نام خانوادگی" required maxlength="120" autocomplete="name"></div>
+            <div class="kp-field"><label for="address-phone">تلفن</label><input id="address-phone" name="phone" type="tel" inputmode="tel" placeholder="شماره تماس" required maxlength="30" autocomplete="tel"></div>
+            <div class="kp-field"><label for="province">استان</label><input id="province" name="province" placeholder="استان" maxlength="100" autocomplete="address-level1"></div>
+            <div class="kp-field"><label for="city">شهر</label><input id="city" name="city" placeholder="شهر" required maxlength="100" autocomplete="address-level2"></div>
+            <div class="kp-field"><label for="postal-code">کد پستی</label><input id="postal-code" name="postal_code" placeholder="کد پستی" maxlength="20" inputmode="numeric" autocomplete="postal-code"></div>
+            <div class="kp-field full"><label for="address">آدرس کامل</label><textarea id="address" name="address" placeholder="خیابان، کوچه، پلاک، واحد..." required maxlength="2000" autocomplete="street-address"></textarea></div>
+          </div>
+          <button class="kp-submit" type="submit"><i class="fa-solid fa-floppy-disk"></i> ذخیره آدرس</button>
+        </form>
+      </div>
+      <div class="kp-info">
+        <h2>نکات آدرس</h2>
+        <div class="kp-info-item"><i class="fa-solid fa-shield-halved"></i><div><b>امن و اختصاصی</b><span>هر آدرس فقط در حساب صاحب آن نمایش داده می‌شود.</span></div></div>
+        <div class="kp-info-item"><i class="fa-solid fa-star"></i><div><b>آدرس پیش‌فرض</b><span>برای سفارش‌های بعدی یک آدرس را پیش‌فرض نگه دار.</span></div></div>
+        <div class="kp-info-item"><i class="fa-solid fa-truck-fast"></i><div><b>تحویل دقیق‌تر</b><span>اطلاعات گیرنده و کد پستی را با دقت وارد کن.</span></div></div>
+      </div>
+    </div>
+  </section>
+  <section class="kp-section">
+    <div class="kp-section-title"><h2>آدرس‌های ذخیره‌شده</h2><p>{{ addresses|length }} آدرس</p></div>
+    {% for item in addresses %}
+    <article class="kp-card" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap">
+        <div><h3 style="margin-top:0">{{ item.title or 'آدرس من' }} {% if item.is_default %}<span class="kp-eyebrow"><i class="fa-solid fa-star"></i> پیش‌فرض</span>{% endif %}</h3><p><strong>{{ item.recipient_name }}</strong> · {{ item.phone }}</p><p>{{ item.province }}{% if item.province and item.city %}، {% endif %}{{ item.city }}{% if item.postal_code %} · کد پستی {{ item.postal_code }}{% endif %}</p><p>{{ item.address }}</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          {% if not item.is_default %}<form method="post" action="{{ url_for('set_default_address', address_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="kp-submit" type="submit"><i class="fa-solid fa-star"></i> انتخاب پیش‌فرض</button></form>{% endif %}
+          <form method="post" action="{{ url_for('delete_address', address_id=item.id) }}" onsubmit="return confirm('آیا از حذف این آدرس مطمئن هستید؟');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="kp-remove" type="submit"><i class="fa-solid fa-trash"></i> حذف</button></form>
+        </div>
+      </div>
+    </article>
+    {% else %}<div class="kp-empty"><i class="fa-solid fa-location-dot"></i><h3>هنوز آدرسی ذخیره نکرده‌ای</h3><p>اولین آدرس ارسال را اضافه کن تا در خرید بعدی سریع‌تر ادامه بدهی.</p></div>{% endfor %}
+  </section>
+</section>
 {% endblock %}

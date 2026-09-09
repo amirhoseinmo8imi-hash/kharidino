@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}جزئیات سفارش #{{ order.id }}{% endblock %}
+{% block title %}جزئیات سفارش #{{ order.id }} | {{ site_name }}{% endblock %}
 {% block content %}
 <section class="section"><div class="container">
-<h1>جزئیات سفارش #{{ order.id }}</h1>
-<p>وضعیت: {{ order.status }}</p>
-<div class="card"><h2>محصولات</h2>
-{% for item in order.items %}<div class="order-item"><strong>{{ item.product_name }}</strong><span>تعداد: {{ item.quantity }}</span><strong>{{ (item.price * item.quantity)|money }} تومان</strong></div>{% endfor %}
-<hr><strong>مبلغ کل: {{ order.total|money }} تومان</strong></div>
-<div class="card"><h2>تاریخچه</h2>{% for item in order.status_history|sort(attribute='created_at') %}<p>{{ item.created_at.strftime('%Y/%m/%d %H:%M') }} — {{ item.new_status }}</p>{% else %}<p>تاریخچه‌ای ثبت نشده است.</p>{% endfor %}</div>
-<a class="btn" href="{{ url_for('orders') }}">بازگشت</a>
+<div class="page-hero"><span class="section-kicker"><i class="fa-solid fa-receipt"></i> پیگیری سفارش</span><h1>جزئیات سفارش #{{ order.id }}</h1><p>وضعیت، اقلام سفارش و تاریخچه تغییرات را یکجا ببین.</p></div>
+<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><h2>وضعیت سفارش</h2><strong>{{ order.status }}</strong></div><div><small>تاریخ ثبت</small><br><strong>{{ order.created_at.strftime('%Y/%m/%d %H:%M') if order.created_at else '—' }}</strong></div></div></div>
+<div class="card"><h2>محصولات سفارش</h2>
+{% for item in order.items %}<div class="order-item" style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line,#eee);flex-wrap:wrap"><div><strong>{{ item.product_name }}</strong><span style="display:block">تعداد: {{ item.quantity }}</span></div><strong>{{ (item.price * item.quantity)|money }} تومان</strong></div>{% endfor %}
+<hr><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span>مبلغ کل</span><strong>{{ order.total|money }} تومان</strong></div></div>
+<div class="card"><h2>تاریخچه سفارش</h2>{% for item in order.status_history|sort(attribute='created_at') %}<div style="display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line,#eee);flex-wrap:wrap"><strong>{{ item.new_status }}</strong><span>{{ item.created_at.strftime('%Y/%m/%d %H:%M') if item.created_at else '—' }}</span>{% if item.note %}<small style="width:100%">{{ item.note }}</small>{% endif %}</div>{% else %}<p>تاریخچه‌ای ثبت نشده است.</p>{% endfor %}</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-arrow-right"></i> سفارش‌های من</a><a class="btn btn-primary" href="{{ url_for('home') }}"><i class="fa-solid fa-bag-shopping"></i> ادامه خرید</a></div>
 </div></section>
 {% endblock %}

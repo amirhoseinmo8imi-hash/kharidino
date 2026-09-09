@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import time
 
-from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for, has_request_context
 
 _TABLE = "kharidino_product_inventory"
 _RESERVATION_TABLE = "kharidino_inventory_reservation"
@@ -39,10 +39,7 @@ def _ensure_table(app) -> None:
 def _inventory_row(product_id):
     from sqlalchemy import text
     from app import db
-    return db.session.execute(
-        text(f"SELECT quantity, managed FROM {_TABLE} WHERE product_id = :product_id"),
-        {"product_id": int(product_id)},
-    ).mappings().first()
+    return db.session.execute(text(f"SELECT quantity, managed FROM {_TABLE} WHERE product_id = :product_id"), {"product_id": int(product_id)}).mappings().first()
 
 
 def inventory_info(product_id):
@@ -132,28 +129,19 @@ def _reserve_managed_stock() -> None:
     from app import db
     reservations = []
     for product_id, quantity in _cart():
-        row = db.session.execute(
-            text(f"SELECT quantity, managed FROM {_TABLE} WHERE product_id = :product_id"),
-            {"product_id": product_id},
-        ).mappings().first()
+        row = db.session.execute(text(f"SELECT quantity, managed FROM {_TABLE} WHERE product_id = :product_id"), {"product_id": product_id}).mappings().first()
         if not row or not bool(row["managed"]):
             continue
-        result = db.session.execute(
-            text(f"""
+        result = db.session.execute(text(f"""
                 UPDATE {_TABLE}
                 SET quantity = quantity - :quantity, updated_at = :updated_at
                 WHERE product_id = :product_id AND managed = 1 AND quantity >= :quantity
-            """),
-            {"product_id": product_id, "quantity": quantity, "updated_at": time.time()},
-        )
+            """), {"product_id": product_id, "quantity": quantity, "updated_at": time.time()})
         if result.rowcount != 1:
             db.session.rollback()
             abort(409, description="موجودی یکی از کالاها برای این تعداد کافی نیست.")
         reservations.append((product_id, quantity))
-        remaining = db.session.execute(
-            text(f"SELECT quantity FROM {_TABLE} WHERE product_id = :product_id"),
-            {"product_id": product_id},
-        ).scalar_one()
+        remaining = db.session.execute(text(f"SELECT quantity FROM {_TABLE} WHERE product_id = :product_id"), {"product_id": product_id}).scalar_one()
         if remaining == 0:
             db.session.execute(text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"), {"product_id": product_id})
     request._kharidino_inventory_reservations = reservations
@@ -162,63 +150,45 @@ def _reserve_managed_stock() -> None:
 def _restore_order_inventory(order):
     from sqlalchemy import text
     from app import db
-    rows = db.session.execute(
-        text(f"SELECT product_id, quantity FROM {_RESERVATION_TABLE} WHERE order_id = :order_id AND restored = 0"),
-        {"order_id": int(order.id)},
-    ).mappings().all()
+    rows = db.session.execute(text(f"SELECT product_id, quantity FROM {_RESERVATION_TABLE} WHERE order_id = :order_id AND restored = 0"), {"order_id": int(order.id)}).mappings().all()
     now = time.time()
     for row in rows:
         product_id = int(row["product_id"])
         quantity = int(row["quantity"])
-        db.session.execute(
-            text(f"""
+        db.session.execute(text(f"""
                 UPDATE {_TABLE}
                 SET quantity = quantity + :quantity, updated_at = :updated_at
                 WHERE product_id = :product_id AND managed = 1
-            """),
-            {"product_id": product_id, "quantity": quantity, "updated_at": now},
-        )
-        db.session.execute(
-            text(f"""
+            """), {"product_id": product_id, "quantity": quantity, "updated_at": now})
+        db.session.execute(text(f"""
                 UPDATE {_RESERVATION_TABLE}
                 SET restored = 1, updated_at = :updated_at
                 WHERE order_id = :order_id AND product_id = :product_id AND restored = 0
-            """),
-            {"order_id": int(order.id), "product_id": product_id, "updated_at": now},
-        )
+            """), {"order_id": int(order.id), "product_id": product_id, "updated_at": now})
         db.session.execute(text("UPDATE offer SET in_stock = 1 WHERE product_id = :product_id"), {"product_id": product_id})
 
 
 def _reserve_order_inventory(order):
     from sqlalchemy import text
     from app import db
-    rows = db.session.execute(
-        text(f"SELECT product_id, quantity FROM {_RESERVATION_TABLE} WHERE order_id = :order_id AND restored = 1"),
-        {"order_id": int(order.id)},
-    ).mappings().all()
+    rows = db.session.execute(text(f"SELECT product_id, quantity FROM {_RESERVATION_TABLE} WHERE order_id = :order_id AND restored = 1"), {"order_id": int(order.id)}).mappings().all()
     now = time.time()
     for row in rows:
         product_id = int(row["product_id"])
         quantity = int(row["quantity"])
-        result = db.session.execute(
-            text(f"""
+        result = db.session.execute(text(f"""
                 UPDATE {_TABLE}
                 SET quantity = quantity - :quantity, updated_at = :updated_at
                 WHERE product_id = :product_id AND managed = 1 AND quantity >= :quantity
-            """),
-            {"product_id": product_id, "quantity": quantity, "updated_at": now},
-        )
+            """), {"product_id": product_id, "quantity": quantity, "updated_at": now})
         if result.rowcount != 1:
             db.session.rollback()
             abort(409, description="موجودی برای فعال‌سازی دوباره سفارش کافی نیست.")
-        db.session.execute(
-            text(f"""
+        db.session.execute(text(f"""
                 UPDATE {_RESERVATION_TABLE}
                 SET restored = 0, updated_at = :updated_at
                 WHERE order_id = :order_id AND product_id = :product_id AND restored = 1
-            """),
-            {"order_id": int(order.id), "product_id": product_id, "updated_at": now},
-        )
+            """), {"order_id": int(order.id), "product_id": product_id, "updated_at": now})
         remaining = db.session.execute(text(f"SELECT quantity FROM {_TABLE} WHERE product_id = :product_id"), {"product_id": product_id}).scalar_one()
         if remaining == 0:
             db.session.execute(text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"), {"product_id": product_id})
@@ -244,7 +214,6 @@ def _handle_order_status_inventory():
 
 def _user_cancel_order(order_id):
     from app import Order, login_required, db
-
     @login_required
     def _handler():
         order = db.session.get(Order, order_id)
@@ -277,7 +246,6 @@ def _inventory_status_api(product_id):
 def _admin_set_inventory():
     from app import Product, admin_required, db
     from sqlalchemy import text
-
     @admin_required
     def _handler():
         try:
@@ -289,15 +257,12 @@ def _admin_set_inventory():
             abort(400, description="مقدار موجودی نامعتبر است.")
         if not db.session.get(Product, product_id):
             abort(404, description="کالا پیدا نشد.")
-        db.session.execute(
-            text(f"""
+        db.session.execute(text(f"""
                 INSERT INTO {_TABLE} (product_id, quantity, managed, updated_at)
                 VALUES (:product_id, :quantity, 1, :updated_at)
                 ON CONFLICT(product_id) DO UPDATE SET
                     quantity = excluded.quantity, managed = 1, updated_at = excluded.updated_at
-            """),
-            {"product_id": product_id, "quantity": quantity, "updated_at": time.time()},
-        )
+            """), {"product_id": product_id, "quantity": quantity, "updated_at": time.time()})
         if quantity == 0:
             db.session.execute(text("UPDATE offer SET in_stock = 0 WHERE product_id = :product_id"), {"product_id": product_id})
         db.session.commit()
@@ -308,7 +273,6 @@ def _admin_set_inventory():
 def _admin_inventory_page():
     from app import Product, admin_required, db
     from sqlalchemy import text
-
     @admin_required
     def _handler():
         products = Product.query.order_by(Product.id.desc()).all()
@@ -328,7 +292,6 @@ def apply_inventory_security(app) -> None:
         if os.environ.get("FLASK_ENV", "").lower() == "production":
             raise
         return
-
     app.jinja_env.globals["inventory_info"] = inventory_info
 
     @app.before_request
@@ -360,9 +323,10 @@ def apply_inventory_security(app) -> None:
     if not getattr(app, "_kharidino_inventory_session_hook", False):
         from sqlalchemy import event, text
         from sqlalchemy.orm import Session
-
         @event.listens_for(Session, "after_flush")
         def _persist_inventory_reservations(session_obj, flush_context):
+            if not has_request_context():
+                return
             reservations = getattr(request, "_kharidino_inventory_reservations", None)
             if not reservations:
                 return
@@ -372,16 +336,12 @@ def apply_inventory_security(app) -> None:
                 return
             now = time.time()
             for product_id, quantity in reservations:
-                session_obj.execute(
-                    text(f"""
+                session_obj.execute(text(f"""
                         INSERT INTO {_RESERVATION_TABLE}
                             (order_id, product_id, quantity, restored, updated_at)
                         VALUES (:order_id, :product_id, :quantity, 0, :updated_at)
-                    """),
-                    {"order_id": int(order.id), "product_id": product_id, "quantity": quantity, "updated_at": now},
-                )
+                    """), {"order_id": int(order.id), "product_id": product_id, "quantity": quantity, "updated_at": now})
             request._kharidino_inventory_reservations = []
-
         app._kharidino_inventory_session_hook = True
 
     if not any(rule.rule == "/api/inventory/<int:product_id>" for rule in app.url_map.iter_rules()):
@@ -389,7 +349,5 @@ def apply_inventory_security(app) -> None:
     if not any(rule.rule == "/admin/inventory" for rule in app.url_map.iter_rules()):
         app.add_url_rule("/admin/inventory", endpoint="admin_inventory", view_func=_admin_inventory_page, methods=["GET"])
     if not any(rule.rule == "/admin/inventory/set" for rule in app.url_map.iter_rules()):
-        app.add_url_rule("/admin/inventory/set", endpoint="admin_inventory_set", view_func=_admin_set_inventory, methods=["POST"])
-    if not any(rule.rule == "/orders/<int:order_id>/cancel" for rule in app.url_map.iter_rules()):
-        app.add_url_rule("/orders/<int:order_id>/cancel", endpoint="cancel_order", view_func=_user_cancel_order, methods=["POST"])
+        app.add_url_rule("/admin/inventory/set", endpoint="admin_set_inventory", view_func=_admin_set_inventory, methods=["POST"])
     app._kharidino_inventory_applied = True

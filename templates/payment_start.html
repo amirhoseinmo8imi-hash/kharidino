@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}پرداخت سفارش #{{ order.id }} | {{ site_name }}{% endblock %}
+{% block extra_css %}
+<style>
+  /* Payment page: keep critical payment information high-contrast and visually dominant. */
+  .payment-start-section{padding-top:8px!important}
+  .checkout-page-hero{background:linear-gradient(135deg,#fff 0%,#fff7f8 55%,#f5f7ff 100%)!important;border:1px solid #e1e5ec!important;box-shadow:0 12px 34px rgba(24,24,27,.07)!important}
+  .checkout-page-hero .section-kicker{background:#fff1f3!important;color:#c91832!important;border:1px solid #ffd1d9!important;font-weight:900!important}
+  .checkout-page-hero h1{color:#18181b!important;font-weight:950!important;text-shadow:none!important;opacity:1!important}
+  .checkout-page-hero p{color:#52525b!important;font-weight:650!important;opacity:1!important}
+  .payment-start-card{background:#fff!important;border:1px solid #dfe3ea!important;box-shadow:0 14px 38px rgba(24,24,27,.09)!important}
+  .payment-start-card .checkout-card-header{background:#fff!important;border-bottom:1px solid #eef0f3!important}
+  .payment-start-card .checkout-card-header span{color:#52525b!important;font-weight:800!important}
+  .payment-start-card .checkout-card-header h2{color:#18181b!important;font-weight:950!important}
+  .payment-amount-card{margin:4px 0 20px!important;padding:24px!important;background:linear-gradient(135deg,#fff7f8,#fff)!important;border:2px solid #ef4056!important;border-radius:18px!important;text-align:center!important;box-shadow:0 10px 28px rgba(239,64,86,.12)!important}
+  .payment-amount-card span{display:block!important;color:#52525b!important;font-size:14px!important;font-weight:800!important;margin-bottom:8px!important}
+  .payment-amount-card strong{display:block!important;color:#18181b!important;font-size:clamp(30px,4vw,42px)!important;font-weight:950!important;line-height:1.25!important;letter-spacing:-.5px!important}
+  .payment-amount-card strong small{color:#c91832!important;font-size:.42em!important;font-weight:900!important;margin-right:5px!important}
+  .payment-note{background:#f0f9ff!important;border:1px solid #b9e6ff!important;color:#172033!important}
+  .payment-note strong{color:#075985!important;font-weight:900!important}
+  .payment-note span{color:#475569!important;font-weight:600!important}
+  .payment-note-icon{background:#dff3ff!important;color:#0284c7!important}
+  .checkout-submit{min-height:54px!important;font-size:16px!important}
+  .checkout-safe{color:#64748b!important;font-weight:650!important}
+  .checkout-summary{background:#fff!important;border:1px solid #dfe3ea!important;box-shadow:0 14px 38px rgba(24,24,27,.08)!important}
+  .checkout-summary .summary-header{color:#18181b!important;font-weight:900!important}
+  .checkout-summary .summary-row span{color:#64748b!important}
+  .checkout-summary .summary-row strong{color:#18181b!important;font-weight:900!important}
+  .checkout-summary .summary-total{margin-top:8px!important;padding:18px!important;background:#fff7f8!important;border:1px solid #ffd5dc!important;border-radius:14px!important}
+  .checkout-summary .summary-total span{color:#52525b!important;font-weight:800!important}
+  .checkout-summary .summary-total strong{color:#c91832!important;font-size:23px!important;font-weight:950!important}
+  .checkout-summary .summary-total small{color:#c91832!important;font-size:.55em!important}
+  @media(max-width:900px){.checkout-page-hero{padding:24px 18px!important}.payment-amount-card strong{font-size:32px!important}}
+</style>
+{% endblock %}
+{% block content %}
+<section class="page-hero checkout-page-hero">
+  <div class="container">
+    <span class="section-kicker"><i class="fa-solid fa-credit-card"></i> پرداخت امن</span>
+    <h1>پرداخت سفارش #{{ order.id }}</h1>
+    <p>مبلغ سفارش را بررسی کن و برای ادامه به درگاه پرداخت برو.</p>
+  </div>
+</section>
+<section class="section checkout-section payment-start-section">
+  <div class="container">
+    <div class="checkout-layout payment-start-layout">
+      <form class="checkout-form checkout-main payment-start-card" method="post" action="{{ url_for('payment_start', order_id=order.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+        <div class="checkout-card-header">
+          <div class="checkout-header-icon"><i class="fa-solid fa-lock"></i></div>
+          <div><span>درگاه پرداخت</span><h2>آماده پرداخت هستی؟</h2></div>
+        </div>
+        <div class="checkout-form-body">
+          <div class="payment-amount-card">
+            <span>مبلغ قابل پرداخت</span>
+            <strong>{{ order.total|money }} <small>تومان</small></strong>
+          </div>
+          <div class="payment-note">
+            <div class="payment-note-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div><strong>پرداخت امن</strong><span>اطلاعات کارت در اختیار خریدینو قرار نمی‌گیرد و تراکنش پس از تأیید درگاه ثبت می‌شود.</span></div>
+          </div>
+          <button class="btn full checkout-submit" type="submit"><i class="fa-solid fa-arrow-left"></i> ادامه به درگاه پرداخت</button>
+          <div class="checkout-safe"><i class="fa-solid fa-lock"></i> این درخواست فقط برای سفارش متعلق به حساب فعلی معتبر است.</div>
+        </div>
+      </form>
+      <aside class="summary-card checkout-summary">
+        <div class="summary-header"><span><i class="fa-solid fa-receipt"></i> خلاصه سفارش</span><div class="summary-icon"><i class="fa-solid fa-bag-shopping"></i></div></div>
+        <div class="summary-row"><span>شماره سفارش</span><strong>#{{ order.id }}</strong></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row"><span>وضعیت</span><strong>در انتظار پرداخت</strong></div>
+        <div class="summary-divider"></div>
+        <div class="summary-total"><span>مبلغ نهایی</span><strong>{{ order.total|money }} <small>تومان</small></strong></div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

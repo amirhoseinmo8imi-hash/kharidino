@@ -4,8 +4,15 @@ A refund must unwind seller availability before money can be paid out. This
 module runs at the ORM boundary so an admin refund, a customer cancellation,
 or another code path changing the master order cannot leave a settlement
 reservation attached to a refunded seller ledger.
+
+The existing payment adapters do not expose a provider-side refund operation
+yet. Therefore production refund requests fail closed instead of pretending
+that money was returned to the customer. Test mode remains usable for CI and
+local lifecycle tests.
 """
 from __future__ import annotations
+
+import os
 
 from flask import abort
 from sqlalchemy import event
@@ -28,6 +35,12 @@ def apply_refund_settlement_hardening(
 ):
     if getattr(app, "_kharidino_refund_settlement_hardening", False):
         return
+
+    @app.before_request
+    def _refund_gateway_guard():
+        if not (os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}):
+            if __import__("flask").request.path.startswith("/payment/refund/"):
+                abort(503, description="بازگشت وجه واقعی هنوز توسط آداپتور درگاه فعال پیاده‌سازی نشده است؛ تراکنش داخلی تغییر نکرد.")
 
     def _affected_ledger_ids(session_obj, order):
         seller_order_ids = [

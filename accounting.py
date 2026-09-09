@@ -10,6 +10,8 @@ import io
 from datetime import datetime, timedelta
 
 from flask import Response, abort, flash, redirect, render_template, request, session, url_for
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from app import app, db, Store, admin_required
 from merchant_marketplace import seller_required, _seller_account
@@ -62,6 +64,44 @@ class SellerSettlementAllocation(db.Model):
 
 def _money(value: int | float) -> int:
     return max(0, int(round(value or 0)))
+
+
+def _ensure_allocation_guard() -> None:
+    """Install a DB-level guard so two payouts cannot reserve the same money.
+
+    The application-level balance check is useful for normal flow, but it is not
+    enough against two concurrent requests that both read the same free balance.
+    SQLite is the project's deployed development/test database, so a trigger is
+    used there as the final invariant: total allocations for a ledger may never
+    exceed that ledger's net value.
+    """
+    if db.engine.dialect.name != "sqlite":
+        return
+    with db.engine.begin() as connection:
+        connection.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS kharidino_guard_allocation_insert
+            BEFORE INSERT ON kharidino_seller_settlement_allocation
+            WHEN (
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM kharidino_seller_settlement_allocation
+                 WHERE ledger_id = NEW.ledger_id) + NEW.amount
+            ) > COALESCE((SELECT net FROM kharidino_seller_ledger WHERE id = NEW.ledger_id), 0)
+            BEGIN
+                SELECT RAISE(ABORT, 'settlement allocation exceeds ledger balance');
+            END
+        """))
+        connection.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS kharidino_guard_allocation_update
+            BEFORE UPDATE OF ledger_id, amount ON kharidino_seller_settlement_allocation
+            WHEN (
+                (SELECT COALESCE(SUM(amount), 0)
+                 FROM kharidino_seller_settlement_allocation
+                 WHERE ledger_id = NEW.ledger_id AND id <> OLD.id) + NEW.amount
+            ) > COALESCE((SELECT net FROM kharidino_seller_ledger WHERE id = NEW.ledger_id), 0)
+            BEGIN
+                SELECT RAISE(ABORT, 'settlement allocation exceeds ledger balance');
+            END
+        """))
 
 
 def _date_range():
@@ -204,10 +244,12 @@ def seller_request_settlement():
     db.session.flush()
     try:
         _reserve_settlement_amount(settlement, amount)
-    except ValueError as exc:
+        db.session.commit()
+    except (ValueError, IntegrityError) as exc:
         db.session.rollback()
-        abort(409, description=str(exc))
-    db.session.commit()
+        if isinstance(exc, ValueError):
+            abort(409, description=str(exc))
+        abort(409, description="این مانده همزمان برای تسویه دیگری رزرو شده است.")
     flash("درخواست تسویه با موفقیت ثبت شد. مبلغ برای این درخواست رزرو شد. ✅", "success")
     return redirect(url_for("seller_accounting"))
 
@@ -240,8 +282,6 @@ def admin_pay_settlement(settlement_id):
     if allocated_total != _money(settlement.amount):
         abort(409, description="رزرو مالی این تسویه ناقص یا نامعتبر است.")
 
-    # The payout is idempotent: the settlement state changes once, and each
-    # allocated ledger portion can be consumed only by this settlement.
     for allocation in allocations:
         ledger = SellerLedger.query.get(allocation.ledger_id)
         if not ledger or ledger.store_id != settlement.store_id or ledger.status in {"cancelled", "paid"}:
@@ -253,8 +293,6 @@ def admin_pay_settlement(settlement_id):
     settlement.processed_by = session.get("user_id")
     settlement.processed_at = datetime.utcnow()
 
-    # Consume fully-paid ledger rows. Partial allocations remain available only
-    # for their unallocated remainder, which _ledger_totals() calculates exactly.
     for allocation in allocations:
         ledger = SellerLedger.query.get(allocation.ledger_id)
         if ledger and _ledger_allocated(ledger.id) >= _money(ledger.net):
@@ -281,3 +319,12 @@ def admin_accounting_export():
     for expense in data["expenses"]:
         writer.writerow([expense.created_at.isoformat() if expense.created_at else "", "", expense.title, expense.amount, expense.category, "expense"])
     return Response(output.getvalue().encode("utf-8-sig"), mimetype="text/csv; charset=utf-8", headers={"Content-Disposition": f"attachment; filename=kharidino-accounting-{start}-{end}.csv"})
+
+
+# Install after models/routes are defined; safe for the normal application launcher.
+try:
+    _ensure_allocation_guard()
+except Exception:
+    app.logger.exception("Unable to install settlement allocation guard")
+    if app.config.get("TESTING"):
+        raise

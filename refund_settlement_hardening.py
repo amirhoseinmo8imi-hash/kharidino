@@ -7,6 +7,7 @@ reservation attached to a refunded seller ledger.
 """
 from __future__ import annotations
 
+from flask import abort
 from sqlalchemy import event
 from sqlalchemy.orm import Session
 
@@ -60,10 +61,13 @@ def apply_refund_settlement_hardening(
         ).all()
         if paid:
             ids = ", ".join(str(x.id) for x in paid[:5])
-            raise ValueError(
-                f"سفارش #{order_id} قبلاً وارد تسویه پرداخت‌شده شده است؛ "
-                f"ابتدا تسویه‌های پرداخت‌شده باید با فرآیند clawback مدیریت شوند. "
-                f"شناسه تسویه: {ids}"
+            abort(
+                409,
+                description=(
+                    f"سفارش #{order_id} قبلاً وارد تسویه پرداخت‌شده شده است؛ "
+                    f"ابتدا تسویه‌های پرداخت‌شده باید با فرآیند clawback مدیریت شوند. "
+                    f"شناسه تسویه: {ids}"
+                ),
             )
 
         requested = session_obj.query(SellerSettlement).filter(

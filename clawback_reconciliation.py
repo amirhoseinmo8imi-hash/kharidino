@@ -56,9 +56,12 @@ def apply_clawback_reconciliation(app, db, Store):
 
     @event.listens_for(Session, "before_flush")
     def _validate_clawback_resolution(session_obj, flush_context, instances):
+        pending_resolutions = session_obj.info.setdefault("kharidino_pending_clawback_resolutions", [])
         for resolution in list(session_obj.new):
             if not isinstance(resolution, SellerClawbackResolution):
                 continue
+            if resolution not in pending_resolutions:
+                pending_resolutions.append(resolution)
             amount = _money(resolution.amount)
             if amount <= 0:
                 raise ValueError("مبلغ وصول بدهی باید بیشتر از صفر باشد.")
@@ -73,22 +76,27 @@ def apply_clawback_reconciliation(app, db, Store):
                 .all()
                 if x.id != resolution.id
             )
-            if already + amount > _money(clawback.amount):
+            pending_amount = sum(
+                _money(x.amount)
+                for x in pending_resolutions
+                if x is not resolution and x.clawback_id == clawback.id
+            )
+            if already + pending_amount + amount > _money(clawback.amount):
                 raise ValueError("مبلغ وصول از بدهی باقی‌مانده بیشتر است.")
 
     @event.listens_for(Session, "after_flush_postexec")
     def _refresh_clawback_status(session_obj, flush_context):
         if session_obj.info.get("kharidino_clawback_status_running"):
             return
+        pending_resolutions = session_obj.info.pop("kharidino_pending_clawback_resolutions", [])
+        if not pending_resolutions:
+            return
         session_obj.info["kharidino_clawback_status_running"] = True
         try:
-            ids = [x.id for x in session_obj.new if isinstance(x, SellerClawbackResolution)]
-            if not ids:
-                return
             clawback_ids = {
                 int(x.clawback_id)
-                for x in session_obj.query(SellerClawbackResolution.clawback_id)
-                .filter(SellerClawbackResolution.id.in_(ids)).all()
+                for x in pending_resolutions
+                if x.id is not None
             }
             for clawback_id in clawback_ids:
                 clawback = session_obj.get(SellerClawback, clawback_id)
@@ -137,7 +145,6 @@ def apply_clawback_reconciliation(app, db, Store):
         if not reference:
             abort(400, description="شماره مرجع وصول الزامی است.")
         if SellerClawbackResolution.query.filter_by(reference=reference).first():
-            # Idempotent retry of the same external collection reference.
             return redirect(url_for("admin_clawbacks"))
         db.session.add(SellerClawbackResolution(
             clawback_id=clawback.id,

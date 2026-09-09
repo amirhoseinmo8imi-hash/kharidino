@@ -52,6 +52,7 @@ from payment import apply_payment
 from button_flow_hardening import apply_button_flow_hardening
 from refund_settlement_hardening import apply_refund_settlement_hardening
 from clawback_reconciliation import apply_clawback_reconciliation
+from financial_reconciliation import apply_financial_reconciliation
 import commerce_runtime
 import profile_extensions
 import merchant_marketplace
@@ -85,6 +86,7 @@ with app.app_context():
     apply_button_flow_hardening(app, db, Store, User)
     db.create_all()
     ensure_settlement_allocation_guard()
+    apply_financial_reconciliation(app, db)
 
 
 def _port_is_available(host: str, port: int) -> bool:

@@ -1,0 +1,6 @@
+# Development / CI quality gates (runtime dependencies remain in requirements.txt)
+pytest>=8.0
+pytest-xdist>=3.6
+ruff>=0.6
+bandit>=1.7
+pip-audit>=2.7

@@ -1,11 +1,7 @@
-"""Small cross-cutting hardening for state-changing UI actions.
-
-Keeps button behavior safe even when a user reaches the endpoint directly instead
-of using the rendered UI. The existing CSRF middleware remains authoritative.
-"""
+"""Small cross-cutting hardening for state-changing UI actions."""
 from __future__ import annotations
 
-from flask import abort, redirect, request, url_for
+from flask import abort, redirect, request, session, url_for
 
 
 def _safe_local_target(value: str | None, fallback: str) -> str:
@@ -15,23 +11,26 @@ def _safe_local_target(value: str | None, fallback: str) -> str:
     return value
 
 
-def apply_button_flow_hardening(app, db, Store):
+def apply_button_flow_hardening(app, db, Store, User):
     if getattr(app, "_kharidino_button_flow_hardening", False):
         return app
 
     @app.before_request
     def _button_flow_guard():
-        # Compare removal historically redirected to Referer verbatim. Keep the
-        # UX while ensuring an attacker cannot turn the action into an external
-        # redirect if a crafted Referer is supplied.
+        # The compare-remove endpoint uses Referer for its UX redirect. The
+        # after-request guard below converts any external/malformed target to a
+        # local compare page.
         if request.endpoint == "compare_remove" and request.method == "POST":
             return None
 
         # A seller-owned Store must not be physically deleted by the generic
-        # admin store button: MerchantStore keeps a one-to-one FK to it. Convert
-        # this destructive action into a safe deactivation and let the normal
-        # admin flow continue for ordinary stores.
+        # admin store button: MerchantStore keeps a one-to-one FK to it. This
+        # guard only runs for an authenticated admin; the normal admin decorator
+        # remains authoritative for all other cases.
         if request.path.startswith("/admin/store/delete/") and request.method == "POST":
+            user = db.session.get(User, session.get("user_id")) if session.get("user_id") else None
+            if not user or user.role != "admin":
+                return None
             try:
                 store_id = int(request.path.rsplit("/", 1)[-1])
             except (TypeError, ValueError):
@@ -52,13 +51,10 @@ def apply_button_flow_hardening(app, db, Store):
 
     @app.after_request
     def _button_flow_redirect_guard(response):
-        # Normalize redirects emitted by compare_remove without changing the
-        # endpoint's existing behavior for ordinary same-site referrers.
         if request.endpoint == "compare_remove" and response.status_code in {301, 302, 303, 307, 308}:
             fallback = url_for("compare")
             location = response.headers.get("Location", "")
-            safe = _safe_local_target(location, fallback)
-            response.headers["Location"] = safe
+            response.headers["Location"] = _safe_local_target(location, fallback)
         return response
 
     app._kharidino_button_flow_hardening = True

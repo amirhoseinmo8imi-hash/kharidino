@@ -101,7 +101,7 @@ with app.app_context():
     from merchant_marketplace_v2 import SellerLedger
     from accounting import SellerSettlement
     apply_financial_accounting(app, db, __import__("app").Order, SellerLedger, SellerSettlement)
-    apply_button_flow_hardening(app, db, Store)
+    apply_button_flow_hardening(app, db, Store, User)
     db.create_all()
 
 

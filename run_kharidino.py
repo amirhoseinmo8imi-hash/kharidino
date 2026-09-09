@@ -66,6 +66,7 @@ from commerce_extensions_v2 import apply_commerce_extensions
 from commerce_catalog import apply_catalog_extensions
 from order_state_machine import apply_order_state_machine
 from payment import apply_payment
+from button_flow_hardening import apply_button_flow_hardening
 import commerce_runtime  # noqa: F401
 import profile_extensions  # noqa: F401
 import merchant_marketplace  # noqa: F401
@@ -100,6 +101,7 @@ with app.app_context():
     from merchant_marketplace_v2 import SellerLedger
     from accounting import SellerSettlement
     apply_financial_accounting(app, db, __import__("app").Order, SellerLedger, SellerSettlement)
+    apply_button_flow_hardening(app, db, Store)
     db.create_all()
 
 

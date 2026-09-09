@@ -13,11 +13,11 @@
     <div class="km-field"><label for="password">رمز عبور</label><input id="password" type="password" name="password" placeholder="رمز عبور خود را وارد کنید" autocomplete="{{ 'current-password' if mode == 'login' else 'new-password' }}" minlength="8" required></div>
     <button class="km-submit" type="submit">{{ 'ورود به خریدینو' if mode == 'login' else 'ساخت حساب کاربری' }}</button>
     <div class="km-auth-links">
-      {% if mode == 'login' %}<a href="{{ url_for('forgot_password') }}">بازیابی رمز عبور</a><span>حساب ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></span>
+      {% if mode == 'login' %}<a href="/forgot-password">بازیابی رمز عبور</a><span>حساب ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></span>
       {% else %}<span>قبلاً حساب ساخته‌اید؟ <a href="{{ url_for('login') }}">وارد شوید</a></span><a href="{{ url_for('home') }}">بازگشت به فروشگاه</a>{% endif %}
     </div>
-    <div style="margin-top:18px;padding:15px;border:1px solid #e8eaf0;border-radius:15px;background:#f8fafc;text-align:center"><strong style="display:block;color:#111827">صاحب فروشگاه هستی؟</strong><a href="{{ url_for('seller_register') }}" style="display:inline-flex;gap:8px;align-items:center;margin-top:8px;font-weight:800;color:#4338ca;text-decoration:none"><i class="fa-solid fa-store"></i> ثبت فروشگاه در خریدینو</a></div>
-    <p class="km-auth-note">با ورود یا ثبت‌نام، <a href="{{ url_for('terms') }}" style="color:#ef4056;font-weight:800;text-decoration:none">قوانین و شرایط استفاده از خریدینو</a> را می‌پذیرید.</p>
+    <div style="margin-top:18px;padding:15px;border:1px solid #e8eaf0;border-radius:15px;background:#f8fafc;text-align:center"><strong style="display:block;color:#111827">صاحب فروشگاه هستی؟</strong><a href="/seller/register" style="display:inline-flex;gap:8px;align-items:center;margin-top:8px;font-weight:800;color:#4338ca;text-decoration:none"><i class="fa-solid fa-store"></i> ثبت فروشگاه در خریدینو</a></div>
+    <p class="km-auth-note">با ورود یا ثبت‌نام، <a href="/terms" style="color:#ef4056;font-weight:800;text-decoration:none">قوانین و شرایط استفاده از خریدینو</a> را می‌پذیرید.</p>
   </form>
 </section>
 {% endblock %}

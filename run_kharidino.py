@@ -67,6 +67,7 @@ from commerce_catalog import apply_catalog_extensions
 from order_state_machine import apply_order_state_machine
 from payment import apply_payment
 from button_flow_hardening import apply_button_flow_hardening
+from refund_settlement_hardening import apply_refund_settlement_hardening
 import commerce_runtime  # noqa: F401
 import profile_extensions  # noqa: F401
 import merchant_marketplace  # noqa: F401
@@ -98,9 +99,14 @@ with app.app_context():
     apply_commerce_extensions(app)
     apply_catalog_extensions(app)
     apply_payment(app, db, __import__("app").Order, User)
-    from merchant_marketplace_v2 import SellerLedger
-    from accounting import SellerSettlement
+    from merchant_marketplace_v2 import SellerLedger, SellerOrder
+    from accounting import SellerSettlement, SellerSettlementAllocation
+    PaymentTransaction = app.extensions["kharidino_payment_transaction"]
     apply_financial_accounting(app, db, __import__("app").Order, SellerLedger, SellerSettlement)
+    apply_refund_settlement_hardening(
+        app, db, __import__("app").Order, PaymentTransaction, SellerOrder,
+        SellerLedger, SellerSettlement, SellerSettlementAllocation,
+    )
     apply_button_flow_hardening(app, db, Store, User)
     db.create_all()
 

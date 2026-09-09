@@ -1,20 +1,12 @@
-"""Refund/cancellation guardrails for seller settlement integrity.
-
-A refund must unwind seller availability before money can be paid out. This
-module runs at the ORM boundary so an admin refund, a customer cancellation,
-or another code path changing the master order cannot leave a settlement
-reservation attached to a refunded seller ledger.
-
-The existing payment adapters do not expose a provider-side refund operation
-yet. Therefore production refund requests fail closed instead of pretending
-that money was returned to the customer. Test mode remains usable for CI and
-local lifecycle tests.
-"""
+"""Production refund execution and seller-settlement clawback safeguards."""
 from __future__ import annotations
 
 import os
+import uuid
+from datetime import datetime
 
-from flask import abort
+import requests
+from flask import abort, redirect, session, url_for
 from sqlalchemy import event
 from sqlalchemy.orm import Session
 
@@ -36,16 +28,40 @@ def apply_refund_settlement_hardening(
     if getattr(app, "_kharidino_refund_settlement_hardening", False):
         return
 
-    @app.before_request
-    def _refund_gateway_guard():
-        if not (os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}):
-            if __import__("flask").request.path.startswith("/payment/refund/"):
-                abort(503, description="بازگشت وجه واقعی هنوز توسط آداپتور درگاه فعال پیاده‌سازی نشده است؛ تراکنش داخلی تغییر نکرد.")
+    class RefundRecord(db.Model):
+        __tablename__ = "kharidino_refund_record"
+        id = db.Column(db.Integer, primary_key=True)
+        public_id = db.Column(db.String(64), unique=True, nullable=False, default=lambda: uuid.uuid4().hex)
+        payment_transaction_id = db.Column(db.Integer, db.ForeignKey("payment_transaction.id"), nullable=False, unique=True, index=True)
+        order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False, index=True)
+        amount = db.Column(db.Integer, nullable=False)
+        status = db.Column(db.String(20), nullable=False, default="pending", index=True)
+        provider_reference = db.Column(db.String(200), nullable=True)
+        error_message = db.Column(db.String(500), nullable=True)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+        completed_at = db.Column(db.DateTime, nullable=True)
+
+    class SellerClawback(db.Model):
+        __tablename__ = "kharidino_seller_clawback"
+        id = db.Column(db.Integer, primary_key=True)
+        reference = db.Column(db.String(180), unique=True, nullable=False, index=True)
+        refund_id = db.Column(db.Integer, db.ForeignKey("kharidino_refund_record.id"), nullable=False, index=True)
+        seller_ledger_id = db.Column(db.Integer, db.ForeignKey("kharidino_seller_ledger.id"), nullable=False, index=True)
+        store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False, index=True)
+        amount = db.Column(db.Integer, nullable=False)
+        status = db.Column(db.String(20), nullable=False, default="open", index=True)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+        settled_at = db.Column(db.DateTime, nullable=True)
+        __table_args__ = (
+            db.UniqueConstraint("refund_id", "seller_ledger_id", name="uq_refund_clawback_ledger"),
+        )
+
+    app.extensions["kharidino_refund_record"] = RefundRecord
+    app.extensions["kharidino_seller_clawback"] = SellerClawback
 
     def _affected_ledger_ids(session_obj, order):
         seller_order_ids = [
-            x.id for x in session_obj.query(SellerOrder.id)
-            .filter_by(order_id=order.id).all()
+            x.id for x in session_obj.query(SellerOrder.id).filter_by(order_id=order.id).all()
         ]
         if not seller_order_ids:
             return set()
@@ -55,52 +71,83 @@ def apply_refund_settlement_hardening(
             .filter(SellerLedger.seller_order_id.in_(seller_order_ids)).all()
         }
 
-    def _protect_and_release(session_obj, ledger_ids, order_id):
-        """Reject paid payouts; cancel only reservations touching this order."""
+    def _settlements_for_ledgers(session_obj, ledger_ids):
         if not ledger_ids:
-            return
-
-        affected_settlement_ids = {
+            return []
+        ids = {
             int(x.settlement_id)
             for x in session_obj.query(SellerSettlementAllocation.settlement_id)
             .filter(SellerSettlementAllocation.ledger_id.in_(ledger_ids)).all()
         }
-        if not affected_settlement_ids:
-            return
+        if not ids:
+            return []
+        return session_obj.query(SellerSettlement).filter(SellerSettlement.id.in_(ids)).all()
 
-        paid = session_obj.query(SellerSettlement).filter(
-            SellerSettlement.id.in_(affected_settlement_ids),
-            SellerSettlement.status == "paid",
-        ).all()
-        if paid:
-            ids = ", ".join(str(x.id) for x in paid[:5])
-            abort(
-                409,
-                description=(
-                    f"سفارش #{order_id} قبلاً وارد تسویه پرداخت‌شده شده است؛ "
-                    f"ابتدا تسویه‌های پرداخت‌شده باید با فرآیند clawback مدیریت شوند. "
-                    f"شناسه تسویه: {ids}"
-                ),
+    def _nextpay_refund(tx):
+        """Execute NextPay's documented money-back request."""
+        api_key = os.environ.get("NEXTPAY_API_KEY", "").strip()
+        trans_id = (tx.authority or "").strip()
+        if not api_key or not trans_id:
+            return False, "", "تنظیمات NextPay یا شناسه تراکنش ناقص است."
+        try:
+            timeout = max(2.0, min(float(os.environ.get("PAYMENT_HTTP_TIMEOUT", "10")), 30.0))
+        except ValueError:
+            timeout = 10.0
+        try:
+            response = requests.post(
+                "https://nextpay.org/nx/gateway/verify",
+                data={
+                    "api_key": api_key,
+                    "trans_id": trans_id,
+                    "amount": int(tx.amount),
+                    "refund_request": "yes_money_back",
+                },
+                timeout=timeout,
             )
+            response.raise_for_status()
+            body = response.json()
+        except (requests.RequestException, ValueError) as exc:
+            return False, "", f"خطای ارتباط با درگاه: {type(exc).__name__}"
+        code = body.get("code")
+        if str(code) == "-90":
+            return True, str(body.get("trans_id") or trans_id)[:200], ""
+        return False, "", f"استرداد درگاه انجام نشد (کد {code})."
 
-        requested = session_obj.query(SellerSettlement).filter(
-            SellerSettlement.id.in_(affected_settlement_ids),
-            SellerSettlement.status == "requested",
-        ).all()
-        for settlement in requested:
-            allocations = session_obj.query(SellerSettlementAllocation).filter_by(
-                settlement_id=settlement.id
-            ).all()
-            # A settlement request is a reservation, not a payment. Once one
-            # of its underlying order ledgers is refunded, cancel the whole
-            # request so its remaining allocations cannot be paid accidentally.
+    def _gateway_refund(tx):
+        if os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}:
+            return True, "TEST-REFUND-" + tx.public_id[:24], ""
+        if (os.environ.get("PAYMENT_PROVIDER", "disabled").strip().lower()) == "nextpay":
+            return _nextpay_refund(tx)
+        return False, "", "Refund برای درگاه فعال فعلاً پیاده‌سازی نشده است."
+
+    def _cancel_requested_reservations(session_obj, settlements, order_id):
+        for settlement in settlements:
+            if settlement.status != "requested":
+                continue
+            allocations = session_obj.query(SellerSettlementAllocation).filter_by(settlement_id=settlement.id).all()
             for allocation in allocations:
                 session_obj.delete(allocation)
             settlement.status = "cancelled"
-            settlement.note = (
-                (settlement.note or "") +
-                f"\nرزرو به‌دلیل لغو/مرجوعی سفارش #{order_id} آزاد شد."
-            )[:5000]
+            settlement.note = ((settlement.note or "") + f"\nتسویه به‌دلیل مرجوعی سفارش #{order_id} لغو شد.")[:5000]
+
+    def _create_clawbacks(session_obj, refund, ledger_ids):
+        for ledger in session_obj.query(SellerLedger).filter(SellerLedger.id.in_(ledger_ids)).all():
+            existing = session_obj.query(SellerClawback).filter_by(
+                refund_id=refund.id, seller_ledger_id=ledger.id
+            ).first()
+            if existing:
+                continue
+            amount = _money(ledger.net)
+            if amount <= 0:
+                continue
+            session_obj.add(SellerClawback(
+                reference=f"CLAWBACK:{refund.public_id}:{ledger.id}",
+                refund_id=refund.id,
+                seller_ledger_id=ledger.id,
+                store_id=ledger.store_id,
+                amount=amount,
+                status="open",
+            ))
 
     @event.listens_for(Session, "before_flush")
     def _refund_before_flush(session_obj, flush_context, instances):
@@ -126,18 +173,88 @@ def apply_refund_settlement_hardening(
                 if not order:
                     continue
                 ledger_ids = _affected_ledger_ids(session_obj, order)
-                _protect_and_release(session_obj, ledger_ids, order_id)
+                settlements = _settlements_for_ledgers(session_obj, ledger_ids)
+                paid = [x for x in settlements if x.status == "paid"]
+                if paid:
+                    # Paid settlements are not silently reversed: the explicit
+                    # clawback records created by the refund endpoint represent
+                    # the seller's debt back to the platform.
+                    pass
+                else:
+                    _cancel_requested_reservations(session_obj, settlements, order_id)
 
-                # Keep seller-side balances aligned with the master order.
                 for seller_order in session_obj.query(SellerOrder).filter_by(order_id=order.id).all():
                     if seller_order.status not in {"delivered", "cancelled"}:
                         seller_order.status = "cancelled"
-                    ledger = session_obj.query(SellerLedger).filter_by(
-                        seller_order_id=seller_order.id
-                    ).first()
+                    ledger = session_obj.query(SellerLedger).filter_by(seller_order_id=seller_order.id).first()
                     if ledger and ledger.status not in {"paid", "cancelled"}:
                         ledger.status = "cancelled"
         finally:
             session_obj.info["kharidino_refund_guard_running"] = False
+
+    original_refund = app.view_functions.get("payment_refund")
+    if original_refund:
+        def hardened_payment_refund(*args, **kwargs):
+            if not session.get("user_id"):
+                abort(401)
+            transaction_id = kwargs.get("transaction_id") or (args[0] if args else "")
+            tx = PaymentTransaction.query.filter_by(public_id=transaction_id).first_or_404()
+            user = db.session.get(__import__("app").User, session["user_id"])
+            if not user or user.role != "admin":
+                abort(403)
+
+            existing = RefundRecord.query.filter_by(payment_transaction_id=tx.id).first()
+            if existing and existing.status == "succeeded":
+                return redirect(url_for("admin"))
+            if tx.status != "paid":
+                abort(409, description="فقط تراکنش پرداخت‌شده قابل استرداد است.")
+            order = db.session.get(Order, tx.order_id)
+            if not order:
+                abort(409, description="سفارش مرتبط با تراکنش پیدا نشد.")
+            if order.status not in {"تأیید شد", "در حال آماده‌سازی"}:
+                abort(409, description="این سفارش در وضعیت قابل استرداد نیست.")
+
+            ledger_ids = _affected_ledger_ids(db.session, order)
+            settlements = _settlements_for_ledgers(db.session, ledger_ids)
+            paid_settlements = [x for x in settlements if x.status == "paid"]
+
+            if not existing:
+                existing = RefundRecord(
+                    payment_transaction_id=tx.id,
+                    order_id=order.id,
+                    amount=int(tx.amount),
+                    status="pending",
+                )
+                db.session.add(existing)
+                db.session.commit()
+
+            ok, provider_reference, error = _gateway_refund(tx)
+            if not ok:
+                existing.status = "failed"
+                existing.error_message = error[:500]
+                db.session.commit()
+                abort(502, description=error)
+
+            tx.status = "refunded"
+            order.status = "لغو شد"
+            existing.status = "succeeded"
+            existing.provider_reference = provider_reference
+            existing.completed_at = db.func.now()
+
+            if paid_settlements:
+                _create_clawbacks(db.session, existing, ledger_ids)
+            else:
+                _cancel_requested_reservations(db.session, settlements, order.id)
+
+            for seller_order in SellerOrder.query.filter_by(order_id=order.id).all():
+                if seller_order.status not in {"delivered", "cancelled"}:
+                    seller_order.status = "cancelled"
+                ledger = SellerLedger.query.filter_by(seller_order_id=seller_order.id).first()
+                if ledger and ledger.status not in {"paid", "cancelled"}:
+                    ledger.status = "cancelled"
+            db.session.commit()
+            return redirect(url_for("admin"))
+
+        app.view_functions["payment_refund"] = hardened_payment_refund
 
     app._kharidino_refund_settlement_hardening = True

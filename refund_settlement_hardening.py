@@ -1,9 +1,9 @@
 """Refund/cancellation guardrails for seller settlement integrity.
 
-A refund must unwind seller availability before money can be paid out.  This
-module deliberately runs at the ORM boundary so an admin refund, a customer
-cancellation, or another code path changing the master order cannot leave a
-requested settlement reserving money that no longer exists.
+A refund must unwind seller availability before money can be paid out. This
+module runs at the ORM boundary so an admin refund, a customer cancellation,
+or another code path changing the master order cannot leave a settlement
+reservation attached to a refunded seller ledger.
 """
 from __future__ import annotations
 
@@ -28,20 +28,34 @@ def apply_refund_settlement_hardening(
     if getattr(app, "_kharidino_refund_settlement_hardening", False):
         return
 
-    def _affected_store_ids(session_obj, order):
+    def _affected_ledger_ids(session_obj, order):
+        seller_order_ids = [
+            x.id for x in session_obj.query(SellerOrder.id)
+            .filter_by(order_id=order.id).all()
+        ]
+        if not seller_order_ids:
+            return set()
         return {
-            int(sub.store_id)
-            for sub in session_obj.query(SellerOrder).filter_by(order_id=order.id).all()
-            if sub.store_id is not None
+            int(x.id)
+            for x in session_obj.query(SellerLedger.id)
+            .filter(SellerLedger.seller_order_id.in_(seller_order_ids)).all()
         }
 
-    def _protect_and_release(session_obj, store_ids, order_id):
-        """Reject already-paid payouts; cancel stale requested reservations."""
-        if not store_ids:
+    def _protect_and_release(session_obj, ledger_ids, order_id):
+        """Reject paid payouts; cancel only reservations touching this order."""
+        if not ledger_ids:
+            return
+
+        affected_settlement_ids = {
+            int(x.settlement_id)
+            for x in session_obj.query(SellerSettlementAllocation.settlement_id)
+            .filter(SellerSettlementAllocation.ledger_id.in_(ledger_ids)).all()
+        }
+        if not affected_settlement_ids:
             return
 
         paid = session_obj.query(SellerSettlement).filter(
-            SellerSettlement.store_id.in_(store_ids),
+            SellerSettlement.id.in_(affected_settlement_ids),
             SellerSettlement.status == "paid",
         ).all()
         if paid:
@@ -53,15 +67,16 @@ def apply_refund_settlement_hardening(
             )
 
         requested = session_obj.query(SellerSettlement).filter(
-            SellerSettlement.store_id.in_(store_ids),
+            SellerSettlement.id.in_(affected_settlement_ids),
             SellerSettlement.status == "requested",
         ).all()
         for settlement in requested:
             allocations = session_obj.query(SellerSettlementAllocation).filter_by(
                 settlement_id=settlement.id
             ).all()
-            # A settlement request is a reservation, not a payment. Once its
-            # underlying order is cancelled/refunded, the reservation must die.
+            # A settlement request is a reservation, not a payment. Once one
+            # of its underlying order ledgers is refunded, cancel the whole
+            # request so its remaining allocations cannot be paid accidentally.
             for allocation in allocations:
                 session_obj.delete(allocation)
             settlement.status = "cancelled"
@@ -93,8 +108,8 @@ def apply_refund_settlement_hardening(
                 order = session_obj.get(Order, order_id)
                 if not order:
                     continue
-                store_ids = _affected_store_ids(session_obj, order)
-                _protect_and_release(session_obj, store_ids, order_id)
+                ledger_ids = _affected_ledger_ids(session_obj, order)
+                _protect_and_release(session_obj, ledger_ids, order_id)
 
                 # Keep seller-side balances aligned with the master order.
                 for seller_order in session_obj.query(SellerOrder).filter_by(order_id=order.id).all():

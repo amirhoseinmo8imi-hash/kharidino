@@ -68,6 +68,7 @@ from order_state_machine import apply_order_state_machine
 from payment import apply_payment
 from button_flow_hardening import apply_button_flow_hardening
 from refund_settlement_hardening import apply_refund_settlement_hardening
+from clawback_reconciliation import apply_clawback_reconciliation
 import commerce_runtime  # noqa: F401
 import profile_extensions  # noqa: F401
 import merchant_marketplace  # noqa: F401
@@ -107,6 +108,7 @@ with app.app_context():
         app, db, __import__("app").Order, PaymentTransaction, SellerOrder,
         SellerLedger, SellerSettlement, SellerSettlementAllocation,
     )
+    apply_clawback_reconciliation(app, db, Store)
     apply_button_flow_hardening(app, db, Store, User)
     db.create_all()
 

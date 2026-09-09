@@ -42,6 +42,24 @@ class SellerSettlement(db.Model):
     store = db.relationship("Store")
 
 
+class SellerSettlementAllocation(db.Model):
+    """Reserve an exact portion of an immutable seller ledger row for a payout.
+
+    A settlement can span several seller orders and can also be partial. Keeping
+    the reservation separate from SellerLedger prevents a paid payout from
+    leaving the whole ledger row apparently withdrawable.
+    """
+    __tablename__ = "kharidino_seller_settlement_allocation"
+    id = db.Column(db.Integer, primary_key=True)
+    settlement_id = db.Column(db.Integer, db.ForeignKey("kharidino_seller_settlement.id"), nullable=False, index=True)
+    ledger_id = db.Column(db.Integer, db.ForeignKey("kharidino_seller_ledger.id"), nullable=False, index=True)
+    amount = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False, index=True)
+    __table_args__ = (db.UniqueConstraint("settlement_id", "ledger_id", name="uq_settlement_ledger_allocation"),)
+    settlement = db.relationship("SellerSettlement", backref=db.backref("allocations", lazy=True, cascade="all, delete-orphan"))
+    ledger = db.relationship("SellerLedger")
+
+
 def _money(value: int | float) -> int:
     return max(0, int(round(value or 0)))
 
@@ -68,11 +86,43 @@ def _date_range():
     return start, end
 
 
+def _ledger_allocated(ledger_id: int) -> int:
+    return _money(db.session.query(db.func.coalesce(db.func.sum(SellerSettlementAllocation.amount), 0)).filter_by(ledger_id=ledger_id).scalar())
+
+
+def _seller_available_balance(store_id: int) -> int:
+    rows = SellerLedger.query.filter_by(store_id=store_id).filter(SellerLedger.status == "available").all()
+    return sum(max(0, _money(row.net) - _ledger_allocated(row.id)) for row in rows)
+
+
+def _reserve_settlement_amount(settlement: SellerSettlement, amount: int) -> None:
+    """Allocate a requested payout across currently available ledger rows."""
+    remaining = amount
+    rows = SellerLedger.query.filter_by(store_id=settlement.store_id).filter(
+        SellerLedger.status == "available", SellerLedger.net > 0
+    ).order_by(SellerLedger.id.asc()).all()
+    for ledger in rows:
+        if remaining <= 0:
+            break
+        free = max(0, _money(ledger.net) - _ledger_allocated(ledger.id))
+        if free <= 0:
+            continue
+        take = min(remaining, free)
+        db.session.add(SellerSettlementAllocation(
+            settlement_id=settlement.id,
+            ledger_id=ledger.id,
+            amount=take,
+        ))
+        remaining -= take
+    if remaining:
+        raise ValueError("مبلغ درخواستی از مانده قابل تسویه بیشتر است.")
+
+
 def _ledger_totals(ledger):
     gross = sum(_money(x.gross) for x in ledger)
     fee = sum(_money(x.platform_fee) for x in ledger)
     net = sum(_money(x.net) for x in ledger)
-    available = sum(_money(x.net) for x in ledger if x.status == "available")
+    available = sum(max(0, _money(x.net) - _ledger_allocated(x.id)) for x in ledger if x.status == "available")
     paid = sum(_money(x.net) for x in ledger if x.status == "paid")
     cancelled = sum(_money(x.gross) for x in ledger if x.status == "cancelled")
     return {"gross": gross, "fee": fee, "net": net, "available": available, "paid": paid, "cancelled": cancelled}
@@ -126,7 +176,7 @@ def seller_accounting():
     settlements = SellerSettlement.query.filter_by(store_id=account.store_id).order_by(SellerSettlement.id.desc()).all()
     requested = sum(_money(x.amount) for x in settlements if x.status == "requested")
     paid = sum(_money(x.amount) for x in settlements if x.status == "paid")
-    withdrawable = max(0, totals["available"] - requested - paid)
+    withdrawable = totals["available"]
     return render_template("accounting_dashboard.html", mode="seller", account=account, start=start.isoformat(), end=end.isoformat(), ledgers=rows, totals=totals, settlements=settlements, withdrawable=withdrawable, requested_settlements=requested, paid_settlements=paid, seller_rows=[], expenses=[], expense_total=0, pending_settlements=requested, completed_settlements=paid, platform_profit=0)
 
 
@@ -136,17 +186,29 @@ def seller_request_settlement():
     account = _seller_account()
     try:
         amount = int(request.form.get("amount", "0"))
-    except ValueError:
+    except (TypeError, ValueError):
         abort(400, description="مبلغ تسویه نامعتبر است.")
     if amount <= 0:
         abort(400, description="مبلغ تسویه باید بیشتر از صفر باشد.")
-    available = sum(_money(x.net) for x in SellerLedger.query.filter_by(store_id=account.store_id, status="available").all())
-    reserved = sum(_money(x.amount) for x in SellerSettlement.query.filter_by(store_id=account.store_id).filter(SellerSettlement.status.in_(["requested", "paid"])).all())
-    if amount > max(0, available - reserved):
+    available = _seller_available_balance(account.store_id)
+    if amount > available:
         abort(409, description="مبلغ درخواستی از مانده قابل تسویه بیشتر است.")
-    db.session.add(SellerSettlement(store_id=account.store_id, amount=amount, note=request.form.get("note", "").strip()[:1000], requested_by=session.get("user_id")))
+    settlement = SellerSettlement(
+        store_id=account.store_id,
+        amount=amount,
+        note=request.form.get("note", "").strip()[:1000],
+        requested_by=session.get("user_id"),
+        status="requested",
+    )
+    db.session.add(settlement)
+    db.session.flush()
+    try:
+        _reserve_settlement_amount(settlement, amount)
+    except ValueError as exc:
+        db.session.rollback()
+        abort(409, description=str(exc))
     db.session.commit()
-    flash("درخواست تسویه با موفقیت ثبت شد. ✅", "success")
+    flash("درخواست تسویه با موفقیت ثبت شد. مبلغ برای این درخواست رزرو شد. ✅", "success")
     return redirect(url_for("seller_accounting"))
 
 
@@ -155,7 +217,7 @@ def seller_request_settlement():
 def admin_add_expense():
     try:
         amount = int(request.form.get("amount", "0"))
-    except ValueError:
+    except (TypeError, ValueError):
         abort(400, description="مبلغ هزینه نامعتبر است.")
     title = request.form.get("title", "").strip()[:200]
     if amount <= 0 or not title:
@@ -172,17 +234,35 @@ def admin_pay_settlement(settlement_id):
     settlement = SellerSettlement.query.get_or_404(settlement_id)
     if settlement.status != "requested":
         abort(409, description="این درخواست قبلاً پردازش شده است.")
-    available = sum(_money(x.net) for x in SellerLedger.query.filter_by(store_id=settlement.store_id, status="available").all())
-    reserved = sum(_money(x.amount) for x in SellerSettlement.query.filter_by(store_id=settlement.store_id).filter(SellerSettlement.status.in_(["requested", "paid"])).all())
-    # Include this request in reserved, but permit it when the complete reserved balance is covered.
-    if settlement.amount > available or reserved > available:
-        abort(409, description="مانده فروشنده برای این تسویه کافی نیست.")
+
+    allocations = SellerSettlementAllocation.query.filter_by(settlement_id=settlement.id).all()
+    allocated_total = sum(_money(x.amount) for x in allocations)
+    if allocated_total != _money(settlement.amount):
+        abort(409, description="رزرو مالی این تسویه ناقص یا نامعتبر است.")
+
+    # The payout is idempotent: the settlement state changes once, and each
+    # allocated ledger portion can be consumed only by this settlement.
+    for allocation in allocations:
+        ledger = SellerLedger.query.get(allocation.ledger_id)
+        if not ledger or ledger.store_id != settlement.store_id or ledger.status in {"cancelled", "paid"}:
+            abort(409, description="یکی از اقلام مالی این تسویه دیگر قابل پرداخت نیست.")
+        if _ledger_allocated(ledger.id) < allocation.amount:
+            abort(409, description="رزرو مالی این تسویه معتبر نیست.")
+
     settlement.status = "paid"
     settlement.processed_by = session.get("user_id")
     settlement.processed_at = datetime.utcnow()
-    # Ledger rows stay immutable; settlement records are the source of truth for payouts.
+
+    # Consume fully-paid ledger rows. Partial allocations remain available only
+    # for their unallocated remainder, which _ledger_totals() calculates exactly.
+    for allocation in allocations:
+        ledger = SellerLedger.query.get(allocation.ledger_id)
+        if ledger and _ledger_allocated(ledger.id) >= _money(ledger.net):
+            ledger.status = "paid"
+            ledger.paid_at = datetime.utcnow()
+
     db.session.commit()
-    flash("تسویه فروشنده با موفقیت پرداخت شد. 💳", "success")
+    flash("تسویه فروشنده با موفقیت پرداخت شد و مبلغ از مانده قابل تسویه خارج شد. 💳", "success")
     return redirect(url_for("admin_accounting"))
 
 

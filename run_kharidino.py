@@ -61,6 +61,7 @@ from catalog_security import apply_catalog_security
 from catalog_ux_api import apply_catalog_ux_api
 from inventory_hardening import apply_inventory_security
 from checkout_preflight import apply_checkout_preflight
+from checkout_idempotency import apply_checkout_idempotency
 from commerce_extensions_v2 import apply_commerce_extensions
 from commerce_catalog import apply_catalog_extensions
 from order_state_machine import apply_order_state_machine
@@ -89,6 +90,7 @@ with app.app_context():
     apply_catalog_security(app)
     apply_catalog_ux_api(app, db, Product, Category, Offer, Store)
     apply_checkout_preflight(app)
+    apply_checkout_idempotency(app, db)
     apply_inventory_security(app)
     apply_inventory_atomicity(app)
     apply_order_state_machine(app)

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}فروشندگان خریدینو | {{ site_name }}{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css') }}?v=2026-09-08-6">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css', v='2026-09-09-1') }}">{% endblock %}
 {% block content %}
 <div class="stores-page" dir="rtl">
   <div class="stores-breadcrumb"><a href="{{ url_for('home') }}">خانه</a><i class="fa-solid fa-chevron-left"></i><span>فروشندگان</span></div>
@@ -11,16 +11,18 @@
       <p>فروشنده موردنظرت را پیدا کن، اعتبار و عملکردش را ببین و وارد ویترین اختصاصی آن شو.</p>
       <div class="stores-hero-pills"><span><i class="fa-solid fa-circle-check"></i> فروشندگان فعال</span><span><i class="fa-solid fa-chart-line"></i> آمار واقعی فروش</span><span><i class="fa-solid fa-shield-heart"></i> انتخاب آگاهانه</span></div>
     </div>
-    <a class="stores-primary" href="#add-store"><i class="fa-solid fa-plus"></i> افزودن فروشگاه</a>
+    {% if current_user and current_user.role == 'admin' %}<a class="stores-primary" href="#add-store"><i class="fa-solid fa-plus"></i> افزودن فروشگاه</a>{% endif %}
   </header>
 
+  {% set stats_map = seller_stats|default({}) %}
   <section class="stores-stats">
     <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-store"></i></span><div><b>{{ stores|length }}</b><small>کل فروشگاه‌ها</small></div></div>
     <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-circle-check"></i></span><div><b>{{ stores|selectattr('active')|list|length }}</b><small>فروشگاه فعال</small></div></div>
-    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-boxes-stacked"></i></span><div><b>{{ seller_stats.values()|sum(attribute='products') }}</b><small>محصول فروشندگان</small></div></div>
-    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-bag-shopping"></i></span><div><b>{{ seller_stats.values()|sum(attribute='delivered') }}</b><small>سفارش تحویل‌شده</small></div></div>
+    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-boxes-stacked"></i></span><div><b>{{ stats_map.values()|sum(attribute='products') }}</b><small>محصول فروشندگان</small></div></div>
+    <div class="store-stat"><span class="store-stat-icon"><i class="fa-solid fa-bag-shopping"></i></span><div><b>{{ stats_map.values()|sum(attribute='delivered') }}</b><small>سفارش تحویل‌شده</small></div></div>
   </section>
 
+  {% if current_user and current_user.role == 'admin' %}
   <section class="store-create-panel" id="add-store">
     <div class="panel-heading"><div><span class="panel-kicker">NEW SELLER</span><h2>افزودن فروشگاه</h2></div><span>اطلاعات اولیه فروشنده را ثبت کنید.</span></div>
     <form class="store-create-form" action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data">
@@ -28,10 +30,11 @@
       <label>نام فروشگاه<input type="text" name="name" required placeholder="مثلاً فروشگاه دیجیتال امیر"></label>
       <label>وب‌سایت<input type="url" name="website" placeholder="https://example.com"></label>
       <label>لوگو<input type="file" name="logo" accept="image/*"></label>
-      <label class="store-check"><input type="checkbox" name="active" checked> فعال</label>
+      <label class="store-check"><input type="checkbox" name="active" value="1" checked> فعال</label>
       <button type="submit"><i class="fa-solid fa-plus"></i> افزودن فروشگاه</button>
     </form>
   </section>
+  {% endif %}
 
   <section class="stores-toolbar">
     <div><span class="panel-kicker">SELLER DIRECTORY</span><h2>فهرست فروشندگان</h2><p>ویترین‌ها و آمار هر فروشنده را در یک نگاه ببین.</p></div>
@@ -40,7 +43,7 @@
 
   <div class="store-grid" id="storeGrid">
     {% for store in stores %}
-    {% set metric = seller_stats.get(store.id, {}) %}
+    {% set metric = stats_map.get(store.id, {}) %}
     <article class="store-card" data-name="{{ store.name|lower }}" data-website="{{ (store.website or '')|lower }}" data-status="{{ 'active' if store.active else 'inactive' }}">
       <div class="store-card-cover"><span class="store-cover-label">{% if store.active %}<i class="fa-solid fa-bolt"></i> فروشنده فعال{% else %}غیرفعال{% endif %}</span></div>
       <div class="store-card-top">
@@ -51,9 +54,15 @@
         {% if store.website %}<a class="store-site" href="{{ store.website }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ store.website }}</a>{% else %}<span class="store-site store-site-empty">وب‌سایت ثبت نشده</span>{% endif %}
       </div>
       <div class="store-metrics"><div><b>{{ metric.products|default(0) }}</b><span>کالا</span></div><div><b>{{ metric.offers|default(0) }}</b><span>پیشنهاد</span></div><div><b>{% if metric.rating %}{{ metric.rating }}<small>★</small>{% else %}—{% endif %}</b><span>امتیاز</span></div><div><b>{{ metric.delivered|default(0) }}</b><span>فروش</span></div></div>
-      <div class="store-card-actions"><a class="store-action storefront-link" href="{{ url_for('storefront', store_id=store.id) }}"><i class="fa-solid fa-store"></i> مشاهده ویترین</a><details class="store-edit"><summary class="store-action edit"><i class="fa-solid fa-pen"></i> ویرایش</summary><form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="{{ store.id }}"><label>نام فروشگاه<input type="text" name="name" required value="{{ store.name }}"></label><label>وب‌سایت<input type="url" name="website" value="{{ store.website or '' }}"></label><label>تغییر لوگو<input type="file" name="logo" accept="image/*"></label><label class="store-check"><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال باشد</label><button type="submit">ذخیره تغییرات</button></form></details><form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete"><i class="fa-solid fa-trash"></i> حذف</button></form></div>
+      <div class="store-card-actions">
+        <a class="store-action storefront-link" href="{{ url_for('storefront', store_id=store.id) }}"><i class="fa-solid fa-store"></i> مشاهده ویترین</a>
+        {% if current_user and current_user.role == 'admin' %}
+        <details class="store-edit"><summary class="store-action edit"><i class="fa-solid fa-pen"></i> ویرایش</summary><form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="{{ store.id }}"><label>نام فروشگاه<input type="text" name="name" required value="{{ store.name }}"></label><label>وب‌سایت<input type="url" name="website" value="{{ store.website or '' }}"></label><label>تغییر لوگو<input type="file" name="logo" accept="image/*"></label><label class="store-check"><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال باشد</label><button type="submit">ذخیره تغییرات</button></form></details>
+        <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete"><i class="fa-solid fa-trash"></i> حذف</button></form>
+        {% endif %}
+      </div>
     </article>
-    {% else %}<div class="store-empty"><i class="fa-solid fa-store-slash"></i><strong>هنوز فروشگاهی ثبت نشده است.</strong><span>اولین فروشگاه را از بخش افزودن فروشگاه ایجاد کنید.</span></div>{% endfor %}
+    {% else %}<div class="store-empty"><i class="fa-solid fa-store-slash"></i><strong>هنوز فروشگاهی ثبت نشده است.</strong><span>اولین فروشگاه را از پنل مدیریت ایجاد کنید.</span></div>{% endfor %}
   </div>
   <div id="storeNoResults" class="store-empty" hidden><i class="fa-solid fa-magnifying-glass"></i><strong>فروشگاهی پیدا نشد</strong><span>عبارت جستجو یا فیلتر را تغییر بده.</span></div>
 </div>

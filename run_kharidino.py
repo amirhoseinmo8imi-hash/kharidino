@@ -57,20 +57,20 @@ from marketplace_ultimate import apply_marketplace_ultimate
 from marketplace_hardening import apply_marketplace_hardening
 from checkout_marketplace_adjustments import apply_checkout_marketplace_adjustments
 from seller_staff import apply_seller_staff
-import seller_fulfillment
-import marketplace_fulfillment
-import commerce_runtime
-import profile_extensions
-import merchant_marketplace
-import merchant_approval
-import merchant_marketplace_v2
-import merchant_customer_marketplace
-import seller_storefront
-import seller_introduction
-import terms
-import password_reset
-import accounting
-import system_health
+import seller_fulfillment  # noqa: F401
+import marketplace_fulfillment  # noqa: F401
+import commerce_runtime  # noqa: F401
+import profile_extensions  # noqa: F401
+import merchant_marketplace  # noqa: F401
+import merchant_approval  # noqa: F401
+import merchant_marketplace_v2  # noqa: F401
+import merchant_customer_marketplace  # noqa: F401
+import seller_storefront  # noqa: F401
+import seller_introduction  # noqa: F401
+import terms  # noqa: F401
+import password_reset  # noqa: F401
+import accounting  # noqa: F401
+import system_health  # noqa: F401
 from inventory_atomicity import apply_inventory_atomicity
 from financial_accounting import apply_financial_accounting
 

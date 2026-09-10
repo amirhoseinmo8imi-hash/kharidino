@@ -5,6 +5,7 @@ from flask import jsonify, flash, redirect, render_template, request, session, u
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
 from app import app, db, User, Order, admin_required, login_required
+from marketplace_ultimate import Coupon, CouponRedemption
 
 class Address(db.Model):
     __tablename__ = "kharidino_address"
@@ -13,14 +14,6 @@ class Address(db.Model):
 class OrderStatusHistory(db.Model):
     __tablename__="kharidino_order_status_history"
     id=db.Column(db.Integer,primary_key=True); order_id=db.Column(db.Integer,db.ForeignKey("order.id"),nullable=False,index=True); old_status=db.Column(db.String(30)); new_status=db.Column(db.String(30),nullable=False); actor_user_id=db.Column(db.Integer,db.ForeignKey("user.id")); note=db.Column(db.String(300),default=""); created_at=db.Column(db.DateTime,nullable=False,default=datetime.utcnow); order=db.relationship("Order",backref=db.backref("status_history",lazy=True,cascade="all, delete-orphan"))
-
-class Coupon(db.Model):
-    __tablename__="kharidino_coupon"
-    id=db.Column(db.Integer,primary_key=True); code=db.Column(db.String(64),unique=True,nullable=False,index=True); kind=db.Column(db.String(16),nullable=False,default="percent"); value=db.Column(db.Integer,nullable=False,default=0); min_total=db.Column(db.Integer,nullable=False,default=0); max_uses=db.Column(db.Integer); used_count=db.Column(db.Integer,nullable=False,default=0); active=db.Column(db.Boolean,nullable=False,default=True); expires_at=db.Column(db.DateTime)
-
-class CouponRedemption(db.Model):
-    __tablename__="kharidino_coupon_redemption"
-    id=db.Column(db.Integer,primary_key=True); coupon_id=db.Column(db.Integer,db.ForeignKey("kharidino_coupon.id"),nullable=False,index=True); user_id=db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False,index=True); order_id=db.Column(db.Integer,db.ForeignKey("order.id"),nullable=False,unique=True); discount=db.Column(db.Integer,nullable=False,default=0); created_at=db.Column(db.DateTime,nullable=False,default=datetime.utcnow); coupon=db.relationship("Coupon",backref=db.backref("redemptions",lazy=True))
 
 class Notification(db.Model):
     __tablename__="kharidino_notification"
@@ -34,9 +27,11 @@ def _owned_order(order_id):
     return order if order and (user.role=="admin" or order.user_id==user.id) else None
 
 def _discount(coupon,total):
-    if not coupon or not coupon.active or total<coupon.min_total or (coupon.expires_at and coupon.expires_at<datetime.utcnow()) or (coupon.max_uses is not None and coupon.used_count>=coupon.max_uses): return 0
+    if not coupon or not coupon.active or total<coupon.min_order or (coupon.expires_at and coupon.expires_at<datetime.utcnow()) or (coupon.usage_limit is not None and coupon.used_count>=coupon.usage_limit): return 0
     if coupon.kind=="fixed": return min(int(coupon.value),int(total))
-    return min(int(total),int(Decimal(total)*Decimal(coupon.value)/Decimal(100)))
+    discount=min(int(total),int(Decimal(total)*Decimal(coupon.value)/Decimal(100)))
+    if coupon.max_discount is not None: discount=min(discount,max(0,int(coupon.max_discount)))
+    return discount
 
 @app.route("/account/addresses",methods=["GET","POST"])
 @login_required
@@ -83,7 +78,7 @@ def order_detail_api(order_id):
 @app.post("/coupon/apply")
 @login_required
 def apply_coupon():
-    code=(request.form.get("code") or "").strip().upper()[:64]; coupon=Coupon.query.filter_by(code=code).first()
+    code=(request.form.get("code") or "").strip().upper()[:80]; coupon=Coupon.query.filter_by(code=code).first()
     if not coupon:session.pop("coupon_code",None);return jsonify({"ok":False,"error":"کد تخفیف معتبر نیست."}),400
     from app import cart_data
     _,total=cart_data(); discount=_discount(coupon,total)
@@ -105,17 +100,17 @@ def notifications():
 def notification_read(notification_id):
     user=_user(); row=db.session.get(Notification,notification_id)
     if not row or row.user_id!=user.id:return ("Not Found",404)
-    row.is_read=True; db.session.commit(); return redirect(url_for("notifications"))
+    row.is_read=True;db.session.commit();return redirect(url_for("notifications"))
 
 @app.route("/admin/coupons",methods=["GET","POST"])
 @admin_required
 def admin_coupons():
     if request.method=="POST":
-        code=(request.form.get("code") or "").strip().upper()[:64]; kind=request.form.get("kind") if request.form.get("kind") in {"percent","fixed"} else "percent"
-        try:value=int(request.form.get("value","0")); min_total=max(0,int(request.form.get("min_total","0"))); max_uses=int(request.form["max_uses"]) if request.form.get("max_uses") else None
+        code=(request.form.get("code") or "").strip().upper()[:80]; kind=request.form.get("kind") if request.form.get("kind") in {"percent","fixed"} else "percent"
+        try:value=int(request.form.get("value","0")); min_order=max(0,int(request.form.get("min_total",request.form.get("min_order","0")))); usage_limit=int(request.form["max_uses"]) if request.form.get("max_uses") else (int(request.form["usage_limit"]) if request.form.get("usage_limit") else None)
         except ValueError:flash("مقادیر عددی نامعتبر است.","danger");return redirect(url_for("admin_coupons"))
-        if not code or value<=0 or (kind=="percent" and value>100) or (max_uses is not None and max_uses<=0) or Coupon.query.filter_by(code=code).first():flash("اطلاعات کد تخفیف نامعتبر یا تکراری است.","danger");return redirect(url_for("admin_coupons"))
-        db.session.add(Coupon(code=code,kind=kind,value=value,min_total=min_total,max_uses=max_uses));db.session.commit();flash("کد تخفیف ایجاد شد.","success");return redirect(url_for("admin_coupons"))
+        if not code or value<=0 or (kind=="percent" and value>100) or (usage_limit is not None and usage_limit<=0) or Coupon.query.filter_by(code=code).first():flash("اطلاعات کد تخفیف نامعتبر یا تکراری است.","danger");return redirect(url_for("admin_coupons"))
+        db.session.add(Coupon(code=code,kind=kind,value=value,min_order=min_order,usage_limit=usage_limit));db.session.commit();flash("کد تخفیف ایجاد شد.","success");return redirect(url_for("admin_coupons"))
     return render_template("admin_coupons.html",coupons=Coupon.query.order_by(Coupon.id.desc()).all())
 
 @app.post("/admin/coupons/<int:coupon_id>/toggle")
@@ -127,7 +122,7 @@ def toggle_coupon(coupon_id):
 
 @event.listens_for(Session,"after_flush")
 def _commerce_after_flush(session_obj,flush_context):
-    actor = session.get("user_id") if has_request_context() else None
+    actor=session.get("user_id") if has_request_context() else None
     for obj in list(session_obj.new)+list(session_obj.dirty):
         if not isinstance(obj,Order):continue
         state=inspect(obj);hist=state.attrs.status.history
@@ -137,7 +132,7 @@ def _commerce_after_flush(session_obj,flush_context):
             if code:
                 coupon=Coupon.query.filter_by(code=code).first();discount=_discount(coupon,obj.total)
                 if discount>0:
-                    obj.total-=discount;coupon.used_count+=1;session_obj.add(CouponRedemption(coupon=coupon,user_id=obj.user_id,order=obj,discount=discount))
+                    obj.total-=discount;coupon.used_count+=1;session_obj.add(CouponRedemption(coupon_id=coupon.id,user_id=obj.user_id,order_id=obj.id,discount=discount))
                 session.pop("coupon_code",None)
         elif hist.has_changes():
             old=hist.deleted[0] if hist.deleted else None;new=hist.added[0] if hist.added else obj.status;session_obj.add(OrderStatusHistory(order=obj,old_status=old,new_status=new,actor_user_id=actor or None))

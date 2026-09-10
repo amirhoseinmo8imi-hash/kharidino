@@ -21,7 +21,7 @@ def test_return_lifecycle_executes_refund_before_marking_refunded():
     assert 'status == "refunded"' in src
     assert 'kharidino_execute_return_refund' in src
     assert 'row.status = "refunded"' in src
-    assert 'return False, error' in src or 'abort(409, description=error)' in src
+    assert 'abort(409, description=error)' in src
 
 
 def test_seller_delivery_unlocks_ledger_only_after_delivery():
@@ -42,4 +42,4 @@ def test_no_direct_return_refund_transition_without_executor():
     marker = 'if status == "refunded":'
     block = src.split(marker, 1)[1].split('row.status = status', 1)[0]
     assert 'kharidino_execute_return_refund' in block
-    assert 'row.status = "refunded"' in block
+    assert 'row.status = "refunded"' not in block

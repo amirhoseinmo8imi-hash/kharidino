@@ -23,7 +23,9 @@ def test_payment_refund_settlement_clawback_is_idempotent():
         db.session.add(order); db.session.flush()
         seller_order = SellerOrder(order_id=order.id, store_id=store.id, status="delivered", subtotal=100_000, shipping_fee=0, platform_fee=5_000, seller_total=95_000)
         db.session.add(seller_order); db.session.flush()
-        ledger = SellerLedger(seller_order_id=seller_order.id, store_id=store.id, gross=100_000, shipping=0, platform_fee=5_000, net=95_000, status="paid")
+        # Allocation is a reservation against an available ledger. The ledger
+        # becomes paid only after the settlement is actually processed.
+        ledger = SellerLedger(seller_order_id=seller_order.id, store_id=store.id, gross=100_000, shipping=0, platform_fee=5_000, net=95_000, status="available")
         db.session.add(ledger); db.session.flush()
         tx = PaymentTransaction(order_id=order.id, user_id=user.id, amount=100_000, status="paid", gateway="test", authority="FLOW-AUTH-1", idempotency_key="FLOW-IDEMP-1")
         db.session.add(tx); db.session.commit()
@@ -32,9 +34,14 @@ def test_payment_refund_settlement_clawback_is_idempotent():
         payment_refs = {x.reference for x in FinancialJournalEntry.query.filter(FinancialJournalEntry.reference.in_(expected_payment_refs)).all()}
         assert payment_refs == expected_payment_refs
 
-        settlement = SellerSettlement(store_id=store.id, amount=95_000, status="paid", note="flow test", requested_by=user.id, processed_by=user.id)
+        settlement = SellerSettlement(store_id=store.id, amount=95_000, status="requested", note="flow test", requested_by=user.id)
         db.session.add(settlement); db.session.flush()
-        db.session.add(SellerSettlementAllocation(settlement_id=settlement.id, ledger_id=ledger.id, amount=95_000)); db.session.commit()
+        allocation = SellerSettlementAllocation(settlement_id=settlement.id, ledger_id=ledger.id, amount=95_000)
+        db.session.add(allocation); db.session.flush()
+        settlement.status = "paid"
+        settlement.processed_by = user.id
+        ledger.status = "paid"
+        db.session.commit()
 
         from flask import session
         with app.test_request_context(f"/payment/refund/{tx.public_id}", method="POST"):
@@ -71,5 +78,5 @@ def test_payment_refund_settlement_clawback_is_idempotent():
         db.session.delete(clawback); db.session.delete(refund)
         for row in FinancialJournalEntry.query.filter(FinancialJournalEntry.reference.in_(expected_payment_refs | expected_refund_refs)).all(): db.session.delete(row)
         db.session.delete(tx)
-        db.session.delete(SellerSettlementAllocation.query.filter_by(settlement_id=settlement.id).one()); db.session.delete(settlement)
+        db.session.delete(allocation); db.session.delete(settlement)
         db.session.delete(ledger); db.session.delete(seller_order); db.session.delete(order); db.session.delete(store); db.session.delete(user); db.session.commit()

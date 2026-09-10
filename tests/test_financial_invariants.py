@@ -94,6 +94,7 @@ def test_partial_then_full_clawback_reconciles_exactly_once():
             db.session.add(Resolution(clawback_id=clawback.id, amount=1, reference=f"OVER-{clawback.id}", processed_by=user.id)); db.session.flush()
         db.session.rollback()
         assert Resolution.query.filter_by(clawback_id=clawback.id).count() == 2
+        db.session.query(SellerSettlementAllocation).filter_by(settlement_id=settlement.id).delete(synchronize_session=False)
         db.session.delete(clawback); db.session.delete(refund); db.session.delete(db.session.get(PaymentTransaction, tx.id)); db.session.delete(settlement); db.session.delete(db.session.get(SellerLedger, ledger.id)); db.session.delete(db.session.get(SellerOrder, seller_order.id)); db.session.delete(db.session.get(Order, order.id)); db.session.delete(store); db.session.delete(user); db.session.commit()
 
 
@@ -110,4 +111,5 @@ def test_database_guard_rejects_cross_settlement_double_allocation():
         with pytest.raises(Exception): db.session.commit()
         db.session.rollback()
         assert SellerSettlementAllocation.query.filter_by(ledger_id=ledger.id).count() == 1
+        db.session.query(SellerSettlementAllocation).filter(SellerSettlementAllocation.settlement_id.in_([first.id, second.id])).delete(synchronize_session=False)
         db.session.delete(db.session.get(SellerSettlement, first.id)); db.session.delete(db.session.get(SellerSettlement, second.id)); db.session.delete(db.session.get(PaymentTransaction, tx.id)); db.session.delete(db.session.get(SellerLedger, ledger.id)); db.session.delete(db.session.get(SellerOrder, seller_order.id)); db.session.delete(db.session.get(Order, order.id)); db.session.delete(store); db.session.delete(user); db.session.commit()

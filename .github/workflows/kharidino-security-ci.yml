@@ -37,3 +37,16 @@ jobs:
         run: pip-audit -r requirements.txt
       - name: Run tests
         run: pytest -q
+      - name: Application smoke test
+        env:
+          PAYMENT_TEST_MODE: "1"
+          FLASK_DEBUG: "0"
+        run: |
+          python - <<'PY'
+          import run_kharidino  # noqa: F401
+          from app import app
+          client = app.test_client()
+          response = client.get("/")
+          assert response.status_code == 200, response.status_code
+          print("Kharidino application smoke test: HTTP 200 OK")
+          PY

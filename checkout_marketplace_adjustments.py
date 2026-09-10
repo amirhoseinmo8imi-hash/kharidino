@@ -1,11 +1,12 @@
 """Atomic marketplace adjustments around the existing checkout flow."""
 from functools import wraps
+from datetime import datetime
 
 from flask import abort, request, session
 from sqlalchemy import update
 
 from app import app, db, Order, Product
-from marketplace_ultimate import Coupon, CouponRedemption, CustomerWallet
+from marketplace_ultimate import Coupon, CouponRedemption, CustomerWallet, WalletTransaction
 from marketplace_hardening import _normalize_coupon
 
 
@@ -34,7 +35,6 @@ def _preview_coupon(code, total, user_id):
     coupon = Coupon.query.filter_by(code=code, active=True).first()
     if not coupon:
         abort(400, description="کد تخفیف معتبر نیست.")
-    from datetime import datetime
     now = datetime.utcnow()
     if coupon.starts_at and now < coupon.starts_at:
         abort(400, description="زمان استفاده از این کد تخفیف هنوز نرسیده است.")
@@ -57,6 +57,7 @@ def _apply_adjustments(order, coupon_code, wallet_amount, use_wallet=False):
     original_total = max(0, int(order.total or 0))
     coupon = None
     discount = 0
+
     if coupon_code:
         coupon, discount = _preview_coupon(coupon_code, original_total, order.user_id)
         existing = CouponRedemption.query.filter_by(order_id=order.id).first()
@@ -74,7 +75,10 @@ def _apply_adjustments(order, coupon_code, wallet_amount, use_wallet=False):
             if changed != 1:
                 raise ValueError("coupon_usage_exhausted")
             db.session.add(CouponRedemption(
-                coupon_id=coupon.id, user_id=order.user_id, order_id=order.id, discount=discount
+                coupon_id=coupon.id,
+                user_id=order.user_id,
+                order_id=order.id,
+                discount=discount,
             ))
 
     subtotal_after_coupon = max(0, original_total - discount)
@@ -84,34 +88,31 @@ def _apply_adjustments(order, coupon_code, wallet_amount, use_wallet=False):
         raise ValueError("wallet_not_found")
     if use_wallet and wallet_amount <= 0:
         wallet_amount = int(wallet.balance or 0)
+
     if wallet_amount:
         requested = min(max(0, int(wallet_amount)), subtotal_after_coupon)
         if requested > 0:
-            changed = db.session.execute(
-                update(CustomerWallet)
-                .where(CustomerWallet.id == wallet.id)
-                .where(CustomerWallet.balance >= requested)
-                .values(balance=CustomerWallet.balance - requested)
-            )
-            if changed.rowcount != 1:
-                raise ValueError("insufficient_wallet_balance")
-            wallet_used = requested
-            from marketplace_ultimate import WalletTransaction
             reference = f"CHECKOUT:{order.id}:WALLET"
             existing_tx = WalletTransaction.query.filter_by(reference=reference).first()
-            if not existing_tx:
-                db.session.add(WalletTransaction(
-                    wallet_id=wallet.id, amount=-wallet_used, kind="checkout",
-                    reference=reference, note=f"پرداخت سفارش #{order.id}",
-                ))
+            if existing_tx:
+                wallet_used = min(subtotal_after_coupon, abs(int(existing_tx.amount or 0)))
             else:
-                # The debit reference already exists; restore the just-reserved amount
-                # and use the existing transaction to make retries idempotent.
-                db.session.execute(
-                    update(CustomerWallet).where(CustomerWallet.id == wallet.id)
-                    .values(balance=CustomerWallet.balance + requested)
+                changed = db.session.execute(
+                    update(CustomerWallet)
+                    .where(CustomerWallet.id == wallet.id)
+                    .where(CustomerWallet.balance >= requested)
+                    .values(balance=CustomerWallet.balance - requested)
                 )
-                wallet_used = abs(int(existing_tx.amount or 0))
+                if changed.rowcount != 1:
+                    raise ValueError("insufficient_wallet_balance")
+                wallet_used = requested
+                db.session.add(WalletTransaction(
+                    wallet_id=wallet.id,
+                    amount=-wallet_used,
+                    kind="checkout",
+                    reference=reference,
+                    note=f"پرداخت سفارش #{order.id}",
+                ))
 
     order.total = max(0, subtotal_after_coupon - wallet_used)
     return {"discount": discount, "wallet_used": wallet_used, "total": order.total}
@@ -121,12 +122,14 @@ def apply_checkout_marketplace_adjustments(app_obj=None):
     app_obj = app_obj or app
     if app_obj.extensions.get("kharidino_checkout_marketplace_adjustments"):
         return
+
     checkout_view = app_obj.view_functions.get("checkout")
     if checkout_view and not getattr(checkout_view, "_kharidino_marketplace_adjustments", False):
         @wraps(checkout_view)
         def checkout_with_marketplace_adjustments(*args, **kwargs):
             if request.method != "POST" or not session.get("user_id"):
                 return checkout_view(*args, **kwargs)
+
             coupon_code = _normalize_coupon(request.form.get("coupon_code") or request.form.get("coupon"))
             raw_wallet = request.form.get("wallet_amount")
             use_wallet = str(request.form.get("use_wallet", "")).lower() in {"1", "true", "yes", "on"}
@@ -137,6 +140,7 @@ def apply_checkout_marketplace_adjustments(app_obj=None):
                     abort(400, description="مبلغ استفاده از کیف پول نامعتبر است.")
             else:
                 wallet_amount = 0
+
             if coupon_code:
                 _preview_coupon(coupon_code, _cart_total(), session["user_id"])
             if wallet_amount:
@@ -152,13 +156,23 @@ def apply_checkout_marketplace_adjustments(app_obj=None):
             new_orders = [o for o in after if o.id not in before_ids]
             if len(new_orders) != 1 or (not coupon_code and not wallet_amount and not use_wallet):
                 return response
+
             order = new_orders[0]
             try:
                 result = _apply_adjustments(order, coupon_code, wallet_amount, use_wallet)
                 if result["total"] <= 0:
-                    # Keep zero-value orders out of the external gateway path.
-                    # The payment layer will be extended to finalize these safely.
-                    raise ValueError("zero_total_requires_free_checkout")
+                    # A zero-value order is a legitimate fully-discounted/wallet order.
+                    # It must never enter the external gateway path.
+                    order.status = "تأیید شد"
+                    db.session.commit()
+                    session["checkout_free_order_id"] = order.id
+                    session["checkout_marketplace_adjustment"] = {
+                        "order_id": order.id,
+                        **result,
+                        "payment_required": False,
+                    }
+                    session.modified = True
+                    return response
                 db.session.commit()
             except Exception:
                 db.session.rollback()
@@ -167,9 +181,15 @@ def apply_checkout_marketplace_adjustments(app_obj=None):
                     order.status = "لغو شد"
                     db.session.commit()
                 abort(409, description="اعمال تخفیف یا کیف پول روی سفارش انجام نشد؛ سفارش لغو شد.")
-            session["checkout_marketplace_adjustment"] = {"order_id": order.id, **result}
+
+            session["checkout_marketplace_adjustment"] = {
+                "order_id": order.id,
+                **result,
+                "payment_required": True,
+            }
             session.modified = True
             return response
+
         checkout_with_marketplace_adjustments._kharidino_marketplace_adjustments = True
         app_obj.view_functions["checkout"] = checkout_with_marketplace_adjustments
 
@@ -177,4 +197,5 @@ def apply_checkout_marketplace_adjustments(app_obj=None):
     def marketplace_checkout_adjustment():
         data = session.get("checkout_marketplace_adjustment") or {}
         return {"ok": True, **data}
+
     app_obj.extensions["kharidino_checkout_marketplace_adjustments"] = True

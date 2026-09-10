@@ -299,11 +299,14 @@ def apply_payment(app, db, Order, User):
     def payment_checkout_bridge(response):
         if request.endpoint == "checkout" and request.method == "POST" and response.status_code in {301, 302, 303, 307, 308}:
             location = response.headers.get("Location", "")
+            free_order_id = session.pop("checkout_free_order_id", None)
             order_id = session.pop("checkout_payment_order_id", None)
             session.modified = True
+            if free_order_id and order_id and int(free_order_id) == int(order_id):
+                return response
             if "/orders" in location and order_id:
                 order = db.session.get(Order, int(order_id))
-                if order and order.user_id == session.get("user_id"):
+                if order and order.user_id == session.get("user_id") and order.status == "در انتظار بررسی" and int(order.total or 0) > 0:
                     response.status_code = 303
                     response.headers["Location"] = url_for("payment_start_form", order_id=order.id)
         return response

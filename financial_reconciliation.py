@@ -21,9 +21,24 @@ def _money(value) -> int:
 
 def reconcile_payment(tx):
     Journal = app.extensions["kharidino_financial_journal"]
-    rows = Journal.query.filter_by(payment_transaction_id=tx.id).all()
-    payment = [x for x in rows if x.event_type == "payment"]
-    refunds = [x for x in rows if x.event_type == "refund"]
+    # The public transaction id is immutable and globally unique. Do not trust
+    # a recycled SQLite integer FK alone: tests/dev databases can legitimately
+    # reuse integer ids after old financial records are removed. Scoping the
+    # audit by the immutable reference prevents an old journal from being
+    # attached to a new transaction merely because both had the same PK.
+    payment_refs = {
+        f"PAYMENT:{tx.public_id}:CASH",
+        f"PAYMENT:{tx.public_id}:SELLER",
+        f"PAYMENT:{tx.public_id}:PLATFORM",
+    }
+    refund_refs = {
+        f"REFUND:{tx.public_id}:CASH",
+        f"REFUND:{tx.public_id}:SELLER",
+        f"REFUND:{tx.public_id}:PLATFORM",
+    }
+    rows = Journal.query.filter(Journal.reference.in_(payment_refs | refund_refs)).all()
+    payment = [x for x in rows if x.reference in payment_refs and x.event_type == "payment"]
+    refunds = [x for x in rows if x.reference in refund_refs and x.event_type == "refund"]
     cash_in = sum(_money(x.amount) for x in payment if x.account == "cash" and x.direction == "debit")
     seller_in = sum(_money(x.amount) for x in payment if x.account == "seller_payable" and x.direction == "credit")
     platform_in = sum(_money(x.amount) for x in payment if x.account == "platform_revenue" and x.direction == "credit")
@@ -81,7 +96,6 @@ def reconcile_settlement(settlement):
 
 def reconcile_all(*, fail_fast=False):
     PaymentTransaction = app.extensions["kharidino_payment_transaction"]
-    RefundRecord = app.extensions.get("kharidino_refund_record")
     SellerClawback = app.extensions.get("kharidino_seller_clawback")
     Resolution = app.extensions.get("kharidino_seller_clawback_resolution")
     failures = []

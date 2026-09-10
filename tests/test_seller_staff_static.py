@@ -9,6 +9,7 @@ def test_seller_staff_is_store_scoped_and_role_limited():
     assert "VALID_ROLES" in src
     assert '"all"' in src
     assert "role not in VALID_ROLES" in src
+    assert "Staff users do not need role=\"seller\"" in src
 
 
 def test_seller_staff_revocation_is_soft_for_auditability():

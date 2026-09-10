@@ -34,7 +34,11 @@ def test_reconciliation_passes_for_balanced_paid_refunded_flow():
         failures = reconcile_all()
         assert any(item["type"] == "ledger" and item["id"] == ledger.id for item in failures)
         db.session.rollback()
-        ledger.net = 95_000; db.session.delete(tx); db.session.delete(ledger); db.session.delete(sub); db.session.delete(order); db.session.delete(store); db.session.delete(user); db.session.commit()
+        ledger.net = 95_000
+        # PaymentTransaction and its immutable journal are intentionally retained:
+        # deleting a financial fact can recycle its SQLite integer id and incorrectly
+        # attach the old journal rows to a later transaction.
+        db.session.delete(ledger); db.session.delete(sub); db.session.delete(order); db.session.delete(store); db.session.delete(user); db.session.commit()
 
 
 def test_two_database_connections_cannot_allocate_same_ledger_twice():
@@ -47,7 +51,8 @@ def test_two_database_connections_cannot_allocate_same_ledger_twice():
         db.session.add(order); db.session.flush()
         sub = SellerOrder(order_id=order.id, store_id=store.id, status="new", subtotal=100_000, shipping_fee=0, platform_fee=5_000, seller_total=95_000)
         db.session.add(sub); db.session.flush()
-        ledger = SellerLedger(seller_order_id=sub.id, store_id=store.id, gross=100_000, shipping=0, platform_fee=5_000, net=95_000, status="available")
+        sub_id = sub.id
+        ledger = SellerLedger(seller_order_id=sub_id, store_id=store.id, gross=100_000, shipping=0, platform_fee=5_000, net=95_000, status="available")
         first = SellerSettlement(store_id=store.id, amount=95_000, status="requested", requested_by=user.id)
         second = SellerSettlement(store_id=store.id, amount=95_000, status="requested", requested_by=user.id)
         db.session.add_all([ledger, first, second]); db.session.commit()
@@ -76,4 +81,4 @@ def test_two_database_connections_cannot_allocate_same_ledger_twice():
         assert sorted(results) == [False, True]
         assert SellerSettlementAllocation.query.filter_by(ledger_id=ledger_id).count() == 1
         db.session.query(SellerSettlement).filter(SellerSettlement.id.in_([first_id, second_id])).delete(synchronize_session=False)
-        db.session.delete(db.session.get(SellerLedger, ledger_id)); db.session.delete(db.session.get(SellerOrder, sub.id)); db.session.delete(db.session.get(Order, order.id)); db.session.delete(store); db.session.delete(user); db.session.commit()
+        db.session.delete(db.session.get(SellerLedger, ledger_id)); db.session.delete(db.session.get(SellerOrder, sub_id)); db.session.delete(db.session.get(Order, order.id)); db.session.delete(store); db.session.delete(user); db.session.commit()

@@ -16,6 +16,17 @@ def test_payment_refund_settlement_clawback_is_idempotent():
     from accounting import SellerSettlement, SellerSettlementAllocation
 
     with app.app_context():
+        # Older financial tests used to remove a ledger before its allocation.
+        # SQLite can then reuse that ledger id, leaving an orphan allocation
+        # which incorrectly trips the allocation invariant for this fresh flow.
+        # Remove only orphan allocation facts; never touch valid ledger data.
+        db.session.execute(
+            db.delete(SellerSettlementAllocation).where(
+                ~SellerSettlementAllocation.ledger_id.in_(db.select(SellerLedger.id))
+            )
+        )
+        db.session.commit()
+
         user = User(name="Flow Test", email="flow-test@example.invalid", password="x", role="admin")
         store = Store(name="Flow Store", active=True)
         db.session.add_all([user, store]); db.session.flush()

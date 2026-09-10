@@ -57,6 +57,7 @@ from financial_reconciliation import apply_financial_reconciliation
 from marketplace_ultimate import apply_marketplace_ultimate
 from marketplace_hardening import apply_marketplace_hardening
 from checkout_marketplace_adjustments import apply_checkout_marketplace_adjustments
+from seller_staff import apply_seller_staff
 import seller_fulfillment
 import marketplace_fulfillment
 import commerce_runtime
@@ -83,6 +84,7 @@ with app.app_context():
     apply_checkout_idempotency(app, db); apply_inventory_security(app); apply_inventory_atomicity(app)
     apply_order_state_machine(app); apply_commerce_extensions(app); apply_catalog_extensions(app)
     apply_marketplace_ultimate(app); apply_marketplace_hardening(app); apply_checkout_marketplace_adjustments(app)
+    apply_seller_staff(app)
     apply_payment(app, db, __import__("app").Order, User)
     from merchant_marketplace_v2 import SellerLedger, SellerOrder
     from accounting import SellerSettlement, SellerSettlementAllocation, ensure_settlement_allocation_guard

@@ -47,6 +47,7 @@ from checkout_idempotency import apply_checkout_idempotency
 from commerce_extensions_v2 import apply_commerce_extensions
 from commerce_catalog import apply_catalog_extensions
 from order_state_machine import apply_order_state_machine
+from order_cancellation import apply_order_cancellation
 from payment import apply_payment
 from button_flow_hardening import apply_button_flow_hardening
 from refund_settlement_hardening import apply_refund_settlement_hardening
@@ -81,7 +82,7 @@ with app.app_context():
     apply_security(app); apply_redirect_hardening(app); apply_catalog_security(app)
     apply_catalog_ux_api(app, db, Product, Category, Offer, Store); apply_checkout_preflight(app)
     apply_checkout_idempotency(app, db); apply_inventory_security(app); apply_inventory_atomicity(app)
-    apply_order_state_machine(app); apply_commerce_extensions(app); apply_catalog_extensions(app)
+    apply_order_state_machine(app); apply_order_cancellation(app); apply_commerce_extensions(app); apply_catalog_extensions(app)
     apply_marketplace_ultimate(app); apply_marketplace_hardening(app); apply_checkout_marketplace_adjustments(app)
     apply_seller_staff(app)
     apply_payment(app, db, __import__("app").Order, User)

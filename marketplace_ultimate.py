@@ -14,15 +14,16 @@ from app import app, db
 
 class WishlistItem(db.Model):
     __tablename__ = "kharidino_wishlist_item"
+    __table_args__ = (db.UniqueConstraint("user_id", "product_id", name="uq_wishlist_user_product"), {"extend_existing": True})
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    __table_args__ = (db.UniqueConstraint("user_id", "product_id", name="uq_wishlist_user_product"),)
 
 
 class PriceAlert(db.Model):
     __tablename__ = "kharidino_price_alert"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False, index=True)
@@ -34,6 +35,7 @@ class PriceAlert(db.Model):
 
 class ProductReview(db.Model):
     __tablename__ = "kharidino_product_review"
+    __table_args__ = (db.UniqueConstraint("user_id", "product_id", "order_id", name="uq_review_purchase"), {"extend_existing": True})
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False, index=True)
@@ -45,11 +47,11 @@ class ProductReview(db.Model):
     status = db.Column(db.String(20), default="pending", nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    __table_args__ = (db.UniqueConstraint("user_id", "product_id", "order_id", name="uq_review_purchase"),)
 
 
 class ProductQuestion(db.Model):
     __tablename__ = "kharidino_product_question"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False, index=True)
@@ -62,6 +64,7 @@ class ProductQuestion(db.Model):
 
 class CustomerWallet(db.Model):
     __tablename__ = "kharidino_customer_wallet"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
     balance = db.Column(db.Integer, default=0, nullable=False)
@@ -72,6 +75,7 @@ class CustomerWallet(db.Model):
 
 class WalletTransaction(db.Model):
     __tablename__ = "kharidino_wallet_transaction"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     wallet_id = db.Column(db.Integer, db.ForeignKey("kharidino_customer_wallet.id"), nullable=False, index=True)
     amount = db.Column(db.Integer, nullable=False)
@@ -83,6 +87,7 @@ class WalletTransaction(db.Model):
 
 class Coupon(db.Model):
     __tablename__ = "kharidino_coupon"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(80), unique=True, nullable=False, index=True)
     kind = db.Column(db.String(20), default="percent", nullable=False)
@@ -98,6 +103,7 @@ class Coupon(db.Model):
 
 class CouponRedemption(db.Model):
     __tablename__ = "kharidino_coupon_redemption"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     coupon_id = db.Column(db.Integer, db.ForeignKey("kharidino_coupon.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
@@ -108,6 +114,7 @@ class CouponRedemption(db.Model):
 
 class CustomerNotification(db.Model):
     __tablename__ = "kharidino_customer_notification"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     title = db.Column(db.String(180), nullable=False)
@@ -120,17 +127,18 @@ class CustomerNotification(db.Model):
 
 class SellerStaff(db.Model):
     __tablename__ = "kharidino_seller_staff"
+    __table_args__ = (db.UniqueConstraint("store_id", "user_id", name="uq_seller_staff_store_user"), {"extend_existing": True})
     id = db.Column(db.Integer, primary_key=True)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     role = db.Column(db.String(40), default="operator", nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    __table_args__ = (db.UniqueConstraint("store_id", "user_id", name="uq_seller_staff_store_user"),)
 
 
 class SellerProductMetric(db.Model):
     __tablename__ = "kharidino_seller_product_metric"
+    __table_args__ = (db.UniqueConstraint("store_id", "product_id", name="uq_seller_product_metric"), {"extend_existing": True})
     id = db.Column(db.Integer, primary_key=True)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False, index=True)
@@ -139,11 +147,11 @@ class SellerProductMetric(db.Model):
     sold_units = db.Column(db.Integer, default=0, nullable=False)
     revenue = db.Column(db.Integer, default=0, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    __table_args__ = (db.UniqueConstraint("store_id", "product_id", name="uq_seller_product_metric"),)
 
 
 class Shipment(db.Model):
     __tablename__ = "kharidino_shipment"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False, index=True)
     seller_order_id = db.Column(db.Integer, db.ForeignKey("kharidino_seller_order.id"), nullable=True, index=True)
@@ -158,6 +166,7 @@ class Shipment(db.Model):
 
 class ReturnRequest(db.Model):
     __tablename__ = "kharidino_return_request"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False, index=True)
     seller_order_id = db.Column(db.Integer, db.ForeignKey("kharidino_seller_order.id"), nullable=True, index=True)
@@ -172,6 +181,7 @@ class ReturnRequest(db.Model):
 
 class SupportTicket(db.Model):
     __tablename__ = "kharidino_support_ticket"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=True, index=True)
@@ -184,6 +194,7 @@ class SupportTicket(db.Model):
 
 class SupportMessage(db.Model):
     __tablename__ = "kharidino_support_message"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey("kharidino_support_ticket.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
@@ -194,6 +205,7 @@ class SupportMessage(db.Model):
 
 class Referral(db.Model):
     __tablename__ = "kharidino_referral"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     referrer_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     referred_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, unique=True)

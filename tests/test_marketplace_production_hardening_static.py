@@ -43,3 +43,26 @@ def test_no_direct_return_refund_transition_without_executor():
     block = src.split(marker, 1)[1].split('row.status = status', 1)[0]
     assert 'kharidino_execute_return_refund' in block
     assert 'row.status = "refunded"' not in block
+
+
+def test_checkout_adjustments_have_atomic_wallet_and_free_order_path():
+    src = read("checkout_marketplace_adjustments.py")
+    assert "CustomerWallet.balance >= requested" in src
+    assert 'reference = f"CHECKOUT:{order.id}:WALLET"' in src
+    assert 'order.status = "تأیید شد"' in src
+    assert 'checkout_free_order_id' in src
+    assert 'payment_required": False' in src
+
+
+def test_payment_bridge_never_sends_free_order_to_gateway():
+    src = read("payment.py")
+    assert 'free_order_id = session.pop("checkout_free_order_id", None)' in src
+    assert 'order.status == "در انتظار بررسی"' in src
+    assert 'int(order.total or 0) > 0' in src
+
+
+def test_payment_callback_is_atomic_and_amount_bound():
+    src = read("payment.py")
+    assert 'status.in_({"pending", "redirect", "failed"})' in src
+    assert 'int(order.total or 0) != tx.amount' in src
+    assert 'tx.status = "paid"' in src

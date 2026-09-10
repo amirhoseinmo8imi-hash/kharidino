@@ -33,10 +33,12 @@ def test_reconciliation_passes_for_balanced_paid_refunded_flow():
         ledger.net = 94_999; db.session.commit()
         assert any("net mismatch" in error for error in reconcile_ledger(ledger))
         ledger.net = 95_000
-        # PaymentTransaction and its immutable journal are intentionally retained:
-        # deleting a financial fact can recycle its SQLite integer id and incorrectly
-        # attach old journal rows to a later transaction.
-        db.session.delete(ledger); db.session.delete(sub); db.session.delete(order); db.session.delete(store); db.session.delete(user); db.session.commit()
+        # Keep the financial transaction and its related rows in this shared CI
+        # database. Deleting the order here makes SQLAlchemy try to NULL the
+        # PaymentTransaction.order_id FK, which is intentionally NOT NULL, and
+        # can also recycle SQLite integer ids for later financial facts. The test
+        # data is uniquely keyed and harmless to subsequent reconciliation checks.
+        db.session.commit()
 
 
 def test_two_database_connections_cannot_allocate_same_ledger_twice():

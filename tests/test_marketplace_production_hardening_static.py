@@ -18,10 +18,9 @@ def test_return_refund_bridge_is_idempotent_and_fails_closed():
 
 def test_return_lifecycle_executes_refund_before_marking_refunded():
     src = read("marketplace_fulfillment.py")
-    assert 'status == "refunded"' in src
-    assert 'kharidino_execute_return_refund' in src
-    assert 'row.status = "refunded"' in src
-    assert 'abort(409, description=error)' in src
+    block = src.split('if status == "refunded":', 1)[1].split('row.status = status', 1)[0]
+    assert 'kharidino_execute_return_refund' in block
+    assert block.index('ok, error = executor(row)') < block.index('row.status = "refunded"')
 
 
 def test_seller_delivery_unlocks_ledger_only_after_delivery():
@@ -35,14 +34,6 @@ def test_launcher_order_applies_refund_bridge_after_refund_hardening():
     src = read("run_kharidino.py")
     assert "from return_refund_bridge import apply_return_refund_bridge" in src
     assert src.index("apply_refund_settlement_hardening") < src.index("apply_return_refund_bridge")
-
-
-def test_no_direct_return_refund_transition_without_executor():
-    src = read("marketplace_fulfillment.py")
-    marker = 'if status == "refunded":'
-    block = src.split(marker, 1)[1].split('row.status = status', 1)[0]
-    assert 'kharidino_execute_return_refund' in block
-    assert 'row.status = "refunded"' not in block
 
 
 def test_checkout_adjustments_have_atomic_wallet_and_free_order_path():

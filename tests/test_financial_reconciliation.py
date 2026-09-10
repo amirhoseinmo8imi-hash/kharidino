@@ -15,7 +15,7 @@ def test_reconciliation_passes_for_balanced_paid_refunded_flow():
     app, db, Order, Store, User, SellerLedger, SellerOrder, SellerSettlement, SellerSettlementAllocation = _boot()
     with app.app_context():
         PaymentTransaction = app.extensions["kharidino_payment_transaction"]
-        from financial_reconciliation import reconcile_all
+        from financial_reconciliation import reconcile_payment, reconcile_ledger
         user = User(name="Recon Pass", email="recon-pass@example.invalid", password="x", role="admin")
         store = Store(name="Recon Pass Store", active=True)
         db.session.add_all([user, store]); db.session.flush()
@@ -27,17 +27,15 @@ def test_reconciliation_passes_for_balanced_paid_refunded_flow():
         db.session.add(ledger)
         tx = PaymentTransaction(order_id=order.id, user_id=user.id, amount=100_000, status="paid", gateway="test", authority=f"RECON-{order.id}", idempotency_key=f"RECON-IDEMP-{order.id}")
         db.session.add(tx); db.session.commit()
-        failures = reconcile_all()
-        assert failures == []
-        # Deliberately corrupt one accounting fact and prove reconciliation catches it.
+        # Audit this transaction specifically so unrelated immutable journals from
+        # earlier tests cannot make a focused reconciliation test order-dependent.
+        assert reconcile_payment(tx) == []
         ledger.net = 94_999; db.session.commit()
-        failures = reconcile_all()
-        assert any(item["type"] == "ledger" and item["id"] == ledger.id for item in failures)
-        db.session.rollback()
+        assert any("net mismatch" in error for error in reconcile_ledger(ledger))
         ledger.net = 95_000
         # PaymentTransaction and its immutable journal are intentionally retained:
         # deleting a financial fact can recycle its SQLite integer id and incorrectly
-        # attach the old journal rows to a later transaction.
+        # attach old journal rows to a later transaction.
         db.session.delete(ledger); db.session.delete(sub); db.session.delete(order); db.session.delete(store); db.session.delete(user); db.session.commit()
 
 
@@ -49,7 +47,8 @@ def test_two_database_connections_cannot_allocate_same_ledger_twice():
         db.session.add_all([user, store]); db.session.flush()
         order = Order(user_id=user.id, total=100_000, status="تأیید شد", customer_name="Race", phone="09122222222", address="Test")
         db.session.add(order); db.session.flush()
-        sub = SellerOrder(order_id=order.id, store_id=store.id, status="new", subtotal=100_000, shipping_fee=0, platform_fee=5_000, seller_total=95_000)
+        order_id = order.id
+        sub = SellerOrder(order_id=order_id, store_id=store.id, status="new", subtotal=100_000, shipping_fee=0, platform_fee=5_000, seller_total=95_000)
         db.session.add(sub); db.session.flush()
         sub_id = sub.id
         ledger = SellerLedger(seller_order_id=sub_id, store_id=store.id, gross=100_000, shipping=0, platform_fee=5_000, net=95_000, status="available")
@@ -81,4 +80,4 @@ def test_two_database_connections_cannot_allocate_same_ledger_twice():
         assert sorted(results) == [False, True]
         assert SellerSettlementAllocation.query.filter_by(ledger_id=ledger_id).count() == 1
         db.session.query(SellerSettlement).filter(SellerSettlement.id.in_([first_id, second_id])).delete(synchronize_session=False)
-        db.session.delete(db.session.get(SellerLedger, ledger_id)); db.session.delete(db.session.get(SellerOrder, sub_id)); db.session.delete(db.session.get(Order, order.id)); db.session.delete(store); db.session.delete(user); db.session.commit()
+        db.session.delete(db.session.get(SellerLedger, ledger_id)); db.session.delete(db.session.get(SellerOrder, sub_id)); db.session.delete(db.session.get(Order, order_id)); db.session.delete(store); db.session.delete(user); db.session.commit()

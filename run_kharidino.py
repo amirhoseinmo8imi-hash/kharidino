@@ -3,7 +3,6 @@ import os
 import socket
 from pathlib import Path
 from zipfile import ZipFile
-from flask import redirect, request, render_template, url_for
 
 try:
     from dotenv import load_dotenv

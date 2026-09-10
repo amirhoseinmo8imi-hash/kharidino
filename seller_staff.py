@@ -26,17 +26,23 @@ VALID_ROLES = set(ROLE_PERMISSIONS) - {"owner"}
 
 
 def _current_membership():
-    account = _seller_account()
-    if not account or account.status != "approved" or not account.store.active:
+    uid = session.get("user_id")
+    if not uid:
         return None, None
-    if account.user_id == session.get("user_id"):
-        return account, {"all"}
-    staff = SellerStaff.query.filter_by(
-        store_id=account.store_id,
-        user_id=session.get("user_id"),
-        active=True,
-    ).first()
+
+    # Store owners are the MerchantStore owner and implicitly have full access.
+    owner_account = _seller_account(uid)
+    if owner_account:
+        if owner_account.status != "approved" or not owner_account.store.active:
+            return None, None
+        return owner_account, {"all"}
+
+    # Staff users do not need role="seller"; membership itself grants scoped access.
+    staff = SellerStaff.query.filter_by(user_id=uid, active=True).first()
     if not staff:
+        return None, None
+    account = MerchantStore.query.filter_by(store_id=staff.store_id).first()
+    if not account or account.status != "approved" or not account.store.active:
         return None, None
     return account, ROLE_PERMISSIONS.get(staff.role, set())
 

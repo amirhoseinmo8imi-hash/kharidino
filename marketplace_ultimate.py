@@ -5,7 +5,6 @@ without changing their tables. It provides durable primitives for customer growt
 seller operations, fulfillment, support and product discovery.
 """
 from datetime import datetime
-from decimal import Decimal
 from functools import wraps
 
 from flask import jsonify, request, session
@@ -303,8 +302,7 @@ def apply_marketplace_ultimate(app_obj=None):
         body = str(data.get("body") or "").strip()
         if len(subject) < 3 or not body:
             return jsonify({"ok": False, "error": "subject_and_body_required"}), 400
-        ticket = SupportTicket(user_id=session["user_id"], order_id=_json_int(data.get("order_id"), 1), subject=subject,
-                               priority=str(data.get("priority") or "normal")[:20])
+        ticket = SupportTicket(user_id=session["user_id"], order_id=_json_int(data.get("order_id"), 1), subject=subject)
         db.session.add(ticket)
         db.session.flush()
         db.session.add(SupportMessage(ticket_id=ticket.id, user_id=session["user_id"], body=body))
@@ -317,28 +315,28 @@ def apply_marketplace_ultimate(app_obj=None):
         data = request.get_json(silent=True) or {}
         order_id = _json_int(data.get("order_id"), 1)
         reason = str(data.get("reason") or "").strip()[:300]
-        if not order_id or len(reason) < 3:
+        details = str(data.get("details") or "").strip()
+        if not order_id or not reason:
             return jsonify({"ok": False, "error": "order_and_reason_required"}), 400
-        row = ReturnRequest.query.filter_by(order_id=order_id, user_id=session["user_id"]).first()
-        if row:
-            return jsonify({"ok": True, "return_id": row.id, "status": row.status, "duplicate": True})
-        row = ReturnRequest(order_id=order_id, user_id=session["user_id"], reason=reason,
-                            details=str(data.get("details") or "").strip())
+        existing = ReturnRequest.query.filter_by(order_id=order_id, user_id=session["user_id"], status="requested").first()
+        if existing:
+            return jsonify({"ok": False, "error": "return_already_requested", "id": existing.id}), 409
+        row = ReturnRequest(order_id=order_id, user_id=session["user_id"], reason=reason, details=details)
         db.session.add(row)
         db.session.commit()
-        return jsonify({"ok": True, "return_id": row.id, "status": row.status})
+        return jsonify({"ok": True, "id": row.id, "status": row.status})
 
     @app_obj.get("/api/marketplace/customer-summary")
     @_login_required_json
     def marketplace_customer_summary():
-        user_id = session["user_id"]
-        wallet = CustomerWallet.query.filter_by(user_id=user_id).first()
-        return jsonify({
-            "ok": True,
-            "wishlist_count": WishlistItem.query.filter_by(user_id=user_id).count(),
-            "price_alert_count": PriceAlert.query.filter_by(user_id=user_id, active=True).count(),
-            "unread_notifications": CustomerNotification.query.filter_by(user_id=user_id, read_at=None).count(),
-            "wallet": {"balance": wallet.balance, "points": wallet.points, "tier": wallet.tier} if wallet else {"balance": 0, "points": 0, "tier": "standard"},
-        })
+        wallet = CustomerWallet.query.filter_by(user_id=session["user_id"]).first()
+        wishlist_count = WishlistItem.query.filter_by(user_id=session["user_id"]).count()
+        unread = CustomerNotification.query.filter_by(user_id=session["user_id"], read_at=None).count()
+        tickets = SupportTicket.query.filter_by(user_id=session["user_id"], status="open").count()
+        return jsonify({"ok": True, "wallet": {"balance": wallet.balance if wallet else 0,
+                                                    "points": wallet.points if wallet else 0,
+                                                    "tier": wallet.tier if wallet else "standard"},
+                        "wishlist_count": wishlist_count, "unread_notifications": unread,
+                        "open_tickets": tickets})
 
     app_obj.extensions["kharidino_marketplace_ultimate"] = True

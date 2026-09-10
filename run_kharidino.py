@@ -54,6 +54,7 @@ from refund_settlement_hardening import apply_refund_settlement_hardening
 from clawback_reconciliation import apply_clawback_reconciliation
 from financial_reconciliation import apply_financial_reconciliation
 from marketplace_ultimate import apply_marketplace_ultimate
+from marketplace_hardening import apply_marketplace_hardening
 import commerce_runtime
 import profile_extensions
 import merchant_marketplace
@@ -77,7 +78,7 @@ with app.app_context():
     apply_catalog_ux_api(app, db, Product, Category, Offer, Store); apply_checkout_preflight(app)
     apply_checkout_idempotency(app, db); apply_inventory_security(app); apply_inventory_atomicity(app)
     apply_order_state_machine(app); apply_commerce_extensions(app); apply_catalog_extensions(app)
-    apply_marketplace_ultimate(app)
+    apply_marketplace_ultimate(app); apply_marketplace_hardening(app)
     apply_payment(app, db, __import__("app").Order, User)
     from merchant_marketplace_v2 import SellerLedger, SellerOrder
     from accounting import SellerSettlement, SellerSettlementAllocation, ensure_settlement_allocation_guard

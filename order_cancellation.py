@@ -11,7 +11,7 @@ def apply_order_cancellation(app):
 
     @app.post("/orders/<int:order_id>/cancel")
     def cancel_order(order_id):
-        from app import Order, db, login_required
+        from app import Order, db
 
         if not session.get("user_id"):
             flash("ابتدا وارد حساب کاربری شوید.", "warning")

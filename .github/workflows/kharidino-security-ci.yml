@@ -50,3 +50,5 @@ jobs:
           assert response.status_code == 200, response.status_code
           print("Kharidino application smoke test: HTTP 200 OK")
           PY
+
+      # The smoke test intentionally boots the same launcher used by developers.

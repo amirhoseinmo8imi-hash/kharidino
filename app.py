@@ -2660,203 +2660,108 @@ def get_valid_coupon(code, total):
 )
 @login_required
 def checkout():
-
-    # =====================================================
-    # دریافت اطلاعات سبد
-    # =====================================================
-
     items, total = cart_data()
-
-    # =====================================================
-    # سبد خالی
-    # =====================================================
-
     if not items:
-
-        flash(
-            "سبد خرید شما خالی است.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("cart")
-        )
-
-    # =====================================================
-    # ثبت سفارش
-    # =====================================================
+        flash("سبد خرید شما خالی است.", "warning")
+        return redirect(url_for("cart"))
 
     coupon = None
     discount = 0
     coupon_code = ""
+    shipping_method = "استاندارد"
+    delivery_fee = 0
 
     if request.method == "POST":
-
         coupon_code = normalize_search_text(request.form.get("coupon_code", "")).upper()
         if coupon_code:
             coupon, discount, coupon_error = get_valid_coupon(coupon_code, total)
             if coupon_error:
                 flash(coupon_error, "warning")
-                return render_template("checkout.html", items=items, total=total, discount=0, final_total=total, coupon_code=coupon_code)
-
+                return render_template("checkout.html", items=items, total=total, discount=0,
+                                       final_total=total, coupon_code=coupon_code,
+                                       shipping_method=shipping_method, delivery_fee=0)
         if request.form.get("apply_coupon") == "1":
-            flash("کد تخفیف با موفقیت اعمال شد." if coupon else "کد تخفیف وارد نشده است.", "success" if coupon else "warning")
-            return render_template(
-                "checkout.html",
-                items=items,
-                total=total,
-                discount=discount,
-                final_total=max(0, total - discount),
-                coupon_code=coupon_code
-            )
+            flash("کد تخفیف با موفقیت اعمال شد." if coupon else "کد تخفیف وارد نشده است.",
+                  "success" if coupon else "warning")
+            return render_template("checkout.html", items=items, total=total, discount=discount,
+                                   final_total=max(0, total - discount), coupon_code=coupon_code,
+                                   shipping_method=shipping_method, delivery_fee=0)
+
+        shipping_method = request.form.get("shipping_method", "استاندارد").strip()
+        delivery_fee = {"استاندارد": 0, "اکسپرس": 120000, "ارسال فروشنده": 50000}.get(shipping_method, 0)
 
         for row in items:
             stock = int(getattr(row["product"], "stock_quantity", 0) or 0)
-            if stock >= 0 and row["quantity"] > stock:
+            if row["quantity"] > stock:
                 flash(f"موجودی «{row['product'].name}» فقط {stock} عدد است.", "warning")
                 return redirect(url_for("cart"))
 
-        name = request.form.get(
-            "customer_name",
-            ""
-        ).strip()
+        name = request.form.get("customer_name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        address = request.form.get("address", "").strip()
+        note = request.form.get("note", "").strip()
 
-        phone = request.form.get(
-            "phone",
-            ""
-        ).strip()
-
-        address = request.form.get(
-            "address",
-            ""
-        ).strip()
-
-        note = request.form.get(
-            "note",
-            ""
-        ).strip()
-
-        # =================================================
-        # بررسی اطلاعات
-        # =================================================
-
-        if (
-            not name
-            or not phone
-            or not address
-        ):
-
-            flash(
-                "نام، شماره تماس و آدرس الزامی است.",
-                "warning"
-            )
-
-            return render_template(
-                "checkout.html",
-                items=items,
-                total=total,
-                discount=discount,
-                final_total=max(0, total - discount),
-                coupon_code=coupon_code
-            )
-
-        # =================================================
-        # ایجاد سفارش
-        # =================================================
+        if not name or not phone or not address:
+            flash("نام، شماره تماس و آدرس الزامی است.", "warning")
+            return render_template("checkout.html", items=items, total=total, discount=discount,
+                                   final_total=max(0, total - discount) + delivery_fee,
+                                   coupon_code=coupon_code, shipping_method=shipping_method,
+                                   delivery_fee=delivery_fee)
 
         order = Order(
-
             user_id=session["user_id"],
-
             total=max(0, total - discount) + delivery_fee,
-
             coupon_code=coupon.code if coupon else "",
-
             discount=discount,
-
             customer_name=name,
-
             phone=phone,
-
             address=address,
-
             note=note,
-
-            status="در انتظار بررسی"
-
+            status="در انتظار بررسی",
+            payment_status="پرداخت نشده",
+            payment_method="پرداخت هنگام تحویل",
+            shipping_method=shipping_method,
+            delivery_fee=delivery_fee
         )
-
-        db.session.add(
-            order
-        )
-
-        # =================================================
-        # ایجاد آیتم‌های سفارش
-        # =================================================
+        db.session.add(order)
+        db.session.flush()
 
         for row in items:
-
             product = row["product"]
-            stock = int(getattr(product, "stock_quantity", 0) or 0)
-            if stock > 0:
-                product.stock_quantity = max(0, stock - row["quantity"])
-
-            db.session.add(
-
-                OrderItem(
-
-                    order=order,
-
-                    product_id=row["product"].id,
-
-                    product_name=row["product"].name,
-
-                    price=row["price"],
-
-                    quantity=row["quantity"]
-
-                )
-
-            )
-
-        # =================================================
-        # ذخیره سفارش
-        # =================================================
+            stock = int(product.stock_quantity or 0)
+            product.stock_quantity = max(0, stock - row["quantity"])
+            offer = best_offer_for(product)
+            store_id = offer.store_id if offer else None
+            commission_rate = int(offer.store.commission_percent or 5) if offer and offer.store else 5
+            gross = int(row["price"]) * int(row["quantity"])
+            commission = int(gross * commission_rate / 100)
+            db.session.add(OrderItem(
+                order=order,
+                product_id=product.id,
+                product_name=product.name,
+                price=row["price"],
+                quantity=row["quantity"],
+                store_id=store_id,
+                commission=commission
+            ))
+            product.sold_count = int(product.sold_count or 0) + int(row["quantity"])
+            if offer and offer.store and offer.store.owner_id:
+                notify(offer.store.owner_id, "سفارش جدید", f"برای «{product.name}» سفارش جدید ثبت شد.", "order")
 
         if coupon:
             coupon.used_count += 1
-
+        ensure_wallet(session["user_id"])
+        notify(session["user_id"], "سفارش ثبت شد", f"سفارش شما با شماره #{order.id} ثبت شد.", "order")
         db.session.commit()
-
-        # =================================================
-        # پاک کردن سبد بعد از ثبت موفق
-        # =================================================
-
         session["cart"] = {}
-
         session.modified = True
+        flash("سفارش شما با موفقیت ثبت شد. 💙", "success")
+        return redirect(url_for("order_detail", order_id=order.id))
 
-        flash(
-            "سفارش شما با موفقیت ثبت شد. 💙",
-            "success"
-        )
-
-        return redirect(
-            url_for("my_orders")
-        )
-
-    # =====================================================
-    # نمایش Checkout
-    # =====================================================
-
-    return render_template(
-        "checkout.html",
-        items=items,
-        total=total,
-        discount=discount,
-        final_total=max(0, total - discount),
-        coupon_code=coupon_code
-    )
+    return render_template("checkout.html", items=items, total=total, discount=discount,
+                           final_total=max(0, total - discount) + delivery_fee,
+                           coupon_code=coupon_code, shipping_method=shipping_method,
+                           delivery_fee=delivery_fee)
 
 
 # =========================================================

@@ -4301,6 +4301,18 @@ def delete_user(user_id):
 
 
 
+def trigger_price_alerts(product, current_price):
+    for alert in PriceAlert.query.filter_by(product_id=product.id, active=True).all():
+        if int(current_price or 0) <= int(alert.target_price or 0):
+            notify(alert.user_id, "هشدار کاهش قیمت", f"قیمت «{product.name}» به {int(current_price):,} تومان رسید.", "price")
+            alert.active = False
+
+
+def trigger_restock_alerts(product):
+    for alert in RestockAlert.query.filter_by(product_id=product.id, active=True).all():
+        notify(alert.user_id, "کالا دوباره موجود شد", f"«{product.name}» دوباره موجود شده است.", "restock")
+        alert.active = False
+
 # =========================================================
 # SELLER MARKETPLACE
 # =========================================================

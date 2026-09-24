@@ -4004,6 +4004,25 @@ def delete_offer(offer_id):
 
 
 # =========================================================
+# INVENTORY QUICK UPDATE
+# =========================================================
+
+@app.post("/admin/product/stock/<int:product_id>")
+@admin_required
+def update_product_stock(product_id):
+    product = Product.query.get_or_404(product_id)
+    try:
+        product.stock_quantity = max(0, int(request.form.get("stock_quantity", "0") or 0))
+        product.low_stock_threshold = max(0, int(request.form.get("low_stock_threshold", "3") or 3))
+    except (TypeError, ValueError):
+        flash("موجودی نامعتبر است.", "danger")
+        return redirect(url_for("admin") + "#inventory-admin")
+    db.session.commit()
+    flash(f"موجودی «{product.name}» به‌روزرسانی شد.", "success")
+    return redirect(url_for("admin") + "#inventory-admin")
+
+
+# =========================================================
 # COUPON MANAGEMENT
 # =========================================================
 

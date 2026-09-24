@@ -154,6 +154,23 @@
             <div class="kd-benefit"><div class="kd-benefit-icon"><i class="fa-solid fa-bolt"></i></div><div><strong>سریع و ساده</strong><span>در چند لحظه بهترین پیشنهاد را پیدا کنید.</span></div></div>
             <div class="kd-benefit"><div class="kd-benefit-icon"><i class="fa-solid fa-heart"></i></div><div><strong>علاقه‌مندی‌ها</strong><span>محصولات موردعلاقه خود را ذخیره کنید.</span></div></div>
         </section>
+    {% if recommendations %}
+<section class="kd-price-section kd-recommendations">
+  <div class="kd-section-header"><div><span class="kd-section-label"><i class="fa-solid fa-wand-magic-sparkles"></i> پیشنهاد خریدینو</span><h2>شاید این‌ها هم برات جالب باشه</h2><p>محصولات مرتبط از همان دسته‌بندی یا انتخاب‌های نزدیک.</p></div></div>
+  <div class="km-products">
+  {% for rp in recommendations %}
+    <a class="km-product" href="{{ url_for('product_detail', product_id=rp.id) }}">
+      <div class="km-product-img">{% if rp.image %}<img src="{{ url_for('static', filename=rp.image) }}" alt="{{ rp.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>
+      {% if rp.category %}<small class="km-product-cat">{{ rp.category.name }}</small>{% endif %}
+      <h3>{{ rp.name }}</h3>
+      <div class="km-price"><strong>{{ lowest_price(rp)|money }}</strong><small>تومان</small></div>
+    </a>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+
     </div>
 
     <div class="kd-mobile-buy-bar">

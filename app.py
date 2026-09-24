@@ -236,6 +236,14 @@ class Product(db.Model):
         nullable=False
     )
 
+    brand = db.Column(db.String(120), default="", nullable=False)
+    warranty = db.Column(db.String(200), default="", nullable=False)
+    badge = db.Column(db.String(80), default="", nullable=False)
+    discount_percent = db.Column(db.Integer, default=0, nullable=False)
+    special_offer_until = db.Column(db.DateTime, nullable=True)
+    view_count = db.Column(db.Integer, default=0, nullable=False)
+    sold_count = db.Column(db.Integer, default=0, nullable=False)
+
     category = db.relationship(
         "Category",
         backref=db.backref(
@@ -270,6 +278,15 @@ class Store(db.Model):
         db.Boolean,
         default=True
     )
+
+    owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    verified = db.Column(db.Boolean, default=False, nullable=False)
+    commission_percent = db.Column(db.Integer, default=5, nullable=False)
+    rating = db.Column(db.Float, default=0, nullable=False)
+    rating_count = db.Column(db.Integer, default=0, nullable=False)
+    shipping_method = db.Column(db.String(40), default="فروشنده", nullable=False)
+    seller_description = db.Column(db.Text, default="", nullable=False)
+    owner = db.relationship("User", foreign_keys=[owner_id], backref=db.backref("stores_owned", lazy=True))
 
 
 class Offer(db.Model):
@@ -414,6 +431,12 @@ class Order(db.Model):
         server_default=db.func.now()
     )
 
+    payment_status = db.Column(db.String(30), default="پرداخت نشده", nullable=False)
+    payment_method = db.Column(db.String(30), default="پرداخت هنگام تحویل", nullable=False)
+    shipping_method = db.Column(db.String(40), default="استاندارد", nullable=False)
+    tracking_code = db.Column(db.String(80), default="", nullable=False)
+    delivery_fee = db.Column(db.Integer, default=0, nullable=False)
+
     user = db.relationship(
         "User",
         backref=db.backref(
@@ -456,6 +479,10 @@ class OrderItem(db.Model):
         nullable=False,
         default=1
     )
+
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=True)
+    commission = db.Column(db.Integer, default=0, nullable=False)
+    store = db.relationship("Store")
 
     order = db.relationship(
         "Order",

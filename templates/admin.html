@@ -2110,15 +2110,18 @@
                     <tr>
                         <td><strong>{{ product.name }}</strong></td>
                         <td>{{ product.sku or '—' }}</td>
-                        <td colspan="3">
-                            <form class="inventory-inline-form" method="post" action="{{ url_for('update_product_stock', product_id=product.id) }}">
-                                <input type="number" name="stock_quantity" min="0" value="{{ product.stock_quantity or 0 }}">
-                                <input type="number" name="low_stock_threshold" min="0" value="{{ product.low_stock_threshold or 0 }}">
-                                {% if (product.stock_quantity or 0) == 0 %}<span class="stock-badge out">ناموجود</span>
-                                {% elif product.stock_quantity <= (product.low_stock_threshold or 0) %}<span class="stock-badge low">کم</span>
-                                {% else %}<span class="stock-badge ok">موجود</span>{% endif %}
+                        <td><input form="stock-{{ product.id }}" type="number" name="stock_quantity" min="0" value="{{ product.stock_quantity or 0 }}"></td>
+                        <td><input form="stock-{{ product.id }}" type="number" name="low_stock_threshold" min="0" value="{{ product.low_stock_threshold or 0 }}"></td>
+                        <td>{% if (product.stock_quantity or 0) == 0 %}<span class="stock-badge out">ناموجود</span>
+                            {% elif product.stock_quantity <= (product.low_stock_threshold or 0) %}<span class="stock-badge low">کم</span>
+                            {% else %}<span class="stock-badge ok">موجود</span>{% endif %}
                         </td>
-                        <td><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm" type="submit"><i class="fa-solid fa-floppy-disk"></i></button></form></td>
+                        <td>
+                            <form id="stock-{{ product.id }}" method="post" action="{{ url_for('update_product_stock', product_id=product.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm" type="submit"><i class="fa-solid fa-floppy-disk"></i></button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                     </tbody>

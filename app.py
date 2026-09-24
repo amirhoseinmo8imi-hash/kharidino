@@ -2501,10 +2501,11 @@ def cart_update():
             product
             and product.active
         ):
-
-            new_cart[
-                str(product_id)
-            ] = quantity
+            stock = int(getattr(product, "stock_quantity", 0) or 0)
+            if stock >= 0:
+                quantity = min(quantity, stock)
+            if quantity > 0:
+                new_cart[str(product_id)] = quantity
 
     # =====================================================
     # ذخیره سبد جدید
@@ -2684,7 +2685,7 @@ def checkout():
 
         for row in items:
             stock = int(getattr(row["product"], "stock_quantity", 0) or 0)
-            if stock > 0 and row["quantity"] > stock:
+            if stock >= 0 and row["quantity"] > stock:
                 flash(f"موجودی «{row['product'].name}» فقط {stock} عدد است.", "warning")
                 return redirect(url_for("cart"))
 

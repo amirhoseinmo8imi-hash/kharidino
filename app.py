@@ -1374,7 +1374,11 @@ def home():
     if max_price is not None:
         query = query.filter(Product.price <= max_price)
 
-    if sort == "rating":\n        query = query.order_by(Product.sold_count.desc(), Product.id.desc())\n    elif sort == "popular":\n        query = query.order_by(Product.sold_count.desc(), Product.view_count.desc(), Product.id.desc())\n    elif sort == "price_low":
+    if sort == "rating":
+        query = query.order_by(Product.sold_count.desc(), Product.id.desc())
+    elif sort == "popular":
+        query = query.order_by(Product.sold_count.desc(), Product.view_count.desc(), Product.id.desc())
+    elif sort == "price_low":
         # قیمت پایه مرتب می‌شود؛ قیمت واقعی کارت‌ها همچنان lowest_price است.
         query = query.order_by(Product.price.asc(), Product.id.desc())
     elif sort == "price_high":
@@ -2876,7 +2880,11 @@ def admin():
         Product.stock_quantity > 0,
         Product.stock_quantity <= Product.low_stock_threshold
     ).order_by(Product.stock_quantity.asc()).all()
-    coupons = Coupon.query.order_by(Coupon.id.desc()).all()\n    sellers = Store.query.filter(Store.owner_id.isnot(None)).order_by(Store.id.desc()).all()\n    settlements = Settlement.query.order_by(Settlement.id.desc()).all()\n    returns = ReturnRequest.query.order_by(ReturnRequest.id.desc()).all()\n    gift_cards = GiftCard.query.order_by(GiftCard.id.desc()).all()
+    coupons = Coupon.query.order_by(Coupon.id.desc()).all()
+    sellers = Store.query.filter(Store.owner_id.isnot(None)).order_by(Store.id.desc()).all()
+    settlements = Settlement.query.order_by(Settlement.id.desc()).all()
+    returns = ReturnRequest.query.order_by(ReturnRequest.id.desc()).all()
+    gift_cards = GiftCard.query.order_by(GiftCard.id.desc()).all()
 
     stats = {
         "products": Product.query.count(),

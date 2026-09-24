@@ -115,5 +115,29 @@
     document.addEventListener('click',function(e){if(!menu.contains(e.target)){menu.classList.remove('is-open');button.setAttribute('aria-expanded','false')}});
   }
 })();
+</script><script>
+(function(){
+ const input=document.querySelector('.km-search input'),box=document.getElementById('kmSearchSuggestions');
+ if(!input||!box)return;
+ let timer=null,last='';
+ input.addEventListener('input',function(){
+   const q=input.value.trim(); clearTimeout(timer);
+   if(q.length<2){box.classList.remove('is-open');box.innerHTML='';return}
+   timer=setTimeout(async function(){
+     if(q===last)return; last=q;
+     try{
+       const res=await fetch('/api/search?q='+encodeURIComponent(q),{headers:{Accept:'application/json'}});
+       const data=await res.json();
+       if(input.value.trim()!==q)return;
+       box.innerHTML=(data.results||[]).map(function(x){
+         const img=x.image?'<img src="'+x.image+'" alt="">':'<span class="km-suggest-icon"><i class="fa-solid fa-box"></i></span>';
+         return '<a role="option" href="'+x.url+'">'+img+'<span><b>'+x.name+'</b><small>'+Number(x.price||0).toLocaleString('fa-IR')+' تومان</small></span></a>';
+       }).join('');
+       box.classList.toggle('is-open',(data.results||[]).length>0);
+     }catch(e){box.classList.remove('is-open')}
+   },180);
+ });
+ document.addEventListener('click',function(e){if(!e.target.closest('.km-search'))box.classList.remove('is-open')});
+})();
 </script><script src="{{ url_for('static', filename='js/main.js') }}"></script><script src="{{ url_for('static', filename='js/background.js') }}"></script>
 </body></html>

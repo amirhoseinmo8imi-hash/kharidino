@@ -96,7 +96,6 @@
                 <div class="kd-product-actions">
                     <form method="POST" action="{{ url_for('cart_add', product_id=product.id) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="kd-add-cart"><i class="fa-solid fa-cart-plus"></i><span>افزودن به سبد خرید</span><i class="fa-solid fa-arrow-left"></i></button>
                     </form>
                     <a href="{{ url_for('cart') }}" class="kd-view-cart"><i class="fa-solid fa-basket-shopping"></i> سبد خرید {% if cart_count %}<span>{{ cart_count }}</span>{% endif %}</a>

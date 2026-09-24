@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}ثبت‌نام فروشنده | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace.css', v='1') }}">{% endblock %}
+{% block content %}
+<div class="market-page container">
+  <section class="market-hero"><span>🏪 فروشنده شو</span><h1>فروشگاه خودت را در خریدینو راه‌اندازی کن</h1><p>محصولاتت را ثبت کن، قیمت بده، سفارش بگیر و گزارش مالی فروشگاهت را ببین.</p></section>
+  <form method="post" class="market-card market-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="market-grid">
+      <label>نام و نام خانوادگی<input name="name" required></label>
+      <label>ایمیل<input type="email" name="email" required></label>
+      <label>رمز عبور<input type="password" name="password" minlength="6" required></label>
+      <label>نام فروشگاه<input name="store_name" required></label>
+      <label>روش ارسال پیش‌فرض<select name="shipping_method"><option>فروشنده</option><option>خریدینو</option></select></label>
+      <label class="wide">معرفی فروشگاه<textarea name="description" rows="4" placeholder="درباره فروشگاه و محصولاتت..."></textarea></label>
+    </div>
+    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-store"></i> ثبت درخواست فروشندگی</button>
+  </form>
+</div>
+{% endblock %}

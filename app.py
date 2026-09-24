@@ -5414,19 +5414,57 @@ def seed():
 def ensure_schema():
     """Small SQLite migration for existing installations without Alembic."""
     inspector = inspect(db.engine)
-    product_cols = {c["name"] for c in inspector.get_columns("product")}
-    order_cols = {c["name"] for c in inspector.get_columns("order")}\n    store_cols = {c["name"] for c in inspector.get_columns("store")}\n    item_cols = {c["name"] for c in inspector.get_columns("order_item")}\n    product_cols = {c["name"] for c in inspector.get_columns("product")}
+    product_cols = {col["name"] for col in inspector.get_columns("product")}
+    order_cols = {col["name"] for col in inspector.get_columns("order")}
+    store_cols = {col["name"] for col in inspector.get_columns("store")}
+    item_cols = {col["name"] for col in inspector.get_columns("order_item")}
     with db.engine.begin() as conn:
-        if "sku" not in product_cols:
-            conn.execute(text("ALTER TABLE product ADD COLUMN sku VARCHAR(80) NOT NULL DEFAULT ''"))
-        if "stock_quantity" not in product_cols:
-            conn.execute(text("ALTER TABLE product ADD COLUMN stock_quantity INTEGER NOT NULL DEFAULT 0"))
-        if "low_stock_threshold" not in product_cols:
-            conn.execute(text("ALTER TABLE product ADD COLUMN low_stock_threshold INTEGER NOT NULL DEFAULT 3"))
-        if "coupon_code" not in order_cols:
-            conn.execute(text("ALTER TABLE "order" ADD COLUMN coupon_code VARCHAR(80) NOT NULL DEFAULT ''"))
-        if "discount" not in order_cols:
-            conn.execute(text("ALTER TABLE "order" ADD COLUMN discount INTEGER NOT NULL DEFAULT 0"))
+        product_migrations = [
+            ("sku", "ALTER TABLE product ADD COLUMN sku VARCHAR(80) NOT NULL DEFAULT ''"),
+            ("stock_quantity", "ALTER TABLE product ADD COLUMN stock_quantity INTEGER NOT NULL DEFAULT 25"),
+            ("low_stock_threshold", "ALTER TABLE product ADD COLUMN low_stock_threshold INTEGER NOT NULL DEFAULT 5"),
+            ("brand", "ALTER TABLE product ADD COLUMN brand VARCHAR(120) NOT NULL DEFAULT ''"),
+            ("warranty", "ALTER TABLE product ADD COLUMN warranty VARCHAR(200) NOT NULL DEFAULT ''"),
+            ("badge", "ALTER TABLE product ADD COLUMN badge VARCHAR(80) NOT NULL DEFAULT ''"),
+            ("discount_percent", "ALTER TABLE product ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0"),
+            ("special_offer_until", "ALTER TABLE product ADD COLUMN special_offer_until DATETIME"),
+            ("view_count", "ALTER TABLE product ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0"),
+            ("sold_count", "ALTER TABLE product ADD COLUMN sold_count INTEGER NOT NULL DEFAULT 0"),
+        ]
+        for name, sql in product_migrations:
+            if name not in product_cols:
+                conn.execute(text(sql))
+        order_migrations = [
+            ("coupon_code", 'ALTER TABLE "order" ADD COLUMN coupon_code VARCHAR(80) NOT NULL DEFAULT ""'),
+            ("discount", 'ALTER TABLE "order" ADD COLUMN discount INTEGER NOT NULL DEFAULT 0'),
+            ("payment_status", 'ALTER TABLE "order" ADD COLUMN payment_status VARCHAR(30) NOT NULL DEFAULT "پرداخت نشده"'),
+            ("payment_method", 'ALTER TABLE "order" ADD COLUMN payment_method VARCHAR(30) NOT NULL DEFAULT "پرداخت هنگام تحویل"'),
+            ("shipping_method", 'ALTER TABLE "order" ADD COLUMN shipping_method VARCHAR(40) NOT NULL DEFAULT "استاندارد"'),
+            ("tracking_code", 'ALTER TABLE "order" ADD COLUMN tracking_code VARCHAR(80) NOT NULL DEFAULT ""'),
+            ("delivery_fee", 'ALTER TABLE "order" ADD COLUMN delivery_fee INTEGER NOT NULL DEFAULT 0'),
+        ]
+        for name, sql in order_migrations:
+            if name not in order_cols:
+                conn.execute(text(sql))
+        store_migrations = [
+            ("owner_id", "ALTER TABLE store ADD COLUMN owner_id INTEGER"),
+            ("verified", "ALTER TABLE store ADD COLUMN verified BOOLEAN NOT NULL DEFAULT 0"),
+            ("commission_percent", "ALTER TABLE store ADD COLUMN commission_percent INTEGER NOT NULL DEFAULT 5"),
+            ("rating", "ALTER TABLE store ADD COLUMN rating FLOAT NOT NULL DEFAULT 0"),
+            ("rating_count", "ALTER TABLE store ADD COLUMN rating_count INTEGER NOT NULL DEFAULT 0"),
+            ("shipping_method", "ALTER TABLE store ADD COLUMN shipping_method VARCHAR(40) NOT NULL DEFAULT 'فروشنده'"),
+            ("seller_description", "ALTER TABLE store ADD COLUMN seller_description TEXT NOT NULL DEFAULT ''"),
+        ]
+        for name, sql in store_migrations:
+            if name not in store_cols:
+                conn.execute(text(sql))
+        item_migrations = [
+            ("store_id", "ALTER TABLE order_item ADD COLUMN store_id INTEGER"),
+            ("commission", "ALTER TABLE order_item ADD COLUMN commission INTEGER NOT NULL DEFAULT 0"),
+        ]
+        for name, sql in item_migrations:
+            if name not in item_cols:
+                conn.execute(text(sql))
 
 
 with app.app_context():

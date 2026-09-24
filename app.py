@@ -52,7 +52,7 @@ app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.environ.get(
     "SECRET_KEY",
-    "change-this-secret-key"
+    secrets.token_hex(32)
 )
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
@@ -951,6 +951,23 @@ def detect_background_mode(path):
 # =========================================================
 # PRICE
 # =========================================================
+
+def available_offer_count(product):
+    if not product:
+        return 0
+    count = 0
+    for offer in product.offers:
+        if offer and offer.in_stock and offer.store and offer.store.active:
+            try:
+                if int(offer.price) > 0:
+                    count += 1
+            except (TypeError, ValueError):
+                pass
+    return count
+
+
+app.jinja_env.globals["available_offer_count"] = available_offer_count
+
 
 def lowest_price(product):
 

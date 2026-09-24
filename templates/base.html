@@ -24,6 +24,7 @@
   <div class="km-header">
     <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><img src="{{ url_for('static', filename='img/kharidino-mark.svg') }}" alt="{{ site_name }}" width="38" height="38"></span><span class="km-logo-text">{{ site_name }}</span></a>
     <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
+    <div class="kh-theme-control"><div class="kh-theme-menu" id="khThemeMenu"><button class="kh-theme-button" id="khThemeButton" type="button" aria-label="تنظیم حالت نمایش" aria-expanded="false"><i class="fa-solid fa-circle-half-stroke"></i></button><div class="kh-theme-panel" role="radiogroup" aria-label="حالت نمایش"><button class="kh-theme-option" type="button" data-theme-choice="system" role="radio">خودکار (ساعت دستگاه)</button><button class="kh-theme-option" type="button" data-theme-choice="light" role="radio">حالت روشن</button><button class="kh-theme-option" type="button" data-theme-choice="dark" role="radio">حالت شب</button></div></div></div>
     <div class="km-user-actions">
       {% if current_user %}<a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
       <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
@@ -79,5 +80,34 @@
   }, true);
 })();
 </script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script><script src="{{ url_for('static', filename='js/background.js') }}"></script>
+<script>
+(function(){
+  const KEY='kharidino-theme';
+  const root=document.documentElement;
+  function systemTheme(){return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}
+  function apply(choice){
+    const theme=choice==='system'?systemTheme():choice;
+    root.dataset.theme=theme;
+    root.dataset.themePreference=choice;
+    document.querySelectorAll('[data-theme-choice]').forEach(function(b){b.setAttribute('aria-checked',b.dataset.themeChoice===choice?'true':'false')});
+  }
+  let saved='system';
+  try{saved=localStorage.getItem(KEY)||'system'}catch(e){}
+  apply(saved);
+  const media=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+  if(media) media.addEventListener?.('change',function(){if(root.dataset.themePreference==='system')apply('system')});
+  const menu=document.getElementById('khThemeMenu'), button=document.getElementById('khThemeButton');
+  if(menu&&button){
+    button.addEventListener('click',function(){const open=menu.classList.toggle('is-open');button.setAttribute('aria-expanded',open?'true':'false')});
+    document.querySelectorAll('[data-theme-choice]').forEach(function(option){
+      option.addEventListener('click',function(){
+        const choice=option.dataset.themeChoice;
+        try{localStorage.setItem(KEY,choice)}catch(e){}
+        apply(choice);menu.classList.remove('is-open');button.setAttribute('aria-expanded','false');
+      });
+    });
+    document.addEventListener('click',function(e){if(!menu.contains(e.target)){menu.classList.remove('is-open');button.setAttribute('aria-expanded','false')}});
+  }
+})();
+</script><script src="{{ url_for('static', filename='js/main.js') }}"></script><script src="{{ url_for('static', filename='js/background.js') }}"></script>
 </body></html>

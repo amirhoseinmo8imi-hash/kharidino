@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}مدیریت | {{ site_name }}{% endblock %}
+{% block title %}مدیریت | {{ site_name }}
+<section id="sellers-admin" class="admin-section admin-card">
+  <div class="admin-title"><div><span class="section-kicker">Marketplace</span><h2>🏪 فروشندگان</h2><p>تأیید فروشگاه‌ها و تعیین کمیسیون.</p></div></div>
+  <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>فروشگاه</th><th>مالک</th><th>تأیید</th><th>کمیسیون</th><th>عملیات</th></tr></thead><tbody>
+  {% for s in sellers %}<tr><td><strong>{{ s.name }}</strong></td><td>{{ s.owner.name if s.owner else '—' }}</td><td>{{ 'تأیید شده' if s.verified else 'در انتظار' }}</td><td><form method="post" action="{{ url_for('admin_seller_verify', store_id=s.id) }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="number" name="commission_percent" min="0" max="30" value="{{ s.commission_percent }}" style="width:80px"><input type="hidden" name="verified" value="{{ '0' if s.verified else '1' }}"><button class="btn">{{ 'لغو تأیید' if s.verified else 'تأیید فروشگاه' }}</button></form></td><td>امتیاز {{ s.rating or 0 }}</td></tr>{% else %}<tr><td colspan="5">فروشنده‌ای ثبت نشده.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<section id="settlements-admin" class="admin-section admin-card">
+  <div class="admin-title"><div><span class="section-kicker">Finance</span><h2>💰 تسویه فروشندگان</h2></div></div>
+  <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>#</th><th>فروشگاه</th><th>مبلغ</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{% for s in settlements %}<tr><td>{{ s.id }}</td><td>{{ s.store.name }}</td><td>{{ s.amount|money }}</td><td>{{ s.status }}</td><td><form method="post" action="{{ url_for('admin_settlement_status', settlement_id=s.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="status"><option>در انتظار بررسی</option><option>تأیید شد</option><option>پرداخت شد</option><option>رد شد</option></select><button class="mini-btn">ذخیره</button></form></td></tr>{% else %}<tr><td colspan="5">درخواستی نیست.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+<section id="returns-admin" class="admin-section admin-card">
+  <div class="admin-title"><div><span class="section-kicker">Customer care</span><h2>↩️ مرجوعی‌ها</h2></div></div>
+  <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>سفارش</th><th>کاربر</th><th>دلیل</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{% for rr in returns %}<tr><td>#{{ rr.order_id }}</td><td>{{ rr.user.name }}</td><td>{{ rr.reason }}</td><td>{{ rr.status }}</td><td><form method="post" action="{{ url_for('admin_return_status', return_id=rr.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="status"><option>در انتظار بررسی</option><option>تأیید شد</option><option>کالا دریافت شد</option><option>بازپرداخت شد</option><option>رد شد</option></select><button class="mini-btn">ذخیره</button></form></td></tr>{% else %}<tr><td colspan="5">درخواستی نیست.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+<section id="giftcards-admin" class="admin-section admin-card">
+  <div class="admin-title"><div><span class="section-kicker">Gift cards</span><h2>🎁 کارت هدیه</h2></div></div>
+  <form method="post" action="{{ url_for('save_gift_card') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="code" placeholder="مثلاً GIFT-2026"><input type="number" name="amount" min="1" placeholder="مبلغ تومان"><button class="btn btn-primary">ساخت کارت</button></form>
+  <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>کد</th><th>مبلغ اولیه</th><th>موجودی</th><th>وضعیت</th></tr></thead><tbody>{% for g in gift_cards %}<tr><td>{{ g.code }}</td><td>{{ g.amount|money }}</td><td>{{ g.balance|money }}</td><td>{{ 'فعال' if g.active else 'مصرف‌شده' }}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+\n{% endblock %}
 
 {% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-advanced.css', v='1') }}">{% endblock %}
 {% block content %}

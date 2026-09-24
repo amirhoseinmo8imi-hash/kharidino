@@ -36,10 +36,8 @@
              CHECKOUT FORM
         ====================================== -->
 
-        <form
-            class="checkout-form checkout-main"
-            method="post"
-        >
+        <form class="checkout-form checkout-main" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="checkout-card-header">
 

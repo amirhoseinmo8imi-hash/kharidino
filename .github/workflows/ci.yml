@@ -1,0 +1,48 @@
+name: Kharidino CI
+
+on:
+  push:
+    branches: ["main", "brand/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile
+        run: python -m py_compile app.py
+
+      - name: Flask smoke test
+        env:
+          SECRET_KEY: ci-test-secret
+        run: |
+          python - <<'PY'
+          from app import app, db
+          client = app.test_client()
+
+          with app.app_context():
+              db.create_all()
+
+          for path in ["/", "/stores", "/compare", "/api/search?q=ab"]:
+              response = client.get(path)
+              assert response.status_code < 500, (path, response.status_code)
+
+          response = client.get("/api/search?q=ab")
+          assert response.is_json
+
+          print("Kharidino smoke tests passed.")
+          PY

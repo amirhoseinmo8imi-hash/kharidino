@@ -561,6 +561,88 @@ class Favorite(db.Model):
     product = db.relationship("Product")
 
 
+class Wallet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    balance = db.Column(db.Integer, default=0, nullable=False)
+    user = db.relationship("User", backref=db.backref("wallet", uselist=False))
+
+
+class WalletTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    kind = db.Column(db.String(40), default="credit", nullable=False)
+    description = db.Column(db.String(300), default="", nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    user = db.relationship("User")
+
+
+class Settlement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    commission = db.Column(db.Integer, default=0, nullable=False)
+    status = db.Column(db.String(30), default="در انتظار بررسی", nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    paid_at = db.Column(db.DateTime, nullable=True)
+    store = db.relationship("Store")
+
+
+class PriceAlert(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    target_price = db.Column(db.Integer, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    user = db.relationship("User")
+    product = db.relationship("Product")
+
+
+class RestockAlert(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    user = db.relationship("User")
+    product = db.relationship("Product")
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    title = db.Column(db.String(160), nullable=False)
+    body = db.Column(db.Text, default="", nullable=False)
+    kind = db.Column(db.String(40), default="info", nullable=False)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    user = db.relationship("User")
+
+
+class ReturnRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    reason = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(40), default="در انتظار بررسی", nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    order = db.relationship("Order", backref=db.backref("return_requests", lazy=True))
+    user = db.relationship("User")
+
+
+class GiftCard(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(80), unique=True, nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    balance = db.Column(db.Integer, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=True)
+
+
+
+
 # =========================================================
 # SETTINGS
 # =========================================================
@@ -1165,6 +1247,54 @@ def normalize_search_text(value):
     return " ".join(text.translate(digit_map).split())
 
 
+def best_offer_for(product):
+    return (
+        Offer.query.join(Store, Offer.store_id == Store.id)
+        .filter(Offer.product_id == product.id, Offer.in_stock.is_(True), Store.active.is_(True))
+        .order_by(Offer.price.asc(), Offer.id.asc()).first()
+    )
+
+
+def ensure_wallet(user_id):
+    wallet = Wallet.query.filter_by(user_id=user_id).first()
+    if not wallet:
+        wallet = Wallet(user_id=user_id, balance=0)
+        db.session.add(wallet)
+        db.session.flush()
+    return wallet
+
+
+def notify(user_id, title, body, kind="info"):
+    if not user_id:
+        return
+    db.session.add(Notification(user_id=user_id, title=title, body=body, kind=kind))
+
+
+def seller_store():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    return Store.query.filter_by(owner_id=user_id).first()
+
+
+def seller_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        user = db.session.get(User, session.get("user_id")) if session.get("user_id") else None
+        if not user or user.role not in {"seller", "admin"}:
+            flash("برای دسترسی به پنل فروشنده باید حساب فروشنده داشته باشید.", "warning")
+            return redirect(url_for("seller_register"))
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+def seller_net(item):
+    gross = int(item.price or 0) * int(item.quantity or 0)
+    return max(0, gross - int(item.commission or 0))
+
+
+app.jinja_env.globals["seller_store"] = seller_store
+
 # =========================================================
 # HOME
 # =========================================================
@@ -1217,7 +1347,7 @@ def home():
     if max_price is not None:
         query = query.filter(Product.price <= max_price)
 
-    if sort == "price_low":
+    if sort == "rating":\n        query = query.order_by(Product.sold_count.desc(), Product.id.desc())\n    elif sort == "popular":\n        query = query.order_by(Product.sold_count.desc(), Product.view_count.desc(), Product.id.desc())\n    elif sort == "price_low":
         # قیمت پایه مرتب می‌شود؛ قیمت واقعی کارت‌ها همچنان lowest_price است.
         query = query.order_by(Product.price.asc(), Product.id.desc())
     elif sort == "price_high":
@@ -1775,18 +1905,6 @@ def store_detail(store_id):
 def register():
 
     if request.method == "POST":
-
-        coupon_code = normalize_search_text(request.form.get("coupon_code", "")).upper()
-        coupon, discount, coupon_error = get_valid_coupon(coupon_code, total)
-        if coupon_code and coupon_error:
-            flash(coupon_error, "warning")
-            return render_template("checkout.html", items=items, total=total, discount=0, final_total=total, coupon_code=coupon_code)
-
-        for row in items:
-            stock = int(getattr(row["product"], "stock_quantity", 0) or 0)
-            if stock > 0 and row["quantity"] > stock:
-                flash(f"موجودی «{row['product'].name}» فقط {stock} عدد است.", "warning")
-                return redirect(url_for("cart"))
 
         name = request.form.get(
             "name",
@@ -2622,7 +2740,7 @@ def checkout():
 
             user_id=session["user_id"],
 
-            total=max(0, total - discount),
+            total=max(0, total - discount) + delivery_fee,
 
             coupon_code=coupon.code if coupon else "",
 
@@ -2825,7 +2943,7 @@ def admin():
         Product.stock_quantity > 0,
         Product.stock_quantity <= Product.low_stock_threshold
     ).order_by(Product.stock_quantity.asc()).all()
-    coupons = Coupon.query.order_by(Coupon.id.desc()).all()
+    coupons = Coupon.query.order_by(Coupon.id.desc()).all()\n    sellers = Store.query.filter(Store.owner_id.isnot(None)).order_by(Store.id.desc()).all()\n    settlements = Settlement.query.order_by(Settlement.id.desc()).all()\n    returns = ReturnRequest.query.order_by(ReturnRequest.id.desc()).all()\n    gift_cards = GiftCard.query.order_by(GiftCard.id.desc()).all()
 
     stats = {
         "products": Product.query.count(),
@@ -3724,9 +3842,9 @@ def save_product():
 
     product.sku = request.form.get("sku", "").strip()[:80]
     try:
-        product.stock_quantity = max(0, int(request.form.get("stock_quantity", "0") or 0))
+        product.stock_quantity = max(0, int(request.form.get("stock_quantity", "25") or 25))
     except (TypeError, ValueError):
-        product.stock_quantity = 0
+        product.stock_quantity = 25
     try:
         product.low_stock_threshold = max(0, int(request.form.get("low_stock_threshold", "3") or 3))
     except (TypeError, ValueError):
@@ -4247,6 +4365,324 @@ def delete_user(user_id):
         url_for("admin")
         + "#users-admin"
     )
+
+
+
+# =========================================================
+# SELLER MARKETPLACE
+# =========================================================
+
+@app.route("/seller/register", methods=["GET", "POST"])
+def seller_register():
+    if session.get("user_id"):
+        user = db.session.get(User, session["user_id"])
+        if user and user.role == "seller":
+            return redirect(url_for("seller_dashboard"))
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        store_name = request.form.get("store_name", "").strip()
+        if not name or not email or len(password) < 6 or not store_name:
+            flash("نام، ایمیل، رمز حداقل ۶ کاراکتری و نام فروشگاه الزامی است.", "warning")
+            return render_template("seller_register.html")
+        if User.query.filter_by(email=email).first():
+            flash("این ایمیل قبلاً ثبت شده است.", "danger")
+            return render_template("seller_register.html")
+        user = User(name=name, email=email, password=generate_password_hash(password), role="seller")
+        db.session.add(user)
+        db.session.flush()
+        store = Store(owner_id=user.id, name=store_name, verified=False, commission_percent=5,
+                      shipping_method=request.form.get("shipping_method", "فروشنده"),
+                      seller_description=request.form.get("description", "").strip())
+        db.session.add(store)
+        ensure_wallet(user.id)
+        db.session.commit()
+        session["user_id"] = user.id
+        notify(user.id, "درخواست فروشندگی ثبت شد", "حساب فروشنده شما برای بررسی مدیر ثبت شد.", "seller")
+        db.session.commit()
+        flash("فروشگاه ثبت شد؛ پس از تأیید مدیر می‌توانی فروش را شروع کنی.", "success")
+        return redirect(url_for("seller_dashboard"))
+    return render_template("seller_register.html")
+
+
+@app.route("/seller")
+@seller_required
+def seller_dashboard():
+    store = seller_store()
+    if not store:
+        return redirect(url_for("seller_register"))
+    offer_ids = [o.id for o in Offer.query.filter_by(store_id=store.id).all()]
+    item_query = OrderItem.query.filter(OrderItem.store_id == store.id)
+    items = item_query.order_by(OrderItem.id.desc()).all()
+    gross = sum(int(i.price or 0) * int(i.quantity or 0) for i in items)
+    commission = sum(int(i.commission or 0) for i in items)
+    pending_settlements = Settlement.query.filter_by(store_id=store.id, status="در انتظار بررسی").all()
+    available = max(0, gross - commission - sum(int(s.amount or 0) for s in pending_settlements))
+    products = Product.query.filter_by(active=True).order_by(Product.id.desc()).all()
+    orders = []
+    seen = set()
+    for i in items:
+        if i.order and i.order.id not in seen:
+            orders.append(i.order); seen.add(i.order.id)
+    settlements = Settlement.query.filter_by(store_id=store.id).order_by(Settlement.id.desc()).all()
+    return render_template("seller_dashboard.html", store=store, products=products, orders=orders[:30],
+                           items=items[:50], gross=gross, commission=commission, available=available,
+                           settlements=settlements)
+
+
+@app.post("/seller/offer/save")
+@seller_required
+def seller_offer_save():
+    store = seller_store()
+    if not store or not store.verified:
+        flash("فروشگاه باید ابتدا توسط مدیر تأیید شود.", "warning")
+        return redirect(url_for("seller_dashboard"))
+    try:
+        product_id = int(request.form.get("product_id", "0"))
+        price = max(0, int(request.form.get("price", "0") or 0))
+        product = Product.query.get_or_404(product_id)
+    except (TypeError, ValueError):
+        flash("اطلاعات محصول یا قیمت نامعتبر است.", "danger")
+        return redirect(url_for("seller_dashboard"))
+    offer = Offer.query.filter_by(product_id=product.id, store_id=store.id).first()
+    if not offer:
+        offer = Offer(product_id=product.id, store_id=store.id)
+        db.session.add(offer)
+    offer.price = price
+    offer.in_stock = request.form.get("in_stock") == "1"
+    offer.url = url_for("product_detail", product_id=product.id, _external=True)
+    db.session.commit()
+    flash("پیشنهاد فروشگاه ذخیره شد.", "success")
+    return redirect(url_for("seller_dashboard"))
+
+
+@app.post("/seller/order/status/<int:order_id>")
+@seller_required
+def seller_order_status(order_id):
+    store = seller_store()
+    order = Order.query.get_or_404(order_id)
+    if not OrderItem.query.filter_by(order_id=order.id, store_id=store.id).first():
+        abort(403)
+    status = request.form.get("status", "")
+    allowed = {"در انتظار بررسی","تأیید شد","در حال آماده‌سازی","ارسال شد","تحویل شد","لغو شد"}
+    if status in allowed:
+        order.status = status
+        if status == "ارسال شد" and not order.tracking_code:
+            order.tracking_code = "KH" + str(order.id).zfill(8)
+        notify(order.user_id, "به‌روزرسانی سفارش", f"وضعیت سفارش #{order.id}: {status}", "order")
+        db.session.commit()
+    return redirect(url_for("seller_dashboard"))
+
+
+@app.post("/seller/settlement/request")
+@seller_required
+def seller_settlement_request():
+    store = seller_store()
+    if not store or not store.verified:
+        flash("فروشگاه تأیید نشده است.", "warning")
+        return redirect(url_for("seller_dashboard"))
+    try:
+        amount = max(0, int(request.form.get("amount", "0") or 0))
+    except (TypeError, ValueError):
+        amount = 0
+    if amount <= 0:
+        flash("مبلغ تسویه نامعتبر است.", "warning")
+        return redirect(url_for("seller_dashboard"))
+    item_total = sum(seller_net(i) for i in OrderItem.query.filter_by(store_id=store.id).all())
+    already = sum(int(s.amount or 0) for s in Settlement.query.filter_by(store_id=store.id).filter(Settlement.status != "رد شد").all())
+    if amount > max(0, item_total - already):
+        flash("مبلغ تسویه بیشتر از موجودی قابل تسویه است.", "warning")
+        return redirect(url_for("seller_dashboard"))
+    db.session.add(Settlement(store_id=store.id, amount=amount, commission=0))
+    db.session.commit()
+    flash("درخواست تسویه ثبت شد.", "success")
+    return redirect(url_for("seller_dashboard"))
+
+
+@app.post("/seller/store/update")
+@seller_required
+def seller_store_update():
+    store = seller_store()
+    store.name = request.form.get("name", store.name).strip()[:200]
+    store.shipping_method = request.form.get("shipping_method", "فروشنده").strip()[:40]
+    store.seller_description = request.form.get("description", "").strip()
+    db.session.commit()
+    flash("اطلاعات فروشگاه ذخیره شد.", "success")
+    return redirect(url_for("seller_dashboard"))
+
+
+@app.post("/admin/seller/verify/<int:store_id>")
+@admin_required
+def admin_seller_verify(store_id):
+    store = Store.query.get_or_404(store_id)
+    store.verified = request.form.get("verified") == "1"
+    store.commission_percent = max(0, min(30, int(request.form.get("commission_percent", store.commission_percent or 5)))
+    if store.owner_id:
+        user = db.session.get(User, store.owner_id)
+        if user and store.verified:
+            user.role = "seller"
+            notify(user.id, "فروشگاه تأیید شد", "فروشگاه شما تأیید شد و امکان فروش فعال شد.", "seller")
+    db.session.commit()
+    return redirect(url_for("admin") + "#sellers-admin")
+
+
+@app.post("/admin/settlement/status/<int:settlement_id>")
+@admin_required
+def admin_settlement_status(settlement_id):
+    settlement = Settlement.query.get_or_404(settlement_id)
+    status = request.form.get("status", "")
+    if status in {"در انتظار بررسی","تأیید شد","پرداخت شد","رد شد"}:
+        settlement.status = status
+        if status == "پرداخت شد":
+            settlement.paid_at = datetime.utcnow()
+        if settlement.store and settlement.store.owner_id:
+            notify(settlement.store.owner_id, "تغییر وضعیت تسویه", f"تسویه #{settlement.id}: {status}", "finance")
+        db.session.commit()
+    return redirect(url_for("admin") + "#settlements-admin")
+
+
+# =========================================================
+# CUSTOMER EXPERIENCE
+# =========================================================
+
+@app.post("/alert/price/<int:product_id>")
+@login_required
+def create_price_alert(product_id):
+    product = Product.query.get_or_404(product_id)
+    try:
+        target = max(0, int(request.form.get("target_price", "0") or 0))
+    except (TypeError, ValueError):
+        target = 0
+    if target <= 0:
+        flash("قیمت هدف نامعتبر است.", "warning")
+        return redirect(url_for("product_detail", product_id=product.id))
+    alert = PriceAlert.query.filter_by(user_id=session["user_id"], product_id=product.id, active=True).first()
+    if alert:
+        alert.target_price = target
+    else:
+        db.session.add(PriceAlert(user_id=session["user_id"], product_id=product.id, target_price=target))
+    db.session.commit()
+    flash("هشدار کاهش قیمت فعال شد. 🔔", "success")
+    return redirect(url_for("product_detail", product_id=product.id))
+
+
+@app.post("/alert/restock/<int:product_id>")
+@login_required
+def create_restock_alert(product_id):
+    product = Product.query.get_or_404(product_id)
+    existing = RestockAlert.query.filter_by(user_id=session["user_id"], product_id=product.id, active=True).first()
+    if not existing:
+        db.session.add(RestockAlert(user_id=session["user_id"], product_id=product.id))
+        db.session.commit()
+    flash("به محض موجود شدن کالا اطلاع می‌دهیم. 🔔", "success")
+    return redirect(url_for("product_detail", product_id=product.id))
+
+
+@app.route("/notifications")
+@login_required
+def notifications():
+    rows = Notification.query.filter_by(user_id=session["user_id"]).order_by(Notification.id.desc()).all()
+    for row in rows:
+        row.is_read = True
+    db.session.commit()
+    return render_template("notifications.html", notifications=rows)
+
+
+@app.route("/order/<int:order_id>")
+@login_required
+def order_detail(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != session["user_id"] and db.session.get(User, session["user_id"]).role != "admin":
+        abort(403)
+    return render_template("order_detail.html", order=order)
+
+
+@app.post("/order/<int:order_id>/return")
+@login_required
+def request_return(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != session["user_id"]:
+        abort(403)
+    reason = request.form.get("reason", "").strip()
+    if not reason:
+        flash("دلیل مرجوعی را بنویس.", "warning")
+        return redirect(url_for("order_detail", order_id=order.id))
+    db.session.add(ReturnRequest(order_id=order.id, user_id=session["user_id"], reason=reason))
+    notify(order.user_id, "درخواست مرجوعی ثبت شد", f"درخواست مرجوعی سفارش #{order.id} دریافت شد.", "return")
+    db.session.commit()
+    flash("درخواست مرجوعی ثبت شد.", "success")
+    return redirect(url_for("order_detail", order_id=order.id))
+
+
+@app.route("/wallet")
+@login_required
+def wallet():
+    w = ensure_wallet(session["user_id"])
+    tx = WalletTransaction.query.filter_by(user_id=session["user_id"]).order_by(WalletTransaction.id.desc()).all()
+    return render_template("wallet.html", wallet=w, transactions=tx)
+
+
+@app.post("/gift-card/redeem")
+@login_required
+def redeem_gift_card():
+    code = normalize_search_text(request.form.get("code", "")).upper().replace(" ", "")
+    card = GiftCard.query.filter_by(code=code, active=True).first()
+    if not card or (card.expires_at and card.expires_at < datetime.utcnow()) or card.balance <= 0:
+        flash("کارت هدیه معتبر نیست.", "danger")
+        return redirect(url_for("wallet"))
+    wallet = ensure_wallet(session["user_id"])
+    amount = card.balance
+    wallet.balance += amount
+    db.session.add(WalletTransaction(user_id=session["user_id"], amount=amount, kind="gift_card", description=f"کارت هدیه {card.code}"))
+    card.balance = 0
+    card.active = False
+    db.session.commit()
+    flash(f"{amount:,} تومان به کیف پول اضافه شد. 🎁", "success")
+    return redirect(url_for("wallet"))
+
+
+@app.post("/admin/gift-card/save")
+@admin_required
+def save_gift_card():
+    code = normalize_search_text(request.form.get("code", "")).upper().replace(" ", "")
+    try:
+        amount = max(0, int(request.form.get("amount", "0") or 0))
+    except (TypeError, ValueError):
+        amount = 0
+    if not code or amount <= 0:
+        flash("کد و مبلغ کارت هدیه الزامی است.", "warning")
+        return redirect(url_for("admin") + "#giftcards-admin")
+    if GiftCard.query.filter_by(code=code).first():
+        flash("این کد قبلاً وجود دارد.", "warning")
+        return redirect(url_for("admin") + "#giftcards-admin")
+    db.session.add(GiftCard(code=code, amount=amount, balance=amount, active=True))
+    db.session.commit()
+    flash("کارت هدیه ساخته شد.", "success")
+    return redirect(url_for("admin") + "#giftcards-admin")
+
+
+@app.post("/admin/return/status/<int:return_id>")
+@admin_required
+def admin_return_status(return_id):
+    rr = ReturnRequest.query.get_or_404(return_id)
+    status = request.form.get("status", "")
+    if status in {"در انتظار بررسی","تأیید شد","کالا دریافت شد","بازپرداخت شد","رد شد"}:
+        rr.status = status
+        if status == "بازپرداخت شد":
+            wallet = ensure_wallet(rr.user_id)
+            wallet.balance += int(rr.order.total or 0)
+            db.session.add(WalletTransaction(user_id=rr.user_id, amount=int(rr.order.total or 0), kind="refund", description=f"بازپرداخت سفارش #{rr.order_id}"))
+            notify(rr.user_id, "بازپرداخت انجام شد", f"مبلغ سفارش #{rr.order_id} به کیف پول اضافه شد.", "refund")
+        db.session.commit()
+    return redirect(url_for("admin") + "#returns-admin")
+
+
+@app.get("/api/notifications/count")
+@login_required
+def notification_count():
+    return {"count": Notification.query.filter_by(user_id=session["user_id"], is_read=False).count()}
+
 
 
 # =========================================================
@@ -4972,7 +5408,7 @@ def ensure_schema():
     """Small SQLite migration for existing installations without Alembic."""
     inspector = inspect(db.engine)
     product_cols = {c["name"] for c in inspector.get_columns("product")}
-    order_cols = {c["name"] for c in inspector.get_columns("order")}
+    order_cols = {c["name"] for c in inspector.get_columns("order")}\n    store_cols = {c["name"] for c in inspector.get_columns("store")}\n    item_cols = {c["name"] for c in inspector.get_columns("order_item")}\n    product_cols = {c["name"] for c in inspector.get_columns("product")}
     with db.engine.begin() as conn:
         if "sku" not in product_cols:
             conn.execute(text("ALTER TABLE product ADD COLUMN sku VARCHAR(80) NOT NULL DEFAULT ''"))

@@ -1,0 +1,43 @@
+/* Kharidino brand identity layer — single source of truth for storefront chrome */
+:root{
+  --kh-brand:#ef4056;
+  --kh-brand-dark:#c81d5a;
+  --kh-ink:#222;
+  --kh-muted:#6b7280;
+  --kh-border:#e8e8ec;
+  --kh-surface:#fff;
+  --kh-bg:#f7f7f8;
+  --kh-radius:12px;
+  --kh-shadow:0 4px 18px rgba(0,0,0,.06);
+}
+html,body{background:var(--kh-bg);color:var(--kh-ink)}
+.km-topbar{background:#fff!important;border-bottom:1px solid var(--kh-border)!important;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.km-header{min-height:76px;gap:22px}
+.km-logo{display:inline-flex!important;align-items:center;gap:10px;text-decoration:none!important;color:var(--kh-ink)!important;font-weight:900!important;font-size:26px!important;white-space:nowrap}
+.km-logo-mark,.kh-footer-logo-mark{display:inline-flex!important;align-items:center;justify-content:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#fff1f3,#ffe3ea);overflow:hidden}
+.km-logo-mark img,.kh-footer-logo-mark img{width:38px;height:38px;display:block}
+.km-logo-text{letter-spacing:-.5px}
+.km-search{border:1px solid #e1e2e6!important;background:#f5f5f7!important;border-radius:12px!important;box-shadow:none!important}
+.km-search:focus-within{border-color:#f29aaa!important;background:#fff!important;box-shadow:0 0 0 3px rgba(239,64,86,.10)!important}
+.km-search button{background:var(--kh-brand)!important;border-radius:9px!important}
+.km-action{border-color:transparent!important}
+.km-action:hover{color:var(--kh-brand)!important}
+.km-action--cart{position:relative}
+.km-cart-badge{background:var(--kh-brand)!important}
+.km-nav{background:#fff!important;border-top:1px solid #f0f0f2!important}
+.km-nav-inner a:first-child,.km-cat-menu{font-weight:800!important;color:var(--kh-ink)!important}
+.km-nav-inner a:hover{color:var(--kh-brand)!important}
+.ki-slide,.ki-feature,.km-section,.ki-newsletter,.ki-trust-grid>div,.km-product,.km-cat{border-radius:var(--kh-radius)!important}
+.km-product{background:#fff!important;border:1px solid var(--kh-border)!important;box-shadow:none!important;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.km-product:hover{transform:translateY(-3px);box-shadow:var(--kh-shadow)!important;border-color:#f2a4b0!important}
+.ki-section-kicker{color:var(--kh-brand)!important}
+.ki-slide-btn{background:var(--kh-brand)!important}
+.ki-feature span,.ki-news-icon{background:#fff0f3!important;color:var(--kh-brand)!important}
+.kh-footer-logo{color:var(--kh-ink)!important}
+.kh-footer-logo-mark{width:42px;height:42px}
+@media(max-width:900px){
+ .km-header{min-height:64px;gap:10px}
+ .km-logo{font-size:21px!important}
+ .km-logo-mark{width:40px;height:40px}
+ .km-logo-mark img{width:34px;height:34px}
+}

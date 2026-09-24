@@ -4517,7 +4517,7 @@ def seller_store_update():
 def admin_seller_verify(store_id):
     store = Store.query.get_or_404(store_id)
     store.verified = request.form.get("verified") == "1"
-    store.commission_percent = max(0, min(30, int(request.form.get("commission_percent", store.commission_percent or 5)))
+    store.commission_percent = max(0, min(30, int(request.form.get("commission_percent", store.commission_percent or 5))))
     if store.owner_id:
         user = db.session.get(User, store.owner_id)
         if user and store.verified:
@@ -5245,6 +5245,12 @@ def seed():
             )
         )
 
+    db.session.commit()
+
+    for p in Product.query.all():
+        if int(p.stock_quantity or 0) == 0:
+            p.stock_quantity = 25
+            p.low_stock_threshold = 5
     db.session.commit()
 
     # =====================================================

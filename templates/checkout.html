@@ -6,7 +6,7 @@
 
 <section class="page-hero checkout-page-hero">
 
-```
+
 <div class="container">
 
     <span class="section-kicker">
@@ -21,13 +21,13 @@
     </p>
 
 </div>
-```
+
 
 </section>
 
 <section class="section checkout-section">
 
-```
+
 <div class="container">
 
     <div class="checkout-layout">
@@ -159,6 +159,16 @@
 
 
                 <!-- PAYMENT NOTE -->
+
+
+                <div class="coupon-box">
+                    <div class="form-section-title"><i class="fa-solid fa-ticket"></i> کد تخفیف</div>
+                    <div class="coupon-row">
+                        <input name="coupon_code" value="{{ coupon_code|default('') }}" placeholder="مثلاً WELCOME10" autocomplete="off">
+                        <button type="submit" class="btn">اعمال تخفیف</button>
+                    </div>
+                    <small class="field-hint">کد تخفیف را وارد کن و همین فرم را ارسال کن.</small>
+                </div>
 
                 <div class="payment-note">
 
@@ -311,15 +321,12 @@
             <div class="summary-divider"></div>
 
 
+            {% if discount|default(0) %}
+            <div class="summary-row discount-row"><span>تخفیف</span><strong>- {{ discount|money }} تومان</strong></div>
+            {% endif %}
             <div class="summary-total">
-
                 <span>مبلغ نهایی</span>
-
-                <strong>
-                    {{ total|money }}
-                    <small>تومان</small>
-                </strong>
-
+                <strong>{{ final_total|default(total)|money }} <small>تومان</small></strong>
             </div>
 
 
@@ -340,7 +347,7 @@
     </div>
 
 </div>
-```
+
 
 </section>
 

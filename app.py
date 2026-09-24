@@ -1930,9 +1930,21 @@ def logout():
 @app.route("/profile")
 @login_required
 def profile():
-
+    user_id = session["user_id"]
+    favorite_count = Favorite.query.filter_by(user_id=user_id).count()
+    order_count = Order.query.filter_by(user_id=user_id).count()
+    recent_orders = (
+        Order.query
+        .filter_by(user_id=user_id)
+        .order_by(Order.id.desc())
+        .limit(3)
+        .all()
+    )
     return render_template(
-        "profile.html"
+        "profile.html",
+        favorite_count=favorite_count,
+        order_count=order_count,
+        recent_orders=recent_orders
     )
 
 

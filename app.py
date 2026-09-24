@@ -2,6 +2,8 @@ import os
 import uuid
 import secrets
 import hmac
+from datetime import datetime
+from sqlalchemy import text
 from functools import wraps
 from pathlib import Path
 
@@ -216,6 +218,24 @@ class Product(db.Model):
         default=True
     )
 
+    sku = db.Column(
+        db.String(80),
+        default="",
+        nullable=False
+    )
+
+    stock_quantity = db.Column(
+        db.Integer,
+        default=0,
+        nullable=False
+    )
+
+    low_stock_threshold = db.Column(
+        db.Integer,
+        default=3,
+        nullable=False
+    )
+
     category = db.relationship(
         "Category",
         backref=db.backref(
@@ -377,6 +397,18 @@ class Order(db.Model):
         default=""
     )
 
+    coupon_code = db.Column(
+        db.String(80),
+        default="",
+        nullable=False
+    )
+
+    discount = db.Column(
+        db.Integer,
+        default=0,
+        nullable=False
+    )
+
     created_at = db.Column(
         db.DateTime,
         server_default=db.func.now()
@@ -485,6 +517,18 @@ class Review(db.Model):
     user = db.relationship(
         "User"
     )
+
+
+class Coupon(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(80), unique=True, nullable=False)
+    percent = db.Column(db.Integer, default=0, nullable=False)
+    fixed_amount = db.Column(db.Integer, default=0, nullable=False)
+    min_total = db.Column(db.Integer, default=0, nullable=False)
+    max_uses = db.Column(db.Integer, default=0, nullable=False)
+    used_count = db.Column(db.Integer, default=0, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=True)
 
 
 class Favorite(db.Model):
@@ -1011,6 +1055,22 @@ def available_offer_count(product):
 app.jinja_env.globals["available_offer_count"] = available_offer_count
 
 
+def recommended_products(product, limit=6):
+    """Simple explainable recommendation: same category first, then text overlap."""
+    query = Product.query.filter(
+        Product.active.is_(True),
+        Product.id != product.id
+    )
+    if product.category_id:
+        same = query.filter(Product.category_id == product.category_id).order_by(Product.id.desc()).limit(limit).all()
+        if len(same) >= limit:
+            return same
+        seen = {p.id for p in same}
+        extra = query.order_by(Product.id.desc()).limit(limit * 2).all()
+        return same + [p for p in extra if p.id not in seen][:limit-len(same)]
+    return query.order_by(Product.id.desc()).limit(limit).all()
+
+
 def lowest_price(product):
 
     if not product:
@@ -1424,6 +1484,8 @@ def product_detail(product_id):
         product
     )
 
+    recommendations = recommended_products(product)
+
     # -----------------------------------------------------
     # RENDER
     # -----------------------------------------------------
@@ -1433,7 +1495,8 @@ def product_detail(product_id):
         product=product,
         offers=offers,
         lowest_price=lowest,
-        rating=rating
+        rating=rating,
+        recommendations=recommendations
     )
 
 # =========================================================
@@ -1712,6 +1775,18 @@ def store_detail(store_id):
 def register():
 
     if request.method == "POST":
+
+        coupon_code = normalize_search_text(request.form.get("coupon_code", "")).upper()
+        coupon, discount, coupon_error = get_valid_coupon(coupon_code, total)
+        if coupon_code and coupon_error:
+            flash(coupon_error, "warning")
+            return render_template("checkout.html", items=items, total=total, discount=0, final_total=total, coupon_code=coupon_code)
+
+        for row in items:
+            stock = int(getattr(row["product"], "stock_quantity", 0) or 0)
+            if stock > 0 and row["quantity"] > stock:
+                flash(f"موجودی «{row['product'].name}» فقط {stock} عدد است.", "warning")
+                return redirect(url_for("cart"))
 
         name = request.form.get(
             "name",
@@ -2400,6 +2475,28 @@ def cart_remove(product_id):
 
 
 # =========================================================
+# COUPON / CHECKOUT HELPERS
+# =========================================================
+
+def get_valid_coupon(code, total):
+    code = normalize_search_text(code).upper()
+    if not code:
+        return None, 0, "کد تخفیف وارد نشده است."
+    coupon = Coupon.query.filter_by(code=code, active=True).first()
+    if not coupon:
+        return None, 0, "کد تخفیف معتبر نیست."
+    if coupon.expires_at and coupon.expires_at < datetime.utcnow():
+        return None, 0, "مهلت این کد تخفیف تمام شده است."
+    if coupon.max_uses and coupon.used_count >= coupon.max_uses:
+        return None, 0, "ظرفیت استفاده از این کد تکمیل شده است."
+    if total < coupon.min_total:
+        return None, 0, f"حداقل مبلغ سفارش برای این کد {coupon.min_total:,} تومان است."
+    discount = int(total * coupon.percent / 100) if coupon.percent else int(coupon.fixed_amount or 0)
+    discount = max(0, min(int(total), discount))
+    return coupon, discount, ""
+
+
+# =========================================================
 # CHECKOUT
 # =========================================================
 
@@ -2486,7 +2583,11 @@ def checkout():
 
             user_id=session["user_id"],
 
-            total=total,
+            total=max(0, total - discount),
+
+            coupon_code=coupon.code if coupon else "",
+
+            discount=discount,
 
             customer_name=name,
 
@@ -2510,6 +2611,11 @@ def checkout():
 
         for row in items:
 
+            product = row["product"]
+            stock = int(getattr(product, "stock_quantity", 0) or 0)
+            if stock > 0:
+                product.stock_quantity = max(0, stock - row["quantity"])
+
             db.session.add(
 
                 OrderItem(
@@ -2531,6 +2637,9 @@ def checkout():
         # =================================================
         # ذخیره سفارش
         # =================================================
+
+        if coupon:
+            coupon.used_count += 1
 
         db.session.commit()
 
@@ -2669,6 +2778,12 @@ def admin():
     pending_orders = Order.query.filter_by(status="در انتظار بررسی").count()
     completed_orders = Order.query.filter_by(status="تکمیل شد").count()
     revenue = sum(int(o.total or 0) for o in Order.query.filter(Order.status != "لغو شد").all())
+    low_stock_products = Product.query.filter(
+        Product.active.is_(True),
+        Product.stock_quantity > 0,
+        Product.stock_quantity <= Product.low_stock_threshold
+    ).order_by(Product.stock_quantity.asc()).all()
+    coupons = Coupon.query.order_by(Coupon.id.desc()).all()
 
     stats = {
         "products": Product.query.count(),
@@ -2690,6 +2805,8 @@ def admin():
         offers=offers,
         users=users,
         orders=orders,
+        coupons=coupons,
+        low_stock_products=low_stock_products,
         stats=stats,
         q=q
     )
@@ -3563,6 +3680,16 @@ def save_product():
         ) == "1"
     )
 
+    product.sku = request.form.get("sku", "").strip()[:80]
+    try:
+        product.stock_quantity = max(0, int(request.form.get("stock_quantity", "0") or 0))
+    except (TypeError, ValueError):
+        product.stock_quantity = 0
+    try:
+        product.low_stock_threshold = max(0, int(request.form.get("low_stock_threshold", "3") or 3))
+    except (TypeError, ValueError):
+        product.low_stock_threshold = 3
+
     old_image = product.image
 
     try:
@@ -3874,6 +4001,84 @@ def delete_offer(offer_id):
         url_for("admin")
         + "#offers-admin"
     )
+
+
+# =========================================================
+# COUPON MANAGEMENT
+# =========================================================
+
+@app.post("/admin/coupon/save")
+@admin_required
+def save_coupon():
+    cid = request.form.get("id", "").strip()
+    code = normalize_search_text(request.form.get("code", "")).upper().replace(" ", "")
+    if not code:
+        flash("کد تخفیف الزامی است.", "warning")
+        return redirect(url_for("admin") + "#coupons-admin")
+    coupon = Coupon.query.get(int(cid)) if cid else Coupon()
+    if not cid:
+        db.session.add(coupon)
+    coupon.code = code[:80]
+    try:
+        coupon.percent = max(0, min(100, int(request.form.get("percent", "0") or 0)))
+        coupon.fixed_amount = max(0, int(request.form.get("fixed_amount", "0") or 0))
+        coupon.min_total = max(0, int(request.form.get("min_total", "0") or 0))
+        coupon.max_uses = max(0, int(request.form.get("max_uses", "0") or 0))
+    except (TypeError, ValueError):
+        db.session.rollback()
+        flash("مقادیر تخفیف نامعتبر است.", "danger")
+        return redirect(url_for("admin") + "#coupons-admin")
+    coupon.active = request.form.get("active") == "1"
+    expiry = request.form.get("expires_at", "").strip()
+    coupon.expires_at = None
+    if expiry:
+        try:
+            coupon.expires_at = datetime.fromisoformat(expiry)
+        except ValueError:
+            flash("تاریخ انقضا نامعتبر است.", "warning")
+    try:
+        db.session.commit()
+        flash("کد تخفیف ذخیره شد.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("کد تخفیف تکراری است یا اطلاعات آن معتبر نیست.", "danger")
+    return redirect(url_for("admin") + "#coupons-admin")
+
+
+@app.post("/admin/coupon/delete/<int:coupon_id>")
+@admin_required
+def delete_coupon(coupon_id):
+    coupon = Coupon.query.get_or_404(coupon_id)
+    db.session.delete(coupon)
+    db.session.commit()
+    flash("کد تخفیف حذف شد.", "success")
+    return redirect(url_for("admin") + "#coupons-admin")
+
+
+@app.get("/api/search")
+def api_search():
+    q = normalize_search_text(request.args.get("q", ""))
+    if len(q) < 2:
+        return {"results": []}
+    products = Product.query.filter(
+        Product.active.is_(True),
+        Product.name.ilike(f"%{q}%")
+    ).order_by(Product.id.desc()).limit(8).all()
+    return {"results": [
+        {"id": p.id, "name": p.name, "image": url_for("static", filename=p.image) if p.image else "", "url": url_for("product_detail", product_id=p.id), "price": int(lowest_price(p) or 0)}
+        for p in products
+    ]}
+
+
+@app.get("/api/recommendations/<int:product_id>")
+def api_recommendations(product_id):
+    product = Product.query.get_or_404(product_id)
+    if not product.active:
+        abort(404)
+    return {"results": [
+        {"id": p.id, "name": p.name, "image": url_for("static", filename=p.image) if p.image else "", "url": url_for("product_detail", product_id=p.id)}
+        for p in recommended_products(product)
+    ]}
 
 
 # =========================================================
@@ -4702,10 +4907,27 @@ def seed():
 # DATABASE INIT
 # =========================================================
 
+def ensure_schema():
+    """Small SQLite migration for existing installations without Alembic."""
+    inspector = db.inspect(db.engine)
+    product_cols = {c["name"] for c in inspector.get_columns("product")}
+    order_cols = {c["name"] for c in inspector.get_columns("order")}
+    with db.engine.begin() as conn:
+        if "sku" not in product_cols:
+            conn.execute(text("ALTER TABLE product ADD COLUMN sku VARCHAR(80) NOT NULL DEFAULT ''"))
+        if "stock_quantity" not in product_cols:
+            conn.execute(text("ALTER TABLE product ADD COLUMN stock_quantity INTEGER NOT NULL DEFAULT 0"))
+        if "low_stock_threshold" not in product_cols:
+            conn.execute(text("ALTER TABLE product ADD COLUMN low_stock_threshold INTEGER NOT NULL DEFAULT 3"))
+        if "coupon_code" not in order_cols:
+            conn.execute(text("ALTER TABLE "order" ADD COLUMN coupon_code VARCHAR(80) NOT NULL DEFAULT ''"))
+        if "discount" not in order_cols:
+            conn.execute(text("ALTER TABLE "order" ADD COLUMN discount INTEGER NOT NULL DEFAULT 0"))
+
+
 with app.app_context():
-
     db.create_all()
-
+    ensure_schema()
     seed()
 
 

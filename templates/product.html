@@ -101,6 +101,13 @@
                     <a href="{{ url_for('cart') }}" class="kd-view-cart"><i class="fa-solid fa-basket-shopping"></i> سبد خرید {% if cart_count %}<span>{{ cart_count }}</span>{% endif %}</a>
                 </div>
 
+<div class="kd-smart-actions">
+  {% if current_user %}
+  <form method="post" action="{{ url_for('create_price_alert', product_id=product.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="number" name="target_price" min="1" placeholder="قیمت هدف"><button type="submit"><i class="fa-solid fa-bell"></i> هشدار کاهش قیمت</button></form>
+  {% if product.stock_quantity <= 0 %}<form method="post" action="{{ url_for('create_restock_alert', product_id=product.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit"><i class="fa-solid fa-box-open"></i> خبرم کن وقتی موجود شد</button></form>{% endif %}
+  {% endif %}
+</div>
+<div class="kd-product-meta"><span><i class="fa-solid fa-shield-halved"></i> {{ product.warranty or 'گارانتی/ضمانت طبق فروشنده' }}</span><span><i class="fa-solid fa-chart-line"></i> {{ product.sold_count }} فروش</span><span><i class="fa-solid fa-eye"></i> {{ product.view_count }} بازدید</span></div>
                 <div class="kd-trust-row">
                     <div><i class="fa-solid fa-shield-halved"></i><span>خرید مطمئن</span></div>
                     <div><i class="fa-solid fa-bolt"></i><span>مقایسه سریع</span></div>

@@ -23,6 +23,7 @@
 
         <div class="product-top-actions">
             <form method="POST" action="{{ url_for('compare_add', product_id=product.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path }}">
                 <button class="btn" type="submit"><i class="fa-solid fa-scale-balanced"></i> افزودن به مقایسه</button>
             </form>
@@ -41,6 +42,7 @@
                         <div class="kd-round-actions">
                             {% if current_user %}
                                 <form method="POST" action="{{ url_for('toggle_favorite', product_id=product.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="kd-round-btn {% if product.id in favorite_ids %}is-favorite{% endif %}" aria-label="علاقه‌مندی">
                                         <i class="{% if product.id in favorite_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
                                     </button>
@@ -93,6 +95,7 @@
 
                 <div class="kd-product-actions">
                     <form method="POST" action="{{ url_for('cart_add', product_id=product.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="kd-add-cart"><i class="fa-solid fa-cart-plus"></i><span>افزودن به سبد خرید</span><i class="fa-solid fa-arrow-left"></i></button>
                     </form>

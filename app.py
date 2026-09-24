@@ -2532,7 +2532,24 @@ def checkout():
     # ثبت سفارش
     # =====================================================
 
+    coupon = None
+    discount = 0
+    coupon_code = ""
+
     if request.method == "POST":
+
+        coupon_code = normalize_search_text(request.form.get("coupon_code", "")).upper()
+        if coupon_code:
+            coupon, discount, coupon_error = get_valid_coupon(coupon_code, total)
+            if coupon_error:
+                flash(coupon_error, "warning")
+                return render_template("checkout.html", items=items, total=total, discount=0, final_total=total, coupon_code=coupon_code)
+
+        for row in items:
+            stock = int(getattr(row["product"], "stock_quantity", 0) or 0)
+            if stock > 0 and row["quantity"] > stock:
+                flash(f"موجودی «{row['product'].name}» فقط {stock} عدد است.", "warning")
+                return redirect(url_for("cart"))
 
         name = request.form.get(
             "customer_name",
@@ -2572,7 +2589,10 @@ def checkout():
             return render_template(
                 "checkout.html",
                 items=items,
-                total=total
+                total=total,
+                discount=discount,
+                final_total=max(0, total - discount),
+                coupon_code=coupon_code
             )
 
         # =================================================
@@ -2667,7 +2687,10 @@ def checkout():
     return render_template(
         "checkout.html",
         items=items,
-        total=total
+        total=total,
+        discount=discount,
+        final_total=max(0, total - discount),
+        coupon_code=coupon_code
     )
 
 

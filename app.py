@@ -3,7 +3,7 @@ import uuid
 import secrets
 import hmac
 from datetime import datetime
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from functools import wraps
 from pathlib import Path
 
@@ -2136,6 +2136,12 @@ def cart_data():
             min(99, quantity)
         )
 
+        product = db.session.get(Product, product_id)
+        if product and product.active:
+            stock = int(getattr(product, "stock_quantity", 0) or 0)
+            if stock > 0:
+                quantity = min(quantity, stock)
+
         # تعداد صفر = حذف
         if quantity <= 0:
             continue
@@ -2275,13 +2281,15 @@ def cart_add(product_id):
         current_quantity = 0
 
     # =================================================
-    # حداکثر 99 عدد
+    # حداکثر 99 عدد + سقف موجودی
     # =================================================
 
-    cart[key] = min(
-        current_quantity + 1,
-        99
-    )
+    requested_quantity = current_quantity + 1
+    stock = int(getattr(product, "stock_quantity", 0) or 0)
+    if stock > 0:
+        requested_quantity = min(requested_quantity, stock)
+
+    cart[key] = min(requested_quantity, 99)
 
     # =================================================
     # ذخیره Session
@@ -2544,6 +2552,17 @@ def checkout():
             if coupon_error:
                 flash(coupon_error, "warning")
                 return render_template("checkout.html", items=items, total=total, discount=0, final_total=total, coupon_code=coupon_code)
+
+        if request.form.get("apply_coupon") == "1":
+            flash("کد تخفیف با موفقیت اعمال شد." if coupon else "کد تخفیف وارد نشده است.", "success" if coupon else "warning")
+            return render_template(
+                "checkout.html",
+                items=items,
+                total=total,
+                discount=discount,
+                final_total=max(0, total - discount),
+                coupon_code=coupon_code
+            )
 
         for row in items:
             stock = int(getattr(row["product"], "stock_quantity", 0) or 0)
@@ -4951,7 +4970,7 @@ def seed():
 
 def ensure_schema():
     """Small SQLite migration for existing installations without Alembic."""
-    inspector = db.inspect(db.engine)
+    inspector = inspect(db.engine)
     product_cols = {c["name"] for c in inspector.get_columns("product")}
     order_cols = {c["name"] for c in inspector.get_columns("order")}
     with db.engine.begin() as conn:

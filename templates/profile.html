@@ -1,3 +1,56 @@
 {% extends "base.html" %}
 {% block title %}حساب کاربری | {{ site_name }}{% endblock %}
-{% block content %}<section class="page-hero"><div class="container"><span class="section-kicker">حساب</span><h1>{{ current_user.name }}</h1><p>{{ current_user.email }}</p></div></section>{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-account.css', v='1') }}">{% endblock %}
+{% block content %}
+<section class="kh-account">
+  <div class="container">
+    <div class="kh-account-head">
+      <div class="kh-account-avatar"><i class="fa-solid fa-user"></i></div>
+      <div>
+        <span class="section-kicker">حساب کاربری</span>
+        <h1>{{ current_user.name }}</h1>
+        <p>{{ current_user.email }}</p>
+      </div>
+      <div class="kh-account-actions">
+        <a class="btn" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box-open"></i> سفارش‌های من</a>
+        <a class="btn btn-primary" href="{{ url_for('home') }}"><i class="fa-solid fa-cart-shopping"></i> ادامه خرید</a>
+      </div>
+    </div>
+
+    <div class="kh-account-stats">
+      <a href="{{ url_for('my_orders') }}"><strong>{{ order_count }}</strong><span>سفارش ثبت‌شده</span></a>
+      <a href="{{ url_for('favorites') }}"><strong>{{ favorite_count }}</strong><span>علاقه‌مندی</span></a>
+      <a href="{{ url_for('cart') }}"><strong>{{ cart_count }}</strong><span>قلم در سبد</span></a>
+    </div>
+
+    <div class="kh-account-grid">
+      <section class="kh-account-card">
+        <div class="kh-card-head"><h2>دسترسی سریع</h2><i class="fa-solid fa-bolt"></i></div>
+        <div class="kh-quick-links">
+          <a href="{{ url_for('my_orders') }}"><i class="fa-solid fa-truck-fast"></i><span><b>پیگیری سفارش‌ها</b><small>وضعیت سفارش‌های اخیر را ببین</small></span><i class="fa-solid fa-chevron-left"></i></a>
+          <a href="{{ url_for('favorites') }}"><i class="fa-solid fa-heart"></i><span><b>علاقه‌مندی‌ها</b><small>محصولات ذخیره‌شده را بررسی کن</small></span><i class="fa-solid fa-chevron-left"></i></a>
+          <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span><b>مقایسه محصولات</b><small>انتخاب‌هایت را کنار هم ببین</small></span><i class="fa-solid fa-chevron-left"></i></a>
+          <a href="{{ url_for('contact') }}"><i class="fa-solid fa-headset"></i><span><b>پشتیبانی</b><small>اگر مشکلی داری با ما در تماس باش</small></span><i class="fa-solid fa-chevron-left"></i></a>
+        </div>
+      </section>
+
+      <section class="kh-account-card">
+        <div class="kh-card-head"><h2>آخرین سفارش‌ها</h2><a href="{{ url_for('my_orders') }}">همه</a></div>
+        {% if recent_orders %}
+          <div class="kh-recent-orders">
+            {% for order in recent_orders %}
+            <a href="{{ url_for('my_orders') }}" class="kh-recent-order">
+              <span class="kh-order-icon"><i class="fa-solid fa-receipt"></i></span>
+              <span><b>سفارش #{{ order.id }}</b><small>{{ order.status }}</small></span>
+              <strong>{{ order.total|money }} تومان</strong>
+            </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="kh-account-empty"><i class="fa-solid fa-box-open"></i><p>هنوز سفارشی ثبت نکرده‌ای.</p><a href="{{ url_for('home') }}" class="btn">شروع خرید</a></div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</section>
+{% endblock %}

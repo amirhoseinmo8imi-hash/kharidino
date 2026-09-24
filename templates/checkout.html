@@ -158,6 +158,13 @@
                 </div>
 
 
+                <div class="form-section-title"><i class="fa-solid fa-truck-fast"></i> روش ارسال</div>
+                <div class="shipping-options">
+                  <label><input type="radio" name="shipping_method" value="استاندارد" {% if shipping_method|default('استاندارد')=='استاندارد' %}checked{% endif %}> ارسال استاندارد <b>رایگان</b></label>
+                  <label><input type="radio" name="shipping_method" value="اکسپرس" {% if shipping_method=='اکسپرس' %}checked{% endif %}> ارسال اکسپرس <b>۱۲۰,۰۰۰ تومان</b></label>
+                  <label><input type="radio" name="shipping_method" value="ارسال فروشنده" {% if shipping_method=='ارسال فروشنده' %}checked{% endif %}> ارسال فروشنده <b>۵۰,۰۰۰ تومان</b></label>
+                </div>
+
                 <!-- PAYMENT NOTE -->
 
 

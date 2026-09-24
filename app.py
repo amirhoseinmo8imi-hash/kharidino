@@ -1,5 +1,7 @@
 import os
 import uuid
+import secrets
+import hmac
 from functools import wraps
 from pathlib import Path
 
@@ -63,6 +65,38 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 
 db = SQLAlchemy(app)
+
+
+# =========================================================
+# CSRF PROTECTION
+# =========================================================
+
+def csrf_token():
+    token = session.get("_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf_token"] = token
+        session.modified = True
+    return token
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.before_request
+def validate_csrf():
+    if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+        return None
+
+    sent = request.form.get("csrf_token", "")
+    if not sent:
+        sent = request.headers.get("X-CSRF-Token", "")
+
+    expected = session.get("_csrf_token", "")
+    if not expected or not sent or not hmac.compare_digest(str(sent), str(expected)):
+        abort(400, description="درخواست نامعتبر است. صفحه را تازه‌سازی کنید و دوباره تلاش کنید.")
+
+    return None
 
 
 # =========================================================
@@ -1084,6 +1118,9 @@ def category(category_id):
         category_id
     )
 
+    if not cat.active:
+        abort(404)
+
     sort = request.args.get("sort", "newest").strip()
     query = Product.query.filter_by(category_id=cat.id, active=True)
 
@@ -1125,6 +1162,9 @@ def product_detail(product_id):
     product = Product.query.get_or_404(
         product_id
     )
+
+    if not product.active:
+        abort(404)
 
     # -----------------------------------------------------
     # REVIEW
@@ -1599,6 +1639,9 @@ def store_detail(store_id):
     store = Store.query.get_or_404(
         store_id
     )
+
+    if not store.active:
+        abort(404)
 
     offers = (
         Offer.query

@@ -1,0 +1,23 @@
+/* Advanced admin commerce controls */
+.admin-alert{display:flex;align-items:center;gap:10px;padding:12px 14px;margin:0 0 16px;border:1px solid #f1c7ce;background:#fff4f5;color:#a51f37;border-radius:12px}
+.admin-table-wrap{overflow:auto}
+.inventory-inline-form{display:flex;align-items:center;gap:7px}
+.inventory-inline-form input{width:100px;max-width:100px}
+.stock-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
+.stock-badge.ok{background:#eaf8ef;color:#19733a}
+.stock-badge.low{background:#fff5dd;color:#956600}
+.stock-badge.out{background:#fff0f0;color:#a52323}
+.coupon-box{margin:18px 0;padding:16px;border:1px dashed #e1e2e6;border-radius:14px;background:rgba(127,127,127,.03)}
+.coupon-row{display:flex;gap:8px;align-items:center}
+.coupon-row input{flex:1;min-width:0}
+.discount-row strong{color:#16803c}
+.admin-sidebar-bottom form{margin:0}
+.admin-sidebar-bottom form button{width:100%;border:0;background:transparent;color:inherit;text-align:right;padding:10px 12px;cursor:pointer;font:inherit}
+@media(max-width:760px){
+ .inventory-inline-form{flex-wrap:wrap}
+ .inventory-inline-form input{width:90px}
+ .coupon-row{flex-direction:column;align-items:stretch}
+ .coupon-row .btn{width:100%}
+}
+html[data-theme="dark"] .admin-alert{background:#2a181d;border-color:#573039;color:#ff9baa}
+html[data-theme="dark"] .coupon-box{border-color:#35373d}

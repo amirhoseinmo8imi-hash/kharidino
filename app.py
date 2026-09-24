@@ -66,6 +66,14 @@ app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 
 db = SQLAlchemy(app)
 
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    return response
+
 
 # =========================================================
 # CSRF PROTECTION
@@ -949,6 +957,19 @@ def detect_background_mode(path):
 
 
 # =========================================================
+# URL VALIDATION
+# =========================================================
+
+def normalize_external_url(value):
+    value = str(value or "").strip()
+    if not value:
+        return ""
+    if value.lower().startswith(("http://", "https://")):
+        return value
+    return ""
+
+
+# =========================================================
 # PRICE
 # =========================================================
 
@@ -1051,15 +1072,30 @@ def money(value):
 
 
 # =========================================================
+# SEARCH HELPERS
+# =========================================================
+
+def normalize_search_text(value):
+    text = str(value or "").strip()
+    digit_map = str.maketrans(
+        "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩",
+        "01234567890123456789"
+    )
+    return " ".join(text.translate(digit_map).split())
+
+
+# =========================================================
 # HOME
 # =========================================================
 
 @app.route("/")
 def home():
 
-    q = request.args.get("q", "").strip()
+    q = normalize_search_text(request.args.get("q", ""))
     sort = request.args.get("sort", "newest").strip()
     category_id = request.args.get("category", "").strip()
+    min_price_raw = normalize_search_text(request.args.get("min_price", ""))
+    max_price_raw = normalize_search_text(request.args.get("max_price", ""))
 
     query = Product.query.filter_by(active=True)
 
@@ -1074,9 +1110,31 @@ def home():
 
     if category_id:
         try:
-            query = query.filter(Product.category_id == int(category_id))
-        except ValueError:
+            category_value = int(category_id)
+            active_category = Category.query.filter_by(id=category_value, active=True).first()
+            if active_category:
+                query = query.filter(Product.category_id == category_value)
+            else:
+                category_id = ""
+        except (TypeError, ValueError):
             category_id = ""
+
+    try:
+        min_price = max(0, int(min_price_raw)) if min_price_raw else None
+    except (TypeError, ValueError):
+        min_price = None
+        min_price_raw = ""
+
+    try:
+        max_price = max(0, int(max_price_raw)) if max_price_raw else None
+    except (TypeError, ValueError):
+        max_price = None
+        max_price_raw = ""
+
+    if min_price is not None:
+        query = query.filter(Product.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Product.price <= max_price)
 
     if sort == "price_low":
         # قیمت پایه مرتب می‌شود؛ قیمت واقعی کارت‌ها همچنان lowest_price است.
@@ -1118,6 +1176,8 @@ def home():
         sort=sort,
         category_id=category_id,
         selected_category=selected_category,
+        min_price=min_price_raw,
+        max_price=max_price_raw,
         lowest_price=lowest_price
     )
 
@@ -1279,10 +1339,10 @@ def product_detail(product_id):
         )
         .filter(
             Offer.product_id == product.id,
-            Offer.in_stock.is_(True),
             Store.active.is_(True)
         )
         .order_by(
+            Offer.in_stock.desc(),
             Offer.price.asc(),
             Offer.id.asc()
         )
@@ -1342,70 +1402,6 @@ def product_detail(product_id):
     rating = product_rating(
         product
     )
-
-    # -----------------------------------------------------
-    # DEBUG
-    # -----------------------------------------------------
-
-    print("")
-    print("==============================================")
-    print("KHARIDINO PRODUCT DEBUG")
-    print("==============================================")
-    print(
-        "Product ID:",
-        product.id
-    )
-    print(
-        "Product:",
-        product.name
-    )
-    print(
-        "Offers:",
-        len(offers)
-    )
-
-    for offer in offers:
-
-        print(
-            "----------------------------------------------"
-        )
-
-        print(
-            "Offer ID:",
-            offer.id
-        )
-
-        print(
-            "Store ID:",
-            offer.store_id
-        )
-
-        print(
-            "Store:",
-            offer.store.name
-            if offer.store
-            else "NO STORE"
-        )
-
-        print(
-            "Price:",
-            offer.price
-        )
-
-        print(
-            "Stock:",
-            offer.in_stock
-        )
-
-        print(
-            "Store Active:",
-            offer.store.active
-            if offer.store
-            else False
-        )
-
-    print("==============================================")
-    print("")
 
     # -----------------------------------------------------
     # RENDER
@@ -1492,7 +1488,9 @@ def compare_add(product_id):
     session["compare"] = ids
     session.modified = True
 
-    target = request.form.get("next") or request.referrer or url_for("home")
+    target = request.form.get("next", "").strip()
+    if not (target.startswith("/") and not target.startswith("//")):
+        target = request.referrer or url_for("home")
     return redirect(target)
 
 
@@ -1897,7 +1895,7 @@ def login():
 # LOGOUT
 # =========================================================
 
-@app.route("/logout")
+@app.post("/logout")
 def logout():
 
     # سبد خرید را قبل از خروج حفظ می‌کنیم
@@ -3795,10 +3793,9 @@ def save_offer():
             + "#offers-admin"
         )
 
-    offer.url = request.form.get(
-        "url",
-        ""
-    ).strip()
+    offer.url = normalize_external_url(
+        request.form.get("url", "")
+    )
 
     offer.in_stock = (
         request.form.get(

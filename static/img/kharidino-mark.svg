@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+<title id="title">نشان خریدینو</title><desc id="desc">سبد خرید مینیمال با حرکت رو به جلو</desc>
+<defs><linearGradient id="g" x1="12" y1="20" x2="84" y2="76" gradientUnits="userSpaceOnUse"><stop stop-color="#ef4056"/><stop offset="1" stop-color="#c81d5a"/></linearGradient></defs>
+<path d="M14 18h9l6 39h42c5 0 9-3 11-8l7-22H31" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="39" cy="76" r="6" fill="#222"/>
+<circle cx="73" cy="76" r="6" fill="#222"/>
+<path d="M49 18h30M57 10l-8 8 8 8" fill="none" stroke="#ef4056" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

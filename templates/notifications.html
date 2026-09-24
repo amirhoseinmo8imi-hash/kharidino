@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block title %}اعلان‌ها | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace.css', v='1') }}">{% endblock %}
+{% block content %}<div class="market-page container"><section class="market-hero compact"><span>مرکز اعلان‌ها</span><h1>اعلان‌های شما</h1></section><div class="market-card notification-list">{% for n in notifications %}<article><i class="fa-solid {% if n.kind=='order' %}fa-box{% elif n.kind=='finance' %}fa-wallet{% else %}fa-bell{% endif %}"></i><div><strong>{{ n.title }}</strong><p>{{ n.body }}</p><small>{{ n.created_at or '' }}</small></div></article>{% else %}<p>اعلانی ندارید.</p>{% endfor %}</div></div>{% endblock %}

@@ -11,7 +11,7 @@
     <div class="km-field"><label for="email">ایمیل</label><input id="email" type="email" name="email" placeholder="example@email.com" autocomplete="email" required></div>
     <div class="km-field"><label for="password">رمز عبور</label><input id="password" type="password" name="password" placeholder="رمز عبور خود را وارد کنید" autocomplete="{{ 'current-password' if mode == 'login' else 'new-password' }}" required></div>
     <button class="km-submit" type="submit">{{ 'ورود به خریدینو' if mode == 'login' else 'ساخت حساب کاربری' }}</button>
-    <div class="km-auth-links">{% if mode == 'login' %}<a href="#">رمز عبور را فراموش کرده‌اید؟</a><span>حساب ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></span>{% else %}<span>قبلاً حساب ساخته‌اید؟ <a href="{{ url_for('login') }}">وارد شوید</a></span><a href="{{ url_for('home') }}">بازگشت به فروشگاه</a>{% endif %}</div>
+    <div class="km-auth-links">{% if mode == 'login' %}<a href="{{ url_for('contact') }}">بازیابی رمز / پشتیبانی</a><span>حساب ندارید؟ <a href="{{ url_for('register') }}">ثبت‌نام کنید</a></span>{% else %}<span>قبلاً حساب ساخته‌اید؟ <a href="{{ url_for('login') }}">وارد شوید</a></span><a href="{{ url_for('home') }}">بازگشت به فروشگاه</a>{% endif %}</div>
     <p class="km-auth-note">با ورود یا ثبت‌نام، قوانین و شرایط استفاده از خریدینو را می‌پذیرید.</p>
   </form>
 </section>

@@ -634,7 +634,28 @@ def inject_globals():
     # GLOBAL TEMPLATE VARIABLES
     # =====================================================
 
+    active_categories = (
+        Category.query
+        .filter_by(active=True)
+        .order_by(Category.id.asc())
+        .all()
+    )
+
+    active_stores = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
+
     return {
+
+        # =================================================
+        # NAVIGATION
+        # =================================================
+
+        "categories": active_categories,
+        "stores": active_stores,
 
         # =================================================
         # SITE

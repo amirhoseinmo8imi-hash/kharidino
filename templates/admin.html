@@ -50,6 +50,14 @@
                 <i class="fa-solid fa-tags"></i>
                 <span>قیمت‌ها</span>
             </a>
+            <a href="#inventory-admin">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>موجودی</span>
+            </a>
+            <a href="#coupons-admin">
+                <i class="fa-solid fa-ticket"></i>
+                <span>کد تخفیف</span>
+            </a>
 
             <a href="#users-admin">
                 <i class="fa-solid fa-users"></i>
@@ -81,10 +89,10 @@
                 بازگشت به سایت
             </a>
 
-            <a href="{{ url_for('logout') }}">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                خروج
-            </a>
+            <form method="post" action="{{ url_for('logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+            </form>
 
         </div>
 
@@ -2079,6 +2087,81 @@
 
             </div>
 
+        </section>
+
+
+        <section id="inventory-admin" class="admin-section admin-card">
+            <div class="admin-title">
+                <div>
+                    <span class="section-kicker">انبار</span>
+                    <h2>📦 مدیریت موجودی</h2>
+                    <p>موجودی و حد هشدار هر محصول را سریع کنترل کن.</p>
+                </div>
+            </div>
+            {% if low_stock_products %}
+            <div class="admin-alert"><i class="fa-solid fa-triangle-exclamation"></i> {{ low_stock_products|length }} محصول به حد هشدار موجودی رسیده است.</div>
+            {% endif %}
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>محصول</th><th>SKU</th><th>موجودی</th><th>حد هشدار</th><th>وضعیت</th><th>ذخیره</th></tr></thead>
+                    <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td><strong>{{ product.name }}</strong></td>
+                        <td>{{ product.sku or '—' }}</td>
+                        <td colspan="3">
+                            <form class="inventory-inline-form" method="post" action="{{ url_for('update_product_stock', product_id=product.id) }}">
+                                <input type="number" name="stock_quantity" min="0" value="{{ product.stock_quantity or 0 }}">
+                                <input type="number" name="low_stock_threshold" min="0" value="{{ product.low_stock_threshold or 0 }}">
+                                {% if (product.stock_quantity or 0) == 0 %}<span class="stock-badge out">ناموجود</span>
+                                {% elif product.stock_quantity <= (product.low_stock_threshold or 0) %}<span class="stock-badge low">کم</span>
+                                {% else %}<span class="stock-badge ok">موجود</span>{% endif %}
+                        </td>
+                        <td><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm" type="submit"><i class="fa-solid fa-floppy-disk"></i></button></form></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="coupons-admin" class="admin-section admin-card">
+            <div class="admin-title">
+                <div>
+                    <span class="section-kicker">فروش</span>
+                    <h2>🎟️ کدهای تخفیف</h2>
+                    <p>تخفیف درصدی یا مبلغ ثابت با سقف استفاده و تاریخ انقضا.</p>
+                </div>
+            </div>
+            <form method="post" action="{{ url_for('save_coupon') }}" class="form-grid">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>کد تخفیف<input name="code" placeholder="WELCOME10" required></label>
+                <label>درصد تخفیف<input type="number" name="percent" min="0" max="100" value="10"></label>
+                <label>تخفیف ثابت (تومان)<input type="number" name="fixed_amount" min="0" value="0"></label>
+                <label>حداقل خرید<input type="number" name="min_total" min="0" value="0"></label>
+                <label>حداکثر دفعات استفاده<input type="number" name="max_uses" min="0" value="0"><small>۰ یعنی نامحدود</small></label>
+                <label>انقضا<input type="datetime-local" name="expires_at"></label>
+                <label class="check"><input type="checkbox" name="active" value="1" checked> فعال</label>
+                <div class="form-actions wide"><button class="btn" type="submit"><i class="fa-solid fa-plus"></i> ساخت کد تخفیف</button></div>
+            </form>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>کد</th><th>تخفیف</th><th>حداقل</th><th>استفاده</th><th>انقضا</th><th>وضعیت</th><th></th></tr></thead>
+                    <tbody>
+                    {% for coupon in coupons %}
+                    <tr>
+                        <td><strong>{{ coupon.code }}</strong></td>
+                        <td>{% if coupon.percent %}{{ coupon.percent }}٪{% else %}{{ coupon.fixed_amount|money }} تومان{% endif %}</td>
+                        <td>{{ coupon.min_total|money }}</td>
+                        <td>{{ coupon.used_count }}{% if coupon.max_uses %} / {{ coupon.max_uses }}{% endif %}</td>
+                        <td>{{ coupon.expires_at or 'بدون انقضا' }}</td>
+                        <td>{{ 'فعال' if coupon.active else 'غیرفعال' }}</td>
+                        <td><form method="post" action="{{ url_for('delete_coupon', coupon_id=coupon.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button></form></td>
+                    </tr>
+                    {% else %}<tr><td colspan="7">هنوز کدی ساخته نشده است.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
 
 

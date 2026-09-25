@@ -3,7 +3,7 @@ from email.message import EmailMessage
 import os
 import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urlparse
@@ -322,6 +322,20 @@ class User(db.Model):
         default="user",
         nullable=False
     )
+
+
+class AccountEmailChange(db.Model):
+    __tablename__ = "account_email_change"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    pending_email = db.Column(db.String(200), nullable=False)
+    code_hash = db.Column(db.String(300), nullable=False, default="")
+    expires_at = db.Column(db.DateTime, nullable=True)
+    sent_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("email_change_request", uselist=False))
 
 
 class Order(db.Model):
@@ -2205,6 +2219,102 @@ def profile():
     return render_template(
         "profile.html"
     )
+
+
+@app.route("/profile/settings", methods=["GET", "POST"])
+@login_required
+def profile_settings():
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        action = request.form.get("action", "").strip()
+
+        if action == "password":
+            current_password = request.form.get("current_password", "")
+            new_password = request.form.get("new_password", "")
+            confirm_password = request.form.get("confirm_password", "")
+
+            if not check_password_hash(user.password, current_password):
+                flash("رمز عبور فعلی اشتباه است.", "danger")
+            elif len(new_password) < 8:
+                flash("رمز عبور جدید باید حداقل ۸ کاراکتر باشد.", "warning")
+            elif new_password != confirm_password:
+                flash("تکرار رمز عبور با رمز جدید یکسان نیست.", "warning")
+            elif check_password_hash(user.password, new_password):
+                flash("رمز عبور جدید نباید با رمز فعلی یکسان باشد.", "warning")
+            else:
+                user.password = generate_password_hash(new_password)
+                db.session.commit()
+                session.clear()
+                flash("رمز عبور با موفقیت تغییر کرد. لطفاً دوباره وارد حساب شوید.", "success")
+                return redirect(url_for("login"))
+
+        elif action == "email_send":
+            new_email = request.form.get("new_email", "").strip().lower()
+            if not new_email or "@" not in new_email or "." not in new_email.rsplit("@", 1)[-1]:
+                flash("یک ایمیل معتبر وارد کنید.", "warning")
+            elif new_email == user.email.lower():
+                flash("این ایمیل همین حالا روی حساب شما ثبت شده است.", "info")
+            elif User.query.filter(db.func.lower(User.email) == new_email).first():
+                flash("این ایمیل قبلاً برای یک حساب دیگر ثبت شده است.", "danger")
+            else:
+                pending = AccountEmailChange.query.filter_by(user_id=user.id).first()
+                now = datetime.utcnow()
+                if pending and pending.sent_at and now - pending.sent_at < timedelta(seconds=60):
+                    flash("برای ارسال دوباره کد، کمی صبر کنید.", "warning")
+                else:
+                    code = f"{secrets.randbelow(1000000):06d}"
+                    if send_kharidino_email(
+                        new_email,
+                        "کد تأیید تغییر ایمیل خریدینو",
+                        f"کد تأیید تغییر ایمیل خریدینو: {code}\nاین کد 10 دقیقه اعتبار دارد.\nاگر این درخواست از طرف شما نبوده، آن را نادیده بگیرید.",
+                    ):
+                        from werkzeug.security import generate_password_hash
+                        if not pending:
+                            pending = AccountEmailChange(user_id=user.id, pending_email=new_email)
+                            db.session.add(pending)
+                        pending.pending_email = new_email
+                        pending.code_hash = generate_password_hash(code)
+                        pending.expires_at = now + timedelta(minutes=10)
+                        pending.sent_at = now
+                        db.session.commit()
+                        flash("کد تأیید به ایمیل جدید ارسال شد.", "success")
+                    else:
+                        flash("ارسال کد انجام نشد. تنظیمات SMTP را بررسی کنید.", "danger")
+
+        elif action == "email_confirm":
+            code = request.form.get("code", "").strip()
+            pending = AccountEmailChange.query.filter_by(user_id=user.id).first()
+            now = datetime.utcnow()
+            if (
+                not pending
+                or not pending.code_hash
+                or not pending.expires_at
+                or pending.expires_at < now
+                or not check_password_hash(pending.code_hash, code)
+            ):
+                flash("کد تأیید ایمیل نامعتبر یا منقضی شده است.", "danger")
+            elif User.query.filter(
+                db.func.lower(User.email) == pending.pending_email.lower(),
+                User.id != user.id,
+            ).first():
+                flash("این ایمیل در این فاصله توسط حساب دیگری ثبت شده است.", "danger")
+            else:
+                user.email = pending.pending_email
+                db.session.delete(pending)
+                db.session.commit()
+                flash("ایمیل حساب با موفقیت تغییر کرد.", "success")
+
+        else:
+            flash("درخواست نامعتبر است.", "warning")
+
+        return redirect(url_for("profile_settings"))
+
+    pending = AccountEmailChange.query.filter_by(user_id=user.id).first()
+    return render_template("profile_settings.html", pending_email=pending.pending_email if pending else "")
 
 
 # =========================================================

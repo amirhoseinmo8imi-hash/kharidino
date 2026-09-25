@@ -55,7 +55,7 @@
       </div>
       <div class="store-metrics"><div><b>{{ metric.products|default(0) }}</b><span>کالا</span></div><div><b>{{ metric.offers|default(0) }}</b><span>پیشنهاد</span></div><div><b>{% if metric.rating %}{{ metric.rating }}<small>★</small>{% else %}—{% endif %}</b><span>امتیاز</span></div><div><b>{{ metric.delivered|default(0) }}</b><span>فروش</span></div></div>
       <div class="store-card-actions">
-        <a class="store-action storefront-link" href="{{ url_for('storefront', store_id=store.id) }}"><i class="fa-solid fa-store"></i> مشاهده ویترین</a>
+        <a class="store-action storefront-link" href="{{ url_for('store_detail', store_id=store.id) }}"><i class="fa-solid fa-store"></i> مشاهده ویترین</a>
         {% if current_user and current_user.role == 'admin' %}
         <details class="store-edit"><summary class="store-action edit"><i class="fa-solid fa-pen"></i> ویرایش</summary><form action="{{ url_for('save_store') }}" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="{{ store.id }}"><label>نام فروشگاه<input type="text" name="name" required value="{{ store.name }}"></label><label>وب‌سایت<input type="url" name="website" value="{{ store.website or '' }}"></label><label>تغییر لوگو<input type="file" name="logo" accept="image/*"></label><label class="store-check"><input type="checkbox" name="active" value="1" {% if store.active %}checked{% endif %}> فعال باشد</label><button type="submit">ذخیره تغییرات</button></form></details>
         <form action="{{ url_for('delete_store', store_id=store.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این فروشگاه مطمئن هستید؟');"><button type="submit" class="store-action delete"><i class="fa-solid fa-trash"></i> حذف</button></form>

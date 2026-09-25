@@ -150,3 +150,34 @@
 }
 .store-grid .store-metrics{width:auto!important;align-self:stretch!important}
 .store-grid .store-card-actions{width:auto!important;align-self:stretch!important;box-sizing:border-box!important}
+
+/* Auth page final layout: keep the form in the first viewport and neutralize legacy vertical spacing. */
+body:has(.km-auth-page) .kg-main{padding-top:0!important;margin-top:0!important;min-height:0!important}
+body:has(.km-auth-page) .km-auth-page{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-height:calc(100vh - 150px)!important;
+  margin:0!important;
+  padding:28px 16px 48px!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  position:relative!important;
+  top:0!important;
+  transform:none!important;
+}
+body:has(.km-auth-page) .km-auth-card{
+  box-sizing:border-box!important;
+  width:min(500px,100%)!important;
+  margin:12px auto 0!important;
+  padding:30px!important;
+  position:relative!important;
+  top:0!important;
+  transform:none!important;
+  align-self:flex-start!important;
+}
+body:has(.km-auth-page) .kh-footer{margin-top:0!important}
+@media(max-width:600px){
+  body:has(.km-auth-page) .km-auth-page{min-height:calc(100vh - 100px)!important;padding:18px 10px 35px!important}
+  body:has(.km-auth-page) .km-auth-card{margin-top:4px!important;padding:22px 18px!important}
+}

@@ -836,6 +836,11 @@ def inject_globals():
 
         "cart_count": cart_count,
 
+        "unread_notification_count": (
+            Notification.query.filter_by(user_id=user.id, is_read=False).count()
+            if user else 0
+        ),
+
         # =================================================
         # FAVORITES
         # =================================================

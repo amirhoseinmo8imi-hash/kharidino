@@ -6,22 +6,41 @@
 {% endblock %}
 {% block content %}
 <div class="kdg-home">
-  <section class="kdg-hero" aria-label="پیشنهادهای خریدینو">
-    <div class="kdg-hero-main">
-      <span class="kdg-eyebrow"><i class="fa-solid fa-bolt"></i> خرید هوشمند با خریدینو</span>
-      <h1>قبل از خرید، بهترین انتخاب را پیدا کن</h1>
-      <p>محصول را جستجو کن، قیمت فروشگاه‌ها را مقایسه کن و با اطلاعات شفاف‌تر خریدت را انجام بده.</p>
-      <div class="kdg-hero-actions">
-        <a href="#offers" class="kdg-primary">مشاهده پیشنهادها <i class="fa-solid fa-arrow-left"></i></a>
-        <a href="#categories" class="kdg-secondary">دسته‌بندی کالاها</a>
+  <section class="kh-market-hero" aria-label="پیشنهادهای ویژه خریدینو">
+    <div class="kh-market-hero-copy">
+      <span class="kh-market-eyebrow"><i class="fa-solid fa-bolt"></i> جشنواره خریدینو</span>
+      <h1>قبل از خرید،<br><strong>قیمت‌ها را مقایسه کن</strong></h1>
+      <p>محصول موردنظرت را پیدا کن و پیشنهاد فروشگاه‌های مختلف را یکجا ببین.</p>
+      <div class="kh-market-hero-actions">
+        <a href="#offers" class="kh-market-primary">مشاهده پیشنهادها <i class="fa-solid fa-arrow-left"></i></a>
+        <a href="{{ url_for('compare') }}" class="kh-market-secondary">مقایسه قیمت</a>
       </div>
+      <div class="kh-market-hero-trust"><span><i class="fa-solid fa-store"></i> {{ store_count|default(10) }} فروشگاه</span><span><i class="fa-solid fa-box"></i> {{ product_count|default(46) }} محصول</span><span><i class="fa-solid fa-tags"></i> {{ offer_count|default(460) }} پیشنهاد</span></div>
     </div>
-    <div class="kdg-hero-side">
-      <div class="kdg-hero-bubble"><i class="fa-solid fa-scale-balanced"></i><strong>مقایسه قیمت</strong><span>چند فروشگاه در یک نگاه</span></div>
-      <div class="kdg-hero-bubble"><i class="fa-solid fa-store"></i><strong>فروشگاه‌های متنوع</strong><span>پیشنهادهای مختلف برای انتخاب</span></div>
-      <div class="kdg-hero-bubble"><i class="fa-solid fa-tags"></i><strong>پیشنهاد ویژه</strong><span>محصولات منتخب خریدینو</span></div>
+    <div class="kh-market-hero-stage">
+      <div class="kh-hero-orb kh-hero-orb-a"></div><div class="kh-hero-orb kh-hero-orb-b"></div>
+      <div class="kh-hero-floating kh-hero-floating-a"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span><strong>هوشمند و سریع</strong></div>
+      <div class="kh-hero-products">
+        {% for product in products[:3] %}
+        <a class="kh-hero-product kh-hero-product-{{ loop.index }}" href="{{ url_for('product_detail', product_id=product.id) }}">
+          <div>{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="eager">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>
+          <span>{{ product.name }}</span>
+          <strong>{{ lowest_price(product)|money }} <small>تومان</small></strong>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="kh-hero-price-card"><span>بهترین پیشنهاد</span><strong>قیمت‌ها را کنار هم ببین</strong><small>و با خیال راحت انتخاب کن</small><i class="fa-solid fa-arrow-left"></i></div>
     </div>
   </section>
+
+  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
+    <a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span><small>هزاران محصول</small></a>
+    <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span><small>انتخاب اقتصادی</small></a>
+    <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span><small>فروشنده‌ها</small></a>
+    <a href="#offers"><i class="fa-solid fa-fire"></i><span>پیشنهادهای ویژه</span><small>قیمت‌های جذاب</small></a>
+    {% for category in categories[:4] %}<a href="{{ url_for('category', category_id=category.id) }}"><i class="fa-solid {{ category.icon or 'fa-box' }}"></i><span>{{ category.name }}</span><small>مشاهده محصولات</small></a>{% endfor %}
+    <a href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span>ثبت فروشگاه</span><small>شروع فروش</small></a>
+  </div>
 
   <div class="kdg-search-chips" aria-label="جستجوهای محبوب">
     <span>جستجوهای محبوب:</span>

@@ -45,6 +45,73 @@
     <section class="km-section" id="products"><div class="km-section-head"><div><span class="ki-section-kicker">جستجوی خریدینو</span><h2>نتایج جستجو برای «{{ q }}»</h2></div><span>{{ products|length }} محصول</span></div><div class="km-products">{% for product in products %}<a class="km-product" href="{{ url_for('product_detail', product_id=product.id) }}"><div class="km-product-img">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>{% if product.category %}<small class="km-product-cat">{{ product.category.name }}</small>{% endif %}<h3>{{ product.name }}</h3><div class="km-price"><strong>{{ lowest_price(product)|money }}</strong><small>تومان</small></div><div class="km-offer"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<b>موجود</b>{% endif %}</div></a>{% endfor %}</div></section>
     {% endif %}
 
+    <section class="kh-home-tools" aria-label="ابزارهای خریدینو">
+      <div class="kh-tools-head">
+        <div><span class="ki-section-kicker">مرکز خرید هوشمند</span><h2>چیزی که برای خرید لازم داری، همین‌جاست</h2><p>مقایسه قیمت، پیدا کردن فروشگاه، بررسی پیشنهادها و مدیریت خرید را سریع‌تر انجام بده.</p></div>
+      </div>
+      <div class="kh-tools-grid">
+        <a href="{{ url_for('compare') }}" class="kh-tool-card kh-tool-card--compare"><span class="kh-tool-icon"><i class="fa-solid fa-scale-balanced"></i></span><div><strong>مقایسه محصولات</strong><small>چند محصول را کنار هم بررسی کن</small></div><i class="fa-solid fa-arrow-left"></i></a>
+        <a href="{{ url_for('stores') }}" class="kh-tool-card"><span class="kh-tool-icon"><i class="fa-solid fa-store"></i></span><div><strong>فروشگاه‌ها</strong><small>{{ stores|length }} فروشگاه فعال خریدینو</small></div><i class="fa-solid fa-arrow-left"></i></a>
+        <a href="{{ url_for('favorites') }}" class="kh-tool-card"><span class="kh-tool-icon"><i class="fa-regular fa-heart"></i></span><div><strong>علاقه‌مندی‌ها</strong><small>محصولات موردعلاقه‌ات را نگه دار</small></div><i class="fa-solid fa-arrow-left"></i></a>
+        <a href="{{ url_for('cart') }}" class="kh-tool-card"><span class="kh-tool-icon"><i class="fa-solid fa-cart-shopping"></i></span><div><strong>سبد خرید</strong><small>خریدت را سریع ادامه بده</small></div><i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+    </section>
+
+    <section class="kh-deals-section" id="deals">
+      <div class="kh-section-head">
+        <div><span class="ki-section-kicker">پیشنهادهای روز</span><h2>تخفیف‌دارهای خریدینو</h2><p>محصولاتی که در کاتالوگ خریدینو تخفیف یا پیشنهاد ویژه دارند.</p></div>
+        <a href="#products">مشاهده محصولات <i class="fa-solid fa-arrow-left"></i></a>
+      </div>
+      <div class="kh-product-rail">
+        {% set discounted_products = products|selectattr('discount_percent')|sort(attribute='discount_percent', reverse=true)|list %}
+        {% for product in discounted_products[:6] %}
+        <a class="kh-mini-product" href="{{ url_for('product_detail', product_id=product.id) }}">
+          <div class="kh-mini-img">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}<span>-{{ product.discount_percent }}%</span></div>
+          <small>{% if product.brand %}{{ product.brand }}{% elif product.category %}{{ product.category.name }}{% else %}محصول خریدینو{% endif %}</small>
+          <strong>{{ product.name }}</strong>
+          <b>{{ lowest_price(product)|money }} تومان</b>
+        </a>
+        {% else %}
+        <div class="kh-empty-deals"><i class="fa-solid fa-tags"></i><strong>هنوز محصول تخفیف‌دار ثبت نشده</strong><span>با اضافه شدن تخفیف‌ها، این بخش خودکار به‌روز می‌شود.</span></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="kh-brand-section" id="brands">
+      <div class="kh-section-head">
+        <div><span class="ki-section-kicker">برندها</span><h2>برندهای موجود در خریدینو</h2><p>برند موردنظرت را سریع‌تر از میان محصولات پیدا کن.</p></div>
+      </div>
+      <div class="kh-brand-rail">
+        {% set home_brands = products|map(attribute='brand')|select|unique|list %}
+        {% for brand in home_brands[:12] %}
+          <a href="{{ url_for('home', q=brand) }}" class="kh-brand-pill"><i class="fa-solid fa-certificate"></i><span>{{ brand }}</span><i class="fa-solid fa-chevron-left"></i></a>
+        {% else %}
+          <span class="kh-brand-empty">برندهای محصولات پس از تکمیل کاتالوگ اینجا نمایش داده می‌شوند.</span>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="kh-sort-section" id="smart-shopping">
+      <div class="kh-section-head">
+        <div><span class="ki-section-kicker">خرید سریع</span><h2>محصولات را بر اساس نیازت مرتب کن</h2></div>
+      </div>
+      <form class="kh-sort-bar" method="get" action="{{ url_for('home') }}">
+        <label><i class="fa-solid fa-filter"></i><span>دسته:</span>
+          <select name="category"><option value="">همه دسته‌ها</option>{% for category in categories %}<option value="{{ category.id }}" {% if category_id|string == category.id|string %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select>
+        </label>
+        <label><i class="fa-solid fa-arrow-down-wide-short"></i><span>مرتب‌سازی:</span>
+          <select name="sort"><option value="newest" {% if sort == 'newest' %}selected{% endif %}>جدیدترین</option><option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>ارزان‌ترین</option><option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>گران‌ترین</option><option value="name" {% if sort == 'name' %}selected{% endif %}>الفبایی</option></select>
+        </label>
+        <button type="submit"><i class="fa-solid fa-check"></i> اعمال فیلتر</button>
+        <a href="{{ url_for('home') }}">پاک کردن</a>
+      </form>
+    </section>
+
+    <section class="kh-seller-cta">
+      <div><span class="ki-section-kicker">ویژه فروشندگان</span><h2>فروشگاهت را به خریدینو اضافه کن</h2><p>محصولاتت را معرفی کن، مشتری بیشتری پیدا کن و فروشگاهت را در بازار خریدینو توسعه بده.</p></div>
+      <div class="kh-seller-cta-actions"><a href="{{ url_for('seller_register') }}" class="kh-cta-primary"><i class="fa-solid fa-store"></i> ثبت‌نام فروشنده</a><a href="{{ url_for('features') }}" class="kh-cta-secondary"><i class="fa-solid fa-circle-info"></i> امکانات Marketplace</a></div>
+    </section>
+
     <section class="ki-newsletter"><div><span class="ki-news-icon"><i class="fa-solid fa-bell"></i></span><div><strong>از قیمت‌های بهتر باخبر شو</strong><p>محصول موردنظرت را جستجو کن، قیمت‌ها را مقایسه کن و هوشمندانه انتخاب کن.</p></div></div><a href="#products">دیدن پیشنهادها</a></section>
     <section class="ki-trust-grid"><div><i class="fa-solid fa-shield-halved"></i><strong>خرید مطمئن‌تر</strong><span>اطلاعات شفاف محصول و فروشگاه</span></div><div><i class="fa-solid fa-chart-line"></i><strong>مقایسه سریع</strong><span>پیدا کردن قیمت مناسب در یک نگاه</span></div><div><i class="fa-solid fa-headset"></i><strong>پشتیبانی</strong><span>همراه شما در مسیر خرید</span></div><div><i class="fa-solid fa-arrows-rotate"></i><strong>به‌روز و کاربردی</strong><span>نمایش پیشنهادهای تازه</span></div></section>
   </div>

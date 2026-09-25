@@ -361,9 +361,15 @@ def register_vehicle_chat(app, db, User, login_required):
                 )
                 db.session.add(chat)
                 db.session.flush()
-        db.session.add(VehicleChatMessage(chat_id=chat.id, sender_id=user_id, body=body))
+        message = VehicleChatMessage(chat_id=chat.id, sender_id=user_id, body=body)
+        db.session.add(message)
         chat.updated_at = datetime.utcnow()
         db.session.commit()
+        if request.headers.get("Accept", "").find("application/json") >= 0:
+            return jsonify({
+                "message": serialize_message(message, user_id),
+                "unread_count": unread_total(user_id),
+            })
         return redirect(url_for("vehicle_chat", ad_id=ad.id))
 
 

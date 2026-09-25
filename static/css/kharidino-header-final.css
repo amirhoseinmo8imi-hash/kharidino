@@ -219,3 +219,15 @@ body:has(.km-home) .mobile-bottom-nav { display:none !important; }
   .km-user-actions { grid-column:auto; width:100%; justify-content:space-between; }
   .km-action { flex:1 1 0; justify-content:center; }
 }
+
+
+/* Final shared-header layering: homepage and inner pages use the same header. */
+.km-topbar{overflow:visible!important;z-index:3000!important}
+.km-nav{position:relative;overflow:visible!important}
+.km-nav-inner{overflow:visible!important;position:relative}
+.km-cat-menu-wrap{z-index:3100}
+.km-category-mega{top:124px!important;z-index:3200!important}
+@media(max-width:720px){
+  .km-nav-inner{overflow-x:auto!important;overflow-y:visible!important}
+  .km-category-mega{top:124px!important;z-index:3200!important}
+}

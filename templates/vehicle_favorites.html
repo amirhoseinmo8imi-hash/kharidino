@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}علاقه‌مندی‌های خودرو | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-26-1') }}">{% endblock %}
+{% block content %}
+<section class="vehicle-page vehicle-favorites-page">
+  <div class="vehicle-section-title">
+    <div><span>لیست شخصی شما</span><h1>علاقه‌مندی‌های خودرو</h1></div>
+    <a href="{{ url_for('vehicles') }}"><i class="fa-solid fa-arrow-right"></i> بازگشت به بازار</a>
+  </div>
+  {% if ads %}
+    <div class="vehicle-grid">
+      {% for ad in ads %}
+      <a class="vehicle-card vehicle-card-pro" href="{{ url_for('vehicle_detail', ad_id=ad.id) }}">
+        <div class="vehicle-card-image">
+          {% if ad.image %}<img src="{{ ad.image if ad.image.startswith('http') else url_for('static', filename=ad.image) }}" alt="{{ ad.title }}" loading="lazy">{% else %}<i class="fa-solid fa-car-side"></i>{% endif %}
+          <span class="vehicle-card-tag">{{ ad.category }}</span>
+          <span class="vehicle-card-status"><i class="fa-solid fa-heart"></i> ذخیره‌شده</span>
+        </div>
+        <div class="vehicle-card-body">
+          <div class="vehicle-card-location"><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</div>
+          <h2>{{ ad.title }}</h2>
+          <div class="vehicle-meta vehicle-meta-pro">
+            {% if ad.year %}<span><i class="fa-regular fa-calendar"></i>{{ ad.year }}</span>{% endif %}
+            {% if ad.mileage %}<span><i class="fa-solid fa-road"></i>{{ "{:,}".format(ad.mileage) }} km</span>{% endif %}
+            {% if ad.fuel %}<span><i class="fa-solid fa-gas-pump"></i>{{ ad.fuel }}</span>{% endif %}
+          </div>
+          <div class="vehicle-card-bottom">
+            <div><small>قیمت</small><strong>{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}</strong></div>
+            <span class="vehicle-view"><i class="fa-solid fa-arrow-left"></i></span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="vehicle-empty">
+      <i class="fa-regular fa-heart"></i>
+      <h2>هنوز آگهی‌ای ذخیره نکردی</h2>
+      <p>روی دکمه «ذخیره» هر آگهی بزن تا اینجا نگهش داریم.</p>
+      <a class="vehicle-primary" href="{{ url_for('vehicles') }}">مشاهده آگهی‌های خودرو</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -7,7 +7,7 @@
     <div class="vehicle-chat-head">
       <a href="{{ url_for('vehicle_detail', ad_id=ad.id) }}" class="vehicle-chat-back"><i class="fa-solid fa-arrow-right"></i></a>
       <div><strong>{{ ad.title }}</strong><span><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</span></div>
-      <a href="{{ url_for('vehicle_detail', ad_id=ad.id) }}" class="vehicle-chat-ad-link">مشاهده آگهی</a>
+      <div class="vehicle-chat-head-tools"><button type="button" id="enableChatNotifications" class="vehicle-chat-notify-btn"><i class="fa-regular fa-bell"></i> اعلان پیام</button><a href="{{ url_for('vehicle_detail', ad_id=ad.id) }}" class="vehicle-chat-ad-link">مشاهده آگهی</a></div>
     </div>
     <div class="vehicle-chat-messages" id="vehicleChatMessages" data-chat-id="{{ chat.id }}" data-last-id="{{ messages[-1].id if messages else 0 }}">
       {% if messages %}
@@ -58,6 +58,15 @@
       const d=await r.json(); if(d.message)append(d.message); ta.value=''; ta.focus();
     }catch(e){form.submit();}finally{btn.disabled=false;}
   });
-  box.scrollTop=box.scrollHeight; poll(); setInterval(poll,1800);
+  box.scrollTop=box.scrollHeight;
+  const notifyBtn=document.getElementById('enableChatNotifications');
+  if(notifyBtn){
+    if(!('Notification' in window)){notifyBtn.hidden=true;}
+    else if(Notification.permission==='granted'){notifyBtn.innerHTML='<i class="fa-solid fa-bell"></i> اعلان فعال';}
+    notifyBtn.addEventListener('click',async function(){
+      try{const p=await Notification.requestPermission(); if(p==='granted'){notifyBtn.innerHTML='<i class="fa-solid fa-bell"></i> اعلان فعال'; new Notification('اعلان‌های خریدینو فعال شد',{body:'از این به بعد پیام جدید را به شما اطلاع می‌دهیم.',icon:'/static/icons/icon-192.svg'});} }catch(e){}
+    });
+  }
+  poll(); setInterval(poll,1800);
 })();
 </script>

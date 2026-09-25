@@ -12,23 +12,50 @@
   </section>
   <div class="kdg-category-layout">
     <aside class="kdg-filter">
-      <strong><i class="fa-solid fa-sliders"></i> مرتب‌سازی</strong>
-      <a class="{% if sort == 'newest' %}is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='newest') }}">جدیدترین</a>
-      <a class="{% if sort == 'price_low' %}is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='price_low') }}">ارزان‌ترین</a>
-      <a class="{% if sort == 'price_high' %}is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='price_high') }}">گران‌ترین</a>
-      <a class="{% if sort == 'name' %}is-active{% endif %}" href="{{ url_for('category', category_id=category.id, sort='name') }}">الفبایی</a>
+      <form method="get" class="kdg-filter-form">
+        <strong><i class="fa-solid fa-sliders"></i> فیلتر و مرتب‌سازی</strong>
+        <label>جستجو در این دسته<input type="search" name="q" value="{{ q|default('') }}" placeholder="نام کالا یا مدل"></label>
+        <label>فروشگاه
+          <select name="store">
+            <option value="">همه فروشگاه‌ها</option>
+            {% for store in store_options|default([]) %}
+            <option value="{{ store.id }}" {% if store_id|default('') == store.id|string %}selected{% endif %}>{{ store.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="kdg-price-fields">
+          <label>حداقل قیمت<input type="number" name="min_price" min="0" value="{{ min_price|default(0) }}" placeholder="تومان"></label>
+          <label>حداکثر قیمت<input type="number" name="max_price" min="0" value="{{ max_price|default(0) }}" placeholder="تومان"></label>
+        </div>
+        <label>مرتب‌سازی
+          <select name="sort">
+            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>جدیدترین</option>
+            <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>ارزان‌ترین</option>
+            <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>گران‌ترین</option>
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>الفبایی</option>
+          </select>
+        </label>
+        <button type="submit" class="kdg-filter-submit"><i class="fa-solid fa-check"></i> اعمال فیلتر</button>
+        <a class="kdg-filter-reset" href="{{ url_for('category', category_id=category.id) }}">حذف فیلترها</a>
+      </form>
     </aside>
     <section class="kdg-category-products">
       <div class="kdg-results-head"><strong>{{ products|length }} محصول</strong><span>مقایسه قیمت و پیشنهاد فروشگاه‌ها</span></div>
       <div class="kdg-products">
         {% for product in products %}
-        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
-          <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid {{ category.icon or 'fa-box-open' }}"></i>{% endif %}</div>
-          <small>{{ category.name }}</small>
-          <h3>{{ product.name }}</h3>
-          <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>
-          <div class="kdg-offer-meta"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<em>موجود</em>{% endif %}</div>
-        </a>
+        <article class="kdg-card-wrap">
+          <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
+            <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid {{ category.icon or 'fa-box-open' }}"></i>{% endif %}</div>
+            <small>{{ category.name }}</small>
+            <h3>{{ product.name }}</h3>
+            <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>
+            <div class="kdg-offer-meta"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<em>موجود</em>{% endif %}</div>
+          </a>
+          <form method="post" action="{{ url_for('compare_add', product_id=product.id) }}" class="kdg-card-compare">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            <button type="submit"><i class="fa-solid fa-scale-balanced"></i> مقایسه</button>
+          </form>
+        </article>
         {% else %}<div class="kdg-empty">هنوز محصولی در این دسته ثبت نشده است.</div>{% endfor %}
       </div>
     </section>

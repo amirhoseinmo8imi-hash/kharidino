@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}درخواست‌های سازمانی | {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="admin-section container" style="padding-top:32px;padding-bottom:64px;">
+
+    <div class="admin-title" style="margin-bottom:24px;">
+        <div>
+            <span class="section-kicker">فروش سازمانی</span>
+            <h1>درخواست‌های فاکتور و همکاری سازمانی</h1>
+            <p>تمام درخواست‌های ثبت‌شده از فرم همکاری سازمانی در این بخش قرار می‌گیرند.</p>
+        </div>
+        <a href="{{ url_for('admin') }}" class="btn">
+            <i class="fa-solid fa-arrow-right"></i>
+            بازگشت به پنل مدیریت
+        </a>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:24px;">
+        <a href="{{ url_for('admin_organization_requests') }}" class="stat-card" style="text-decoration:none;">
+            <div class="stat-icon"><i class="fa-solid fa-inbox"></i></div>
+            <div><strong>{{ counts.all }}</strong><span>همه درخواست‌ها</span></div>
+        </a>
+        <a href="{{ url_for('admin_organization_requests', status='در انتظار بررسی') }}" class="stat-card" style="text-decoration:none;">
+            <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div><strong>{{ counts.pending }}</strong><span>در انتظار بررسی</span></div>
+        </a>
+        <a href="{{ url_for('admin_organization_requests', status='در حال پیگیری') }}" class="stat-card" style="text-decoration:none;">
+            <div class="stat-icon"><i class="fa-solid fa-headset"></i></div>
+            <div><strong>{{ counts.tracking }}</strong><span>در حال پیگیری</span></div>
+        </a>
+        <a href="{{ url_for('admin_organization_requests', status='تکمیل شد') }}" class="stat-card" style="text-decoration:none;">
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div><strong>{{ counts.completed }}</strong><span>تکمیل‌شده</span></div>
+        </a>
+    </div>
+
+    <div class="admin-card" style="padding:22px;">
+        <div class="admin-title" style="margin-bottom:18px;">
+            <div>
+                <h2>لیست درخواست‌ها</h2>
+                <p>برای پیگیری، وضعیت هر درخواست را مستقیماً از همین صفحه تغییر بده.</p>
+            </div>
+            <form method="get" action="{{ url_for('admin_organization_requests') }}" style="display:flex;gap:8px;align-items:center;">
+                <select name="status" onchange="this.form.submit()" aria-label="فیلتر وضعیت">
+                    <option value="">همه وضعیت‌ها</option>
+                    {% for value in allowed_statuses %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        {% if requests %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>کد پیگیری</th>
+                        <th>شرکت / سازمان</th>
+                        <th>رابط</th>
+                        <th>تماس</th>
+                        <th>موضوع</th>
+                        <th>فاکتور</th>
+                        <th>وضعیت</th>
+                        <th>ثبت شده</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in requests %}
+                    <tr>
+                        <td><strong>{{ item.id }}</strong></td>
+                        <td><strong>KHD-ORG-{{ "%06d"|format(item.id) }}</strong></td>
+                        <td>
+                            <strong>{{ item.company_name }}</strong>
+                            {% if item.national_id %}
+                            <small style="display:block;opacity:.7;">شناسه ملی: {{ item.national_id }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ item.contact_name }}
+                            {% if item.contact_email %}
+                            <small style="display:block;"><a href="mailto:{{ item.contact_email }}">{{ item.contact_email }}</a></small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.phone %}
+                            <a href="tel:{{ item.phone }}">{{ item.phone }}</a>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>{{ item.contract_subject or "—" }}</td>
+                        <td>
+                            {% if item.invoice_required %}
+                            <span class="status success">موردنیاز</span>
+                            {% else %}
+                            <span class="status">خیر</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="{{ url_for('admin_organization_request_status', request_id=item.id) }}" style="display:flex;gap:6px;min-width:170px;">\n                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="status" onchange="this.form.submit()">
+                                    {% for value in allowed_statuses %}
+                                    <option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </td>
+                        <td style="white-space:nowrap;">
+                            {{ item.created_at.strftime('%Y/%m/%d %H:%M') if item.created_at else '—' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="9">
+                            <details>
+                                <summary>مشاهده جزئیات کامل درخواست #{{ item.id }}</summary>
+                                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px;">
+                                    <div><strong>شماره اقتصادی:</strong><br>{{ item.economic_code or "—" }}</div>
+                                    <div><strong>شماره ثبت:</strong><br>{{ item.registration_number or "—" }}</div>
+                                    <div><strong>کد پستی:</strong><br>{{ item.postal_code or "—" }}</div>
+                                    <div><strong>ارزش تقریبی:</strong><br>{{ item.estimated_value or "—" }}</div>
+                                    <div><strong>شرایط پرداخت:</strong><br>{{ item.payment_terms or "—" }}</div>
+                                    <div style="grid-column:1/-1;"><strong>نشانی:</strong><br>{{ item.address or "—" }}</div>
+                                    <div style="grid-column:1/-1;"><strong>پیام:</strong><br>{{ item.message or "—" }}</div>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-help">
+            <div><i class="fa-solid fa-inbox"></i></div>
+            <div>
+                <strong>درخواستی پیدا نشد</strong>
+                <p>در این فیلتر هنوز درخواست سازمانی ثبت نشده است.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

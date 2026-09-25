@@ -1,3 +1,5 @@
+import smtplib
+from email.message import EmailMessage
 import os
 import secrets
 import uuid
@@ -835,6 +837,43 @@ def validate_csrf():
     return None
 
 
+
+
+def send_kharidino_email(to_email, subject, body):
+    """Send optional SMTP email. Returns True when SMTP is configured and delivery succeeds."""
+    to_email = (to_email or "").strip()
+    smtp_host = os.environ.get("KHARIDINO_SMTP_HOST", "").strip()
+    smtp_user = os.environ.get("KHARIDINO_SMTP_USER", "").strip()
+    smtp_password = os.environ.get("KHARIDINO_SMTP_PASSWORD", "")
+    if not to_email or not smtp_host or not smtp_user or not smtp_password:
+        return False
+
+    smtp_port = int(os.environ.get("KHARIDINO_SMTP_PORT", "587"))
+    sender = os.environ.get("KHARIDINO_SMTP_FROM", smtp_user).strip()
+    use_ssl = os.environ.get("KHARIDINO_SMTP_SSL", "0").strip().lower() in {"1", "true", "yes"}
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to_email
+    msg.set_content(body)
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15) as server:
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        return True
+    except Exception:
+        app.logger.exception("Kharidino SMTP notification failed")
+        return False
+
 # =========================================================
 # AUTH HELPERS
 # =========================================================
@@ -1260,6 +1299,67 @@ def home():
         category_id=category_id,
         selected_category=selected_category,
         lowest_price=lowest_price
+    )
+
+
+# =========================================================
+# CATALOG
+# =========================================================
+
+@app.route("/products")
+def catalog_products():
+    """Display the complete active product catalog."""
+    q = request.args.get("q", "").strip()
+    sort = request.args.get("sort", "newest").strip()
+
+    query = Product.query.filter_by(active=True)
+
+    if q:
+        search = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Product.name.ilike(search),
+                Product.description.ilike(search),
+                Product.category.has(Category.name.ilike(search)),
+            )
+        )
+
+    products = query.all()
+
+    if sort == "price_low":
+        products.sort(key=lambda item: (lowest_price(item), -item.id))
+    elif sort == "price_high":
+        products.sort(key=lambda item: (-lowest_price(item), -item.id))
+    elif sort == "name":
+        products.sort(key=lambda item: item.name.lower())
+    else:
+        sort = "newest"
+        products.sort(key=lambda item: item.id, reverse=True)
+
+    categories = (
+        Category.query
+        .filter_by(active=True)
+        .order_by(Category.id.asc())
+        .all()
+    )
+
+    stores = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
+
+    return render_template(
+        "index.html",
+        products=products,
+        categories=categories,
+        stores=stores,
+        q=q,
+        sort=sort,
+        category_id="",
+        selected_category=None,
+        lowest_price=lowest_price,
     )
 
 
@@ -2737,7 +2837,27 @@ def organization_request():
     )
     db.session.add(inquiry)
     db.session.commit()
-    flash("درخواست همکاری سازمانی ثبت شد. واحد فروش خریدینو با شما تماس خواهد گرفت.", "success")
+
+    tracking_code = f"KHD-ORG-{inquiry.id:06d}"
+    admin_email = os.environ.get("KHARIDINO_ADMIN_NOTIFICATION_EMAIL", "").strip()
+    customer_body = (
+        f"درخواست سازمانی شما با کد پیگیری {tracking_code} ثبت شد.\\n\\n"
+        "واحد فروش خریدینو درخواست شما را بررسی خواهد کرد."
+    )
+    if inquiry.contact_email:
+        send_kharidino_email(
+            inquiry.contact_email,
+            f"ثبت درخواست سازمانی خریدینو | {tracking_code}",
+            customer_body,
+        )
+    if admin_email:
+        send_kharidino_email(
+            admin_email,
+            f"درخواست سازمانی جدید | {tracking_code} | {inquiry.company_name}",
+            f"درخواست جدیدی در خریدینو ثبت شد.\\nکد پیگیری: {tracking_code}\\nسازمان: {inquiry.company_name}\\nرابط: {inquiry.contact_name}\\nتلفن: {inquiry.phone}\\nایمیل: {inquiry.contact_email}\\nموضوع: {inquiry.contract_subject}\\nفاکتور: {'بله' if inquiry.invoice_required else 'خیر'}",
+        )
+
+    flash(f"درخواست همکاری سازمانی ثبت شد. کد پیگیری شما: {tracking_code}", "success")
     return redirect(url_for("organizations"))
 
 
@@ -2808,6 +2928,73 @@ def order_invoice(order_id):
 # =========================================================
 # ADMIN DASHBOARD
 # =========================================================
+
+@app.route("/admin/organization-requests")
+@admin_required
+def admin_organization_requests():
+    status_filter = request.args.get("status", "").strip()
+    allowed_statuses = [
+        "در انتظار بررسی",
+        "در حال پیگیری",
+        "تکمیل شد",
+        "رد شد",
+    ]
+
+    query = OrganizationRequest.query.order_by(OrganizationRequest.id.desc())
+    if status_filter in allowed_statuses:
+        query = query.filter_by(status=status_filter)
+    else:
+        status_filter = ""
+
+    requests = query.all()
+    counts = {
+        "all": OrganizationRequest.query.count(),
+        "pending": OrganizationRequest.query.filter_by(status="در انتظار بررسی").count(),
+        "tracking": OrganizationRequest.query.filter_by(status="در حال پیگیری").count(),
+        "completed": OrganizationRequest.query.filter_by(status="تکمیل شد").count(),
+        "rejected": OrganizationRequest.query.filter_by(status="رد شد").count(),
+    }
+
+    return render_template(
+        "admin_organization_requests.html",
+        requests=requests,
+        counts=counts,
+        status_filter=status_filter,
+        allowed_statuses=allowed_statuses,
+    )
+
+
+@app.post("/admin/organization-requests/<int:request_id>/status")
+@admin_required
+def admin_organization_request_status(request_id):
+    inquiry = db.session.get(OrganizationRequest, request_id)
+    if not inquiry:
+        abort(404)
+
+    allowed_statuses = {
+        "در انتظار بررسی",
+        "در حال پیگیری",
+        "تکمیل شد",
+        "رد شد",
+    }
+    new_status = request.form.get("status", "").strip()
+    if new_status not in allowed_statuses:
+        flash("وضعیت انتخاب‌شده معتبر نیست.", "danger")
+        return redirect(url_for("admin_organization_requests"))
+
+    inquiry.status = new_status
+    db.session.commit()
+
+    tracking_code = f"KHD-ORG-{inquiry.id:06d}"
+    if inquiry.contact_email:
+        send_kharidino_email(
+            inquiry.contact_email,
+            f"به‌روزرسانی درخواست خریدینو | {tracking_code}",
+            f"وضعیت درخواست سازمانی شما با کد {tracking_code} به «{new_status}» تغییر کرد.\\n\\nواحد فروش خریدینو در صورت نیاز با شما تماس خواهد گرفت.",
+        )
+    flash(f"وضعیت درخواست #{inquiry.id} به «{new_status}» تغییر کرد.", "success")
+    return redirect(url_for("admin_organization_requests", status=request.args.get("status", "")))
+
 
 @app.route("/admin")
 @admin_required

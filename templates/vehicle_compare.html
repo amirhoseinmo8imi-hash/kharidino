@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}مقایسه خودروها | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-26-2') }}">{% endblock %}
+{% block content %}
+<section class="vehicle-page vehicle-compare-page">
+  <div class="vehicle-section-title"><div><span>تصمیم‌گیری هوشمند</span><h1>مقایسه خودروها</h1></div><a href="{{ url_for('vehicles') }}">بازگشت به بازار <i class="fa-solid fa-arrow-left"></i></a></div>
+  {% if ads %}
+  <div class="vehicle-compare-toolbar"><strong>{{ ads|length }} خودرو انتخاب شده</strong><span>تا ۴ خودرو را کنار هم مقایسه کن.</span><button type="button" id="clearVehicleCompare">پاک کردن مقایسه</button></div>
+  <div class="vehicle-compare-table">
+    <div class="vehicle-compare-head">
+      <div class="compare-label">مشخصات</div>
+      {% for ad in ads %}<div class="compare-car"><img src="{{ ad.image if ad.image.startswith('http') else url_for('static',filename=ad.image) }}" alt="{{ ad.title }}"><a href="{{ url_for('vehicle_detail',ad_id=ad.id) }}">{{ ad.title }}</a><strong>{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}</strong></div>{% endfor %}
+    </div>
+    {% for label,attr in [('برند','brand'),('مدل','model'),('سال','year'),('کارکرد','mileage'),('سوخت','fuel'),('گیربکس','gearbox'),('رنگ','body_color'),('موتور','engine'),('وضعیت بدنه','accident_status'),('نوع فروشنده','seller_type'),('شهر','city')] %}
+    <div class="vehicle-compare-row"><div class="compare-label">{{ label }}</div>{% for ad in ads %}<div>{% set val=ad|attr if false else '' %}{% if attr=='mileage' and ad.mileage %}{{ "{:,}".format(ad.mileage) }} کیلومتر{% else %}{{ ad.__dict__.get(attr) or '—' }}{% endif %}</div>{% endfor %}</div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="vehicle-empty"><i class="fa-solid fa-scale-balanced"></i><h2>هنوز خودرویی برای مقایسه انتخاب نکردی</h2><p>از کارت آگهی‌ها گزینه «مقایسه» را فعال کن.</p><a class="vehicle-primary" href="{{ url_for('vehicles') }}">انتخاب خودرو</a></div>
+  {% endif %}
+</section>
+<script>
+document.getElementById('clearVehicleCompare')?.addEventListener('click',async()=>{await fetch('{{ url_for("clear_vehicle_compare") }}',{method:'POST'});location.href='{{ url_for("vehicles") }}';});
+</script>
+{% endblock %}

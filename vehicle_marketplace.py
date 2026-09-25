@@ -150,6 +150,27 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
             favorite = bool(VehicleFavorite.query.filter_by(
                 user_id=session["user_id"], vehicle_ad_id=ad.id
             ).first())
+        similar_query=VehicleAd.query.filter(
+            VehicleAd.status=="approved",
+            VehicleAd.id!=ad.id,
+            VehicleAd.category==ad.category,
+        )
+        if ad.brand:
+            similar_query=similar_query.filter(VehicleAd.brand==ad.brand)
+        similar_ads=similar_query.order_by(VehicleAd.id.desc()).limit(6).all()
+        if len(similar_ads)<4:
+            similar_ads=VehicleAd.query.filter(
+                VehicleAd.status=="approved",
+                VehicleAd.id!=ad.id,
+                VehicleAd.category==ad.category,
+            ).order_by(VehicleAd.id.desc()).limit(6).all()
+        market_ads=VehicleAd.query.filter(
+            VehicleAd.status=="approved",
+            VehicleAd.category==ad.category,
+        ).order_by(VehicleAd.id.desc()).limit(60).all()
+        prices=[x.price for x in market_ads if x.price]
+        market_median=sorted(prices)[len(prices)//2] if prices else 0
+        seller_ad_count=VehicleAd.query.filter_by(user_id=ad.user_id).count() if ad.user_id else 0
         return render_template(
             "vehicle_detail.html",
             ad=ad,
@@ -157,6 +178,9 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
             status_labels=VEHICLE_STATUS_LABELS,
             vehicle_favorite=favorite,
             vehicle_compare_selected=ad.id in session.get("vehicle_compare_ids", []),
+            similar_ads=similar_ads,
+            market_median=market_median,
+            seller_ad_count=seller_ad_count,
         )
 
     @app.post("/api/vehicle/<int:ad_id>/favorite")

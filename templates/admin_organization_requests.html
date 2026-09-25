@@ -97,7 +97,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <form method="post" action="{{ url_for('admin_organization_request_status', request_id=item.id) }}" style="display:flex;gap:6px;min-width:170px;">
+                            <form method="post" action="{{ url_for('admin_organization_request_status', request_id=item.id) }}" style="display:flex;gap:6px;min-width:170px;">\n                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <select name="status" onchange="this.form.submit()">
                                     {% for value in allowed_statuses %}
                                     <option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ value }}</option>

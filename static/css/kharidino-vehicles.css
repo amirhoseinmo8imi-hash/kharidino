@@ -71,3 +71,12 @@
 .vehicle-chat-unread{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#ef4056;color:#fff;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
 .vehicle-chat-list-item{position:relative}
 @media(max-width:600px){.vehicle-chat-head-tools{gap:5px}.vehicle-chat-notify-btn{padding:7px 8px}.vehicle-chat-ad-link{font-size:11px}}
+
+
+/* Vehicle interactive actions */
+.vehicle-detail-actions .vehicle-action-btn{cursor:pointer;border:0;font:inherit}
+.vehicle-detail-actions .vehicle-action-btn.active{color:#d61f3d;background:rgba(214,31,61,.08)}
+.vehicle-action-toast{position:fixed;right:24px;bottom:24px;z-index:9999;padding:12px 18px;border-radius:14px;background:#171717;color:#fff;box-shadow:0 12px 35px rgba(0,0,0,.22);opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s ease;font-size:14px}
+.vehicle-action-toast.show{opacity:1;transform:translateY(0)}
+.vehicle-favorites-page{padding-bottom:60px}
+@media(max-width:600px){.vehicle-action-toast{right:14px;left:14px;bottom:18px;text-align:center}}

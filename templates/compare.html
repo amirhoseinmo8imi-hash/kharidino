@@ -3,11 +3,11 @@
 {% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pages-v3.css', v='2026-09-06-1') }}">{% endblock %}
 {% block content %}
 <div class="kp-page">
-  <section class="kp-hero"><span class="kp-eyebrow"><i class="fa-solid fa-scale-balanced"></i> مقایسه هوشمند</span><h1>محصولات را کنار هم مقایسه کن</h1><p>تا ۴ محصول را انتخاب کن و قیمت، دسته‌بندی، تعداد فروشگاه و امتیاز کاربران را یکجا ببین.</p></section>
+  <section class="kp-hero"><span class="kp-eyebrow"><i class="fa-solid fa-scale-balanced"></i> مقایسه هوشمند</span><h1>محصولات را کنار هم مقایسه کن</h1><p>تا ۴ محصول را انتخاب کن و قیمت، دسته‌بندی، تعداد فروشگاه و امتیاز کاربران را یکجا ببین.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><a class="btn btn-primary" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-plus"></i> افزودن محصول برای مقایسه</a><a class="btn" href="{{ url_for('home') }}">بازگشت به خرید</a></div></section>
   {% if products %}
   <section class="kp-section"><div class="kp-section-title"><h2>مقایسه انتخاب‌های تو</h2><p>{{ products|length }} محصول انتخاب شده</p></div><div class="kp-compare-shell"><table class="kp-compare"><thead><tr><th>ویژگی</th>{% for p in products %}<th><div class="kp-product">{% if p.image %}<img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}">{% else %}<div class="kp-product-placeholder"><i class="fa-solid fa-box"></i></div>{% endif %}<a href="{{ url_for('product_detail', product_id=p.id) }}">{{ p.name }}</a><form method="POST" action="{{ url_for('compare_remove', product_id=p.id) }}"><button class="kp-remove" type="submit"><i class="fa-solid fa-xmark"></i> حذف</button></form></div></th>{% endfor %}</tr></thead><tbody>
   <tr><td>دسته‌بندی</td>{% for p in products %}<td>{{ p.category.name if p.category else '—' }}</td>{% endfor %}</tr>
-  <tr><td>بهترین قیمت</td>{% for p in products %}<td><strong class="kp-best">{{ lowest_price(p)|money }} <small>تومان</small></strong></td>{% endfor %}</tr>
+  <tr><td>بهترین قیمت</td>{% for p in products %}<td><strong class="kp-best">{{ lowest_price(p)|money }} <small>تومان</small></strong>{% if p.offers %}<br><small>{{ p.offers|selectattr('in_stock')|list|length }} پیشنهاد موجود</small>{% endif %}</td>{% endfor %}</tr>
   <tr><td>فروشگاه‌ها</td>{% for p in products %}<td><i class="fa-solid fa-store"></i> {{ p.offers|length }}</td>{% endfor %}</tr>
   <tr><td>امتیاز کاربران</td>{% for p in products %}<td>★ {{ product_rating(p) or 'بدون امتیاز' }}</td>{% endfor %}</tr>
   <tr><td>توضیحات</td>{% for p in products %}<td>{{ p.description or 'توضیحی ثبت نشده است.' }}</td>{% endfor %}</tr>

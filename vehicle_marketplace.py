@@ -328,7 +328,7 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
                 except ValueError: return 0
             paths=[]
             try:
-                for f in request.files.getlist("images")[:8]:
+                for f in request.files.getlist("images")[:20]:
                     p=save_image(f)
                     if p: paths.append(p)
             except ValueError as exc:

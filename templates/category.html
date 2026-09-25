@@ -45,7 +45,7 @@
         {% for product in products %}
         <article class="kdg-card-wrap">
           <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
-            <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid {{ category.icon or 'fa-box-open' }}"></i>{% endif %}</div>
+            <div class="kdg-product-image"><img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="lazy"></div>
             <small>{{ category.name }}</small>
             <h3>{{ product.name }}</h3>
             <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>

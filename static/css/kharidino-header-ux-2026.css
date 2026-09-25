@@ -455,3 +455,21 @@
 @media(prefers-reduced-motion:reduce){
   .km-mega-side-item{transition:none}
 }
+
+
+/* 2026-09-26 navigation DOM cleanup */
+.km-nav-primary{
+  min-width:0;
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.km-nav-primary .km-nav-business{flex:0 0 auto}
+.km-nav-primary .km-nav-link--support{margin-right:auto}
+@media(max-width:1200px) and (min-width:861px){
+  .km-nav-primary{gap:2px}
+}
+@media(max-width:860px){
+  .km-nav-primary{display:contents}
+}

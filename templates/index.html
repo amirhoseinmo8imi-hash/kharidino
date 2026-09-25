@@ -88,14 +88,37 @@
         <div class="kh-watch-dial">
           <span class="kh-watch-brand">OMEGA</span>
           <span class="kh-watch-mark kh-mark-12">12</span><span class="kh-watch-mark kh-mark-3">3</span><span class="kh-watch-mark kh-mark-6">6</span><span class="kh-watch-mark kh-mark-9">9</span>
-          <i class="kh-watch-hand kh-hand-h"></i><i class="kh-watch-hand kh-hand-m"></i><i class="kh-watch-hand kh-hand-s"></i>
+          <i class="kh-watch-hand kh-hand-h" data-watch-hour></i><i class="kh-watch-hand kh-hand-m" data-watch-minute></i><i class="kh-watch-hand kh-hand-s" data-watch-second></i>
           <b class="kh-watch-center"></b>
+          <span class="kh-watch-live-dot" title="ساعت زنده"></span>
+          <span class="kh-watch-date" data-watch-date></span>
         </div>
       </div>
       <div class="kh-watch-spark kh-spark-1"></div><div class="kh-watch-spark kh-spark-2"></div>
     </div>
     <div class="kh-luxury-bottom"><span>TIMELESS DESIGN</span><span>PRECISION</span><span>ICONIC STYLE</span></div>
   </section>
+  <script>
+  (function(){
+    function updateLiveWatch(){
+      const now=new Date();
+      const s=now.getSeconds()+now.getMilliseconds()/1000;
+      const m=now.getMinutes()+s/60;
+      const h=(now.getHours()%12)+m/60;
+      const hour=document.querySelector('[data-watch-hour]');
+      const minute=document.querySelector('[data-watch-minute]');
+      const second=document.querySelector('[data-watch-second]');
+      const date=document.querySelector('[data-watch-date]');
+      if(!hour||!minute||!second)return;
+      hour.style.transform='rotate('+((h*30))+'deg)';
+      minute.style.transform='rotate('+((m*6))+'deg)';
+      second.style.transform='rotate('+((s*6))+'deg)';
+      if(date)date.textContent=now.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }
+    updateLiveWatch();
+    setInterval(updateLiveWatch,250);
+  })();
+  </script>
 
   <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
     <div class="kh-vcat-head">

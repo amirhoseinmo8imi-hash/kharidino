@@ -7,7 +7,7 @@
   {% if chats %}
     {% for chat in chats %}
       <a class="vehicle-chat-list-item" href="{{ url_for('vehicle_chat', ad_id=chat.vehicle_ad_id, chat_id=chat.id) }}">
-        <i class="fa-regular fa-comments"></i><div><strong>آگهی شماره {{ chat.vehicle_ad_id }}</strong><span>{{ chat.updated_at.strftime('%Y/%m/%d %H:%M') if chat.updated_at else '' }}</span></div><span class="vehicle-chat-unread" data-chat-unread="{{ chat.unread_count }}" {% if not chat.unread_count %}hidden{% endif %}>{{ chat.unread_count if chat.unread_count < 100 else "99+" }}</span><i class="fa-solid fa-chevron-left"></i>
+        <i class="fa-regular fa-comments"></i><div><strong>آگهی شماره {{ chat.vehicle_ad_id }}</strong><span>{{ chat.updated_at.strftime('%Y/%m/%d %H:%M') if chat.updated_at else '' }}</span></div><span class="vehicle-chat-unread" data-chat-unread="{{ unread_by_chat.get(chat.id, 0) }}" {% if not unread_by_chat.get(chat.id, 0) %}hidden{% endif %}>{{ unread_by_chat.get(chat.id, 0) if unread_by_chat.get(chat.id, 0) < 100 else "99+" }}</span><i class="fa-solid fa-chevron-left"></i>
       </a>
     {% endfor %}
   {% else %}<div class="vehicle-chat-empty"><i class="fa-regular fa-comments"></i><strong>هنوز چتی نداری</strong></div>{% endif %}

@@ -39,7 +39,14 @@
       <div class="vehicle-seller-box">
         <div class="vehicle-seller-avatar"><i class="fa-solid fa-user"></i></div>
         <div class="vehicle-seller-info"><span>فروشنده</span><strong>{{ ad.seller_type }}</strong><small><i class="fa-solid fa-circle-check"></i> عضو خریدینو</small></div>
-        <a class="vehicle-call-btn" href="tel:{{ ad.phone }}"><i class="fa-solid fa-phone"></i> تماس</a>
+        <div class="vehicle-contact-actions">
+  {% if current_user and current_user.id != ad.user_id and vehicle_chat_enabled %}
+    <a class="vehicle-chat-btn" href="{{ url_for('vehicle_chat', ad_id=ad.id) }}"><i class="fa-regular fa-comments"></i> چت با فروشنده</a>
+  {% elif current_user and current_user.id != ad.user_id %}
+    <a class="vehicle-chat-btn vehicle-chat-btn--locked" href="{{ url_for('vehicle_verification') }}"><i class="fa-solid fa-shield-halved"></i> تأیید برای چت</a>
+  {% endif %}
+  <a class="vehicle-call-btn" href="tel:{{ ad.phone }}"><i class="fa-solid fa-phone"></i> تماس</a>
+</div>
       </div>
     </div>
   </div>

@@ -1,0 +1,61 @@
+/* Kharidino 2026 — Marketplace Redesign: Shop + Auto */
+.kh-portal-switch{margin:16px 0;display:grid;gap:13px}
+.kh-portal-head{padding:0 4px;text-align:right;direction:rtl}
+.kh-portal-head>span{font-size:9px;color:#ef4056;font-weight:950;letter-spacing:.4px}
+.kh-portal-head h2{margin:4px 0;font-size:21px;font-weight:950;color:#17191d}
+.kh-portal-head p{margin:0;color:#747980;font-size:10px;line-height:1.9}
+.kh-portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;direction:rtl}
+.kh-portal-card{position:relative;min-height:118px;display:grid;grid-template-columns:64px minmax(0,1fr) 30px;align-items:center;gap:15px;padding:20px 22px;border-radius:20px;text-decoration:none;overflow:hidden;border:1px solid #e4e5e8;box-shadow:0 9px 28px rgba(18,24,35,.06);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.kh-portal-card:before{content:"";position:absolute;inset:auto -40px -70px auto;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.08)}
+.kh-portal-card:hover{transform:translateY(-4px);box-shadow:0 17px 38px rgba(18,24,35,.12)}
+.kh-portal-shop{background:linear-gradient(135deg,#fff,#fff3f5)}
+.kh-portal-auto{background:linear-gradient(135deg,#171a20,#292e37);border-color:#30353f;color:#fff}
+.kh-portal-icon{width:58px;height:58px;border-radius:17px;display:grid;place-items:center;font-size:25px;position:relative;z-index:1}
+.kh-portal-shop .kh-portal-icon{background:#fff;color:#ef4056;box-shadow:0 6px 18px rgba(239,64,86,.12)}
+.kh-portal-auto .kh-portal-icon{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.12)}
+.kh-portal-copy{position:relative;z-index:1;min-width:0}
+.kh-portal-copy span{display:block;font-size:8px;font-weight:900;letter-spacing:1px;margin-bottom:4px;opacity:.72}
+.kh-portal-copy strong{display:block;font-size:18px;font-weight:950}
+.kh-portal-copy p{margin:4px 0 0;font-size:9px;line-height:1.8;color:#737982}
+.kh-portal-auto .kh-portal-copy p{color:#b9bec6}
+.kh-portal-arrow{position:relative;z-index:1;font-size:15px}
+.kh-portal-shop .kh-portal-arrow{color:#ef4056}
+.kh-portal-auto .kh-portal-arrow{color:#fff}
+
+/* Dedicated auto-market zone */
+.kh-auto-zone{margin:20px 0 0;padding:14px;background:linear-gradient(180deg,#eef1f5,#f8f9fb 80%);border:1px solid #dfe2e7;border-radius:24px;box-shadow:0 14px 40px rgba(20,25,35,.07);position:relative;overflow:hidden}
+.kh-auto-zone:before{content:"";position:absolute;width:360px;height:360px;left:-150px;top:90px;border-radius:50%;background:rgba(80,90,105,.06);pointer-events:none}
+.kh-auto-zone>*{position:relative;z-index:1}
+.kh-auto-zone-bar{min-height:62px;padding:7px 9px 13px;display:flex;align-items:center;justify-content:space-between;gap:14px;direction:rtl}
+.kh-auto-zone-bar div{display:grid;gap:3px}
+.kh-auto-zone-bar span{font-size:8px;font-weight:950;letter-spacing:1px;color:#626a75}
+.kh-auto-zone-bar span i{margin-left:5px}
+.kh-auto-zone-bar strong{font-size:20px;font-weight:950;color:#171a1f}
+.kh-auto-zone-bar a{display:inline-flex;align-items:center;gap:7px;padding:10px 13px;border-radius:10px;background:#20242b;color:#fff;text-decoration:none;font-size:9px;font-weight:900;white-space:nowrap;transition:transform .2s ease,background .2s ease}
+.kh-auto-zone-bar a:hover{transform:translateY(-2px);background:#ef4056}
+.kh-auto-zone .kh-vehicle-categories,.kh-auto-zone .kh-vehicle-showcase{margin-top:0!important;box-shadow:none!important}
+.kh-auto-zone .kh-vehicle-categories{background:transparent!important;border-color:#dfe2e7!important}
+.kh-auto-zone .kh-vehicle-showcase{margin-top:12px!important;background:#fff!important}
+.kh-auto-zone .kh-vcat-card{background:rgba(255,255,255,.8)!important}
+.kh-auto-zone .kh-showcase-window{background:#fff}
+
+/* Separate marketplace shortcuts into a calmer shopping utility row */
+.kh-market-shortcuts{border:1px solid #e5e6e9!important;border-radius:18px!important;background:#fff!important;padding:8px!important;box-shadow:0 6px 20px rgba(18,24,35,.04)!important}
+.kh-market-shortcuts a{border:0!important;border-radius:12px!important;background:#fafafb!important}
+.kh-market-shortcuts a:hover{background:#fff2f4!important}
+
+/* Make the top hierarchy more obvious */
+.km-nav-link--hot{color:#ef4056!important}
+.km-nav-link--support{font-weight:950!important}
+@media(max-width:760px){
+ .kh-portal-grid{grid-template-columns:1fr}
+ .kh-portal-card{min-height:100px;padding:15px 14px;grid-template-columns:52px minmax(0,1fr) 22px;gap:11px;border-radius:16px}
+ .kh-portal-icon{width:50px;height:50px;border-radius:14px;font-size:21px}
+ .kh-portal-copy strong{font-size:15px}
+ .kh-portal-copy p{font-size:8px}
+ .kh-auto-zone{margin-top:13px;padding:8px;border-radius:18px}
+ .kh-auto-zone-bar{display:block;padding:8px 6px 11px}
+ .kh-auto-zone-bar strong{font-size:16px}
+ .kh-auto-zone-bar a{margin-top:9px;width:max-content}
+}
+@media(prefers-reduced-motion:reduce){.kh-portal-card,.kh-auto-zone-bar a{transition:none}}

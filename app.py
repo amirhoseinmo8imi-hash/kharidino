@@ -2754,7 +2754,17 @@ def checkout():
 
         if coupon:
             coupon.used_count += 1
-        ensure_wallet(session["user_id"])
+
+        wallet = ensure_wallet(session["user_id"])
+        if payment_method == "کیف پول":
+            wallet.balance -= final_total
+            db.session.add(WalletTransaction(
+                user_id=session["user_id"],
+                amount=-final_total,
+                kind="purchase",
+                description=f"پرداخت سفارش #{order.id}"
+            ))
+
         notify(session["user_id"], "سفارش ثبت شد", f"سفارش شما با شماره #{order.id} ثبت شد.", "order")
         db.session.commit()
         session["cart"] = {}

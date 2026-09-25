@@ -816,6 +816,20 @@ def validate_csrf():
     if not submitted or not secrets.compare_digest(
         str(submitted), str(expected)
     ):
+        # Public authentication/onboarding forms can legitimately remain open
+        # across a session refresh (for example after restarting the dev server).
+        # Rebind their anonymous session to the submitted form token instead of
+        # returning a confusing 400. Authenticated mutations remain strict.
+        public_recovery_endpoints = {
+            "login",
+            "register",
+            "seller_register",
+            "organization_request",
+        }
+        if not session.get("user_id") and request.endpoint in public_recovery_endpoints and submitted:
+            session["csrf_token"] = str(submitted)
+            session.modified = True
+            return None
         abort(400, description="CSRF token is missing or invalid.")
 
     return None

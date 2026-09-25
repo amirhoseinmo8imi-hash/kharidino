@@ -13,7 +13,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
 
-from flask import render_template, request, redirect, url_for, flash, abort, session
+from flask import render_template, request, redirect, url_for, flash, abort, session, jsonify
 
 
 def register_vehicle_chat(app, db, User, login_required):
@@ -365,6 +365,69 @@ def register_vehicle_chat(app, db, User, login_required):
         chat.updated_at = datetime.utcnow()
         db.session.commit()
         return redirect(url_for("vehicle_chat", ad_id=ad.id))
+
+
+    def serialize_message(message, current_user_id):
+        return {
+            "id": message.id,
+            "body": message.body,
+            "sender_id": message.sender_id,
+            "mine": message.sender_id == current_user_id,
+            "created_at": message.created_at.strftime("%Y/%m/%d %H:%M") if message.created_at else "",
+        }
+
+    def unread_total(user_id):
+        return (
+            VehicleChatMessage.query
+            .join(VehicleChat, VehicleChat.id == VehicleChatMessage.chat_id)
+            .filter(
+                db.or_(VehicleChat.buyer_id == user_id, VehicleChat.seller_id == user_id),
+                VehicleChatMessage.sender_id != user_id,
+                VehicleChatMessage.read_at.is_(None),
+            )
+            .count()
+        )
+
+    @app.get("/api/vehicle-chats/unread")
+    @login_required
+    def vehicle_chat_unread_api():
+        user_id = session["user_id"]
+        return jsonify({"count": unread_total(user_id)})
+
+    @app.get("/api/vehicle-chat/<int:chat_id>/messages")
+    @login_required
+    def vehicle_chat_messages_api(chat_id):
+        user_id = session["user_id"]
+        chat = db.session.get(VehicleChat, chat_id)
+        if not chat:
+            abort(404)
+        if user_id not in {chat.buyer_id, chat.seller_id}:
+            abort(403)
+
+        try:
+            after_id = max(0, int(request.args.get("after_id", "0")))
+        except (TypeError, ValueError):
+            after_id = 0
+
+        query = VehicleChatMessage.query.filter(
+            VehicleChatMessage.chat_id == chat.id,
+            VehicleChatMessage.id > after_id,
+        ).order_by(VehicleChatMessage.id.asc())
+        messages = query.all()
+
+        # Opening/polling the active conversation counts incoming messages as read.
+        unread = [m for m in messages if m.sender_id != user_id and m.read_at is None]
+        if unread:
+            now = datetime.utcnow()
+            for message in unread:
+                message.read_at = now
+            db.session.commit()
+
+        return jsonify({
+            "messages": [serialize_message(m, user_id) for m in messages],
+            "unread_count": unread_total(user_id),
+            "chat_updated_at": chat.updated_at.isoformat() if chat.updated_at else None,
+        })
 
     @app.get("/my-chats")
     @login_required

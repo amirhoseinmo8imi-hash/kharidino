@@ -1331,6 +1331,15 @@ def home():
         .all()
     )
 
+    # Homepage vehicle showcase: only approved ads, newest first.
+    vehicle_ads = (
+        VehicleAd.query
+        .filter_by(status="approved")
+        .order_by(VehicleAd.id.desc())
+        .limit(16)
+        .all()
+    )
+
     selected_category = None
     if category_id:
         selected_category = db.session.get(Category, int(category_id))
@@ -1344,7 +1353,8 @@ def home():
         sort=sort,
         category_id=category_id,
         selected_category=selected_category,
-        lowest_price=lowest_price
+        lowest_price=lowest_price,
+        vehicle_ads=vehicle_ads
     )
 
 

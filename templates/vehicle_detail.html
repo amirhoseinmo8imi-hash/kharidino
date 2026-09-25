@@ -35,6 +35,11 @@
         </div>
       </div>
 
+      <div class="vehicle-market-insight">
+  <div><i class="fa-solid fa-chart-line"></i><span><strong>دید بازار</strong><small>{% if market_median %}میانگین میانه آگهی‌های همین دسته حدود {{ "{:,}".format(market_median) }} تومان است.{% else %}اطلاعات کافی برای مقایسه بازار وجود ندارد.{% endif %}</small></span></div>
+  <div><i class="fa-solid fa-layer-group"></i><span><strong>فروشنده</strong><small>{{ seller_ad_count }} آگهی ثبت‌شده در خریدینو</small></span></div>
+</div>
+
       <div class="vehicle-price-panel"><span>قیمت</span><strong>{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}</strong>{% if ad.negotiable %}<small><i class="fa-solid fa-circle-check"></i> قابل مذاکره</small>{% endif %}</div>
 
       <div class="vehicle-spec-box">
@@ -68,6 +73,19 @@
     <aside class="vehicle-safety-box"><i class="fa-solid fa-shield-halved"></i><div><strong>نکات ایمنی خرید</strong><p>قبل از معامله، خودرو و مدارک را بررسی کن و از پرداخت بیعانه بدون اطمینان از فروشنده خودداری کن.</p></div></aside>
   </div>
 
+{% if similar_ads %}
+  <section class="vehicle-similar-section">
+    <div class="vehicle-section-title"><div><span>پیشنهادهای نزدیک</span><h2>آگهی‌های مشابه این خودرو</h2></div><a href="{{ url_for('vehicles',category=ad.category) }}">مشاهده همه <i class="fa-solid fa-arrow-left"></i></a></div>
+    <div class="vehicle-grid vehicle-grid-similar">
+      {% for item in similar_ads %}
+      <a class="vehicle-card vehicle-card-pro" href="{{ url_for('vehicle_detail',ad_id=item.id) }}">
+        <div class="vehicle-card-image">{% if item.image %}<img src="{{ item.image if item.image.startswith('http') else url_for('static',filename=item.image) }}" alt="{{ item.title }}" loading="lazy">{% endif %}<span class="vehicle-card-tag">{{ item.category }}</span></div>
+        <div class="vehicle-card-body"><div class="vehicle-card-location"><i class="fa-solid fa-location-dot"></i> {{ item.city }}</div><h2>{{ item.title }}</h2><div class="vehicle-card-bottom"><strong>{% if item.price %}{{ "{:,}".format(item.price) }} تومان{% else %}توافقی{% endif %}</strong><span class="vehicle-view"><i class="fa-solid fa-arrow-left"></i></span></div></div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
   {% if current_user and current_user.id==ad.user_id %}
   <form class="vehicle-owner-actions" method="post" action="{{ url_for('vehicle_delete', ad_id=ad.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="vehicle-danger" type="submit"><i class="fa-solid fa-trash"></i> حذف آگهی</button></form>
   {% endif %}

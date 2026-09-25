@@ -23,7 +23,7 @@
       <div class="kh-hero-products">
         {% for product in products[:3] %}
         <a class="kh-hero-product kh-hero-product-{{ loop.index }}" href="{{ url_for('product_detail', product_id=product.id) }}">
-          <div><img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="eager" onerror="this.onerror=null;this.src='{{ product_image_url(product) }}';"></div>
+          <div><img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="eager"></div>
           <span>{{ product.name }}</span>
           <strong>{{ lowest_price(product)|money }} <small>تومان</small></strong>
         </a>

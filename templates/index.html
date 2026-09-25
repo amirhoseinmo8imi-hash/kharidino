@@ -11,37 +11,6 @@
 {% endblock %}
 {% block content %}
 <div class="km-home">
-  <div class="container">
-    <header class="km-topbar">
-      <div class="km-header">
-        <a class="km-logo" href="{{ url_for('home') }}">خریدینو</a>
-        <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ q or '' }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
-        <div class="km-user-actions">
-          {% if session.get('user_id') %}<a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
-          <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
-          {% if current_user and current_user.role == 'seller' %}<a class="km-action km-action--seller" href="{{ url_for('seller_dashboard') }}"><i class="fa-solid fa-store"></i><span>پنل فروشنده</span></a>{% elif session.get('user_id') %}<a class="km-action km-action--seller" href="{{ url_for('register') }}"><i class="fa-solid fa-store"></i><span>فروشنده شوید</span></a>{% endif %}
-          {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
-          {% if session.get('user_id') %}<form class="km-action km-action--logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="km-logout-button"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></button></form>{% endif %}
-        </div>
-      </div>
-      <nav class="km-nav" aria-label="ناوبری فروشگاه"><div class="km-nav-inner">
-  <div class="km-cat-menu-wrap">
-    <button type="button" class="km-cat-menu-trigger" aria-haspopup="true" aria-expanded="false">
-      <i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>
-    </button>
-    <div class="km-category-mega" role="menu" aria-label="دسته‌بندی کالاها">
-      {% for cat in (categories|default([])) %}
-      <a class="km-category-mega-link" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
-        <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
-        <span>{{ cat.name }}</span>
-      </a>
-      {% else %}<div class="km-category-mega-empty">دسته‌بندی‌ای برای نمایش وجود ندارد.</div>{% endfor %}
-    </div>
-  </div>
-  {% for cat in (categories|default([]))[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}
-</div></nav>
-    </header>
-
     <section class="ki-slider" aria-label="پیشنهادهای خریدینو"><div class="ki-slides" id="kiSlides">
       <article class="ki-slide is-active"><div class="ki-slide-copy"><span class="ki-slide-badge"><i class="fa-solid fa-bolt"></i> خرید هوشمند با خریدینو</span><h1>{{ setting("hero_title", "بهترین قیمت را قبل از خرید پیدا کن") }}</h1><p>{{ setting("hero_subtitle", "قیمت محصولات را بین فروشگاه‌ها مقایسه کن و با آگاهی بیشتر خرید کن.") }}</p><a class="ki-slide-btn" href="#products">مشاهده پیشنهادها <i class="fa-solid fa-arrow-left"></i></a></div><div class="ki-slide-art"><div class="ki-art-circle"></div><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></div></article>
       {% for product in products[:2] %}<article class="ki-slide{% if loop.first %} is-next{% endif %}"><div class="ki-slide-copy"><span class="ki-slide-badge"><i class="fa-solid fa-tags"></i> پیشنهاد ویژه خریدینو</span><h2>{{ product.name }}</h2><p>قیمت این محصول را بین فروشگاه‌ها مقایسه کن و بهترین پیشنهاد موجود را پیدا کن.</p><a class="ki-slide-btn" href="{{ url_for('product_detail', product_id=product.id) }}">مشاهده محصول <i class="fa-solid fa-arrow-left"></i></a></div><div class="ki-slide-product">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}<div class="ki-slide-product-price">از <strong>{{ lowest_price(product)|money }}</strong> تومان</div></div></article>{% endfor %}
@@ -130,7 +99,6 @@
 
     <section class="ki-newsletter"><div><span class="ki-news-icon"><i class="fa-solid fa-bell"></i></span><div><strong>از قیمت‌های بهتر باخبر شو</strong><p>محصول موردنظرت را جستجو کن، قیمت‌ها را مقایسه کن و هوشمندانه انتخاب کن.</p></div></div><a href="#products">دیدن پیشنهادها</a></section>
     <section class="ki-trust-grid"><div><i class="fa-solid fa-shield-halved"></i><strong>خرید مطمئن‌تر</strong><span>اطلاعات شفاف محصول و فروشگاه</span></div><div><i class="fa-solid fa-chart-line"></i><strong>مقایسه سریع</strong><span>پیدا کردن قیمت مناسب در یک نگاه</span></div><div><i class="fa-solid fa-headset"></i><strong>پشتیبانی</strong><span>همراه شما در مسیر خرید</span></div><div><i class="fa-solid fa-arrows-rotate"></i><strong>به‌روز و کاربردی</strong><span>نمایش پیشنهادهای تازه</span></div></section>
-  </div>
 </div>
 <script>(function(){let current=0,timer=null;const slides=()=>document.querySelectorAll('.ki-slide'),dots=()=>document.querySelectorAll('#kiDots button');function render(){const s=slides();if(!s.length)return;s.forEach((el,i)=>el.classList.toggle('is-active',i===current));dots().forEach((el,i)=>el.classList.toggle('is-active',i===current))}window.kiGoSlide=function(i){const s=slides();if(!s.length)return;current=(i+s.length)%s.length;render();restart()};window.kiMoveSlide=function(step){kiGoSlide(current+step)};function restart(){clearInterval(timer);if(slides().length>1)timer=setInterval(()=>kiMoveSlide(1),5500)}render();restart();const slider=document.querySelector('.ki-slider');if(slider){slider.addEventListener('mouseenter',()=>clearInterval(timer));slider.addEventListener('mouseleave',restart)}})();</script>
 {% endblock %}

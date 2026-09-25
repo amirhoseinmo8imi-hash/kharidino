@@ -1790,6 +1790,10 @@ def login():
 
             session["user_id"] = user.id
 
+            # پس از تعویض نشست، CSRF جدید بساز تا فرم‌های بعدی
+            # با نشست قبلی ناسازگار نباشند.
+            csrf_token()
+
             # حفظ سبد خرید قبلی
             session["cart"] = old_cart
 

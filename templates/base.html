@@ -135,7 +135,7 @@
     items.slice(0,7).forEach(function(item){
       const a=document.createElement('a');
       a.href='/product/'+item.id;
-      a.innerHTML='<i class="fa-solid fa-box"></i><span>'+String(item.name||'').replace(/[<>&"]/g,function(s){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[s]})+'</span><small>'+String(item.price||0).replace(/\\B(?=(\\d{3})+(?!\\d))/g,',')+' تومان</small>';
+      a.innerHTML='<i class="fa-solid fa-box"></i><span>'+String(item.name||'').replace(/[<>&"]/g,function(s){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[s]})+'</span><small>'+new Intl.NumberFormat('fa-IR').format(Number(item.price||0))+' تومان</small>';
       box.appendChild(a);
     });
     input.parentElement.appendChild(box);

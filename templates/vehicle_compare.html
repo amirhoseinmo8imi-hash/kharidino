@@ -12,7 +12,7 @@
       {% for ad in ads %}<div class="compare-car"><img src="{{ ad.image if ad.image.startswith('http') else url_for('static',filename=ad.image) }}" alt="{{ ad.title }}"><a href="{{ url_for('vehicle_detail',ad_id=ad.id) }}">{{ ad.title }}</a><strong>{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}</strong></div>{% endfor %}
     </div>
     {% for label,attr in [('برند','brand'),('مدل','model'),('سال','year'),('کارکرد','mileage'),('سوخت','fuel'),('گیربکس','gearbox'),('رنگ','body_color'),('موتور','engine'),('وضعیت بدنه','accident_status'),('نوع فروشنده','seller_type'),('شهر','city')] %}
-    <div class="vehicle-compare-row"><div class="compare-label">{{ label }}</div>{% for ad in ads %}<div>{% set val=ad|attr if false else '' %}{% if attr=='mileage' and ad.mileage %}{{ "{:,}".format(ad.mileage) }} کیلومتر{% else %}{{ ad.__dict__.get(attr) or '—' }}{% endif %}</div>{% endfor %}</div>
+    <div class="vehicle-compare-row"><div class="compare-label">{{ label }}</div>{% for ad in ads %}<div>{% set val=ad|attr if false else '' %}{% if attr=='mileage' and ad.mileage %}{{ "{:,}".format(ad.mileage) }} کیلومتر{% else %}{{ val or '—' }}{% endif %}</div>{% endfor %}</div>
     {% endfor %}
   </div>
   {% else %}

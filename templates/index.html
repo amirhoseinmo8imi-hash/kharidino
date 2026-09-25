@@ -42,6 +42,60 @@
     <a href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span>ثبت فروشگاه</span><small>شروع فروش</small></a>
   </div>
 
+  {% if not q and vehicle_ads %}
+  <section class="kh-vehicle-showcase" aria-label="آگهی‌های جدید وسایل نقلیه">
+    <div class="kh-showcase-head">
+      <div>
+        <span><i class="fa-solid fa-gauge-high"></i> بازار وسایل نقلیه</span>
+        <h2>آگهی‌های جدید، <strong>همین الان</strong></h2>
+        <p>خودرو، موتورسیکلت و وسایل نقلیه را با یک نگاه پیدا کن.</p>
+      </div>
+      <a href="{{ url_for('vehicles') }}">مشاهده همه آگهی‌ها <i class="fa-solid fa-arrow-left"></i></a>
+    </div>
+
+    <div class="kh-showcase-window">
+      <div class="kh-showcase-track">
+        {% for repeat in range(2) %}
+          {% for ad in vehicle_ads %}
+          <a class="kh-vehicle-card" href="{{ url_for('vehicle_detail', ad_id=ad.id) }}" aria-label="{{ ad.title }}">
+            <div class="kh-vehicle-media">
+              {% if ad.image %}
+                {% if ad.image.startswith('http') %}
+                  <img src="{{ ad.image }}" alt="{{ ad.title }}" loading="{{ 'eager' if loop.index <= 3 and repeat == 0 else 'lazy' }}">
+                {% else %}
+                  <img src="{{ url_for('static', filename=ad.image) }}" alt="{{ ad.title }}" loading="lazy">
+                {% endif %}
+              {% else %}
+                <div class="kh-vehicle-placeholder"><i class="fa-solid fa-car-side"></i></div>
+              {% endif %}
+              <span class="kh-vehicle-category">{{ ad.category }}</span>
+              {% if ad.negotiable %}<b class="kh-vehicle-negotiable">قابل مذاکره</b>{% endif %}
+            </div>
+            <div class="kh-vehicle-body">
+              <small><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</small>
+              <h3>{{ ad.title }}</h3>
+              <div class="kh-vehicle-meta">
+                {% if ad.year %}<span>{{ ad.year }}</span>{% endif %}
+                {% if ad.mileage %}<span>{{ "{:,}".format(ad.mileage) }} km</span>{% endif %}
+                {% if ad.gearbox %}<span>{{ ad.gearbox }}</span>{% endif %}
+              </div>
+              <strong class="kh-vehicle-price">
+                {% if ad.price %}{{ ad.price|money }} <small>تومان</small>{% else %}تماس بگیرید{% endif %}
+              </strong>
+            </div>
+          </a>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="kh-showcase-foot">
+      <span><i class="fa-solid fa-circle-play"></i> حرکت خودکار</span>
+      <span><i class="fa-solid fa-hand-pointer"></i> برای توقف، نشانگر را روی آگهی‌ها نگه دار</span>
+      <a href="{{ url_for('vehicles') }}">ثبت آگهی خودرو <i class="fa-solid fa-plus"></i></a>
+    </div>
+  </section>
+  {% endif %}
+
   <div class="kdg-search-chips" aria-label="جستجوهای محبوب">
     <span>جستجوهای محبوب:</span>
     {% for category in categories[:6] %}<a class="kdg-search-chip" href="{{ url_for('home', q=category.name) }}">{{ category.name }}</a>{% endfor %}

@@ -32,6 +32,7 @@
           {% if merchant.status == 'approved' %}<a class="ki-seller-btn ki-seller-btn--primary ki-register-full-btn" href="{{ url_for('seller_dashboard') }}">ورود به پنل فروشگاه <i class="fa-solid fa-arrow-left"></i></a>{% endif %}
         {% else %}
           <form method="post" class="ki-register-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label><span>نام و نام خانوادگی</span><input name="name" autocomplete="name" placeholder="مثلاً امیر محسنی" required></label>
             <label><span>ایمیل</span><input type="email" name="email" autocomplete="email" placeholder="name@example.com" required></label>
             <label><span>رمز عبور</span><input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="حداقل ۸ کاراکتر" required></label>

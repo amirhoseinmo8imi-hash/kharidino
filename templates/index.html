@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-25-1') }}">
 {% endblock %}
 {% block content %}
 <div class="kdg-home">
@@ -21,6 +22,26 @@
       <div class="kdg-hero-bubble"><i class="fa-solid fa-tags"></i><strong>پیشنهاد ویژه</strong><span>محصولات منتخب خریدینو</span></div>
     </div>
   </section>
+
+  <div class="kdg-search-chips" aria-label="جستجوهای محبوب">
+    <span>جستجوهای محبوب:</span>
+    {% for category in categories[:6] %}<a class="kdg-search-chip" href="{{ url_for('home', q=category.name) }}">{{ category.name }}</a>{% endfor %}
+    <a class="kdg-search-chip" href="{{ url_for('compare') }}">مقایسه قیمت</a>
+  </div>
+
+  <div class="kdg-quick-links" aria-label="دسترسی سریع">
+    <a class="kdg-quick-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><div><strong>مقایسه قیمت</strong><span>قیمت فروشگاه‌ها را کنار هم ببین</span></div></a>
+    <a class="kdg-quick-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><div><strong>فروشگاه‌ها</strong><span>فروشنده‌ها و پیشنهادها</span></div></a>
+    <a class="kdg-quick-link" href="#offers"><i class="fa-solid fa-fire"></i><div><strong>پیشنهادهای ویژه</strong><span>قیمت‌های منتخب امروز</span></div></a>
+    <a class="kdg-quick-link" href="{{ url_for('features') }}"><i class="fa-solid fa-circle-info"></i><div><strong>راهنمای خرید</strong><span>چطور هوشمندانه انتخاب کنیم؟</span></div></a>
+    <a class="kdg-quick-link" href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><div><strong>ثبت فروشگاه</strong><span>شروع فروش در خریدینو</span></div></a>
+  </div>
+
+  <div class="kdg-price-compare-banner">
+    <i class="fa-solid fa-tags"></i>
+    <div><strong>قبل از خرید، قیمت را مقایسه کن</strong><span>خریدینو قیمت و پیشنهاد فروشگاه‌ها را در یک صفحه جمع می‌کند تا انتخاب راحت‌تری داشته باشی.</span></div>
+    <a href="{{ url_for('compare') }}">رفتن به مقایسه قیمت <i class="fa-solid fa-arrow-left"></i></a>
+  </div>
 
   <section class="kdg-service-row" aria-label="مزیت‌های خریدینو">
     <div><i class="fa-solid fa-scale-balanced"></i><strong>مقایسه قیمت</strong><span>قیمت چند فروشگاه را کنار هم ببین</span></div>

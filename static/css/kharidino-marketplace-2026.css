@@ -1,0 +1,30 @@
+/* Kharidino Marketplace 2026 — combined marketplace + price-comparison UX. */
+.km-nav-inner{display:flex!important;align-items:center!important}
+.km-nav-link{display:inline-flex!important;align-items:center!important;gap:7px!important;padding:0 12px!important;color:#555!important;text-decoration:none!important;font-size:10px!important;white-space:nowrap!important;border-bottom:2px solid transparent!important;height:40px!important}
+.km-nav-link i{font-size:11px!important;color:#777!important}
+.km-nav-link:hover{color:#ef4056!important;border-bottom-color:#ef4056!important;background:#fff!important}
+.km-nav-link:hover i{color:#ef4056!important}
+.km-nav-link--hot{color:#ef4056!important;font-weight:900!important}
+.km-nav-link--hot i{color:#ef4056!important}
+.km-nav-link--support{margin-right:auto!important}
+.kdg-hero{background:#fff!important;color:#222!important;border:1px solid #e7e8eb!important;box-shadow:0 8px 30px rgba(0,0,0,.06)!important;grid-template-columns:1.25fr .75fr!important;position:relative!important}
+.kdg-hero-main{background:linear-gradient(135deg,#fff,#fff7f8)!important;padding:45px 52px!important}
+.kdg-eyebrow{color:#ef4056!important;border-color:#ffd5db!important;background:#fff1f3!important}
+.kdg-hero h1{color:#202124!important}
+.kdg-hero p{color:#686d75!important}
+.kdg-primary{background:#ef4056!important;color:#fff!important;box-shadow:0 5px 14px rgba(239,64,86,.22)}
+.kdg-secondary{color:#ef4056!important;border:1px solid #f1c5cc!important;background:#fff!important}
+.kdg-hero-side{background:linear-gradient(135deg,#ef4056,#d92f46)!important}
+.kdg-hero-bubble{background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.22)!important}
+.kdg-section{box-shadow:0 3px 16px rgba(0,0,0,.025)!important}
+.kdg-service-row>div{transition:transform .18s ease,box-shadow .18s ease}.kdg-service-row>div:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.07)}
+.kdg-quick-links{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:0 0 20px}
+.kdg-quick-link{background:#fff;border:1px solid #e7e8eb;border-radius:13px;padding:14px;text-decoration:none;color:#222;display:flex;align-items:center;gap:11px;transition:.18s}
+.kdg-quick-link i{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:#fff1f3;color:#ef4056}
+.kdg-quick-link strong{font-size:10px;display:block}.kdg-quick-link span{font-size:8px;color:#858a91;display:block;margin-top:3px}.kdg-quick-link:hover{border-color:#f2b8c0;transform:translateY(-2px)}
+.kdg-search-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:13px}.kdg-search-chips>span{font-size:9px;color:#777}.kdg-search-chip{padding:6px 10px;border:1px solid #e4e5e7;border-radius:999px;color:#555;text-decoration:none;font-size:8px;background:#fff}.kdg-search-chip:hover{color:#ef4056;border-color:#ef4056}
+.kdg-price-compare-banner{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:15px;background:#202124;color:#fff;border-radius:15px;padding:18px 20px;margin-bottom:20px}
+.kdg-price-compare-banner>i{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:#ef4056;font-size:20px}
+.kdg-price-compare-banner strong{font-size:13px}.kdg-price-compare-banner span{display:block;color:#c7c9ce;font-size:9px;margin-top:4px}.kdg-price-compare-banner a{background:#fff;color:#202124;text-decoration:none;border-radius:9px;padding:10px 14px;font-size:9px;font-weight:900;white-space:nowrap}
+@media(max-width:900px){.km-nav-inner{overflow-x:auto!important}.km-nav-link--support{margin-right:0!important}.kdg-quick-links{grid-template-columns:repeat(3,1fr)}.kdg-price-compare-banner{grid-template-columns:auto 1fr}.kdg-price-compare-banner a{grid-column:1/-1;text-align:center}}
+@media(max-width:600px){.kdg-quick-links{grid-template-columns:repeat(2,1fr)}.kdg-hero-main{padding:30px 24px!important}.kdg-price-compare-banner{padding:14px}.kdg-price-compare-banner strong{font-size:11px}}

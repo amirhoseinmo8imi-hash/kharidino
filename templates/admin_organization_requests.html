@@ -58,6 +58,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>کد پیگیری</th>
                         <th>شرکت / سازمان</th>
                         <th>رابط</th>
                         <th>تماس</th>
@@ -71,6 +72,7 @@
                     {% for item in requests %}
                     <tr>
                         <td><strong>{{ item.id }}</strong></td>
+                        <td><strong>KHD-ORG-{{ "%06d"|format(item.id) }}</strong></td>
                         <td>
                             <strong>{{ item.company_name }}</strong>
                             {% if item.national_id %}

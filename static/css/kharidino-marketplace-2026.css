@@ -206,7 +206,7 @@ body.kh-home-page{background:#f5f6f8!important}
 
 .kh-showcase-window{border-radius:17px;padding:3px;background:linear-gradient(90deg,rgba(239,64,86,.13),rgba(139,58,168,.10),rgba(239,64,86,.13))}
 .kh-showcase-track{animation-duration:34s}
-.kh-vehicle-card{flex-basis:255px;box-shadow:0 10px 25px rgba(20,20,25,.08)}
+.kh-vehicle-card{position:relative;flex-basis:255px;box-shadow:0 10px 25px rgba(20,20,25,.08)}
 .kh-vehicle-media{height:170px}
 .kh-vehicle-card:after{content:"";position:absolute;inset:0;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45);pointer-events:none}
 .kh-vehicle-body h3{font-size:12px}

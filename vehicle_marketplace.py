@@ -62,6 +62,26 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
 
     VehicleAdModel = VehicleAd
 
+    class VehicleView(db.Model):
+        __tablename__ = "vehicle_view"
+        id = db.Column(db.Integer, primary_key=True)
+        vehicle_ad_id = db.Column(db.Integer, db.ForeignKey("vehicle_ad.id"), nullable=False)
+        viewer_key = db.Column(db.String(120), nullable=False)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+        __table_args__ = (
+            db.UniqueConstraint("vehicle_ad_id", "viewer_key", name="unique_vehicle_viewer"),
+        )
+
+    class VehicleReport(db.Model):
+        __tablename__ = "vehicle_report"
+        id = db.Column(db.Integer, primary_key=True)
+        vehicle_ad_id = db.Column(db.Integer, db.ForeignKey("vehicle_ad.id"), nullable=False)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+        reason = db.Column(db.String(120), nullable=False)
+        details = db.Column(db.String(500), default="")
+        status = db.Column(db.String(30), default="new", nullable=False)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
     class VehicleSavedSearch(db.Model):
         __tablename__ = "vehicle_saved_search"
         id = db.Column(db.Integer, primary_key=True)
@@ -145,6 +165,11 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
     def vehicle_detail(ad_id):
         ad=VehicleAd.query.get_or_404(ad_id)
         if ad.status!="approved" and not (is_admin() or session.get("user_id")==ad.user_id): abort(404)
+        viewer_key=f"user:{session['user_id']}" if session.get("user_id") else f"anon:{request.remote_addr or 'unknown'}"
+        if not VehicleView.query.filter_by(vehicle_ad_id=ad.id,viewer_key=viewer_key).first():
+            db.session.add(VehicleView(vehicle_ad_id=ad.id,viewer_key=viewer_key))
+            db.session.commit()
+        view_count=VehicleView.query.filter_by(vehicle_ad_id=ad.id).count()
         favorite = False
         if session.get("user_id"):
             favorite = bool(VehicleFavorite.query.filter_by(
@@ -278,6 +303,18 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
         db.session.delete(item); db.session.commit()
         flash("جستجوی ذخیره‌شده حذف شد.","success")
         return redirect(url_for("vehicle_searches"))
+
+    @app.post("/api/vehicle/<int:ad_id>/report")
+    def report_vehicle(ad_id):
+        ad=VehicleAd.query.get_or_404(ad_id)
+        reason=request.form.get("reason","").strip()[:120]
+        details=request.form.get("details","").strip()[:500]
+        allowed={"آگهی تکراری","اطلاعات نادرست","محتوای نامناسب","احتمال کلاهبرداری","خودرو فروخته شده","سایر"}
+        if reason not in allowed:
+            return {"ok":False,"message":"دلیل گزارش معتبر نیست."},400
+        db.session.add(VehicleReport(vehicle_ad_id=ad.id,user_id=session.get("user_id"),reason=reason,details=details))
+        db.session.commit()
+        return {"ok":True,"message":"گزارش شما ثبت شد و برای بررسی ارسال شد."}
 
     @app.route("/vehicles/post",methods=["GET","POST"])
     @login_required

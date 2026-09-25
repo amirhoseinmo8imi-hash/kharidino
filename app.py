@@ -2809,6 +2809,65 @@ def order_invoice(order_id):
 # ADMIN DASHBOARD
 # =========================================================
 
+@app.route("/admin/organization-requests")
+@admin_required
+def admin_organization_requests():
+    status_filter = request.args.get("status", "").strip()
+    allowed_statuses = [
+        "در انتظار بررسی",
+        "در حال پیگیری",
+        "تکمیل شد",
+        "رد شد",
+    ]
+
+    query = OrganizationRequest.query.order_by(OrganizationRequest.id.desc())
+    if status_filter in allowed_statuses:
+        query = query.filter_by(status=status_filter)
+    else:
+        status_filter = ""
+
+    requests = query.all()
+    counts = {
+        "all": OrganizationRequest.query.count(),
+        "pending": OrganizationRequest.query.filter_by(status="در انتظار بررسی").count(),
+        "tracking": OrganizationRequest.query.filter_by(status="در حال پیگیری").count(),
+        "completed": OrganizationRequest.query.filter_by(status="تکمیل شد").count(),
+        "rejected": OrganizationRequest.query.filter_by(status="رد شد").count(),
+    }
+
+    return render_template(
+        "admin_organization_requests.html",
+        requests=requests,
+        counts=counts,
+        status_filter=status_filter,
+        allowed_statuses=allowed_statuses,
+    )
+
+
+@app.post("/admin/organization-requests/<int:request_id>/status")
+@admin_required
+def admin_organization_request_status(request_id):
+    inquiry = db.session.get(OrganizationRequest, request_id)
+    if not inquiry:
+        abort(404)
+
+    allowed_statuses = {
+        "در انتظار بررسی",
+        "در حال پیگیری",
+        "تکمیل شد",
+        "رد شد",
+    }
+    new_status = request.form.get("status", "").strip()
+    if new_status not in allowed_statuses:
+        flash("وضعیت انتخاب‌شده معتبر نیست.", "danger")
+        return redirect(url_for("admin_organization_requests"))
+
+    inquiry.status = new_status
+    db.session.commit()
+    flash(f"وضعیت درخواست #{inquiry.id} به «{new_status}» تغییر کرد.", "success")
+    return redirect(url_for("admin_organization_requests", status=request.args.get("status", "")))
+
+
 @app.route("/admin")
 @admin_required
 def admin():

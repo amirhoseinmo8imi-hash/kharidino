@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}تنظیمات حساب | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-profile-final.css', v='2026-09-26-settings-1') }}">{% endblock %}
+{% block content %}
+<section class="kh-profile-page"><div class="container kh-profile-wrap">
+<a class="kh-profile-btn kh-settings-back" href="{{ url_for('profile') }}"><i class="fa-solid fa-arrow-right"></i> بازگشت به پروفایل</a>
+<div class="kh-profile-head"><div class="kh-profile-title"><h1>تنظیمات حساب</h1><p>ایمیل و رمز عبور حساب خریدینوت را مدیریت کن.</p></div></div>
+<div class="kh-settings-grid">
+<section class="kh-settings-card">
+<h2><i class="fa-solid fa-envelope"></i> تغییر ایمیل</h2><p>برای امنیت، بعد از وارد کردن ایمیل جدید یک کد ۶ رقمی به همان ایمیل ارسال می‌شود.</p>
+<p class="kh-settings-current">{{ current_user.email }}</p>
+{% if pending_email %}<div class="kh-settings-status"><i class="fa-solid fa-clock"></i> کد برای {{ pending_email }} ارسال شده</div>{% endif %}
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="email_send">
+<label for="new_email">ایمیل جدید</label><input id="new_email" name="new_email" type="email" autocomplete="email" placeholder="example@gmail.com" required>
+<button class="kh-profile-btn primary" type="submit"><i class="fa-solid fa-paper-plane"></i> ارسال کد تأیید</button></form>
+{% if pending_email %}<form method="post" style="margin-top:16px"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="email_confirm">
+<label for="email_code">کد تأیید</label><input id="email_code" name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="کد ۶ رقمی" required>
+<button class="kh-profile-btn" type="submit"><i class="fa-solid fa-circle-check"></i> تأیید و تغییر ایمیل</button></form>{% endif %}
+<p class="kh-settings-note">کد تأیید ۱۰ دقیقه اعتبار دارد و ارسال مجدد کد تا ۶۰ ثانیه محدود می‌شود.</p>
+</section>
+<section class="kh-settings-card">
+<h2><i class="fa-solid fa-lock"></i> تغییر رمز عبور</h2><p>برای تغییر رمز، ابتدا رمز عبور فعلی را وارد کن.</p>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="password">
+<label for="current_password">رمز عبور فعلی</label><input id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+<label for="new_password">رمز عبور جدید</label><input id="new_password" name="new_password" type="password" minlength="8" autocomplete="new-password" placeholder="حداقل ۸ کاراکتر" required>
+<label for="confirm_password">تکرار رمز عبور جدید</label><input id="confirm_password" name="confirm_password" type="password" minlength="8" autocomplete="new-password" required>
+<button class="kh-profile-btn primary" type="submit"><i class="fa-solid fa-key"></i> تغییر رمز عبور</button></form>
+<p class="kh-settings-note">بعد از تغییر موفق رمز، نشست فعلی بسته می‌شود و باید دوباره وارد حساب شوی.</p>
+</section>
+<section class="kh-settings-card kh-settings-wide"><h2><i class="fa-solid fa-shield-halved"></i> امنیت حساب</h2><p>رمز عبور به‌صورت هش‌شده در دیتابیس ذخیره می‌شود. ایمیل جدید فقط پس از تأیید کد فعال می‌شود و تا آن زمان ایمیل فعلی حساب تغییر نمی‌کند.</p></section>
+</div></div></section>
+{% endblock %}

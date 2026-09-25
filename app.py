@@ -5135,6 +5135,9 @@ def seed():
 from vehicle_marketplace import register_vehicle_marketplace, seed_demo_vehicle_ads
 register_vehicle_marketplace(app, db, User, login_required, admin_required)
 
+from vehicle_chat import register_vehicle_chat
+register_vehicle_chat(app, db, User, login_required)
+
 # =========================================================
 # DATABASE INIT
 # =========================================================

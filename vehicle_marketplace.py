@@ -61,6 +61,19 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
         user = db.relationship("User", backref=db.backref("vehicle_ads", lazy=True))
 
     VehicleAdModel = VehicleAd
+
+    class VehicleFavorite(db.Model):
+        __tablename__ = "vehicle_favorite"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        vehicle_ad_id = db.Column(db.Integer, db.ForeignKey("vehicle_ad.id"), nullable=False)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+        __table_args__ = (
+            db.UniqueConstraint("user_id", "vehicle_ad_id", name="unique_vehicle_favorite"),
+        )
+        user = db.relationship("User", backref=db.backref("vehicle_favorites", lazy=True))
+        vehicle_ad = db.relationship("VehicleAd")
+
     upload_dir = Path(app.root_path) / "static" / "uploads" / "vehicles"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
@@ -122,7 +135,51 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
     def vehicle_detail(ad_id):
         ad=VehicleAd.query.get_or_404(ad_id)
         if ad.status!="approved" and not (is_admin() or session.get("user_id")==ad.user_id): abort(404)
-        return render_template("vehicle_detail.html",ad=ad,gallery=[x for x in (ad.gallery or "").split("|") if x],status_labels=VEHICLE_STATUS_LABELS)
+        favorite = False
+        if session.get("user_id"):
+            favorite = bool(VehicleFavorite.query.filter_by(
+                user_id=session["user_id"], vehicle_ad_id=ad.id
+            ).first())
+        return render_template(
+            "vehicle_detail.html",
+            ad=ad,
+            gallery=[x for x in (ad.gallery or "").split("|") if x],
+            status_labels=VEHICLE_STATUS_LABELS,
+            vehicle_favorite=favorite,
+        )
+
+    @app.post("/api/vehicle/<int:ad_id>/favorite")
+    @login_required
+    def toggle_vehicle_favorite(ad_id):
+        ad=VehicleAd.query.get_or_404(ad_id)
+        if ad.status!="approved" and not (is_admin() or session.get("user_id")==ad.user_id):
+            abort(404)
+        favorite=VehicleFavorite.query.filter_by(
+            user_id=session["user_id"], vehicle_ad_id=ad.id
+        ).first()
+        if favorite:
+            db.session.delete(favorite)
+            saved=False
+        else:
+            db.session.add(VehicleFavorite(
+                user_id=session["user_id"], vehicle_ad_id=ad.id
+            ))
+            saved=True
+        db.session.commit()
+        return {
+            "ok": True,
+            "saved": saved,
+            "message": "به علاقه‌مندی‌ها اضافه شد." if saved else "از علاقه‌مندی‌ها حذف شد.",
+        }
+
+    @app.get("/vehicle-favorites")
+    @login_required
+    def vehicle_favorites():
+        rows=VehicleFavorite.query.filter_by(user_id=session["user_id"]).order_by(
+            VehicleFavorite.created_at.desc()
+        ).all()
+        ads=[row.vehicle_ad for row in rows if row.vehicle_ad and row.vehicle_ad.status=="approved"]
+        return render_template("vehicle_favorites.html", ads=ads)
 
     @app.route("/vehicles/post",methods=["GET","POST"])
     @login_required

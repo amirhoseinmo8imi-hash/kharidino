@@ -9,7 +9,7 @@
       <div><strong>{{ ad.title }}</strong><span><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</span></div>
       <a href="{{ url_for('vehicle_detail', ad_id=ad.id) }}" class="vehicle-chat-ad-link">مشاهده آگهی</a>
     </div>
-    <div class="vehicle-chat-messages">
+    <div class="vehicle-chat-messages" id="vehicleChatMessages" data-chat-id="{{ chat.id }}" data-last-id="{{ messages[-1].id if messages else 0 }}">
       {% if messages %}
         {% for message in messages %}
         <div class="vehicle-chat-message {% if message.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
@@ -21,7 +21,7 @@
         <div class="vehicle-chat-empty"><i class="fa-regular fa-comments"></i><strong>گفت‌وگو را شروع کن</strong><span>سؤال خودت درباره خودرو یا وسیله نقلیه را برای فروشنده بفرست.</span></div>
       {% endif %}
     </div>
-    <form class="vehicle-chat-compose" method="post" action="{{ url_for('vehicle_chat_send', ad_id=ad.id) }}">
+    <form class="vehicle-chat-compose" id="vehicleChatCompose" method="post" action="{{ url_for('vehicle_chat_send', ad_id=ad.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% if chat %}<input type="hidden" name="chat_id" value="{{ chat.id }}">{% endif %}
       <textarea name="body" maxlength="4000" rows="2" placeholder="پیامت را بنویس..." required></textarea>
@@ -30,3 +30,34 @@
   </div>
 </section>
 {% endblock %}
+<script>
+(function(){
+  const box=document.getElementById('vehicleChatMessages'), form=document.getElementById('vehicleChatCompose');
+  if(!box || !form) return;
+  let lastId=Number(box.dataset.lastId||0), busy=false;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  function append(m){
+    const empty=box.querySelector('.vehicle-chat-empty'); if(empty) empty.remove();
+    const el=document.createElement('div'); el.className='vehicle-chat-message '+(m.mine?'mine':'theirs');
+    el.dataset.messageId=m.id; el.innerHTML='<div>'+esc(m.body).replace(/\n/g,'<br>')+'</div><small>'+esc(m.created_at)+'</small>';
+    box.appendChild(el); lastId=Math.max(lastId,Number(m.id)); box.scrollTop=box.scrollHeight;
+  }
+  async function poll(){
+    if(busy)return; busy=true;
+    try{
+      const r=await fetch('/api/vehicle-chat/'+box.dataset.chatId+'/messages?after_id='+lastId,{headers:{Accept:'application/json'},cache:'no-store'});
+      if(r.ok){const d=await r.json(); (d.messages||[]).forEach(append);}
+    }catch(e){} finally{busy=false;}
+  }
+  form.addEventListener('submit',async e=>{
+    e.preventDefault(); const ta=form.querySelector('textarea[name="body"]'), body=(ta.value||'').trim(); if(!body)return;
+    const btn=form.querySelector('button[type="submit"]'); btn.disabled=true;
+    try{
+      const r=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{Accept:'application/json'}});
+      if(!r.ok)throw new Error('send');
+      const d=await r.json(); if(d.message)append(d.message); ta.value=''; ta.focus();
+    }catch(e){form.submit();}finally{btn.disabled=false;}
+  });
+  box.scrollTop=box.scrollHeight; poll(); setInterval(poll,1800);
+})();
+</script>

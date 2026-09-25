@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}خرید سازمانی و همکاری | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="kh-b2b-page">
+  <div class="container">
+    <div class="kh-b2b-hero">
+      <div><span class="kh-kicker"><i class="fa-solid fa-building"></i> خدمات سازمانی</span><h1>خرید سازمانی، قرارداد و صدور فاکتور</h1><p>برای شرکت‌ها، سازمان‌ها و پروژه‌ها درخواست همکاری ثبت کنید؛ خریدینو اطلاعات حقوقی، قرارداد، پیش‌فاکتور و صورتحساب فروش را در یک مسیر مدیریت می‌کند.</p><div class="kh-b2b-pills"><span>پیش‌فاکتور</span><span>قرارداد سازمانی</span><span>فاکتور فروش</span><span>پیگیری سفارش</span></div></div>
+      <div class="kh-b2b-hero-icon"><i class="fa-solid fa-building-columns"></i></div>
+    </div>
+    <div class="kh-b2b-grid">
+      <form class="kh-b2b-form" method="post" action="{{ url_for('organization_request') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="kh-b2b-title"><i class="fa-solid fa-file-signature"></i><div><h2>درخواست همکاری سازمانی</h2><small>اطلاعات را وارد کنید تا واحد فروش با شما هماهنگ کند.</small></div></div>
+        <div class="kh-b2b-fields">
+          <label><span>نام شرکت / سازمان *</span><input name="company_name" required></label>
+          <label><span>نام شخص رابط *</span><input name="contact_name" required></label>
+          <label><span>شناسه ملی</span><input name="national_id"></label>
+          <label><span>شماره اقتصادی</span><input name="economic_code"></label>
+          <label><span>شماره ثبت</span><input name="registration_number"></label>
+          <label><span>کد پستی</span><input name="postal_code"></label>
+          <label><span>تلفن</span><input name="phone" type="tel"></label>
+          <label><span>ایمیل</span><input name="contact_email" type="email"></label>
+          <label class="wide"><span>موضوع قرارداد / خرید</span><input name="contract_subject" placeholder="مثلاً تأمین تجهیزات پروژه..."></label>
+          <label><span>بودجه یا ارزش تقریبی</span><input name="estimated_value"></label>
+          <label><span>شرایط پرداخت پیشنهادی</span><input name="payment_terms" placeholder="نقدی، مرحله‌ای، اعتباری..."></label>
+          <label class="wide"><span>نشانی سازمان</span><textarea name="address" rows="3"></textarea></label>
+          <label class="wide"><span>توضیحات</span><textarea name="message" rows="4"></textarea></label>
+          <label class="kh-b2b-check wide"><input type="checkbox" name="invoice_required" value="1" checked> <span>نیاز به فاکتور فروش با اطلاعات کامل حقوقی دارم.</span></label>
+        </div>
+        <button class="kh-b2b-submit" type="submit">ثبت درخواست سازمانی <i class="fa-solid fa-arrow-left"></i></button>
+      </form>
+      <aside class="kh-b2b-side">
+        <div><i class="fa-solid fa-file-invoice"></i><h3>فاکتور فروش</h3><p>فاکتور می‌تواند شامل مشخصات حقوقی فروشنده و خریدار، شماره فاکتور، تاریخ، اقلام، تخفیف، مالیات و مبلغ نهایی باشد.</p></div>
+        <div><i class="fa-solid fa-handshake"></i><h3>قرارداد سازمانی</h3><p>شماره قرارداد و اطلاعات سازمان در فرآیند خرید قابل ثبت و پیگیری خواهد بود.</p></div>
+        <div><i class="fa-solid fa-headset"></i><h3>کارشناس فروش</h3><p>درخواست شما برای بررسی و هماهنگی خریدهای عمده و پروژه‌ای ثبت می‌شود.</p></div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

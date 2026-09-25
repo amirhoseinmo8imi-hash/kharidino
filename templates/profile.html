@@ -1,3 +1,36 @@
 {% extends "base.html" %}
 {% block title %}حساب کاربری | {{ site_name }}{% endblock %}
-{% block content %}<section class="page-hero"><div class="container"><span class="section-kicker">حساب</span><h1>{{ current_user.name }}</h1><p>{{ current_user.email }}</p></div></section>{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-profile-final.css', v='2026-09-07-1') }}">{% endblock %}
+{% block content %}
+<section class="kh-profile-page"><div class="container kh-profile-wrap">
+<div class="kh-profile-head"><div class="kh-profile-title"><h1>حساب کاربری</h1><p>اطلاعات حساب، مشخصات شخصی و نشانی خودت را یکجا مدیریت کن.</p></div><a class="kh-profile-btn" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i> سفارش‌های من</a></div>
+<div class="kh-profile-grid">
+<aside class="kh-profile-card kh-avatar-card">
+{% if false %}<img class="kh-avatar" src="{{ url_for('static', filename=user_profile.avatar) }}" alt="عکس پروفایل">{% else %}<div class="kh-avatar-fallback">{{ (current_user.name or 'ک')[:1]|upper }}</div>{% endif %}
+<div class="kh-profile-name">{{ current_user.name }}</div><div class="kh-profile-email">{{ current_user.email }}</div>
+<div class="kh-profile-note">مدیریت تصویر پروفایل در نسخه فعلی حساب فعال نیست.</div>
+
+<div class="kh-completion"><div class="kh-completion-row"><span>وضعیت حساب</span><span>فعال</span></div><div class="kh-progress"><span style="width:100%"></span></div></div>
+<div class="kh-profile-note">برای امنیت، اطلاعات حساس مثل رمز عبور، شماره کارت و مدارک هویتی در این صفحه ذخیره نمی‌شوند.</div>
+</aside>
+<main>
+<div class="kh-verification-profile-card">
+  <div><div><span class="kh-verification-label">امنیت حساب برای چت خودرو</span><strong>{% if vehicle_chat_enabled %}<i class="fa-solid fa-circle-check"></i> چت فعال است{% else %}تأیید تلفن و ایمیل لازم است{% endif %}</strong></div><p>{% if vehicle_chat_enabled %}می‌توانی در آگهی‌های خودرو و وسایل نقلیه با فروشنده چت کنی.{% else %}برای فعال شدن چت، هر دو مورد را تأیید کن.{% endif %}</p></div>
+  <a class="kh-profile-btn {% if vehicle_chat_enabled %}primary{% endif %}" href="{{ url_for('vehicle_verification') }}">{% if vehicle_chat_enabled %}مشاهده وضعیت{% else %}تأیید تلفن و ایمیل{% endif %}</a>
+</div>
+<div class="kh-stats"><a class="kh-stat" href="{{ url_for('my_orders') }}"><strong>—</strong><span>سفارش‌های من</span></a><a class="kh-stat" href="{{ url_for('favorites') }}"><strong>{{ favorite_ids|length }}</strong><span>علاقه‌مندی‌ها</span></a><a class="kh-stat" href="{{ url_for('compare') }}"><strong>{{ compare_count }}</strong><span>مقایسه‌ها</span></a></div>
+<section class="kh-profile-card kh-account-summary">
+  <h2 class="kh-section-title">اطلاعات حساب</h2>
+  <div class="kh-form-grid">
+    <div class="kh-field"><label>نام</label><input value="{{ current_user.name }}" readonly></div>
+    <div class="kh-field"><label>ایمیل</label><input value="{{ current_user.email }}" readonly dir="ltr"></div>
+    <div class="kh-field"><label>نوع حساب</label><input value="{{ current_user.role }}" readonly></div>
+    <div class="kh-field"><label>وضعیت چت خودرو</label><input value="{% if vehicle_chat_enabled %}فعال — تلفن و ایمیل تأیید شده{% else %}نیازمند تأیید تلفن و ایمیل{% endif %}" readonly></div>
+  </div>
+  <div class="kh-form-actions">
+    <a class="kh-profile-btn primary" href="{{ url_for('vehicle_verification') }}"><i class="fa-solid fa-shield-halved"></i> مدیریت تأیید حساب</a>
+  </div>
+</section>
+<div class="kh-profile-links"><a class="kh-profile-link" href="{{ url_for('profile_settings') }}"><i class="fa-solid fa-user-gear"></i> تنظیمات حساب</a><a class="kh-profile-link" href="{{ url_for('my_vehicle_chats') }}"><i class="fa-regular fa-comments"></i> چت‌های خودرو</a><a class="kh-profile-link" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box-open"></i> سفارش‌های من</a><a class="kh-profile-link" href="{{ url_for('favorites') }}"><i class="fa-regular fa-heart"></i> علاقه‌مندی‌ها</a><a class="kh-profile-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i> لیست مقایسه</a><span class="kh-profile-link kh-profile-link--disabled"><i class="fa-solid fa-location-dot"></i> دفترچه آدرس <small>به‌زودی</small></span><span class="kh-profile-link kh-profile-link--disabled"><i class="fa-solid fa-bell"></i> اعلان‌ها <small>اعلان چت در حال فعال‌سازی است</small></span></div>
+</main></div></div></section>
+{% endblock %}

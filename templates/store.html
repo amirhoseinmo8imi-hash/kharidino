@@ -1,10 +1,26 @@
 {% extends "base.html" %}
 {% block title %}{{ store.name }} | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-site-polish-2026.css', v='2026-09-25-1') }}">{% endblock %}
 {% block content %}
-<section class="page-hero"><div class="container"><span class="section-kicker">فروشگاه</span><h1>{{ store.name }}</h1>{% if store.website %}<a class="btn" href="{{ store.website }}" target="_blank">وب‌سایت فروشگاه</a>{% endif %}</div></section>
-<section class="section"><div class="container table-card"><div class="offer-table">
-{% for o in offers %}
-<div class="offer-row"><span>{{ o.product.name }}</span><strong>{{ o.price|money }} تومان</strong>{% if o.url %}<a class="btn" target="_blank" href="{{ o.url }}">خرید</a>{% endif %}</div>
-{% else %}<div class="empty">قیمتی ثبت نشده.</div>{% endfor %}
-</div></div></section>
+<div class="stores-page">
+  <div class="stores-breadcrumb"><a href="{{ url_for('home') }}">خانه</a><i class="fa-solid fa-chevron-left"></i><a href="{{ url_for('stores') }}">فروشگاه‌ها</a><i class="fa-solid fa-chevron-left"></i><strong>{{ store.name }}</strong></div>
+  <section class="store-detail-hero">
+    <div class="store-detail-logo">{% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}">{% else %}<i class="fa-solid fa-store"></i>{% endif %}</div>
+    <div class="store-detail-copy"><span>ویترین فروشگاه در خریدینو</span><h1>{{ store.name }}</h1><p>قیمت‌های این فروشگاه را ببین، محصولات را بررسی کن و قبل از خرید با پیشنهادهای دیگر مقایسه کن.</p>{% if store.website %}<a href="{{ store.website }}" target="_blank" rel="noopener noreferrer" class="store-detail-site"><i class="fa-solid fa-arrow-up-right-from-square"></i> ورود به وب‌سایت فروشگاه</a>{% endif %}</div>
+    <div class="store-detail-stats"><div><strong>{{ offers|length }}</strong><span>پیشنهاد قیمت</span></div><div><strong>{{ offers|selectattr('in_stock')|list|length }}</strong><span>موجود</span></div></div>
+  </section>
+  <section class="store-detail-toolbar"><div><span>پیشنهادهای فروشگاه</span><h2>محصولات و قیمت‌ها</h2></div><a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i> مقایسه محصولات</a></section>
+  <section class="store-offer-list">
+    {% for o in offers %}
+    <article class="store-offer-card">
+      <a class="store-offer-product" href="{{ url_for('product_detail', product_id=o.product.id) }}">
+        <div class="store-offer-image">{% if o.product.image %}<img src="{{ url_for('static', filename=o.product.image) }}" alt="{{ o.product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box"></i>{% endif %}</div>
+        <div><small>{{ o.product.category.name if o.product.category else 'محصول' }}</small><strong>{{ o.product.name }}</strong><span><i class="fa-solid fa-scale-balanced"></i> مشاهده مقایسه قیمت</span></div>
+      </a>
+      <div class="store-offer-price"><small>قیمت فروشگاه</small><strong>{{ o.price|money }} <span>تومان</span></strong>{% if o.in_stock %}<em><i class="fa-solid fa-circle-check"></i> موجود</em>{% else %}<em class="is-off"><i class="fa-solid fa-circle-xmark"></i> ناموجود</em>{% endif %}</div>
+      <div>{% if o.url and o.in_stock %}<a class="store-buy" href="{{ o.url }}" target="_blank" rel="noopener noreferrer">خرید از فروشگاه <i class="fa-solid fa-arrow-left"></i></a>{% elif o.url %}<a class="store-buy secondary" href="{{ o.url }}" target="_blank" rel="noopener noreferrer">مشاهده <i class="fa-solid fa-arrow-left"></i></a>{% else %}<span class="store-no-link">لینک خرید ثبت نشده</span>{% endif %}</div>
+    </article>
+    {% else %}<div class="kdg-empty"><i class="fa-solid fa-store-slash"></i><h3>هنوز پیشنهادی ثبت نشده است</h3><p>این فروشگاه فعلاً قیمت فعالی برای نمایش ندارد.</p></div>{% endfor %}
+  </section>
+</div>
 {% endblock %}

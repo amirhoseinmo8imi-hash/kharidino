@@ -1,0 +1,41 @@
+.ki-inventory-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(22, 163, 74, .10);
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ki-out-of-stock .ki-inventory-badge {
+  background: rgba(220, 38, 38, .10);
+  color: #b91c1c;
+}
+
+.ki-inventory-stat strong {
+  font-size: 14px;
+}
+
+.ki-inventory-note {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.ki-out-of-stock .qty {
+  opacity: .65;
+}
+
+.kd-add-cart:disabled,
+.kd-mobile-buy-bar button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  filter: grayscale(.35);
+}

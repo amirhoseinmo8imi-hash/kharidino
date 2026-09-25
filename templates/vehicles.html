@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}بازار خودرو و وسایل نقلیه | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-25-2') }}">{% endblock %}
+
+{% block content %}
+<section class="vehicle-page">
+  <div class="vehicle-hero vehicle-hero-pro">
+    <div class="vehicle-hero-copy">
+      <span class="vehicle-kicker"><i class="fa-solid fa-car-side"></i> بازار آگهی خریدینو</span>
+      <h1>خودرو و وسایل نقلیه</h1>
+      <p>خودرو، موتور، ماشین‌آلات و تجهیزات را با فیلترهای تخصصی پیدا کن؛ سریع‌تر مقایسه کن و مستقیم با فروشنده تماس بگیر.</p>
+      <div class="vehicle-hero-actions">
+        <a class="vehicle-primary" href="{{ url_for('vehicle_post') }}"><i class="fa-solid fa-plus"></i> ثبت آگهی رایگان</a>
+        {% if current_user %}<a class="vehicle-hero-link" href="{{ url_for('vehicle_favorites') }}"><i class="fa-solid fa-heart"></i> علاقه‌مندی‌های من</a>{% endif %}
+        <a class="vehicle-hero-link" href="#vehicle-list"><i class="fa-solid fa-arrow-down"></i> دیدن آگهی‌ها</a>
+      </div>
+    </div>
+    <div class="vehicle-hero-art">
+      <div class="vehicle-art-circle"><i class="fa-solid fa-car-rear"></i></div>
+      <div class="vehicle-art-badge"><strong>{{ ads|length }}</strong><span>آگهی تأییدشده</span></div>
+    </div>
+  </div>
+
+  <div class="vehicle-stats">
+    <div><i class="fa-solid fa-shield-halved"></i><span><b>آگهی تأییدشده</b> بررسی‌شده توسط خریدینو</span></div>
+    <div><i class="fa-solid fa-location-dot"></i><span><b>شهر و محله</b> جستجوی دقیق‌تر</span></div>
+    <div><i class="fa-solid fa-sliders"></i><span><b>فیلتر تخصصی</b> قیمت، مدل و مشخصات</span></div>
+  </div>
+
+  <div class="vehicle-section-title">
+    <div><span>دسته‌بندی‌ها</span><h2>چی دنبالشی؟</h2></div>
+    <a href="{{ url_for('vehicles') }}">همه آگهی‌ها <i class="fa-solid fa-angle-left"></i></a>
+  </div>
+
+  <div class="vehicle-category-strip">
+    {% set category_icons = {
+      'خودرو سواری':'fa-car',
+      'موتورسیکلت':'fa-motorcycle',
+      'خودرو سنگین':'fa-truck',
+      'ماشین‌آلات و تجهیزات':'fa-tractor',
+      'قایق و وسایل دریایی':'fa-sailboat',
+      'قطعات و لوازم نقلیه':'fa-gears',
+      'خودرو اقتصادی':'fa-wallet',
+      'خودرو لوکس':'fa-gem',
+      'خودرو کلاسیک':'fa-clock-rotate-left',
+      'دوچرخه و اسکوتر':'fa-bicycle'
+    } %}
+    {% for c in vehicle_categories %}
+      <a class="vehicle-category-chip {% if filters.category == c %}active{% endif %}" href="{{ url_for('vehicles', category=c) }}">
+        <span><i class="fa-solid {{ category_icons.get(c, 'fa-car-side') }}"></i></span><b>{{ c }}</b>
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="vehicle-section-title vehicle-list-heading" id="vehicle-list">
+    <div><span>بازار خرید و فروش</span><h2>آگهی‌های خودرو و وسایل نقلیه</h2></div>
+    <span class="vehicle-result-count">{{ ads|length }} نتیجه</span>
+  </div>
+
+  <div class="vehicle-market-tools">
+  <div><strong>ابزارهای هوشمند</strong><span>خودروها را ذخیره، مقایسه و جستجوهایت را نگه دار.</span></div>
+  <div class="vehicle-market-tool-actions">
+    <a href="{{ url_for('vehicle_compare') }}"><i class="fa-solid fa-scale-balanced"></i> مقایسه <b data-vehicle-compare-count>{{ vehicle_compare_ids|length }}</b></a>
+    {% if current_user %}<a href="{{ url_for('vehicle_searches') }}"><i class="fa-solid fa-bell"></i> جستجوهای من</a>{% endif %}
+  </div>
+</div>
+
+  <div class="vehicle-layout">
+    <aside class="vehicle-filters">
+      <div class="vehicle-filter-head"><div><span>جستجوی دقیق</span><h2>فیلتر آگهی‌ها</h2></div><i class="fa-solid fa-filter"></i></div>
+      <form method="get">
+        <label><span>جستجو</span><div class="vehicle-input-icon"><i class="fa-solid fa-magnifying-glass"></i><input name="q" value="{{ filters.q }}" placeholder="برند، مدل یا عنوان"></div></label>
+        <label><span>دسته‌بندی</span><select name="category"><option value="">همه دسته‌ها</option>{% for c in vehicle_categories %}<option value="{{ c }}" {% if filters.category==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></label>
+        <label><span>شهر</span><div class="vehicle-input-icon"><i class="fa-solid fa-location-dot"></i><input name="city" value="{{ filters.city }}" placeholder="مثلاً تهران"></div></label>
+        <div class="vehicle-filter-row">
+          <label><span>حداقل قیمت</span><input type="number" name="min_price" value="{{ request.args.get('min_price','') }}" placeholder="تومان"></label>
+          <label><span>حداکثر قیمت</span><input type="number" name="max_price" value="{{ request.args.get('max_price','') }}" placeholder="تومان"></label>
+        </div>
+        <div class="vehicle-filter-row">
+          <label><span>از سال</span><input type="number" name="min_year" value="{{ request.args.get('min_year','') }}" placeholder="مثلاً ۱۳۹۸"></label>
+          <label><span>تا سال</span><input type="number" name="max_year" value="{{ request.args.get('max_year','') }}" placeholder="مثلاً ۱۴۰۵"></label>
+        </div>
+        <label><span>نوع فروشنده</span><select name="seller_type"><option value="">همه فروشنده‌ها</option><option value="شخصی" {% if request.args.get('seller_type')=='شخصی' %}selected{% endif %}>شخصی</option><option value="نمایشگاه" {% if request.args.get('seller_type')=='نمایشگاه' %}selected{% endif %}>نمایشگاه</option></select></label>
+        <label><span>مرتب‌سازی</span><select name="sort"><option value="newest" {% if request.args.get('sort','newest')=='newest' %}selected{% endif %}>جدیدترین</option><option value="price_low" {% if request.args.get('sort')=='price_low' %}selected{% endif %}>ارزان‌ترین</option><option value="price_high" {% if request.args.get('sort')=='price_high' %}selected{% endif %}>گران‌ترین</option><option value="year_high" {% if request.args.get('sort')=='year_high' %}selected{% endif %}>مدل جدیدتر</option></select></label>
+        <button class="vehicle-filter-btn" type="submit"><i class="fa-solid fa-sliders"></i> اعمال فیلتر</button>
+        <a class="vehicle-clear-filter" href="{{ url_for('vehicles') }}">پاک کردن فیلترها</a>
+{% if current_user %}
+        <div class="vehicle-save-search"><form method="post" action="{{ url_for('save_vehicle_search') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="q" value="{{ filters.q }}"><input type="hidden" name="category" value="{{ filters.category }}"><input type="hidden" name="city" value="{{ filters.city }}"><input type="hidden" name="min_price" value="{{ request.args.get('min_price','') }}"><input type="hidden" name="max_price" value="{{ request.args.get('max_price','') }}"><input type="hidden" name="min_year" value="{{ request.args.get('min_year','') }}"><input type="hidden" name="max_year" value="{{ request.args.get('max_year','') }}"><input type="hidden" name="seller_type" value="{{ request.args.get('seller_type','') }}"><input type="hidden" name="sort" value="{{ request.args.get('sort','newest') }}"><input name="name" placeholder="نام جستجو؛ مثلاً 207 تهران" required><button type="submit"><i class="fa-solid fa-bell"></i> ذخیره این جستجو</button></form></div>
+        {% endif %}
+      </form>
+    </aside>
+
+    <main class="vehicle-results">
+      {% if ads %}
+        <div class="vehicle-grid">
+          {% for ad in ads %}
+          <a class="vehicle-card vehicle-card-pro" href="{{ url_for('vehicle_detail', ad_id=ad.id) }}">
+            <div class="vehicle-card-image">
+              {% if ad.image %}<img src="{{ ad.image if ad.image.startswith('http') else url_for('static', filename=ad.image) }}" alt="{{ ad.title }}" loading="lazy">{% else %}<i class="fa-solid fa-car-side"></i>{% endif %}
+              <span class="vehicle-card-tag">{{ ad.category }}</span>
+              <button type="button" class="vehicle-compare-toggle{% if ad.id in vehicle_compare_ids %} active{% endif %}" data-vehicle-compare="{{ ad.id }}" aria-pressed="{{ 'true' if ad.id in vehicle_compare_ids else 'false' }}"><i class="fa-solid fa-scale-balanced"></i><span>{% if ad.id in vehicle_compare_ids %}در مقایسه{% else %}مقایسه{% endif %}</span></button>
+              <span class="vehicle-card-status"><i class="fa-solid fa-circle-check"></i> تأیید شده</span>
+            </div>
+            <div class="vehicle-card-body">
+              <div class="vehicle-card-location"><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</div>
+              <h2>{{ ad.title }}</h2>
+              <div class="vehicle-meta vehicle-meta-pro">
+                {% if ad.year %}<span><i class="fa-regular fa-calendar"></i>{{ ad.year }}</span>{% endif %}
+                {% if ad.mileage %}<span><i class="fa-solid fa-road"></i>{{ "{:,}".format(ad.mileage) }} km</span>{% endif %}
+                {% if ad.fuel %}<span><i class="fa-solid fa-gas-pump"></i>{{ ad.fuel }}</span>{% endif %}
+              </div>
+              <div class="vehicle-card-bottom">
+                <div><small>قیمت</small><strong>{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}</strong></div>
+                <span class="vehicle-view"><i class="fa-solid fa-arrow-left"></i></span>
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="vehicle-empty"><i class="fa-solid fa-car-side"></i><h2>آگهی‌ای پیدا نشد</h2><p>فیلترها را کمی بازتر کن یا اولین آگهی را ثبت کن.</p><a class="vehicle-primary" href="{{ url_for('vehicle_post') }}">ثبت آگهی</a></div>
+      {% endif %}
+    </main>
+  </div>
+</section>
+{% endblock %}<script>
+document.querySelectorAll('[data-vehicle-compare]').forEach(function(btn){
+ btn.addEventListener('click',async function(e){
+  e.preventDefault();e.stopPropagation();
+  try{const r=await fetch('/api/vehicle/'+btn.dataset.vehicleCompare+'/compare',{method:'POST',headers:{Accept:'application/json'}});const d=await r.json();
+   if(!d.ok){alert(d.message);return;} btn.classList.toggle('active',d.selected);btn.setAttribute('aria-pressed',d.selected?'true':'false');btn.querySelector('span').textContent=d.selected?'در مقایسه':'مقایسه';const c=document.querySelector('[data-vehicle-compare-count]');if(c)c.textContent=d.count;
+  }catch(e){}
+ });
+});
+</script>

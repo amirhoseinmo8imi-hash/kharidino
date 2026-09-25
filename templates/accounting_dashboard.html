@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'platform' %}حسابداری مدیریت{% else %}حسابداری فروشنده{% endif %} | خریدینو{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-accounting.css') }}">
+<section class="accounting-page" dir="rtl">
+  <div class="accounting-hero">
+    <div>
+      <span class="eyebrow">Kharidino Finance Suite</span>
+      <h1>{% if mode == 'platform' %}مرکز مالی خریدینو{% else %}دفتر مالی فروشگاه من{% endif %}</h1>
+      <p>{% if mode == 'platform' %}فروش، کمیسیون، هزینه‌ها و تسویه فروشندگان را در یک دفتر مالی یکپارچه مدیریت کن.{% else %}فروش، کمیسیون، مانده قابل تسویه و سابقه پرداخت فروشگاهت را شفاف ببین.{% endif %}</p>
+    </div>
+    <div class="accounting-actions">
+      <form class="range-form" method="get">
+        <input type="date" name="from" value="{{ start }}">
+        <span>تا</span>
+        <input type="date" name="to" value="{{ end }}">
+        <button type="submit">اعمال بازه</button>
+      </form>
+      {% if mode == 'platform' %}
+      <a class="ghost-btn" href="{{ url_for('admin_accounting_export', **{'from': start, 'to': end}) }}">دانلود CSV</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="finance-kpis">
+    {% if mode == 'platform' %}
+      <article><span>فروش ناخالص</span><strong>{{ "{:,.0f}".format(totals.gross) }}</strong><small>تومان</small></article>
+      <article><span>کمیسیون خریدینو</span><strong>{{ "{:,.0f}".format(totals.fee) }}</strong><small>درآمد پلتفرم</small></article>
+      <article><span>هزینه‌ها</span><strong>{{ "{:,.0f}".format(expense_total) }}</strong><small>ثبت‌شده در بازه</small></article>
+      <article class="accent"><span>سود عملیاتی</span><strong>{{ "{:,.0f}".format(platform_profit) }}</strong><small>کمیسیون − هزینه</small></article>
+      <article><span>تسویه در انتظار</span><strong>{{ "{:,.0f}".format(pending_settlements) }}</strong><small>تومان</small></article>
+      <article><span>تسویه پرداخت‌شده</span><strong>{{ "{:,.0f}".format(completed_settlements) }}</strong><small>تومان</small></article>
+    {% else %}
+      <article><span>فروش ناخالص</span><strong>{{ "{:,.0f}".format(totals.gross) }}</strong><small>تومان</small></article>
+      <article><span>کمیسیون خریدینو</span><strong>{{ "{:,.0f}".format(totals.fee) }}</strong><small>کسرشده</small></article>
+      <article><span>خالص فروش</span><strong>{{ "{:,.0f}".format(totals.net) }}</strong><small>سهم فروشگاه</small></article>
+      <article class="accent"><span>قابل تسویه</span><strong>{{ "{:,.0f}".format(withdrawable) }}</strong><small>تومان</small></article>
+      <article><span>درخواست‌ها</span><strong>{{ "{:,.0f}".format(requested_settlements) }}</strong><small>در انتظار پرداخت</small></article>
+      <article><span>پرداخت‌شده</span><strong>{{ "{:,.0f}".format(paid_settlements) }}</strong><small>تومان</small></article>
+    {% endif %}
+  </div>
+
+  {% if mode == 'seller' %}
+  <div class="finance-grid">
+    <section class="finance-card settlement-card">
+      <div class="card-heading"><div><span class="eyebrow">Payout</span><h2>درخواست تسویه</h2></div><span class="secure-pill">🔒 امن و محدود به فروشگاه</span></div>
+      <form method="post" action="{{ url_for('seller_request_settlement') }}" class="settlement-form">
+        <label>مبلغ تسویه (تومان)<input id="settlementAmount" type="number" min="1" max="{{ withdrawable }}" name="amount" required></label>
+        <label>یادداشت اختیاری<textarea name="note" maxlength="1000" placeholder="مثلاً تسویه دوره اول شهریور"></textarea></label>
+        <div class="settlement-hint">حداکثر قابل درخواست: <b>{{ "{:,.0f}".format(withdrawable) }}</b> تومان</div>
+        <button class="primary-btn" type="submit">ثبت درخواست تسویه</button>
+      </form>
+    </section>
+    <section class="finance-card mini-chart-card">
+      <div class="card-heading"><div><span class="eyebrow">Health</span><h2>وضعیت مالی</h2></div></div>
+      <div class="health-row"><span>سهم خالص از فروش</span><b>{{ ((totals.net / totals.gross * 100) if totals.gross else 0)|round(1) }}%</b></div>
+      <div class="progress"><i style="width: {{ ((totals.net / totals.gross * 100) if totals.gross else 0) }}%"></i></div>
+      <div class="health-row"><span>تسویه‌شده از خالص</span><b>{{ ((paid_settlements / totals.net * 100) if totals.net else 0)|round(1) }}%</b></div>
+      <div class="progress"><i style="width: {{ ((paid_settlements / totals.net * 100) if totals.net else 0) }}%"></i></div>
+    </section>
+  </div>
+  {% else %}
+  <div class="finance-grid">
+    <section class="finance-card">
+      <div class="card-heading"><div><span class="eyebrow">Expense ledger</span><h2>ثبت هزینه جدید</h2></div></div>
+      <form method="post" action="{{ url_for('admin_add_expense') }}" class="settlement-form">
+        <label>عنوان هزینه<input name="title" maxlength="200" required placeholder="تبلیغات، حمل‌ونقل، سرور..."></label>
+        <label>دسته‌بندی<select name="category"><option>تبلیغات</option><option>عملیات</option><option>حقوق</option><option>حمل‌ونقل</option><option>سرور و زیرساخت</option><option>سایر</option></select></label>
+        <label>مبلغ (تومان)<input type="number" name="amount" min="1" required></label>
+        <label>شرح<textarea name="description" maxlength="2000"></textarea></label>
+        <button class="primary-btn" type="submit">ثبت در دفتر هزینه</button>
+      </form>
+    </section>
+    <section class="finance-card">
+      <div class="card-heading"><div><span class="eyebrow">Marketplace</span><h2>خلاصه فروشندگان</h2></div></div>
+      <div class="seller-summary-list">
+        {% for row in seller_rows %}
+        <div class="seller-summary"><div><b>{{ row.store.name }}</b><small>فروش ناخالص {{ "{:,.0f}".format(row.gross) }} تومان</small></div><strong>{{ "{:,.0f}".format(row.net) }}</strong></div>
+        {% else %}<div class="empty-state">هنوز داده مالی فروشنده‌ای ثبت نشده است.</div>{% endfor %}
+      </div>
+    </section>
+  </div>
+  {% endif %}
+
+  {% if mode == 'platform' %}
+  <section class="finance-card table-card">
+    <div class="card-heading"><div><span class="eyebrow">Payout queue</span><h2>درخواست‌های تسویه فروشندگان</h2></div></div>
+    <div class="table-wrap"><table><thead><tr><th>فروشگاه</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>
+      {% for item in settlements %}<tr><td>{{ item.store.name }}</td><td>{{ "{:,.0f}".format(item.amount) }} تومان</td><td><span class="status {{ item.status }}">{{ {'requested':'در انتظار','paid':'پرداخت شد'}.get(item.status, item.status) }}</span></td><td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '-' }}</td><td>{% if item.status == 'requested' %}<form method="post" action="{{ url_for('admin_pay_settlement', settlement_id=item.id) }}"><button class="table-btn" type="submit">ثبت پرداخت</button></form>{% else %}✓ تکمیل{% endif %}</td></tr>
+      {% else %}<tr><td colspan="5" class="empty-cell">درخواستی وجود ندارد.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  {% else %}
+  <section class="finance-card table-card">
+    <div class="card-heading"><div><span class="eyebrow">Ledger</span><h2>دفتر فروش فروشگاه</h2></div></div>
+    <div class="table-wrap"><table><thead><tr><th>شناسه</th><th>فروش ناخالص</th><th>کمیسیون</th><th>خالص</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>
+      {% for item in ledgers %}<tr><td>#{{ item.seller_order_id }}</td><td>{{ "{:,.0f}".format(item.gross) }}</td><td>{{ "{:,.0f}".format(item.platform_fee) }}</td><td><b>{{ "{:,.0f}".format(item.net) }}</b></td><td><span class="status {{ item.status }}">{{ {'pending':'در انتظار','available':'قابل تسویه','paid':'پرداخت‌شده','cancelled':'لغو شده'}.get(item.status, item.status) }}</span></td><td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '-' }}</td></tr>
+      {% else %}<tr><td colspan="6" class="empty-cell">هنوز تراکنش مالی ندارید.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  {% endif %}
+
+  {% if mode == 'platform' %}
+  <section class="finance-card table-card">
+    <div class="card-heading"><div><span class="eyebrow">Operating costs</span><h2>دفتر هزینه‌ها</h2></div></div>
+    <div class="table-wrap"><table><thead><tr><th>عنوان</th><th>دسته</th><th>مبلغ</th><th>شرح</th><th>تاریخ</th></tr></thead><tbody>
+      {% for item in expenses %}<tr><td>{{ item.title }}</td><td>{{ item.category }}</td><td>{{ "{:,.0f}".format(item.amount) }} تومان</td><td>{{ item.description or '-' }}</td><td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '-' }}</td></tr>{% else %}<tr><td colspan="5" class="empty-cell">هزینه‌ای در این بازه ثبت نشده است.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  {% endif %}
+</section>
+<script src="{{ url_for('static', filename='js/kharidino-accounting.js') }}"></script>
+{% endblock %}

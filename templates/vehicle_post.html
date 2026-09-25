@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}ثبت آگهی حرفه‌ای | {{ site_name }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-26-pro-listing') }}">
+{% endblock %}
+{% block content %}
+<main class="vehicle-post-pro" id="vehiclePostApp">
+  <section class="vehicle-post-hero">
+    <div>
+      <span class="vehicle-post-eyebrow"><i class="fa-solid fa-wand-magic-sparkles"></i> آگهی حرفه‌ای خریدینو</span>
+      <h1>آگهی‌ات را حرفه‌ای منتشر کن</h1>
+      <p>اطلاعات کامل‌تر، عکس‌های بهتر و توضیحات دقیق‌تر یعنی خریدار قبل از تماس، تصویر روشن‌تری از آگهی تو دارد.</p>
+    </div>
+    <div class="vehicle-post-trust">
+      <span><i class="fa-solid fa-shield-halved"></i> بررسی قبل از انتشار</span>
+      <span><i class="fa-solid fa-floppy-disk"></i> ذخیره خودکار فرم</span>
+      <span><i class="fa-solid fa-eye"></i> پیش‌نمایش زنده</span>
+    </div>
+  </section>
+
+  <div class="vehicle-post-layout">
+    <form method="post" enctype="multipart/form-data" class="vehicle-pro-form" id="vehiclePostForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="vehicle-stepbar" id="vehicleStepbar">
+        <button type="button" class="vehicle-step active" data-step="1"><b>۱</b><span>نوع آگهی</span></button>
+        <i></i><button type="button" class="vehicle-step" data-step="2"><b>۲</b><span>مشخصات</span></button>
+        <i></i><button type="button" class="vehicle-step" data-step="3"><b>۳</b><span>قیمت و تماس</span></button>
+        <i></i><button type="button" class="vehicle-step" data-step="4"><b>۴</b><span>تصاویر و توضیحات</span></button>
+      </div>
+
+      <section class="vehicle-pro-section vehicle-step-panel active" data-panel="1">
+        <div class="vehicle-pro-section-head">
+          <span class="vehicle-section-icon"><i class="fa-solid fa-layer-group"></i></span>
+          <div><h2>اول بگو چی می‌فروشی</h2><p>دسته درست باعث می‌شود آگهی در جای مناسب نمایش داده شود.</p></div>
+        </div>
+        <div class="vehicle-category-picker">
+          {% for c in vehicle_categories %}
+          <label class="vehicle-category-option">
+            <input type="radio" name="category" value="{{ c }}" {% if loop.first %}checked{% endif %}>
+            <span><i class="fa-solid fa-car-side"></i><b>{{ c }}</b><small>{% if 'خودرو' in c %}مشخصات کامل خودرو{% elif 'موتورسیکلت' in c %}مشخصات موتور{% else %}مشخصات تخصصی{% endif %}</small></span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="vehicle-pro-grid">
+          <label class="vehicle-field vehicle-field-wide"><span>عنوان آگهی *</span><input id="title" name="title" maxlength="220" required placeholder="مثلاً پژو 207 اتوماتیک مدل 1401"><small class="field-help"><span id="titleCount">0</span>/220 — عنوان دقیق و واقعی بنویس.</small></label>
+          <label class="vehicle-field"><span>شهر *</span><input id="city" name="city" maxlength="80" required placeholder="مثلاً تهران" autocomplete="address-level2"></label>
+          <label class="vehicle-field"><span>محله</span><input id="district" name="district" maxlength="120" placeholder="مثلاً سعادت‌آباد"></label>
+        </div>
+        <div class="vehicle-smart-tip"><i class="fa-solid fa-lightbulb"></i><div><b>نکته فروش</b><span>عنوان را با برند + مدل + تیپ + سال بنویس؛ از کلمات تبلیغاتی مثل «فوری» و «باورنکردنی» کمتر استفاده کن.</span></div></div>
+        <button type="button" class="vehicle-next vehicle-primary" data-next="2">ادامه مشخصات <i class="fa-solid fa-arrow-left"></i></button>
+      </section>
+
+      <section class="vehicle-pro-section vehicle-step-panel" data-panel="2">
+        <div class="vehicle-pro-section-head">
+          <span class="vehicle-section-icon"><i class="fa-solid fa-car"></i></span>
+          <div><h2>مشخصات وسیله</h2><p>هرچه مشخصات دقیق‌تر باشد، جست‌وجوی خریدار دقیق‌تر می‌شود.</p></div>
+        </div>
+        <div class="vehicle-pro-grid">
+          <label class="vehicle-field"><span>برند</span><input id="brand" name="brand" maxlength="100" placeholder="مثلاً پژو"></label>
+          <label class="vehicle-field"><span>مدل</span><input id="model" name="model" maxlength="120" placeholder="مثلاً 207"></label>
+          <label class="vehicle-field"><span>سال ساخت</span><input id="year" name="year" type="number" min="0" max="2100" placeholder="1401"></label>
+          <label class="vehicle-field"><span>کارکرد (کیلومتر)</span><input id="mileage" name="mileage" type="number" min="0" placeholder="85000"></label>
+          <label class="vehicle-field"><span>سوخت</span><select name="fuel"><option value="">انتخاب کنید</option><option>بنزین</option><option>گاز</option><option>دوگانه‌سوز</option><option>دیزل</option><option>برقی</option><option>هیبریدی</option></select></label>
+          <label class="vehicle-field"><span>گیربکس</span><select name="gearbox"><option value="">انتخاب کنید</option><option>دستی</option><option>اتوماتیک</option><option>نیمه‌اتوماتیک</option></select></label>
+          <label class="vehicle-field"><span>رنگ بدنه</span><input name="body_color" maxlength="50" placeholder="سفید"></label>
+          <label class="vehicle-field"><span>وضعیت موتور</span><input name="engine" maxlength="80" placeholder="سالم / نیاز به تعمیر..."></label>
+          <label class="vehicle-field vehicle-field-wide"><span>وضعیت بدنه و تصادف</span><input name="accident_status" maxlength="80" placeholder="بدون تصادف، دو لکه رنگ، تعویض گلگیر..."></label>
+          <label class="vehicle-field"><span>نوع فروشنده</span><select name="seller_type"><option>شخصی</option><option>نمایشگاه</option></select></label>
+        </div>
+        <div class="vehicle-check-grid">
+          <label><input type="checkbox" data-quality="مدارک و وضعیت مالکیت"> مدارک آماده انتقال</label>
+          <label><input type="checkbox" data-quality="سرویس و نگهداری"> سابقه سرویس/نگهداری موجود</label>
+          <label><input type="checkbox" data-quality="معاینه فنی"> معاینه فنی معتبر</label>
+        </div>
+        <div class="vehicle-step-actions"><button type="button" class="vehicle-back-step" data-back="1">بازگشت</button><button type="button" class="vehicle-next vehicle-primary" data-next="3">ادامه قیمت و تماس <i class="fa-solid fa-arrow-left"></i></button></div>
+      </section>
+
+      <section class="vehicle-pro-section vehicle-step-panel" data-panel="3">
+        <div class="vehicle-pro-section-head">
+          <span class="vehicle-section-icon"><i class="fa-solid fa-tags"></i></span>
+          <div><h2>قیمت و راه ارتباطی</h2><p>قیمت را شفاف ثبت کن و مشخص کن امکان مذاکره وجود دارد یا نه.</p></div>
+        </div>
+        <div class="vehicle-pro-price-box">
+          <label class="vehicle-field"><span>قیمت (تومان)</span><input id="price" name="price" type="number" min="0" inputmode="numeric" placeholder="مثلاً 1250000000"><small id="priceWords">برای قیمت توافقی، عدد را خالی بگذار.</small></label>
+          <div class="vehicle-price-preview"><span>نمایش قیمت</span><strong id="priceFormatted">توافقی</strong></div>
+        </div>
+        <label class="vehicle-negotiable"><input type="checkbox" name="negotiable" value="1"><span><b>قیمت قابل مذاکره است</b><small>اگر خریدار امکان پیشنهاد قیمت دارد، این گزینه را فعال کن.</small></span></label>
+        <div class="vehicle-pro-grid">
+          <label class="vehicle-field vehicle-field-wide"><span>شماره تماس *</span><input id="phone" name="phone" required maxlength="40" inputmode="tel" placeholder="09xxxxxxxxx" autocomplete="tel"><small class="field-help">شماره را با فرمت قابل تماس وارد کن.</small></label>
+        </div>
+        <div class="vehicle-smart-tip"><i class="fa-solid fa-shield-halved"></i><div><b>امنیت</b><span>اطلاعات تماس را فقط در اختیار خریداران آگهی قرار بده و از دریافت بیعانه یا اطلاعات بانکی مشکوک خودداری کن.</span></div></div>
+        <div class="vehicle-step-actions"><button type="button" class="vehicle-back-step" data-back="2">بازگشت</button><button type="button" class="vehicle-next vehicle-primary" data-next="4">ادامه تصاویر و توضیحات <i class="fa-solid fa-arrow-left"></i></button></div>
+      </section>
+
+      <section class="vehicle-pro-section vehicle-step-panel" data-panel="4">
+        <div class="vehicle-pro-section-head">
+          <span class="vehicle-section-icon"><i class="fa-solid fa-images"></i></span>
+          <div><h2>ویترین آگهی را بساز</h2><p>عکس‌های واضح از چند زاویه، اعتماد خریدار را بیشتر می‌کند.</p></div>
+        </div>
+
+        <div class="vehicle-dropzone" id="vehicleDropzone">
+          <input id="images" type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+          <div class="vehicle-dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          <h3>عکس‌ها را اینجا بکش و رها کن</h3>
+          <p>یا برای انتخاب عکس کلیک کن · حداکثر ۲۰ عکس · JPG, PNG, WEBP</p>
+          <button type="button" class="vehicle-secondary" id="pickImages">انتخاب عکس‌ها</button>
+        </div>
+        <div class="vehicle-upload-meta"><span id="imageCount">۰ عکس</span><span>عکس اول، تصویر اصلی آگهی است</span></div>
+        <div class="vehicle-image-grid" id="imagePreview"></div>
+
+        <div class="vehicle-description-box">
+          <div class="vehicle-description-head"><label class="vehicle-field"><span>توضیحات آگهی</span><textarea id="description" name="description" maxlength="5000" rows="9" placeholder="مثلاً: خودرو کم‌کارکرد، سرویس‌های دوره‌ای انجام شده، دو کلید، بیمه تا ...&#10;&#10;مواردی مثل دلیل فروش، وضعیت فنی، رنگ‌شدگی، آپشن‌ها و ایرادهای موجود را صادقانه بنویس."></textarea><small class="field-help"><span id="descriptionCount">0</span>/5000</small></label></div>
+          <div class="vehicle-description-suggestions">
+            <b>افزودن سریع:</b>
+            <button type="button" data-insert="سرویس‌های دوره‌ای انجام شده. ">سرویس دوره‌ای</button>
+            <button type="button" data-insert="دو کلید دارد. ">دو کلید</button>
+            <button type="button" data-insert="سابقه نگهداری و فاکتورهای سرویس موجود است. ">سوابق سرویس</button>
+            <button type="button" data-insert="بدون تصادف. ">بدون تصادف</button>
+            <button type="button" data-insert="قیمت قابل مذاکره است. ">قابل مذاکره</button>
+          </div>
+        </div>
+
+        <div class="vehicle-publish-check">
+          <i class="fa-solid fa-circle-check"></i>
+          <div><b>قبل از انتشار بررسی می‌کنیم</b><span>آگهی پس از ثبت وارد صف بررسی مدیریت می‌شود و بعد از تأیید منتشر خواهد شد.</span></div>
+        </div>
+        <div class="vehicle-step-actions"><button type="button" class="vehicle-back-step" data-back="3">بازگشت</button><button class="vehicle-primary vehicle-submit-pro" type="submit"><i class="fa-solid fa-paper-plane"></i> ثبت آگهی و ارسال برای بررسی</button></div>
+      </section>
+    </form>
+
+    <aside class="vehicle-post-sidebar">
+      <div class="vehicle-progress-card">
+        <div class="vehicle-progress-head"><span>کیفیت آگهی</span><strong id="qualityPercent">0%</strong></div>
+        <div class="vehicle-progress-track"><span id="qualityBar"></span></div>
+        <p id="qualityText">با تکمیل اطلاعات، امتیاز کیفیت آگهی بالا می‌رود.</p>
+        <ul id="qualityChecklist">
+          <li data-check="title"><i class="fa-regular fa-circle"></i> عنوان دقیق</li>
+          <li data-check="specs"><i class="fa-regular fa-circle"></i> مشخصات اصلی</li>
+          <li data-check="price"><i class="fa-regular fa-circle"></i> قیمت</li>
+          <li data-check="phone"><i class="fa-regular fa-circle"></i> شماره تماس</li>
+          <li data-check="images"><i class="fa-regular fa-circle"></i> حداقل ۳ عکس</li>
+          <li data-check="description"><i class="fa-regular fa-circle"></i> توضیحات مفید</li>
+        </ul>
+      </div>
+
+      <div class="vehicle-live-card">
+        <div class="vehicle-live-head"><span><i class="fa-solid fa-circle"></i> پیش‌نمایش</span><small>نمایش تقریبی</small></div>
+        <div class="vehicle-live-image" id="liveImage"><i class="fa-solid fa-car-side"></i></div>
+        <div class="vehicle-live-body">
+          <small id="liveLocation">شهر را وارد کن</small>
+          <h3 id="liveTitle">عنوان آگهی تو اینجا نمایش داده می‌شود</h3>
+          <strong id="livePrice">توافقی</strong>
+          <div><span id="liveBrand">برند</span><span id="liveYear">سال</span><span id="liveMileage">کارکرد</span></div>
+        </div>
+      </div>
+
+      <div class="vehicle-draft-card"><i class="fa-solid fa-floppy-disk"></i><div><b>ذخیره خودکار فعال است</b><span>اگر صفحه را ببندی، اطلاعات فرم در همین مرورگر نگه داشته می‌شود.</span></div><button type="button" id="clearDraft">پاک کردن پیش‌نویس</button></div>
+    </aside>
+  </div>
+</main>
+
+<script>
+(function(){
+  const app=document.getElementById('vehiclePostApp'), form=document.getElementById('vehiclePostForm');
+  if(!app||!form) return;
+  const panels=[...document.querySelectorAll('.vehicle-step-panel')], steps=[...document.querySelectorAll('.vehicle-step')];
+  let current=1, selectedFiles=[];
+  const draftKey='kharidino_vehicle_post_draft_v2';
+  const qs=s=>document.querySelector(s);
+  const fields=[...form.querySelectorAll('input:not([type=file]):not([type=hidden]), select, textarea')];
+
+  function showStep(n){
+    current=Math.max(1,Math.min(4,n));
+    panels.forEach(p=>p.classList.toggle('active',Number(p.dataset.panel)===current));
+    steps.forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===current));
+    window.scrollTo({top:document.querySelector('.vehicle-post-hero').offsetTop-20,behavior:'smooth'});
+  }
+  function requiredOk(step){
+    if(step===1) return qs('#title').value.trim() && qs('#city').value.trim() && qs('input[name="category"]:checked');
+    if(step===3) return qs('#phone').value.trim();
+    return true;
+  }
+  document.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>{const n=Number(b.dataset.next);if(requiredOk(current))showStep(n);else{const f=current===1?qs('#title'):qs('#phone');f.reportValidity();}}));
+  document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>showStep(Number(b.dataset.back))));
+  steps.forEach(s=>s.addEventListener('click',()=>showStep(Number(s.dataset.step))));
+
+  function formatMoney(v){if(!v)return 'توافقی';return Number(v).toLocaleString('fa-IR')+' تومان';}
+  function updatePreview(){
+    qs('#titleCount').textContent=qs('#title').value.length;
+    qs('#descriptionCount').textContent=qs('#description').value.length;
+    qs('#priceFormatted').textContent=formatMoney(qs('#price').value);
+    qs('#liveTitle').textContent=qs('#title').value.trim()||'عنوان آگهی تو اینجا نمایش داده می‌شود';
+    qs('#liveLocation').textContent=[qs('#city').value.trim(),qs('#district').value.trim()].filter(Boolean).join('، ')||'شهر را وارد کن';
+    qs('#livePrice').textContent=formatMoney(qs('#price').value);
+    qs('#liveBrand').textContent=qs('#brand').value.trim()||'برند';
+    qs('#liveYear').textContent=qs('#year').value.trim()?('مدل '+qs('#year').value):'سال';
+    qs('#liveMileage').textContent=qs('#mileage').value.trim()?Number(qs('#mileage').value).toLocaleString('fa-IR')+' km':'کارکرد';
+  }
+  function quality(){
+    const checks={
+      title:qs('#title').value.trim().length>=8,
+      specs:[qs('#brand').value,qs('#model').value,qs('#year').value,qs('#mileage').value].filter(x=>String(x).trim()).length>=3,
+      price:!!qs('#price').value || !!document.querySelector('[name="negotiable"]:checked'),
+      phone:qs('#phone').value.trim().length>=8,
+      images:selectedFiles.length>=3,
+      description:qs('#description').value.trim().length>=120
+    };
+    let score=Math.round(Object.values(checks).filter(Boolean).length/Object.keys(checks).length*100);
+    qs('#qualityPercent').textContent=score+'%';qs('#qualityBar').style.width=score+'%';
+    qs('#qualityText').textContent=score>=90?'آگهی تقریباً کامل است. آماده انتشار!':score>=65?'خوبه؛ چند مورد دیگر اضافه کن تا حرفه‌ای‌تر شود.':'اطلاعات بیشتری اضافه کن تا آگهی کامل‌تر شود.';
+    Object.entries(checks).forEach(([k,v])=>{const el=document.querySelector('[data-check="'+k+'"]');if(!el)return;el.classList.toggle('done',v);el.querySelector('i').className=v?'fa-solid fa-circle-check':'fa-regular fa-circle';});
+  }
+  function renderImages(){
+    const box=qs('#imagePreview');box.innerHTML='';
+    qs('#imageCount').textContent=selectedFiles.length.toLocaleString('fa-IR')+' عکس';
+    selectedFiles.forEach((file,i)=>{
+      const card=document.createElement('div');card.className='vehicle-image-item';card.draggable=true;
+      const img=document.createElement('img');img.src=URL.createObjectURL(file);img.alt='تصویر '+(i+1);
+      card.innerHTML='<span class="vehicle-image-badge">'+(i===0?'تصویر اصلی':('تصویر '+(i+1)))+'</span><button type="button" title="حذف"><i class="fa-solid fa-xmark"></i></button>';
+      card.prepend(img);card.querySelector('button').onclick=()=>{selectedFiles.splice(i,1);syncFiles();};
+      box.appendChild(card);
+    });
+  }
+  function syncFiles(){
+    const dt=new DataTransfer();selectedFiles.forEach(f=>dt.items.add(f));qs('#images').files=dt.files;renderImages();quality();saveDraft();
+  }
+  qs('#images').addEventListener('change',e=>{
+    const incoming=[...e.target.files];
+    if(selectedFiles.length+incoming.length>20){alert('حداکثر ۲۰ عکس می‌توانی اضافه کنی.');return;}
+    selectedFiles=[...selectedFiles,...incoming.filter(f=>f.type.startsWith('image/'))];syncFiles();
+  });
+  qs('#pickImages').onclick=()=>qs('#images').click();
+  const dz=qs('#vehicleDropzone');
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('dragging');}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('dragging');}));
+  dz.addEventListener('drop',e=>{const files=[...e.dataTransfer.files];if(selectedFiles.length+files.length>20){alert('حداکثر ۲۰ عکس می‌توانی اضافه کنی.');return;}selectedFiles=[...selectedFiles,...files.filter(f=>f.type.startsWith('image/'))];syncFiles();});
+
+  document.querySelectorAll('[data-insert]').forEach(b=>b.onclick=()=>{const ta=qs('#description');const pos=ta.selectionStart||ta.value.length;ta.value=ta.value.slice(0,pos)+b.dataset.insert+ta.value.slice(pos);ta.dispatchEvent(new Event('input'));ta.focus();});
+  fields.forEach(f=>f.addEventListener('input',()=>{updatePreview();quality();saveDraft();}));
+  fields.forEach(f=>f.addEventListener('change',()=>{updatePreview();quality();saveDraft();}));
+
+  function saveDraft(){
+    const data={};fields.forEach(f=>{if(f.name&&f.type!=='file')data[f.name]=f.type==='checkbox'?f.checked:f.value;});
+    localStorage.setItem(draftKey,JSON.stringify(data));
+  }
+  function loadDraft(){
+    try{
+      const data=JSON.parse(localStorage.getItem(draftKey)||'null');if(!data)return;
+      fields.forEach(f=>{if(!(f.name in data))return;if(f.type==='checkbox')f.checked=!!data[f.name];else f.value=data[f.name];});
+    }catch(e){}
+  }
+  qs('#clearDraft').onclick=()=>{if(confirm('پیش‌نویس ذخیره‌شده پاک شود؟')){localStorage.removeItem(draftKey);form.reset();selectedFiles=[];renderImages();updatePreview();quality();showStep(1);}};
+  form.addEventListener('submit',e=>{
+    if(!qs('#title').value.trim()||!qs('#city').value.trim()||!qs('#phone').value.trim()){e.preventDefault();showStep(!qs('#title').value.trim()?1:3);form.reportValidity();return;}
+    localStorage.removeItem(draftKey);
+  });
+  loadDraft();renderImages();updatePreview();quality();
+})();
+</script>
+{% endblock %}

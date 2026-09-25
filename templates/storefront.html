@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}ویترین {{ store.name }} | {{ site_name }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stores-marketplace.css') }}?v=2026-09-08-5">{% endblock %}
+{% block content %}
+<div class="seller-storefront" dir="rtl">
+  <header class="storefront-hero">
+    <div class="storefront-brand">
+      <div class="storefront-logo">{% if store.logo %}<img src="{{ url_for('static', filename=store.logo) }}" alt="{{ store.name }}">{% else %}<span>🏪</span>{% endif %}</div>
+      <div><span class="stores-eyebrow">KHARIDINO / STORE</span><h1>{{ store.name }}</h1><p>ویترین محصولات و پیشنهادهای این فروشنده در خریدینو</p></div>
+    </div>
+    <div class="storefront-badge">● فروشگاه فعال</div>
+  </header>
+
+  <section class="storefront-stats">
+    <div><b>{{ products|length }}</b><span>محصول</span></div>
+    <div><b>{{ offers|length }}</b><span>پیشنهاد</span></div>
+    <div><b>{{ stats.rating or '—' }}</b><span>امتیاز{% if stats.reviews %} · {{ stats.reviews }} نظر{% endif %}</span></div>
+    <div><b>{{ stats.delivered }}</b><span>فروش تحویل‌شده</span></div>
+  </section>
+
+  <section class="storefront-toolbar"><div><span class="panel-kicker">PRODUCT CATALOG</span><h2>محصولات فروشگاه</h2></div><input id="storefrontSearch" type="search" placeholder="جستجو در محصولات…" autocomplete="off"></section>
+
+  <div class="storefront-grid" id="storefrontGrid">
+    {% for product in products %}
+      {% set offer = offers_by_product.get(product.id) %}
+      <article class="storefront-product" data-name="{{ product.name|lower }}">
+        <div class="storefront-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<span>📦</span>{% endif %}</div>
+        <div class="storefront-product-body"><span class="storefront-category">{{ product.category.name if product.category else 'بدون دسته‌بندی' }}</span><h3>{{ product.name }}</h3>{% if offer %}<strong>{{ "{:,.0f}".format(offer.price) }} تومان</strong><span class="storefront-stock {{ 'ok' if offer.in_stock else 'off' }}">{{ 'موجود' if offer.in_stock else 'ناموجود' }}</span>{% else %}<span class="storefront-stock off">پیشنهاد فعال ندارد</span>{% endif %}</div>
+        {% if offer and offer.url %}<a class="storefront-buy" href="{{ offer.url }}" target="_blank" rel="noopener noreferrer">مشاهده پیشنهاد ←</a>{% endif %}
+      </article>
+    {% else %}<div class="store-empty">این فروشگاه هنوز محصولی برای نمایش ندارد.</div>{% endfor %}
+  </div>
+  <div id="storefrontNoResults" class="store-empty" hidden>محصولی با این جستجو پیدا نشد.</div>
+</div>
+<script>(()=>{const s=document.getElementById('storefrontSearch'),cards=[...document.querySelectorAll('#storefrontGrid .storefront-product')],e=document.getElementById('storefrontNoResults');s?.addEventListener('input',()=>{const q=(s.value||'').trim().toLowerCase();let n=0;cards.forEach(c=>{const ok=!q||c.dataset.name.includes(q);c.hidden=!ok;if(ok)n++});e.hidden=n!==0})})();</script>
+{% endblock %}

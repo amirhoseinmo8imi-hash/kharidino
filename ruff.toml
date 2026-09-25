@@ -1,0 +1,13 @@
+line-length = 100
+target-version = "py312"
+
+[lint]
+# Keep syntax/import correctness and substantive pyflakes checks while allowing
+# the repository's long-standing compact one-line control-flow style during
+# the migration to formatted Python. Unused-import/f-string cleanups are not
+# correctness gates and are intentionally deferred from this production gate.
+select = ["E4", "E9", "F"]
+ignore = ["E402", "F401", "F541"]
+
+[lint.per-file-ignores]
+"tests/*" = ["F401"]

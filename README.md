@@ -1,79 +1,134 @@
 # خریدینو — Kharidino Ultimate 🚀
 
-خریدینو یک پلتفرم مقایسه قیمت و خرید هوشمند است. این نسخه علاوه بر فروشگاه، یک لایه مدیریتی **Kharidino AI** و **Site Doctor** دارد.
+خریدینو یک پلتفرم مقایسه قیمت و خرید چندفروشندگی است. این شاخه روی هسته تجاری، امنیت، پرداخت، حسابداری و عملیات قابل اتکا تمرکز دارد و ظاهر فعلی سایت بدون بازطراحی غیرضروری حفظ شده است.
 
-## امکانات فعلی
-- رابط کاربری Dark / Glassmorphism و Responsive
-- صفحه خانه، محصول، فروشگاه، دسته‌بندی، سبد خرید و سفارش‌ها
-- جست‌وجو و مقایسه قیمت فروشگاه‌ها
+## هسته تجاری
+- خانه، محصول، فروشگاه، دسته‌بندی، سبد خرید و سفارش‌ها
+- مقایسه قیمت و پیشنهادهای فروشگاه‌ها
 - علاقه‌مندی و مقایسه محصولات
-- مدیریت محصولات، دسته‌بندی‌ها، فروشگاه‌ها، قیمت‌ها و کاربران
-- آپلود تصویر و پس‌زمینه تصویر/ویدیو
-- Kharidino AI Dashboard
-- Site Doctor با Health Score
-- تحلیل min/avg/max قیمت و تشخیص قیمت‌های پرت
-- Recommendation API بر اساس دسته‌بندی
-- AI Agent با فرمان فارسی/انگلیسی و Change Plan
-- فرمان صوتی فارسی در مرورگرهای پشتیبان Speech Recognition
-- Snapshot قبل از تغییرات حساس
-- PWA foundation
+- Marketplace چندفروشندگی و Seller Center
+- وضعیت سفارش با State Machine و جلوگیری از پرش مراحل
+- رزرو اتمیک موجودی و بازگردانی موجودی هنگام لغو
+- Checkout Preflight برای ورودی‌ها، سبد و موجودی
 
-## اجرای معمول
+## پرداخت
+- چرخه استاندارد `pending → redirect → verifying → paid/failed`
+- وضعیت‌های `cancelled` و `refunded`
+- Idempotency برای جلوگیری از پرداخت تکراری
+- Authority و callback validation
+- تأیید سفارش فقط بعد از موفقیت پرداخت
+- ایجاد سفارش فروشنده فقط پس از پرداخت موفق
+- Adapter مستقل برای اتصال درگاه واقعی ایران
+- Test Gateway برای تست end-to-end بدون بانک واقعی
+
+> درگاه واقعی بانکی هنوز باید با API رسمی سرویس‌دهنده موردنظر پیاده‌سازی و کلیدهای آن در محیط Production تنظیم شود؛ Test Gateway فقط برای تست است.
+
+## حسابداری و تسویه
+- دفتر روزنامه مالی Double-Entry و idempotent
+- ثبت دریافت وجه مشتری
+- ثبت درآمد/کمیسیون پلتفرم
+- ثبت بدهی فروشنده
+- ثبت استرداد وجه
+- ثبت پرداخت تسویه فروشنده
+- آزادسازی وجه فروشنده فقط پس از `تحویل شد` سفارش اصلی
+- جلوگیری از ثبت دوباره سند با `reference` یکتا
+- داشبورد حسابداری مدیر و حسابداری فروشنده
+- خروجی CSV
+
+## امنیت و عملیات
+- CSRF و Same-Origin برای عملیات state-changing
+- HttpOnly / SameSite session cookies و Secure در Production
+- الزام SECRET_KEY قوی در Production
+- محدودیت حجم درخواست و فرم
+- Rate limiting پایه
+- اعتبارسنجی محتوای فایل‌های تصویری/ویدیویی
+- Security Headers و CSP
+- کنترل Open Redirect
+- Health endpoint و System Health
+- لاگ خطای امن بدون نمایش جزئیات داخلی به کاربر
+- CI شامل compile، security audit، dependency audit و pytest
+
+## Kharidino AI / Site Doctor
+- داشبورد Kharidino AI
+- Health Score و Site Doctor
+- تحلیل قیمت min/avg/max و قیمت‌های پرت
+- Recommendation API
+- AI Agent با Change Plan و Approval Required
+- Snapshot قبل از تغییرات حساس
+
+## اجرای نسخه Ultimate
 
 ```bash
 pip install -r requirements.txt
-python app.py
-```
-
-## اجرای نسخه Ultimate
-برای فعال بودن Kharidino AI از لانچر امن استفاده کن:
-
-```bash
 python run_kharidino.py
 ```
 
-داشبورد مدیر:
+برای Production:
 
-```text
-/admin/kharidino-ai/
+```bash
+set KHARIDINO_PRODUCTION=1
+set FLASK_DEBUG=0
+python run_kharidino.py
 ```
 
-Debug در لانچر Ultimate به‌صورت پیش‌فرض خاموش است و فقط با `FLASK_DEBUG=1` فعال می‌شود.
+در لینوکس از `export` به‌جای `set` استفاده کن. مقادیر نمونه را در `.env.example` ببین و Secretها را خارج از Git نگه دار.
 
-## امنیت
-- `.env`، دیتابیس، cache و فایل‌های موقت در Git نادیده گرفته شده‌اند.
-- `SECRET_KEY` را در محیط Production تنظیم کن.
-- رمز نمونه مدیر را قبل از انتشار تغییر بده.
-- AI Agent در این نسخه **Approval Required** است و خودش کد یا دیتابیس را بدون تأیید تغییر نمی‌دهد.
-
-## معماری AI
+## مسیرهای مهم
 
 ```text
-User / Voice
-     ↓
-Kharidino AI
-     ↓
-Site Doctor / Analyzer
-     ↓
-Change Plan
-     ↓
-Manager Approval
-     ↓
-Backup / Snapshot
-     ↓
-Apply
-     ↓
-Automated Tests
-     ↓
-Save or Rollback
+/healthz
+/admin/system-health
+/admin/accounting
+/seller/accounting
+/seller/orders
+/payment/start/<order_id>
+/payment/callback/<transaction_id>
 ```
-
-> قابلیت Apply/Rollback کامل کد به‌صورت عمدی در لایه امن بعدی توسعه داده می‌شود تا هیچ فرمان اشتباهی نتواند پروژه یا دیتابیس را تخریب کند.
 
 ## تست
 
 ```bash
-python -m pytest tests/test_kharidino_ai.py
+python -m compileall -q .
+python security_audit.py
+python -m pytest -q
 ```
 
-پرداخت آنلاین واقعی در این نسخه به درگاه بانکی متصل نشده است؛ سفارش در سایت ثبت می‌شود.
+CI نیز همین کنترل‌ها را روی Python 3.12 اجرا می‌کند و dependency vulnerability audit دارد.
+
+## معماری جریان خرید
+
+```text
+Cart
+ ↓
+Checkout Preflight
+ ↓
+Atomic Inventory Reservation
+ ↓
+Order: در انتظار بررسی
+ ↓
+Payment Transaction
+ ↓
+Gateway Verification
+ ↓
+Order: تأیید شد
+ ↓
+Seller Split + Seller Ledger
+ ↓
+Order: در حال آماده‌سازی
+ ↓
+ارسال شد
+ ↓
+تحویل شد
+ ↓
+Seller Funds: available
+ ↓
+Settlement Request
+ ↓
+Admin Pay
+ ↓
+Seller Funds: paid
+```
+
+## وضعیت انتشار
+
+این شاخه برای تکمیل هسته حرفه‌ای پروژه و عبور از CI/security review آماده‌سازی می‌شود. قبل از Merge نهایی باید اجرای واقعی CI و تست end-to-end، بررسی dependencyها و اتصال درگاه بانکی واقعی انجام شود. PR فعلی عمداً باز می‌ماند تا این بررسی‌ها کامل شوند.

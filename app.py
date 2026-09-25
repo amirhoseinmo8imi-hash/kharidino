@@ -1,7 +1,12 @@
+import smtplib
+from email.message import EmailMessage
 import os
+import secrets
 import uuid
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
+from urllib.parse import urlparse
 
 from flask import (
     Flask,
@@ -17,6 +22,11 @@ from flask import (
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+
+
+# Load local .env before any SMTP/payment configuration is read.
+load_dotenv()
 
 
 # =========================================================
@@ -48,10 +58,33 @@ for folder in [
 
 app = Flask(__name__)
 
-app.config["SECRET_KEY"] = os.environ.get(
-    "SECRET_KEY",
-    "change-this-secret-key"
+configured_secret = (
+    os.environ.get("KHARIDINO_SECRET_KEY", "").strip()
+    or os.environ.get("SECRET_KEY", "").strip()
 )
+
+if configured_secret:
+    app.config["SECRET_KEY"] = configured_secret
+else:
+    # Keep local sessions stable across restarts. The generated file is ignored
+    # by git and can still be overridden by an environment variable in production.
+    local_secret_file = BASE_DIR / ".kharidino-secret"
+    try:
+        if local_secret_file.exists():
+            local_secret = local_secret_file.read_text(encoding="utf-8").strip()
+        else:
+            local_secret = secrets.token_urlsafe(64)
+            local_secret_file.write_text(local_secret, encoding="utf-8")
+        app.config["SECRET_KEY"] = local_secret or secrets.token_urlsafe(64)
+    except OSError:
+        app.config["SECRET_KEY"] = secrets.token_urlsafe(64)
+
+# Browser/session settings: use a new cookie namespace so old development sessions cannot
+# poison the CSRF/session state after the authentication system is upgraded.
+app.config["SESSION_COOKIE_NAME"] = "kharidino_session_v2"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = False
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + str(BASE_DIR / "kharidino.db")
@@ -291,6 +324,20 @@ class User(db.Model):
     )
 
 
+class AccountEmailChange(db.Model):
+    __tablename__ = "account_email_change"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    pending_email = db.Column(db.String(200), nullable=False)
+    code_hash = db.Column(db.String(300), nullable=False, default="")
+    expires_at = db.Column(db.DateTime, nullable=True)
+    sent_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("email_change_request", uselist=False))
+
+
 class Order(db.Model):
     id = db.Column(
         db.Integer,
@@ -395,6 +442,51 @@ class OrderItem(db.Model):
     product = db.relationship(
         "Product"
     )
+
+
+
+class OrganizationRequest(db.Model):
+    __tablename__ = "organization_request"
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(250), nullable=False)
+    national_id = db.Column(db.String(30), default="")
+    economic_code = db.Column(db.String(30), default="")
+    registration_number = db.Column(db.String(50), default="")
+    postal_code = db.Column(db.String(20), default="")
+    phone = db.Column(db.String(40), default="")
+    address = db.Column(db.Text, default="")
+    contact_name = db.Column(db.String(150), nullable=False)
+    contact_email = db.Column(db.String(254), default="")
+    contract_subject = db.Column(db.String(300), default="")
+    estimated_value = db.Column(db.String(80), default="")
+    payment_terms = db.Column(db.String(150), default="")
+    invoice_required = db.Column(db.Boolean, default=True)
+    message = db.Column(db.Text, default="")
+    status = db.Column(db.String(40), default="در انتظار بررسی", nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Invoice(db.Model):
+    __tablename__ = "invoice"
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False, unique=True)
+    invoice_number = db.Column(db.String(60), unique=True, nullable=False)
+    invoice_type = db.Column(db.String(30), default="فروش")
+    buyer_type = db.Column(db.String(30), default="مصرف‌کننده")
+    buyer_name = db.Column(db.String(250), nullable=False)
+    buyer_national_id = db.Column(db.String(30), default="")
+    buyer_economic_code = db.Column(db.String(30), default="")
+    buyer_registration_number = db.Column(db.String(50), default="")
+    buyer_postal_code = db.Column(db.String(20), default="")
+    buyer_phone = db.Column(db.String(40), default="")
+    buyer_address = db.Column(db.Text, default="")
+    subtotal = db.Column(db.Integer, default=0, nullable=False)
+    discount = db.Column(db.Integer, default=0, nullable=False)
+    tax = db.Column(db.Integer, default=0, nullable=False)
+    total = db.Column(db.Integer, default=0, nullable=False)
+    status = db.Column(db.String(30), default="صادر نشده")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    order = db.relationship("Order", backref=db.backref("invoice", uselist=False))
 
 
 class Review(db.Model):
@@ -592,7 +684,29 @@ def inject_globals():
     # GLOBAL TEMPLATE VARIABLES
     # =====================================================
 
+    # Shared catalog data keeps the mega-menu/footer/search shell connected
+    # on every page, not only on the home route.
+    global_categories = (
+        Category.query
+        .filter_by(active=True)
+        .order_by(Category.id.asc())
+        .all()
+    )
+    global_stores = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
+
     return {
+
+        "categories": global_categories,
+        "stores": global_stores,
+        "category_count": len(global_categories),
+        "store_count": len(global_stores),
+        "product_count": Product.query.filter_by(active=True).count(),
+        "offer_count": Offer.query.count(),
 
         # =================================================
         # SITE
@@ -680,6 +794,169 @@ def inject_globals():
 
 
 # =========================================================
+# PRODUCT IMAGE FALLBACKS
+# =========================================================
+PRODUCT_FALLBACK_IMAGES = {
+    "موبایل": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=700&q=85",
+    "لپ‌تاپ و کامپیوتر": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=700&q=85",
+    "کالای دیجیتال": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=700&q=85",
+    "هدفون و هندزفری": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=85",
+    "گیمینگ": "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=700&q=85",
+    "تلویزیون و صوتی تصویری": "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=700&q=85",
+    "ساعت و پوشیدنی": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=700&q=85",
+    "خانه و آشپزخانه": "https://images.unsplash.com/photo-1556910103-1c02745aae3?auto=format&fit=crop&w=700&q=85",
+    "زیبایی و سلامت": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=700&q=85",
+    "کتاب و لوازم‌التحریر": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=700&q=85",
+    "ورزش و سفر": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=700&q=85",
+    "ابزار": "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=700&q=85",
+    "خودرو": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=700&q=85",
+    "مد و پوشاک": "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=700&q=85",
+    "سوپرمارکتی": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=85",
+    "default": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=700&q=85",
+}
+
+
+def product_image_url(product):
+    image = (getattr(product, "image", "") or "").strip()
+    if image.startswith(("http://", "https://", "/")):
+        return image
+    if image:
+        return url_for("static", filename=image)
+    category = getattr(getattr(product, "category", None), "name", "") or ""
+    return PRODUCT_FALLBACK_IMAGES.get(category, PRODUCT_FALLBACK_IMAGES["default"])
+
+
+app.jinja_env.globals["product_image_url"] = product_image_url
+
+
+# =========================================================
+# CSRF PROTECTION
+# =========================================================
+
+def csrf_token():
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.before_request
+def validate_csrf():
+    # Every rendered page gets a token. Keeping one token for the browser session
+    # prevents ordinary navigation and multi-tab use from invalidating open forms.
+    csrf_token()
+
+    if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+        return None
+
+    submitted = (
+        request.form.get("csrf_token")
+        or request.headers.get("X-CSRF-Token")
+        or ""
+    )
+    expected = session.get("csrf_token") or ""
+
+    # If an old/invalid development session cookie was discarded by Flask, allow
+    # a public form carrying its own token to establish the fresh session token.
+    # Authenticated sessions still require an exact token match.
+    if not expected:
+        if submitted and not session.get("user_id"):
+            session["csrf_token"] = str(submitted)
+            session.modified = True
+            return None
+        abort(400, description="CSRF token is missing or invalid.")
+
+    if not submitted or not secrets.compare_digest(
+        str(submitted), str(expected)
+    ):
+        # Public authentication/onboarding forms can legitimately remain open
+        # across a session refresh (for example after restarting the dev server).
+        # Rebind their anonymous session to the submitted form token instead of
+        # returning a confusing 400. Authenticated mutations remain strict.
+        public_recovery_endpoints = {
+            "login",
+            "register",
+            "seller_register",
+            "organization_request",
+        }
+        if not session.get("user_id") and request.endpoint in public_recovery_endpoints and submitted:
+            session["csrf_token"] = str(submitted)
+            session.modified = True
+            return None
+        abort(400, description="CSRF token is missing or invalid.")
+
+    return None
+
+
+
+
+def send_kharidino_email(to_email, subject, body):
+    """Send SMTP email using either Kharidino or standard .env variable names."""
+    to_email = (to_email or "").strip()
+    smtp_host = (
+        os.environ.get("KHARIDINO_SMTP_HOST", "").strip()
+        or os.environ.get("SMTP_HOST", "").strip()
+    )
+    smtp_user = (
+        os.environ.get("KHARIDINO_SMTP_USER", "").strip()
+        or os.environ.get("SMTP_USERNAME", "").strip()
+    )
+    smtp_password = (
+        os.environ.get("KHARIDINO_SMTP_PASSWORD", "")
+        or os.environ.get("SMTP_PASSWORD", "")
+    )
+    if not to_email or not smtp_host or not smtp_user or not smtp_password:
+        app.logger.error("Kharidino SMTP is not fully configured.")
+        return False
+
+    try:
+        smtp_port = int(
+            os.environ.get("KHARIDINO_SMTP_PORT", "").strip()
+            or os.environ.get("SMTP_PORT", "587").strip()
+        )
+    except ValueError:
+        app.logger.error("Invalid SMTP port configuration.")
+        return False
+
+    sender = (
+        os.environ.get("KHARIDINO_SMTP_FROM", "").strip()
+        or os.environ.get("MAIL_FROM", "").strip()
+        or smtp_user
+    )
+    use_ssl = (
+        os.environ.get("KHARIDINO_SMTP_SSL", "").strip()
+        or os.environ.get("SMTP_USE_SSL", "0").strip()
+    ).lower() in {"1", "true", "yes"}
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to_email
+    msg.set_content(body)
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=20) as server:
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        app.logger.info("Kharidino email sent successfully to %s", to_email)
+        return True
+    except Exception:
+        app.logger.exception("Kharidino SMTP notification failed")
+        return False
+
+# =========================================================
 # AUTH HELPERS
 # =========================================================
 
@@ -735,6 +1012,39 @@ def admin_required(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+# =========================================================
+# SAFE REDIRECTS
+# =========================================================
+
+def safe_local_redirect(target, fallback):
+    target = (target or "").strip()
+    if not target:
+        return fallback
+    parsed = urlparse(target)
+    if (
+        target.startswith("/")
+        and not target.startswith("//")
+        and not parsed.scheme
+        and not parsed.netloc
+        and not parsed.username
+        and not parsed.password
+    ):
+        return target
+    return fallback
+
+
+def validate_external_url(value):
+    value = (value or "").strip()
+    if not value:
+        return ""
+    parsed = urlparse(value)
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("لینک باید یک آدرس معتبر http یا https باشد.")
+    if parsed.username or parsed.password:
+        raise ValueError("لینک‌های دارای نام کاربری یا رمز عبور مجاز نیستند.")
+    return value
 
 
 # =========================================================
@@ -955,6 +1265,8 @@ def lowest_price(product):
     except (TypeError, ValueError):
         return 0
 
+app.jinja_env.globals["lowest_price"] = lowest_price
+
 # =========================================================
 # REVIEWS
 # =========================================================
@@ -1017,7 +1329,8 @@ def home():
         query = query.filter(
             db.or_(
                 Product.name.ilike(search),
-                Product.description.ilike(search)
+                Product.description.ilike(search),
+                Product.category.has(Category.name.ilike(search)),
             )
         )
 
@@ -1027,18 +1340,18 @@ def home():
         except ValueError:
             category_id = ""
 
+    products = query.all()
+
+    # Sort by the effective price shown to users, not the stale base price.
     if sort == "price_low":
-        # قیمت پایه مرتب می‌شود؛ قیمت واقعی کارت‌ها همچنان lowest_price است.
-        query = query.order_by(Product.price.asc(), Product.id.desc())
+        products.sort(key=lambda item: (lowest_price(item), -item.id))
     elif sort == "price_high":
-        query = query.order_by(Product.price.desc(), Product.id.desc())
+        products.sort(key=lambda item: (-lowest_price(item), -item.id))
     elif sort == "name":
-        query = query.order_by(Product.name.asc())
+        products.sort(key=lambda item: item.name.lower())
     else:
         sort = "newest"
-        query = query.order_by(Product.id.desc())
-
-    products = query.all()
+        products.sort(key=lambda item: item.id, reverse=True)
 
     categories = (
         Category.query
@@ -1051,6 +1364,15 @@ def home():
         Store.query
         .filter_by(active=True)
         .order_by(Store.name.asc())
+        .all()
+    )
+
+    # Homepage vehicle showcase: only approved ads, newest first.
+    vehicle_ads = (
+        VehicleAd.query
+        .filter_by(status="approved")
+        .order_by(VehicleAd.id.desc())
+        .limit(16)
         .all()
     )
 
@@ -1067,7 +1389,69 @@ def home():
         sort=sort,
         category_id=category_id,
         selected_category=selected_category,
-        lowest_price=lowest_price
+        lowest_price=lowest_price,
+        vehicle_ads=vehicle_ads
+    )
+
+
+# =========================================================
+# CATALOG
+# =========================================================
+
+@app.route("/products")
+def catalog_products():
+    """Display the complete active product catalog."""
+    q = request.args.get("q", "").strip()
+    sort = request.args.get("sort", "newest").strip()
+
+    query = Product.query.filter_by(active=True)
+
+    if q:
+        search = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Product.name.ilike(search),
+                Product.description.ilike(search),
+                Product.category.has(Category.name.ilike(search)),
+            )
+        )
+
+    products = query.all()
+
+    if sort == "price_low":
+        products.sort(key=lambda item: (lowest_price(item), -item.id))
+    elif sort == "price_high":
+        products.sort(key=lambda item: (-lowest_price(item), -item.id))
+    elif sort == "name":
+        products.sort(key=lambda item: item.name.lower())
+    else:
+        sort = "newest"
+        products.sort(key=lambda item: item.id, reverse=True)
+
+    categories = (
+        Category.query
+        .filter_by(active=True)
+        .order_by(Category.id.asc())
+        .all()
+    )
+
+    stores = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
+
+    return render_template(
+        "index.html",
+        products=products,
+        categories=categories,
+        stores=stores,
+        q=q,
+        sort=sort,
+        category_id="",
+        selected_category=None,
+        lowest_price=lowest_price,
     )
 
 
@@ -1080,31 +1464,89 @@ def home():
 )
 def category(category_id):
 
-    cat = Category.query.get_or_404(
-        category_id
-    )
+    cat = Category.query.get_or_404(category_id)
 
     sort = request.args.get("sort", "newest").strip()
-    query = Product.query.filter_by(category_id=cat.id, active=True)
+    store_id = request.args.get("store", "").strip()
+    q = request.args.get("q", "").strip()[:100]
 
-    if sort == "price_low":
-        query = query.order_by(Product.price.asc(), Product.id.desc())
-    elif sort == "price_high":
-        query = query.order_by(Product.price.desc(), Product.id.desc())
-    elif sort == "name":
-        query = query.order_by(Product.name.asc())
-    else:
-        sort = "newest"
-        query = query.order_by(Product.id.desc())
+    try:
+        min_price = max(0, int(request.args.get("min_price", "0") or 0))
+        max_price = max(0, int(request.args.get("max_price", "0") or 0))
+    except (TypeError, ValueError):
+        min_price = max_price = 0
+
+    if min_price and max_price and min_price > max_price:
+        min_price, max_price = max_price, min_price
+
+    query = Product.query.filter(
+        Product.category_id == cat.id,
+        Product.active.is_(True),
+    )
+
+    if q:
+        needle = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Product.name.ilike(needle),
+                Product.description.ilike(needle),
+            )
+        )
 
     products = query.all()
+    selected_store = db.session.get(Store, int(store_id)) if store_id.isdigit() else None
+
+    # Filter using the same effective price users see on product cards.
+    filtered = []
+    for product in products:
+        if store_id.isdigit():
+            if not selected_store or not selected_store.active:
+                continue
+            matching = [
+                offer for offer in product.offers
+                if offer.store_id == selected_store.id
+                and offer.in_stock
+                and offer.price
+                and offer.price > 0
+            ]
+            if not matching:
+                continue
+
+        effective = lowest_price(product)
+        if min_price and effective < min_price:
+            continue
+        if max_price and effective > max_price:
+            continue
+        filtered.append(product)
+
+    if sort == "price_low":
+        filtered.sort(key=lambda item: (lowest_price(item), -item.id))
+    elif sort == "price_high":
+        filtered.sort(key=lambda item: (-lowest_price(item), -item.id))
+    elif sort == "name":
+        filtered.sort(key=lambda item: item.name.lower())
+    else:
+        sort = "newest"
+        filtered.sort(key=lambda item: item.id, reverse=True)
+
+    store_options = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
 
     return render_template(
         "category.html",
         category=cat,
-        products=products,
+        products=filtered,
         sort=sort,
-        lowest_price=lowest_price
+        q=q,
+        store_id=store_id,
+        min_price=min_price,
+        max_price=max_price,
+        store_options=store_options,
+        lowest_price=lowest_price,
     )
 
 
@@ -1435,7 +1877,10 @@ def compare_add(product_id):
     session["compare"] = ids
     session.modified = True
 
-    target = request.form.get("next") or request.referrer or url_for("home")
+    fallback = url_for("home")
+    target = safe_local_redirect(request.form.get("next"), fallback)
+    if target == fallback and request.referrer:
+        target = safe_local_redirect(request.referrer, fallback)
     return redirect(target)
 
 
@@ -1572,6 +2017,23 @@ def favorites():
 
 
 # =========================================================
+# SELLER REGISTRATION
+# =========================================================
+
+@app.route("/seller/register", methods=["GET", "POST"])
+def seller_register():
+    """
+    Keep the seller-registration entry point available.
+
+    The current application does not yet expose the merchant-account workflow
+    required by the dedicated seller_register template, so route the user into
+    the existing account-registration flow instead of allowing Jinja's
+    url_for('seller_register') to raise a BuildError.
+    """
+    return redirect(url_for("register"))
+
+
+# =========================================================
 # STORES
 # =========================================================
 
@@ -1623,91 +2085,40 @@ def store_detail(store_id):
 
 
 # =========================================================
-# REGISTER
+# LOGIN
 # =========================================================
 
-@app.route(
-    "/register",
-    methods=["GET", "POST"]
-)
+@app.route("/register", methods=["GET", "POST"])
 def register():
-
     if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
-        name = request.form.get(
-            "name",
-            ""
-        ).strip()
+        if not name or not email or len(password) < 8:
+            flash("نام، ایمیل و رمز عبور حداقل ۸ کاراکتری الزامی است.", "warning")
+            return render_template("auth.html", mode="register")
 
-        email = request.form.get(
-            "email",
-            ""
-        ).strip().lower()
-
-        password = request.form.get(
-            "password",
-            ""
-        )
-
-        if (
-            not name
-            or not email
-            or len(password) < 6
-        ):
-
-            flash(
-                "نام، ایمیل و رمز حداقل ۶ کاراکتری لازم است.",
-                "warning"
-            )
-
-            return redirect(
-                url_for("register")
-            )
-
-        if User.query.filter_by(
-            email=email
-        ).first():
-
-            flash(
-                "این ایمیل قبلاً ثبت شده است.",
-                "danger"
-            )
-
-            return redirect(
-                url_for("register")
-            )
+        if User.query.filter_by(email=email).first():
+            flash("این ایمیل قبلاً ثبت شده است.", "warning")
+            return render_template("auth.html", mode="register")
 
         user = User(
             name=name,
             email=email,
-            password=generate_password_hash(
-                password
-            ),
-            role="user"
+            password=generate_password_hash(password),
+            role="user",
         )
-
         db.session.add(user)
-
         db.session.commit()
 
-        flash(
-            "ثبت‌نام با موفقیت انجام شد.",
-            "success"
-        )
+        session["user_id"] = user.id
+        session.modified = True
+        flash("حساب کاربری با موفقیت ساخته شد. خوش آمدی 👋", "success")
+        return redirect(url_for("home"))
 
-        return redirect(
-            url_for("login")
-        )
+    return render_template("auth.html", mode="register")
 
-    return render_template(
-        "auth.html",
-        mode="register"
-    )
-
-
-# =========================================================
-# LOGIN
-# =========================================================
 
 @app.route(
     "/login",
@@ -1759,6 +2170,10 @@ def login():
             # پاک کردن Session قبلی
             # =================================================
 
+            # توکن CSRF را بین ورود کاربر و فرم‌هایی که در تب دیگری باز هستند
+            # حفظ می‌کنیم تا ورود در یک تب باعث خراب شدن فرم سازمانی/سفارش در تب دیگر نشود.
+            preserved_csrf = session.get("csrf_token")
+
             session.clear()
 
             # =================================================
@@ -1766,6 +2181,7 @@ def login():
             # =================================================
 
             session["user_id"] = user.id
+            session["csrf_token"] = preserved_csrf or secrets.token_urlsafe(32)
 
             # حفظ سبد خرید قبلی
             session["cart"] = old_cart
@@ -1837,7 +2253,7 @@ def login():
 # LOGOUT
 # =========================================================
 
-@app.route("/logout")
+@app.post("/logout")
 def logout():
 
     # سبد خرید را قبل از خروج حفظ می‌کنیم
@@ -1876,6 +2292,101 @@ def profile():
     return render_template(
         "profile.html"
     )
+
+
+@app.route("/profile/settings", methods=["GET", "POST"])
+@login_required
+def profile_settings():
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        action = request.form.get("action", "").strip()
+
+        if action == "password":
+            current_password = request.form.get("current_password", "")
+            new_password = request.form.get("new_password", "")
+            confirm_password = request.form.get("confirm_password", "")
+
+            if not check_password_hash(user.password, current_password):
+                flash("رمز عبور فعلی اشتباه است.", "danger")
+            elif len(new_password) < 8:
+                flash("رمز عبور جدید باید حداقل ۸ کاراکتر باشد.", "warning")
+            elif new_password != confirm_password:
+                flash("تکرار رمز عبور با رمز جدید یکسان نیست.", "warning")
+            elif check_password_hash(user.password, new_password):
+                flash("رمز عبور جدید نباید با رمز فعلی یکسان باشد.", "warning")
+            else:
+                user.password = generate_password_hash(new_password)
+                db.session.commit()
+                session.clear()
+                flash("رمز عبور با موفقیت تغییر کرد. لطفاً دوباره وارد حساب شوید.", "success")
+                return redirect(url_for("login"))
+
+        elif action == "email_send":
+            new_email = request.form.get("new_email", "").strip().lower()
+            if not new_email or "@" not in new_email or "." not in new_email.rsplit("@", 1)[-1]:
+                flash("یک ایمیل معتبر وارد کنید.", "warning")
+            elif new_email == user.email.lower():
+                flash("این ایمیل همین حالا روی حساب شما ثبت شده است.", "info")
+            elif User.query.filter(db.func.lower(User.email) == new_email).first():
+                flash("این ایمیل قبلاً برای یک حساب دیگر ثبت شده است.", "danger")
+            else:
+                pending = AccountEmailChange.query.filter_by(user_id=user.id).first()
+                now = datetime.utcnow()
+                if pending and pending.sent_at and now - pending.sent_at < timedelta(seconds=60):
+                    flash("برای ارسال دوباره کد، کمی صبر کنید.", "warning")
+                else:
+                    code = f"{secrets.randbelow(1000000):06d}"
+                    if send_kharidino_email(
+                        new_email,
+                        "کد تأیید تغییر ایمیل خریدینو",
+                        f"کد تأیید تغییر ایمیل خریدینو: {code}\nاین کد 10 دقیقه اعتبار دارد.\nاگر این درخواست از طرف شما نبوده، آن را نادیده بگیرید.",
+                    ):
+                        if not pending:
+                            pending = AccountEmailChange(user_id=user.id, pending_email=new_email)
+                            db.session.add(pending)
+                        pending.pending_email = new_email
+                        pending.code_hash = generate_password_hash(code)
+                        pending.expires_at = now + timedelta(minutes=10)
+                        pending.sent_at = now
+                        db.session.commit()
+                        flash("کد تأیید به ایمیل جدید ارسال شد.", "success")
+                    else:
+                        flash("ارسال کد انجام نشد. تنظیمات SMTP را بررسی کنید.", "danger")
+
+        elif action == "email_confirm":
+            code = request.form.get("code", "").strip()
+            pending = AccountEmailChange.query.filter_by(user_id=user.id).first()
+            now = datetime.utcnow()
+            if (
+                not pending
+                or not pending.code_hash
+                or not pending.expires_at
+                or pending.expires_at < now
+                or not check_password_hash(pending.code_hash, code)
+            ):
+                flash("کد تأیید ایمیل نامعتبر یا منقضی شده است.", "danger")
+            elif User.query.filter(
+                db.func.lower(User.email) == pending.pending_email.lower(),
+                User.id != user.id,
+            ).first():
+                flash("این ایمیل در این فاصله توسط حساب دیگری ثبت شده است.", "danger")
+            else:
+                user.email = pending.pending_email
+                db.session.delete(pending)
+                db.session.commit()
+                flash("ایمیل حساب با موفقیت تغییر کرد.", "success")
+
+        else:
+            flash("درخواست نامعتبر است.", "warning")
+
+        return redirect(url_for("profile_settings"))
+
+    pending = AccountEmailChange.query.filter_by(user_id=user.id).first()
+    return render_template("profile_settings.html", pending_email=pending.pending_email if pending else "")
 
 
 # =========================================================
@@ -2496,9 +3007,198 @@ def my_orders():
     )
 
 
+
+# =========================================================
+# ORGANIZATIONS / B2B
+# =========================================================
+@app.route("/organizations")
+def organizations():
+    return render_template("organizations.html")
+
+
+@app.post("/organizations/request")
+def organization_request():
+    company_name = request.form.get("company_name", "").strip()
+    contact_name = request.form.get("contact_name", "").strip()
+    if not company_name or not contact_name:
+        flash("نام سازمان و نام شخص رابط الزامی است.", "warning")
+        return redirect(url_for("organizations"))
+    inquiry = OrganizationRequest(
+        company_name=company_name,
+        national_id=request.form.get("national_id", "").strip(),
+        economic_code=request.form.get("economic_code", "").strip(),
+        registration_number=request.form.get("registration_number", "").strip(),
+        postal_code=request.form.get("postal_code", "").strip(),
+        phone=request.form.get("phone", "").strip(),
+        address=request.form.get("address", "").strip(),
+        contact_name=contact_name,
+        contact_email=request.form.get("contact_email", "").strip(),
+        contract_subject=request.form.get("contract_subject", "").strip(),
+        estimated_value=request.form.get("estimated_value", "").strip(),
+        payment_terms=request.form.get("payment_terms", "").strip(),
+        invoice_required=bool(request.form.get("invoice_required")),
+        message=request.form.get("message", "").strip(),
+    )
+    db.session.add(inquiry)
+    db.session.commit()
+
+    tracking_code = f"KHD-ORG-{inquiry.id:06d}"
+    admin_email = os.environ.get("KHARIDINO_ADMIN_NOTIFICATION_EMAIL", "").strip()
+    customer_body = (
+        f"درخواست سازمانی شما با کد پیگیری {tracking_code} ثبت شد.\\n\\n"
+        "واحد فروش خریدینو درخواست شما را بررسی خواهد کرد."
+    )
+    if inquiry.contact_email:
+        send_kharidino_email(
+            inquiry.contact_email,
+            f"ثبت درخواست سازمانی خریدینو | {tracking_code}",
+            customer_body,
+        )
+    if admin_email:
+        send_kharidino_email(
+            admin_email,
+            f"درخواست سازمانی جدید | {tracking_code} | {inquiry.company_name}",
+            f"درخواست جدیدی در خریدینو ثبت شد.\\nکد پیگیری: {tracking_code}\\nسازمان: {inquiry.company_name}\\nرابط: {inquiry.contact_name}\\nتلفن: {inquiry.phone}\\nایمیل: {inquiry.contact_email}\\nموضوع: {inquiry.contract_subject}\\nفاکتور: {'بله' if inquiry.invoice_required else 'خیر'}",
+        )
+
+    flash(f"درخواست همکاری سازمانی ثبت شد. کد پیگیری شما: {tracking_code}", "success")
+    return redirect(url_for("organizations"))
+
+
+def _company_profile():
+    return {
+        "legal_name": setting("company_legal_name", setting("site_name", "خریدینو")),
+        "national_id": setting("company_national_id", ""),
+        "economic_code": setting("company_economic_code", ""),
+        "registration_number": setting("company_registration_number", ""),
+        "postal_code": setting("company_postal_code", ""),
+        "phone": setting("company_phone", ""),
+        "address": setting("company_address", ""),
+        "website": setting("company_website", ""),
+        "email": setting("company_email", ""),
+        "bank_name": setting("company_bank_name", ""),
+        "iban": setting("company_iban", ""),
+    }
+
+
+@app.route("/admin/business-profile", methods=["GET", "POST"])
+@admin_required
+def admin_business_profile():
+    fields = {
+        "company_legal_name": "نام حقوقی شرکت",
+        "company_national_id": "شناسه ملی",
+        "company_economic_code": "شماره اقتصادی",
+        "company_registration_number": "شماره ثبت",
+        "company_postal_code": "کد پستی",
+        "company_phone": "تلفن",
+        "company_address": "نشانی",
+        "company_website": "وب‌سایت",
+        "company_email": "ایمیل",
+        "company_bank_name": "نام بانک",
+        "company_iban": "شماره شبا",
+    }
+    if request.method == "POST":
+        for key in fields:
+            set_setting(key, request.form.get(key, "").strip())
+        db.session.commit()
+        flash("اطلاعات حقوقی و صدور فاکتور ذخیره شد.", "success")
+        return redirect(url_for("admin_business_profile"))
+    return render_template("admin_business_profile.html", fields=fields, profile=_company_profile())
+
+
+@app.route("/orders/<int:order_id>/invoice")
+@login_required
+def order_invoice(order_id):
+    order = db.session.get(Order, order_id)
+    if not order or order.user_id != session["user_id"]:
+        abort(404)
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        invoice = Invoice(
+            order_id=order.id,
+            invoice_number=f"KH-{datetime.utcnow().strftime('%Y%m%d')}-{order.id:06d}",
+            buyer_name=order.customer_name,
+            buyer_phone=order.phone,
+            buyer_address=order.address,
+            subtotal=order.total,
+            total=order.total,
+            status="پیش‌نویس",
+        )
+        db.session.add(invoice)
+        db.session.commit()
+    return render_template("invoice.html", invoice=invoice, order=order, company=_company_profile())
+
+
 # =========================================================
 # ADMIN DASHBOARD
 # =========================================================
+
+@app.route("/admin/organization-requests")
+@admin_required
+def admin_organization_requests():
+    status_filter = request.args.get("status", "").strip()
+    allowed_statuses = [
+        "در انتظار بررسی",
+        "در حال پیگیری",
+        "تکمیل شد",
+        "رد شد",
+    ]
+
+    query = OrganizationRequest.query.order_by(OrganizationRequest.id.desc())
+    if status_filter in allowed_statuses:
+        query = query.filter_by(status=status_filter)
+    else:
+        status_filter = ""
+
+    requests = query.all()
+    counts = {
+        "all": OrganizationRequest.query.count(),
+        "pending": OrganizationRequest.query.filter_by(status="در انتظار بررسی").count(),
+        "tracking": OrganizationRequest.query.filter_by(status="در حال پیگیری").count(),
+        "completed": OrganizationRequest.query.filter_by(status="تکمیل شد").count(),
+        "rejected": OrganizationRequest.query.filter_by(status="رد شد").count(),
+    }
+
+    return render_template(
+        "admin_organization_requests.html",
+        requests=requests,
+        counts=counts,
+        status_filter=status_filter,
+        allowed_statuses=allowed_statuses,
+    )
+
+
+@app.post("/admin/organization-requests/<int:request_id>/status")
+@admin_required
+def admin_organization_request_status(request_id):
+    inquiry = db.session.get(OrganizationRequest, request_id)
+    if not inquiry:
+        abort(404)
+
+    allowed_statuses = {
+        "در انتظار بررسی",
+        "در حال پیگیری",
+        "تکمیل شد",
+        "رد شد",
+    }
+    new_status = request.form.get("status", "").strip()
+    if new_status not in allowed_statuses:
+        flash("وضعیت انتخاب‌شده معتبر نیست.", "danger")
+        return redirect(url_for("admin_organization_requests"))
+
+    inquiry.status = new_status
+    db.session.commit()
+
+    tracking_code = f"KHD-ORG-{inquiry.id:06d}"
+    if inquiry.contact_email:
+        send_kharidino_email(
+            inquiry.contact_email,
+            f"به‌روزرسانی درخواست خریدینو | {tracking_code}",
+            f"وضعیت درخواست سازمانی شما با کد {tracking_code} به «{new_status}» تغییر کرد.\\n\\nواحد فروش خریدینو در صورت نیاز با شما تماس خواهد گرفت.",
+        )
+    flash(f"وضعیت درخواست #{inquiry.id} به «{new_status}» تغییر کرد.", "success")
+    return redirect(url_for("admin_organization_requests", status=request.args.get("status", "")))
+
 
 @app.route("/admin")
 @admin_required
@@ -3191,12 +3891,13 @@ def admin_fix_offers():
         )
 
 
-    except Exception as e:
+    except Exception:
 
         db.session.rollback()
+        app.logger.exception("admin_fix_offers failed")
 
         flash(
-            f"خطا هنگام تعمیر پیشنهادها: {e}",
+            "تعمیر پیشنهادها با خطا مواجه شد.",
             "danger"
         )
 
@@ -3579,10 +4280,12 @@ def save_store():
         ""
     ).strip()
 
-    store.website = request.form.get(
-        "website",
-        ""
-    ).strip()
+    try:
+        store.website = validate_external_url(request.form.get("website", ""))
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), "danger")
+        return redirect(url_for("admin") + "#stores-admin")
 
     store.active = (
         request.form.get(
@@ -3735,10 +4438,12 @@ def save_offer():
             + "#offers-admin"
         )
 
-    offer.url = request.form.get(
-        "url",
-        ""
-    ).strip()
+    try:
+        offer.url = validate_external_url(request.form.get("url", ""))
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), "danger")
+        return redirect(url_for("admin") + "#offers-admin")
 
     offer.in_stock = (
         request.form.get(
@@ -3945,16 +4650,19 @@ def seed():
 
     if not admin:
 
-        db.session.add(
-            User(
-                name="مدیر سایت",
-                email="admin@kharidino.local",
-                password=generate_password_hash(
-                    "admin12345"
-                ),
-                role="admin"
+        bootstrap_email = os.environ.get("KHARIDINO_ADMIN_EMAIL", "").strip().lower()
+        bootstrap_password = os.environ.get("KHARIDINO_ADMIN_PASSWORD", "")
+        if bootstrap_email and bootstrap_password:
+            if len(bootstrap_password) < 12:
+                raise RuntimeError("KHARIDINO_ADMIN_PASSWORD must be at least 12 characters.")
+            db.session.add(
+                User(
+                    name="مدیر سایت",
+                    email=bootstrap_email,
+                    password=generate_password_hash(bootstrap_password),
+                    role="admin"
+                )
             )
-        )
 
     # =====================================================
     # CATEGORIES
@@ -4609,6 +5317,15 @@ def seed():
 
 
 # =========================================================
+# VEHICLE CLASSIFIEDS MODULE
+# =========================================================
+from vehicle_marketplace import register_vehicle_marketplace, seed_demo_vehicle_ads
+VehicleAd = register_vehicle_marketplace(app, db, User, login_required, admin_required)
+
+from vehicle_chat import register_vehicle_chat
+register_vehicle_chat(app, db, User, login_required)
+
+# =========================================================
 # DATABASE INIT
 # =========================================================
 
@@ -4617,6 +5334,7 @@ with app.app_context():
     db.create_all()
 
     seed()
+    seed_demo_vehicle_ads(db, User)
 
 
 # =========================================================
@@ -4627,5 +5345,5 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=True
+        debug=os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
     )

@@ -1,0 +1,1 @@
+Security validation changes: explicit request-size rejection, database checkout idempotency before business stock checks, and delegation of missing product resolution to the checkout business layer.

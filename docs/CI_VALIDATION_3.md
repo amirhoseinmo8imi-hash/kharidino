@@ -1,0 +1,1 @@
+The branch is ready for CI validation. No merge into the previous working branch is performed until the automated checks confirm the complete change set.

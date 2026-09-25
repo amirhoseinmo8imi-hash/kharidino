@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}{{ ad.title }} | خریدینو
+
+{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-25-3') }}">{% endblock %}
+{% block content %}
+<section class="vehicle-detail-page vehicle-detail-pro">
+  <div class="vehicle-breadcrumb"><a href="{{ url_for('vehicles') }}"><i class="fa-solid fa-arrow-right"></i> خودرو و وسایل نقلیه</a><span>/</span><span>{{ ad.category }}</span></div>
+
+  <div class="vehicle-detail-layout">
+    <div class="vehicle-detail-media">
+      <div class="vehicle-main-photo vehicle-main-photo-pro">
+        {% if ad.image %}<img id="vehicleMainImage" src="{{ ad.image if ad.image.startswith('http') else url_for('static', filename=ad.image) }}" alt="{{ ad.title }}">{% else %}<i class="fa-solid fa-car-side"></i>{% endif %}
+        <button type="button" class="vehicle-photo-count"><i class="fa-regular fa-images"></i> {{ gallery|length if gallery else 1 }} عکس</button>
+      </div>
+      {% if gallery|length > 1 %}
+      <div class="vehicle-thumbs vehicle-thumbs-pro">
+        {% for img in gallery %}<button type="button" class="vehicle-thumb {% if loop.first %}active{% endif %}" onclick="document.getElementById('vehicleMainImage').src=this.dataset.src;document.querySelectorAll('.vehicle-thumb').forEach(x=>x.classList.remove('active'));this.classList.add('active')" data-src="{{ img if img.startswith('http') else url_for('static', filename=img) }}"><img src="{{ img if img.startswith('http') else url_for('static', filename=img) }}" alt="{{ ad.title }}"></button>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="vehicle-under-media"><span><i class="fa-solid fa-eye"></i> {{ view_count }} بازدید</span><span><i class="fa-regular fa-clock"></i> آگهی {{ ad.created_at.strftime('%Y/%m/%d') if ad.created_at else '' }}</span><span><i class="fa-solid fa-shield-halved"></i> آگهی تأیید شده</span></div>
+    </div>
+
+    <div class="vehicle-detail-main">
+      <div class="vehicle-detail-heading">
+        <div><span class="vehicle-detail-category">{{ ad.category }}</span><h1>{{ ad.title }}</h1><p><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</p></div>
+        <div class="vehicle-detail-actions">
+          <button type="button" class="vehicle-action-btn{% if vehicle_favorite %} active{% endif %}" id="vehicleFavoriteBtn" data-saved="{{ '1' if vehicle_favorite else '0' }}" aria-pressed="{{ 'true' if vehicle_favorite else 'false' }}">
+            <i class="fa-{% if vehicle_favorite %}solid{% else %}regular{% endif %} fa-heart"></i><span>{% if vehicle_favorite %}ذخیره شد{% else %}ذخیره{% endif %}</span>
+          </button>
+          <button type="button" class="vehicle-action-btn{% if vehicle_compare_selected %} active{% endif %}" id="vehicleCompareBtn" data-selected="{{ '1' if vehicle_compare_selected else '0' }}"><i class="fa-solid fa-scale-balanced"></i><span>{% if vehicle_compare_selected %}در مقایسه{% else %}مقایسه{% endif %}</span></button>
+          <button type="button" class="vehicle-action-btn" id="vehicleShareBtn">
+            <i class="fa-solid fa-share-nodes"></i><span>اشتراک</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="vehicle-market-insight">
+  <div><i class="fa-solid fa-chart-line"></i><span><strong>دید بازار</strong><small>{% if market_median %}میانگین میانه آگهی‌های همین دسته حدود {{ "{:,}".format(market_median) }} تومان است.{% else %}اطلاعات کافی برای مقایسه بازار وجود ندارد.{% endif %}</small></span></div>
+  <div><i class="fa-solid fa-layer-group"></i><span><strong>فروشنده</strong><small>{{ seller_ad_count }} آگهی ثبت‌شده در خریدینو</small></span></div>
+</div>
+
+      <div class="vehicle-price-panel"><span>قیمت</span><strong>{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}</strong>{% if ad.negotiable %}<small><i class="fa-solid fa-circle-check"></i> قابل مذاکره</small>{% endif %}</div>
+
+      <div class="vehicle-spec-box">
+        <div class="vehicle-spec-title">مشخصات</div>
+        <div class="vehicle-spec-grid vehicle-spec-grid-pro">
+          {% for label,val in [('برند',ad.brand),('مدل',ad.model),('سال',ad.year),('کارکرد',ad.mileage),('سوخت',ad.fuel),('گیربکس',ad.gearbox),('رنگ',ad.body_color),('موتور',ad.engine),('وضعیت بدنه',ad.accident_status),('فروشنده',ad.seller_type)] %}
+            {% if val %}<div><span>{{ label }}</span><strong>{{ "{:,}".format(val) if label=="کارکرد" else val }}{% if label=="کارکرد" %} کیلومتر{% endif %}</strong></div>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="vehicle-seller-box">
+        <div class="vehicle-seller-avatar"><i class="fa-solid fa-user"></i></div>
+        <div class="vehicle-seller-info"><span>فروشنده</span><strong>{{ ad.seller_type }}</strong><small><i class="fa-solid fa-circle-check"></i> عضو خریدینو</small></div>
+        <div class="vehicle-contact-actions">
+  {% if current_user and current_user.id != ad.user_id and vehicle_chat_enabled %}
+    <a class="vehicle-chat-btn" href="{{ url_for('vehicle_chat', ad_id=ad.id) }}"><i class="fa-regular fa-comments"></i> چت با فروشنده</a>
+  {% elif current_user and current_user.id != ad.user_id %}
+    <a class="vehicle-chat-btn vehicle-chat-btn--locked" href="{{ url_for('vehicle_verification') }}"><i class="fa-solid fa-shield-halved"></i> تأیید برای چت</a>
+  {% elif not current_user %}
+    <a class="vehicle-chat-btn vehicle-chat-btn--locked" href="{{ url_for('login', next=request.path) }}"><i class="fa-regular fa-comments"></i> ورود برای چت</a>
+  {% endif %}
+  <a class="vehicle-call-btn" href="tel:{{ ad.phone }}"><i class="fa-solid fa-phone"></i> تماس</a>
+</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vehicle-detail-bottom">
+    <article class="vehicle-description vehicle-description-pro"><div class="vehicle-content-title"><i class="fa-solid fa-align-right"></i><h2>توضیحات آگهی</h2></div><p>{{ ad.description or "توضیحی برای این آگهی ثبت نشده است." }}</p></article>
+    <div class="vehicle-report-box">
+  <button type="button" id="vehicleReportToggle"><i class="fa-regular fa-flag"></i> گزارش آگهی</button>
+  <form id="vehicleReportForm" hidden>
+    <select name="reason" required><option value="">دلیل گزارش را انتخاب کن</option><option>آگهی تکراری</option><option>اطلاعات نادرست</option><option>محتوای نامناسب</option><option>احتمال کلاهبرداری</option><option>خودرو فروخته شده</option><option>سایر</option></select>
+    <textarea name="details" maxlength="500" placeholder="اگر لازم است توضیح کوتاهی بنویس..."></textarea>
+    <button type="submit">ارسال گزارش</button>
+  </form>
+</div>
+<aside class="vehicle-safety-box"><i class="fa-solid fa-shield-halved"></i><div><strong>نکات ایمنی خرید</strong><p>قبل از معامله، خودرو و مدارک را بررسی کن و از پرداخت بیعانه بدون اطمینان از فروشنده خودداری کن.</p></div></aside>
+  </div>
+
+{% if similar_ads %}
+  <section class="vehicle-similar-section">
+    <div class="vehicle-section-title"><div><span>پیشنهادهای نزدیک</span><h2>آگهی‌های مشابه این خودرو</h2></div><a href="{{ url_for('vehicles',category=ad.category) }}">مشاهده همه <i class="fa-solid fa-arrow-left"></i></a></div>
+    <div class="vehicle-grid vehicle-grid-similar">
+      {% for item in similar_ads %}
+      <a class="vehicle-card vehicle-card-pro" href="{{ url_for('vehicle_detail',ad_id=item.id) }}">
+        <div class="vehicle-card-image">{% if item.image %}<img src="{{ item.image if item.image.startswith('http') else url_for('static',filename=item.image) }}" alt="{{ item.title }}" loading="lazy">{% endif %}<span class="vehicle-card-tag">{{ item.category }}</span></div>
+        <div class="vehicle-card-body"><div class="vehicle-card-location"><i class="fa-solid fa-location-dot"></i> {{ item.city }}</div><h2>{{ item.title }}</h2><div class="vehicle-card-bottom"><strong>{% if item.price %}{{ "{:,}".format(item.price) }} تومان{% else %}توافقی{% endif %}</strong><span class="vehicle-view"><i class="fa-solid fa-arrow-left"></i></span></div></div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% if current_user and current_user.id==ad.user_id %}
+  <form class="vehicle-owner-actions" method="post" action="{{ url_for('vehicle_delete', ad_id=ad.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="vehicle-danger" type="submit"><i class="fa-solid fa-trash"></i> حذف آگهی</button></form>
+  {% endif %}
+</section><script>
+(function(){
+ const t=document.getElementById('vehicleReportToggle'),f=document.getElementById('vehicleReportForm');
+ if(t&&f)t.onclick=()=>f.hidden=!f.hidden;
+ if(f)f.onsubmit=async e=>{e.preventDefault();try{const r=await fetch('{{ url_for("report_vehicle",ad_id=ad.id) }}',{method:'POST',body:new FormData(f),headers:{Accept:'application/json'}});const d=await r.json();toast(d.message);if(d.ok){f.reset();f.hidden=true;}}catch(e){toast('ارسال گزارش انجام نشد.');}};
+})();
+</script><script>
+(function(){
+ const btn=document.getElementById('vehicleCompareBtn');
+ if(btn)btn.addEventListener('click',async function(){
+  try{const r=await fetch('{{ url_for("toggle_vehicle_compare",ad_id=ad.id) }}',{method:'POST',headers:{Accept:'application/json'}});const d=await r.json();
+   if(!d.ok){toast(d.message);return;}btn.classList.toggle('active',d.selected);btn.querySelector('span').textContent=d.selected?'در مقایسه':'مقایسه';toast(d.message+' ('+d.count+'/4)');
+  }catch(e){toast('مقایسه در دسترس نیست.');}
+ });
+})();
+</script>
+<script>
+(function(){
+  const fav=document.getElementById('vehicleFavoriteBtn');
+  const share=document.getElementById('vehicleShareBtn');
+  const toast=(msg)=>{
+    let el=document.querySelector('.vehicle-action-toast');
+    if(!el){el=document.createElement('div');el.className='vehicle-action-toast';document.body.appendChild(el);}
+    el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200);
+  };
+  if(fav){
+    fav.addEventListener('click',async function(){
+      try{
+        const res=await fetch('{{ url_for("toggle_vehicle_favorite", ad_id=ad.id) }}',{method:'POST',headers:{'Accept':'application/json'}});
+        const contentType=res.headers.get('content-type')||'';
+        if(res.status===401||res.status===403||!contentType.includes('application/json')){
+          window.location.href='{{ url_for("login", next=request.path) }}';return;
+        }
+        const data=await res.json();
+        if(!data.ok){toast('ذخیره آگهی انجام نشد.');return;}
+        fav.classList.toggle('active',!!data.saved);
+        fav.dataset.saved=data.saved?'1':'0';
+        fav.setAttribute('aria-pressed',data.saved?'true':'false');
+        fav.innerHTML='<i class="fa-'+(data.saved?'solid':'regular')+' fa-heart"></i><span>'+(data.saved?'ذخیره شد':'ذخیره')+'</span>';
+        toast(data.message);
+      }catch(e){toast('اتصال برقرار نشد؛ دوباره تلاش کن.');}
+    });
+  }
+  if(share){
+    share.addEventListener('click',async function(){
+      const shareData={title:{{ ad.title|tojson }},text:'{{ ad.title|e }} در بازار خودرو خریدینو',url:window.location.href};
+      try{
+        if(navigator.share){await navigator.share(shareData);toast('صفحه برای اشتراک‌گذاری آماده شد.');}
+        else if(navigator.clipboard){await navigator.clipboard.writeText(window.location.href);toast('لینک آگهی کپی شد.');}
+        else {const ta=document.createElement('textarea');ta.value=window.location.href;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('لینک آگهی کپی شد.');}
+      }catch(e){if(e&&e.name!=='AbortError')toast('اشتراک‌گذاری انجام نشد.');}
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}تأیید فروشندگان | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-approval.css') }}">{% endblock %}
+
+{% block content %}
+<section class="seller-approval-page">
+    <div class="seller-approval-hero">
+        <div>
+            <span class="seller-approval-kicker">SELLER APPROVAL</span>
+            <h1>تأیید فروشندگان</h1>
+            <p>درخواست‌های فروشندگی را اینجا بررسی کن و فقط فروشنده‌های تأییدشده را فعال کن.</p>
+        </div>
+        <div class="seller-approval-actions">
+            <a class="sa-btn sa-btn-light" href="{{ url_for('admin') }}"><i class="fa-solid fa-arrow-right"></i> پنل مدیریت</a>
+            <a class="sa-btn sa-btn-dark" href="{{ url_for('admin_merchants') }}"><i class="fa-solid fa-store"></i> مدیریت فروشگاه‌ها</a>
+        </div>
+    </div>
+
+    <div class="seller-approval-stats">
+        <div class="sa-stat sa-pending"><span>در انتظار تأیید</span><strong>{{ counts.pending }}</strong><i class="fa-solid fa-hourglass-half"></i></div>
+        <div class="sa-stat sa-approved"><span>تأیید شده</span><strong>{{ counts.approved }}</strong><i class="fa-solid fa-circle-check"></i></div>
+        <div class="sa-stat sa-rejected"><span>رد شده</span><strong>{{ counts.rejected }}</strong><i class="fa-solid fa-circle-xmark"></i></div>
+        <div class="sa-stat sa-suspended"><span>تعلیق شده</span><strong>{{ counts.suspended }}</strong><i class="fa-solid fa-ban"></i></div>
+    </div>
+
+    <div class="seller-approval-section-title">
+        <div><span class="seller-approval-kicker">APPLICATIONS</span><h2>درخواست‌های فروشندگی</h2></div>
+        <span>{{ accounts|length }} درخواست</span>
+    </div>
+
+    <div class="seller-approval-list">
+        {% for a in accounts %}
+        <article class="seller-approval-card {% if a.status == 'pending' %}is-pending{% endif %}">
+            <div class="sa-card-top">
+                <div class="sa-store-icon">
+                    {% if a.store.logo %}<img src="{{ url_for('static', filename=a.store.logo) }}" alt="{{ a.store.name }}">{% else %}<i class="fa-solid fa-store"></i>{% endif %}
+                </div>
+                <div class="sa-store-main">
+                    <div class="sa-title-row"><h3>{{ a.store.name }}</h3><span class="sa-badge {{ a.status }}">{{ status_labels.get(a.status, a.status) }}</span></div>
+                    <p><i class="fa-solid fa-user"></i> {{ a.user.name }} &nbsp;·&nbsp; <i class="fa-solid fa-envelope"></i> {{ a.user.email }}</p>
+                    <small>شناسه درخواست #{{ a.id }} &nbsp;·&nbsp; فروشگاه #{{ a.store_id }}</small>
+                </div>
+            </div>
+
+            <div class="sa-details">
+                <div><span>وضعیت فروشگاه</span><strong>{% if a.store.active %}فعال{% else %}غیرفعال{% endif %}</strong></div>
+                <div><span>وب‌سایت</span>{% if a.store.website %}<a href="{{ a.store.website }}" target="_blank" rel="noopener">مشاهده سایت <i class="fa-solid fa-arrow-up-left-from-square"></i></a>{% else %}<strong>ثبت نشده</strong>{% endif %}</div>
+                <div><span>تاریخ ثبت</span><strong>{{ a.created_at.strftime('%Y/%m/%d %H:%M') if a.created_at else '—' }}</strong></div>
+            </div>
+
+            <div class="sa-actions">
+                {% if a.status != 'approved' %}
+                <form method="post" action="{{ url_for('admin_merchant_request_approve', account_id=a.id) }}">
+                    <button class="sa-action approve" type="submit"><i class="fa-solid fa-check"></i> تأیید فروشنده</button>
+                </form>
+                {% endif %}
+                {% if a.status == 'pending' %}
+                <form method="post" action="{{ url_for('admin_merchant_request_reject', account_id=a.id) }}">
+                    <button class="sa-action reject" type="submit"><i class="fa-solid fa-xmark"></i> رد درخواست</button>
+                </form>
+                {% elif a.status == 'approved' %}
+                <form method="post" action="{{ url_for('admin_merchant_request_suspend', account_id=a.id) }}">
+                    <button class="sa-action suspend" type="submit"><i class="fa-solid fa-pause"></i> تعلیق فروشنده</button>
+                </form>
+                {% else %}
+                <form method="post" action="{{ url_for('admin_merchant_request_pending', account_id=a.id) }}">
+                    <button class="sa-action pending" type="submit"><i class="fa-solid fa-rotate-left"></i> بازگردانی به بررسی</button>
+                </form>
+                {% endif %}
+            </div>
+        </article>
+        {% else %}
+        <div class="sa-empty"><i class="fa-solid fa-store-slash"></i><h3>هنوز درخواست فروشندگی ثبت نشده</h3><p>هر درخواست جدید از ثبت‌نام فروشنده در این بخش نمایش داده می‌شود.</p></div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

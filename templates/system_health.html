@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}سلامت سیستم | {{ site_name }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-system-health.css') }}">
+<section class="kh-health" dir="rtl">
+  <div class="kh-health-hero">
+    <div><span>KHARIDINO OPS</span><h1>مرکز سلامت و کنترل سیستم</h1><p>وضعیت دیتابیس، اسکیمای پروژه و سازگاری داده‌ها را قبل از انتشار بررسی کن.</p></div>
+    <div class="kh-health-status {{ health.status }}">{% if health.status == 'healthy' %}● سالم{% else %}● نیازمند بررسی{% endif %}</div>
+  </div>
+  <div class="kh-health-grid">
+    <article><span>دیتابیس</span><strong>{% if health.database.ok %}سالم{% else %}خطا{% endif %}</strong><small>{{ health.database.integrity }}</small></article>
+    <article><span>اسکیما</span><strong>{% if health.schema.ok %}کامل{% else %}ناقص{% endif %}</strong><small>{{ health.schema.table_count }} جدول</small></article>
+    <article><span>سازگاری داده</span><strong>{% if health.consistency.ok %}بدون خطا{% else %}هشدار{% endif %}</strong><small>{{ health.consistency.checks|length }} کنترل</small></article>
+  </div>
+  <div class="kh-health-card"><div class="kh-health-head"><div><span>CONSISTENCY</span><h2>کنترل‌های یکپارچگی</h2></div><small>{{ health.checked_at }}</small></div>
+    <div class="kh-checks">{% for item in health.consistency.checks %}<div class="kh-check"><i class="{{ 'ok' if item.ok else 'bad' }}">{{ '✓' if item.ok else '!' }}</i><div><b>{{ {'negative_inventory':'موجودی منفی','negative_ledger':'دفتر مالی منفی','orphan_seller_orders':'سفارش فروشنده بدون فروشگاه','orphan_ledger':'دفتر مالی بدون سفارش'} .get(item.name, item.name) }}</b><small>{{ item.count }} مورد</small></div></div>{% endfor %}</div>
+  </div>
+  {% if health.schema.missing %}<div class="kh-health-card warning"><h2>جداول موردنیاز ایجاد نشده‌اند</h2><p>{{ health.schema.missing|join('، ') }}</p></div>{% endif %}
+</section>
+{% endblock %}

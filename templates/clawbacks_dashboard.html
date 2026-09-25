@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}تسویه بدهی فروشندگان | خریدینو{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1100px;margin:40px auto">
+  <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:24px">
+    <div>
+      <h1 style="margin:0">بدهی‌های مرجوعی فروشندگان</h1>
+      <p style="opacity:.75">وصول بدهی‌های ایجادشده بعد از پرداخت تسویه، با شماره مرجع و ثبت قابل حسابرسی.</p>
+    </div>
+    <a href="{{ url_for('admin_accounting') }}">← بازگشت به حسابداری</a>
+  </div>
+
+  {% if not items %}
+    <div style="padding:28px;border:1px solid rgba(255,255,255,.12);border-radius:18px">موردی برای وصول وجود ندارد.</div>
+  {% endif %}
+
+  {% for item in items %}
+    {% set cb = item.clawback %}
+    <div style="padding:22px;margin-bottom:16px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(255,255,255,.03)">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px">
+        <div><small>مرجع بدهی</small><div><strong>{{ cb.reference }}</strong></div></div>
+        <div><small>مبلغ بدهی</small><div><strong>{{ "{:,.0f}".format(cb.amount) }} تومان</strong></div></div>
+        <div><small>وصول‌شده</small><div><strong>{{ "{:,.0f}".format(item.resolved) }} تومان</strong></div></div>
+        <div><small>باقی‌مانده</small><div><strong>{{ "{:,.0f}".format(item.remaining) }} تومان</strong></div></div>
+        <div><small>وضعیت</small><div><strong>{{ cb.status }}</strong></div></div>
+      </div>
+
+      {% if item.remaining > 0 %}
+      <form method="post" action="{{ url_for('admin_resolve_clawback', clawback_id=cb.id) }}" style="display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end">
+        <label>مبلغ وصول<input name="amount" type="number" min="1" max="{{ item.remaining }}" required></label>
+        <label>شماره مرجع<input name="reference" maxlength="180" required></label>
+        <label>یادداشت<input name="note" maxlength="1000" placeholder="مثلاً حواله بانکی / تهاتر"></label>
+        <button type="submit">ثبت وصول</button>
+      </form>
+      {% else %}
+        <div style="opacity:.8">این بدهی به‌طور کامل وصول شده است.</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

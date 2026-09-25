@@ -1,0 +1,52 @@
+/* Kharidino homepage marketplace expansion */
+.kh-home-tools,.kh-deals-section,.kh-brand-section,.kh-sort-section,.kh-seller-cta{margin:28px 0}
+.kh-tools-head,.kh-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px}
+.kh-tools-head h2,.kh-section-head h2{margin:5px 0 4px;font-size:25px;color:#20252d}
+.kh-tools-head p,.kh-section-head p{margin:0;color:#777;font-size:14px}
+.kh-tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kh-tool-card{display:flex;align-items:center;gap:12px;min-height:104px;padding:18px;border:1px solid #ececf0;border-radius:20px;background:#fff;box-shadow:0 8px 28px rgba(25,25,35,.06);transition:.25s ease}
+.kh-tool-card:hover{transform:translateY(-4px);border-color:#f1a0ad;box-shadow:0 14px 34px rgba(220,25,55,.12)}
+.kh-tool-card>div{display:flex;flex-direction:column;flex:1}
+.kh-tool-card strong{font-size:16px;color:#222}
+.kh-tool-card small{margin-top:3px;color:#777;line-height:1.6}
+.kh-tool-card>i{color:#e91d3d}
+.kh-tool-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:14px;background:#fff0f3;color:#e91d3d;font-size:19px;flex:none}
+.kh-tool-card--compare{background:linear-gradient(135deg,#fff7f8,#fff)}
+.kh-deals-section{padding:24px;border-radius:24px;background:linear-gradient(135deg,#fff5f6,#fff);border:1px solid #f4d9de}
+.kh-section-head>a{display:inline-flex;align-items:center;gap:8px;color:#e21c3d;font-weight:800;font-size:14px}
+.kh-product-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.kh-mini-product{min-width:0;padding:13px;border:1px solid #eee;border-radius:18px;background:#fff;transition:.25s ease}
+.kh-mini-product:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.08)}
+.kh-mini-img{height:150px;border-radius:14px;background:#f7f7f9;position:relative;display:grid;place-items:center;overflow:hidden}
+.kh-mini-img img{width:100%;height:100%;object-fit:contain}
+.kh-mini-img>i{font-size:38px;color:#bbb}
+.kh-mini-img span{position:absolute;top:8px;right:8px;padding:4px 8px;border-radius:999px;background:#e91d3d;color:#fff;font-size:11px;font-weight:900}
+.kh-mini-product small{display:block;color:#999;margin-top:9px;font-size:11px}
+.kh-mini-product strong{display:block;margin-top:4px;color:#252525;font-size:13px;line-height:1.7;min-height:43px}
+.kh-mini-product b{display:block;margin-top:8px;color:#e21c3d;font-size:14px}
+.kh-empty-deals{grid-column:1/-1;padding:35px;text-align:center;border:1px dashed #ddd;border-radius:18px;color:#777;display:flex;flex-direction:column;gap:6px}
+.kh-empty-deals i{font-size:28px;color:#e91d3d}
+.kh-brand-rail{display:flex;gap:10px;flex-wrap:wrap}
+.kh-brand-pill{display:inline-flex;align-items:center;gap:9px;padding:12px 16px;border:1px solid #e8e8eb;border-radius:14px;background:#fff;color:#333;font-weight:800;transition:.2s}
+.kh-brand-pill i:first-child{color:#e91d3d}
+.kh-brand-pill i:last-child{color:#aaa;font-size:11px}
+.kh-brand-pill:hover{border-color:#e91d3d;color:#e21c3d;background:#fff7f8}
+.kh-brand-empty{padding:20px;color:#888;background:#fff;border:1px dashed #ddd;border-radius:15px}
+.kh-sort-section{padding:22px;border-radius:22px;background:#fff;border:1px solid #ececf0}
+.kh-sort-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.kh-sort-bar label{display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid #e5e5e8;border-radius:13px;background:#fafafa;color:#555}
+.kh-sort-bar label i{color:#e91d3d}
+.kh-sort-bar select{border:0;background:transparent;outline:0;color:#222;font-weight:700;min-width:125px}
+.kh-sort-bar button,.kh-sort-bar>a{border:0;border-radius:13px;padding:11px 17px;font-weight:800}
+.kh-sort-bar button{background:#e91d3d;color:#fff}
+.kh-sort-bar>a{color:#777;background:#f2f2f4}
+.kh-seller-cta{padding:28px 30px;border-radius:24px;background:linear-gradient(135deg,#25252c,#15151a);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:25px}
+.kh-seller-cta h2{margin:5px 0;font-size:25px}
+.kh-seller-cta p{margin:0;color:#c7c7ce;max-width:650px}
+.kh-seller-cta .ki-section-kicker{color:#ff8498}
+.kh-seller-cta-actions{display:flex;gap:10px;flex-wrap:wrap;flex:none}
+.kh-cta-primary,.kh-cta-secondary{padding:12px 17px;border-radius:13px;font-weight:900;display:inline-flex;align-items:center;gap:8px}
+.kh-cta-primary{background:#e91d3d;color:#fff}
+.kh-cta-secondary{border:1px solid #555;color:#fff}
+@media(max-width:1050px){.kh-tools-grid{grid-template-columns:repeat(2,1fr)}.kh-product-rail{grid-template-columns:repeat(3,1fr)}.kh-seller-cta{flex-direction:column;align-items:flex-start}}
+@media(max-width:650px){.kh-home-tools,.kh-deals-section,.kh-brand-section,.kh-sort-section,.kh-seller-cta{margin:20px 0}.kh-tools-grid{grid-template-columns:1fr}.kh-product-rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}.kh-mini-product{min-width:190px;scroll-snap-align:start}.kh-tools-head h2,.kh-section-head h2,.kh-seller-cta h2{font-size:20px}.kh-sort-bar{align-items:stretch;flex-direction:column}.kh-sort-bar label,.kh-sort-bar button,.kh-sort-bar>a{width:100%;justify-content:space-between}.kh-seller-cta{padding:22px}.kh-seller-cta-actions{width:100%;flex-direction:column}.kh-cta-primary,.kh-cta-secondary{justify-content:center}}

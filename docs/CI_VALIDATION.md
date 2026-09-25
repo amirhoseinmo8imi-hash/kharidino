@@ -1,0 +1,1 @@
+CI validation is required before merging this branch. The previous failing security cases have been addressed in `security_hardening.py`: checkout replay protection is registered before stock checks, missing products are delegated to the business checkout layer, and request content length is explicitly bounded.

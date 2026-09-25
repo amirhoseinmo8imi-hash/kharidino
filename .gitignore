@@ -1,4 +1,5 @@
 # Secrets
+.kharidino-secret
 .env
 .env.*
 
@@ -26,3 +27,11 @@ static/uploads/products/no_image_27/
 
 # Local project archives
 kharidino_ready.zip
+
+# Local backup copies
+*.local-backup
+*.encoding-backup
+*.local-copy
+
+# Local backup directories
+*.local-backup/

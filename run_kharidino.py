@@ -1,14 +1,8 @@
-"""Recommended launcher for Kharidino Ultimate.
-
-This launcher is the single entry point for the full application. It registers
-all optional subsystems before starting Flask and protects development runs
-from accidentally talking to an older server already listening on the same
-port.
-"""
+"""Recommended launcher for Kharidino Ultimate."""
 import os
 import socket
-
-from flask import redirect, request, render_template
+from pathlib import Path
+from zipfile import ZipFile
 
 try:
     from dotenv import load_dotenv
@@ -16,119 +10,109 @@ try:
 except ImportError:
     pass
 
+BASE_DIR = Path(__file__).resolve().parent
+PRODUCTS_DIR = BASE_DIR / "static" / "uploads" / "products"
+PRODUCTS_ARCHIVE = PRODUCTS_DIR / "products.zip"
+
+def _install_bundled_product_images():
+    if not PRODUCTS_ARCHIVE.is_file(): return
+    PRODUCTS_DIR.mkdir(parents=True, exist_ok=True); root = PRODUCTS_DIR.resolve(); extracted = 0
+    try:
+        with ZipFile(PRODUCTS_ARCHIVE) as archive:
+            for info in archive.infolist():
+                name = info.filename.replace("\\", "/").lstrip("/"); parts = [p for p in name.split("/") if p not in {"", "."}]
+                if parts and parts[0].lower() == "products": parts = parts[1:]
+                if not parts: continue
+                target = (PRODUCTS_DIR / Path(*parts)).resolve()
+                if root != target and root not in target.parents: continue
+                if info.is_dir(): target.mkdir(parents=True, exist_ok=True); continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not target.exists():
+                    with archive.open(info) as src, target.open("wb") as dst: dst.write(src.read())
+                    extracted += 1
+        if extracted: print(f"[Kharidino] Installed {extracted} bundled product image files.")
+    except Exception as exc: print(f"[Kharidino] Product image archive was not installed: {exc}")
+
+_install_bundled_product_images()
 from app import app, db, Product, Category, Store, Offer, User, admin_required
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
 from security_hardening import apply_security
-
+from redirect_hardening import apply_redirect_hardening
+from catalog_security import apply_catalog_security
+from catalog_ux_api import apply_catalog_ux_api
+from inventory_hardening import apply_inventory_security
+from checkout_preflight import apply_checkout_preflight
+from checkout_idempotency import apply_checkout_idempotency
+from commerce_extensions_v2 import apply_commerce_extensions
+from commerce_catalog import apply_catalog_extensions
+from order_state_machine import apply_order_state_machine
+from order_cancellation import apply_order_cancellation
+from payment import apply_payment
+from button_flow_hardening import apply_button_flow_hardening
+from refund_settlement_hardening import apply_refund_settlement_hardening
+from return_refund_bridge import apply_return_refund_bridge
+from clawback_reconciliation import apply_clawback_reconciliation
+from financial_reconciliation import apply_financial_reconciliation
+from marketplace_ultimate import apply_marketplace_ultimate
+from marketplace_hardening import apply_marketplace_hardening
+from checkout_marketplace_adjustments import apply_checkout_marketplace_adjustments
+from seller_staff import apply_seller_staff
+import seller_fulfillment  # noqa: F401
+import marketplace_fulfillment  # noqa: F401
+import commerce_runtime  # noqa: F401
+import profile_extensions  # noqa: F401
+import merchant_marketplace  # noqa: F401
+import merchant_approval  # noqa: F401
+import merchant_marketplace_v2  # noqa: F401
+import merchant_customer_marketplace  # noqa: F401
+import seller_storefront  # noqa: F401
+import seller_introduction  # noqa: F401
+import terms  # noqa: F401
+import password_reset  # noqa: F401
+import accounting  # noqa: F401
+import system_health  # noqa: F401
+from inventory_atomicity import apply_inventory_atomicity
+from financial_accounting import apply_financial_accounting
 
 register_ai(app, db, Product, Store, Offer, User, admin_required)
 register_mobile_api(app, db, Product, Category, Store, Offer)
-apply_security(app)
+
+with app.app_context():
+    apply_security(app); apply_redirect_hardening(app); apply_catalog_security(app)
+    apply_catalog_ux_api(app, db, Product, Category, Offer, Store); apply_checkout_preflight(app)
+    apply_checkout_idempotency(app, db); apply_inventory_security(app); apply_inventory_atomicity(app)
+    apply_order_state_machine(app); apply_order_cancellation(app); apply_commerce_extensions(app); apply_catalog_extensions(app)
+    apply_marketplace_ultimate(app); apply_marketplace_hardening(app); apply_checkout_marketplace_adjustments(app)
+    apply_seller_staff(app)
+    apply_payment(app, db, __import__("app").Order, User)
+    from merchant_marketplace_v2 import SellerLedger, SellerOrder
+    from accounting import SellerSettlement, SellerSettlementAllocation, ensure_settlement_allocation_guard
+    PaymentTransaction = app.extensions["kharidino_payment_transaction"]
+    apply_financial_accounting(app, db, __import__("app").Order, SellerLedger, SellerSettlement)
+    apply_refund_settlement_hardening(app, db, __import__("app").Order, PaymentTransaction, SellerOrder, SellerLedger, SellerSettlement, SellerSettlementAllocation)
+    apply_return_refund_bridge(app, db, __import__("app").Order, PaymentTransaction)
+    apply_clawback_reconciliation(app, db, Store)
+    apply_button_flow_hardening(app, db, Store, User)
+    db.create_all()
+    ensure_settlement_allocation_guard()
+    apply_financial_reconciliation(app, db)
 
 
 def _port_is_available(host: str, port: int) -> bool:
-    """Return True only when no TCP server is actually answering on the port.
-
-    A bind-only probe is not reliable for this development scenario on Windows:
-    an existing listener can still make a bind probe misleading. We therefore
-    test the loopback endpoint directly. If connect() succeeds, another server
-    is definitely listening and this port must not be used.
-    """
-    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    probe.settimeout(0.25)
-    try:
-        result = probe.connect_ex(("127.0.0.1", port))
-        return result != 0
-    except OSError:
-        return True
-    finally:
-        probe.close()
-
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM); probe.settimeout(0.25)
+    try: return probe.connect_ex(("127.0.0.1", port)) != 0
+    except OSError: return True
+    finally: probe.close()
 
 def _select_port(requested: int) -> int:
-    """Select a genuinely unused local TCP port for the current server."""
-    if _port_is_available("0.0.0.0", requested):
-        return requested
-
-    if os.environ.get("STRICT_PORT", "0").lower() in {"1", "true", "yes"}:
-        raise RuntimeError(
-            f"Port {requested} is already in use. Stop the old Kharidino server "
-            "or choose another PORT."
-        )
-
+    if _port_is_available("0.0.0.0", requested): return requested
+    if os.environ.get("STRICT_PORT", "0").lower() in {"1", "true", "yes"}: raise RuntimeError(f"Port {requested} is already in use. Stop the old Kharidino server or choose another PORT.")
     for candidate in range(requested + 1, requested + 21):
-        if _port_is_available("0.0.0.0", candidate):
-            print(
-                f"[Kharidino] Port {requested} is busy; using free port {candidate}."
-            )
-            return candidate
-
-    raise RuntimeError(
-        f"Ports {requested}-{requested + 20} are busy. "
-        "Stop old Python/Flask processes and try again."
-    )
-
-
-@app.get("/splash")
-def kharidino_splash():
-    return render_template("kharidino_splash.html")
-
-
-@app.get("/phone")
-def phone_connection():
-    """Simple LAN connection page for opening Kharidino on a phone."""
-    host = request.host.split(":", 1)[0]
-    port = request.host.rsplit(":", 1)[-1] if ":" in request.host else os.environ.get("PORT", "5000")
-    if host in {"127.0.0.1", "localhost", "0.0.0.0", "::1"}:
-        try:
-            host = socket.gethostbyname(socket.gethostname())
-        except OSError:
-            host = "YOUR-PC-IP"
-    return (
-        "<!doctype html><html lang='fa' dir='rtl'><meta charset='utf-8'>"
-        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-        "<title>اتصال موبایل | خریدینو</title>"
-        "<style>body{font-family:Tahoma,Arial;background:#f7f8fa;margin:0;padding:28px;color:#202124}"
-        ".card{max-width:520px;margin:auto;background:#fff;border:1px solid #e7e9ed;border-radius:20px;padding:24px;box-shadow:0 10px 35px #0001}"
-        "h1{font-size:23px}.url{direction:ltr;display:block;background:#fff4ee;color:#e94b00;padding:15px;border-radius:12px;font:bold 20px Arial;text-align:center;margin:18px 0}"
-        "ol{line-height:2}.ok{color:#16a34a;font-weight:bold}</style>"
-        f"<div class='card'><h1>📱 اتصال خریدینو به گوشی</h1>"
-        f"<p class='ok'>سرور روی شبکه محلی فعال است.</p>"
-        f"<span class='url'>http://{host}:{port}</span>"
-        "<ol><li>گوشی و کامپیوتر را به یک Wi‑Fi وصل کن.</li>"
-        "<li>آدرس بالا را در Chrome گوشی وارد کن.</li>"
-        "<li>اگر باز نشد، Windows Firewall را برای Python روی Private Network مجاز کن.</li></ol>"
-        "<p>برای API موبایل: <b>/api/mobile/health</b></p></div></html>"
-    )
-
-
-@app.before_request
-def splash_gate():
-    if (
-        request.path.startswith("/static/")
-        or request.path.startswith("/splash")
-        or request.path.startswith("/phone")
-        or request.path.startswith("/api/mobile/")
-        or request.path.startswith("/admin/kharidino-ai/api/")
-    ):
-        return None
-    if request.cookies.get("kharidino_splash") != "1":
-        return redirect("/splash")
-    return None
-
+        if _port_is_available("0.0.0.0", candidate): return candidate
+    raise RuntimeError("No free port found.")
 
 if __name__ == "__main__":
-    host = os.environ.get("HOST", "0.0.0.0")
-    requested_port = int(os.environ.get("PORT", "5000"))
-    port = _select_port(requested_port)
-    debug = os.environ.get("FLASK_DEBUG", "0").lower() in {"1", "true", "yes"}
-
-    print("=" * 50)
-    print("KHARIDINO ULTIMATE SERVER")
-    print(f"Local:  http://127.0.0.1:{port}")
-    print(f"LAN:    http://<PC-IP>:{port}")
-    print(f"AI:     http://127.0.0.1:{port}/admin/kharidino-ai/")
-    print("=" * 50)
-
-    app.run(host=host, port=port, debug=debug)
+    host = os.environ.get("HOST", "127.0.0.1"); port = _select_port(int(os.environ.get("PORT", "5000")))
+    print(f"[Kharidino] Running on http://{host}:{port}")
+    app.run(host=host, port=port, debug=os.environ.get("FLASK_DEBUG", "0") == "1")

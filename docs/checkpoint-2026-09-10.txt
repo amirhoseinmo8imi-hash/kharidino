@@ -1,0 +1,1 @@
+Stable marketplace hardening checkpoint. Current branch head is recorded by Git history.

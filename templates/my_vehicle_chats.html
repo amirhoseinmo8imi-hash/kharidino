@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}چت‌های من | خریدینو{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-26-chat-1') }}">{% endblock %}
+{% block content %}
+<section class="vehicle-chat-page"><div class="vehicle-chat-shell vehicle-chat-list" data-chat-list>
+  <div class="vehicle-chat-list-head"><h1>چت‌های من</h1><p>گفت‌وگوهای مربوط به آگهی‌های خودرو و وسایل نقلیه</p></div>
+  {% if chats %}
+    {% for chat in chats %}
+      <a class="vehicle-chat-list-item" href="{{ url_for('vehicle_chat', ad_id=chat.vehicle_ad_id, chat_id=chat.id) }}">
+        <i class="fa-regular fa-comments"></i><div><strong>آگهی شماره {{ chat.vehicle_ad_id }}</strong><span>{{ chat.updated_at.strftime('%Y/%m/%d %H:%M') if chat.updated_at else '' }}</span></div><span class="vehicle-chat-unread" data-chat-unread="{{ unread_by_chat.get(chat.id, 0) }}" {% if not unread_by_chat.get(chat.id, 0) %}hidden{% endif %}>{{ unread_by_chat.get(chat.id, 0) if unread_by_chat.get(chat.id, 0) < 100 else "99+" }}</span><i class="fa-solid fa-chevron-left"></i>
+      </a>
+    {% endfor %}
+  {% else %}<div class="vehicle-chat-empty"><i class="fa-regular fa-comments"></i><strong>هنوز چتی نداری</strong></div>{% endif %}
+</div></section>
+{% endblock %}
+<script>
+(function(){
+  const list=document.querySelector('[data-chat-list]'); if(!list)return;
+  async function refresh(){
+    try{const r=await fetch('/api/vehicle-chats/unread',{headers:{Accept:'application/json'},cache:'no-store'}); if(!r.ok)return; const d=await r.json(); document.querySelectorAll('[data-chat-unread]').forEach(b=>{b.textContent=d.count>99?'99+':d.count;b.hidden=d.count<=0;});}catch(e){}
+  }
+  refresh();setInterval(refresh,3000);
+})();
+</script>

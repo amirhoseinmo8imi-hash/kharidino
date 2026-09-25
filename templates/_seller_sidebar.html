@@ -1,0 +1,18 @@
+<aside class="seller-sidebar">
+  <div class="seller-logo">
+    {% if account.store.logo %}<img src="{{ url_for('static', filename=account.store.logo) }}" alt="">{% else %}<span><i class="fa-solid fa-store"></i></span>{% endif %}
+    <div><strong>{{ account.store.name }}</strong><small>پنل فروشگاه</small></div>
+  </div>
+  <nav>
+    <a href="{{ url_for('seller_dashboard') }}"><i class="fa-solid fa-gauge-high"></i><span>نمای کلی</span></a>
+    <a href="{{ url_for('seller_dashboard') }}#products"><i class="fa-solid fa-boxes-stacked"></i><span>محصولات</span></a>
+    <a href="{{ url_for('seller_orders') }}"><i class="fa-solid fa-bag-shopping"></i><span>مدیریت سفارش‌ها</span></a>
+    <a href="{{ url_for('seller_finance') }}"><i class="fa-solid fa-wallet"></i><span>مالی و تسویه</span></a>
+    <a href="{{ url_for('seller_analytics') }}"><i class="fa-solid fa-chart-line"></i><span>تحلیل فروش</span></a>
+    <a href="{{ url_for('seller_dashboard') }}#store-settings"><i class="fa-solid fa-store"></i><span>مشخصات فروشگاه</span></a>
+  </nav>
+  <div class="seller-sidebar-bottom">
+    <a href="{{ url_for('home') }}"><i class="fa-solid fa-globe"></i><span>مشاهده سایت</span></a>
+    <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span>خروج</span></a>
+  </div>
+</aside>

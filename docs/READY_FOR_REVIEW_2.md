@@ -1,0 +1,1 @@
+Automated CI is the final gate before merging.

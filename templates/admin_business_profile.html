@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}اطلاعات حقوقی شرکت | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="kh-company-admin"><div class="container"><div class="kh-company-card">
+<div class="kh-b2b-title"><i class="fa-solid fa-building-shield"></i><div><h1>اطلاعات حقوقی و صدور فاکتور</h1><small>این اطلاعات روی پیش‌فاکتور و فاکتور خریدینو نمایش داده می‌شود. فقط اطلاعات واقعی و ثبت‌شده شرکت را وارد کنید.</small></div></div>
+<form method="post" class="kh-company-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="kh-company-fields">
+<label><span>نام حقوقی شرکت</span><input name="company_legal_name" value="{{ profile.legal_name }}"></label>
+<label><span>شناسه ملی</span><input name="company_national_id" value="{{ profile.national_id }}"></label>
+<label><span>شماره اقتصادی</span><input name="company_economic_code" value="{{ profile.economic_code }}"></label>
+<label><span>شماره ثبت</span><input name="company_registration_number" value="{{ profile.registration_number }}"></label>
+<label><span>کد پستی</span><input name="company_postal_code" value="{{ profile.postal_code }}"></label>
+<label><span>تلفن</span><input name="company_phone" value="{{ profile.phone }}"></label>
+<label><span>ایمیل</span><input name="company_email" value="{{ profile.email }}"></label>
+<label><span>وب‌سایت</span><input name="company_website" value="{{ profile.website }}"></label>
+<label class="wide"><span>نشانی</span><textarea name="company_address" rows="3">{{ profile.address }}</textarea></label>
+<label><span>نام بانک</span><input name="company_bank_name" value="{{ profile.bank_name }}"></label>
+<label><span>شماره شبا</span><input name="company_iban" value="{{ profile.iban }}"></label>
+</div>
+<button class="kh-b2b-submit" type="submit">ذخیره اطلاعات حقوقی <i class="fa-solid fa-floppy-disk"></i></button>
+</form></div></div></section>
+{% endblock %}

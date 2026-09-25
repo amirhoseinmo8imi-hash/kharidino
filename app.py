@@ -1732,48 +1732,6 @@ def register():
     return render_template("auth.html", mode="register")
 
 
-@app.route("/seller/register", methods=["GET", "POST"])
-def seller_register():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        store_name = request.form.get("store_name", "").strip()
-        website = request.form.get("website", "").strip()
-
-        if not name or not email or len(password) < 8 or not store_name:
-            flash("نام، ایمیل، رمز عبور حداقل ۸ کاراکتری و نام فروشگاه الزامی است.", "warning")
-            return render_template("seller_register.html")
-
-        if User.query.filter_by(email=email).first():
-            flash("این ایمیل قبلاً ثبت شده است. از صفحه ورود وارد شوید.", "warning")
-            return render_template("seller_register.html")
-
-        user = User(
-            name=name,
-            email=email,
-            password=generate_password_hash(password),
-            role="seller",
-        )
-        db.session.add(user)
-        db.session.flush()
-
-        store = Store(
-            name=store_name,
-            website=website,
-            active=True,
-        )
-        db.session.add(store)
-        db.session.commit()
-
-        session["user_id"] = user.id
-        session.modified = True
-        flash("درخواست فروشندگی و حساب شما ثبت شد. فروشگاه برای تکمیل تنظیمات آماده است.", "success")
-        return redirect(url_for("seller_register"))
-
-    return render_template("seller_register.html")
-
-
 @app.route(
     "/login",
     methods=["GET", "POST"]

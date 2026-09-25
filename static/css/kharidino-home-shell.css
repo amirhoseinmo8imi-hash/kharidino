@@ -272,3 +272,42 @@ body:has(.km-home) .footer-bottom {
     padding: 8px 10px;
   }
 }
+
+
+/* 2026-09-25 homepage correction: marketplace header + promo + clean hero */
+.kh-promo-bar{
+  width:min(1450px,calc(100% - 32px));
+  min-height:42px;
+  margin:12px auto 0;
+  padding:0 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  border:1px solid #eceef2;
+  border-radius:12px;
+  background:linear-gradient(90deg,#fff,#fff7f8);
+  color:#454b55;
+  font-size:11px;
+  font-weight:800;
+}
+.kh-promo-bar span{display:inline-flex;align-items:center;gap:8px}
+.kh-promo-bar span i,.kh-promo-bar a i{color:#ef233c}
+.kh-promo-bar a{display:inline-flex;align-items:center;gap:8px;color:#ef233c;text-decoration:none;white-space:nowrap}
+.kh-promo-bar a:hover{color:#c91631}
+.kh-home-page .ki-slider{margin-top:14px}
+
+.ki-slide-art--compare>i{font-size:116px}
+.ki-slide-art--deal>i{font-size:112px}
+.ki-slide-art--store>i{font-size:108px}
+.ki-slide-art--deal .ki-art-circle{background:rgba(255,255,255,.14)}
+.ki-slide-art--store .ki-art-circle{background:rgba(255,255,255,.11)}
+
+@media(max-width:720px){
+  .kh-promo-bar{width:calc(100% - 24px);min-height:38px;padding:7px 12px;font-size:9px}
+  .kh-promo-bar a{font-size:9px}
+  .kh-promo-bar span{min-width:0}
+  .kh-promo-bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kh-promo-bar a{display:none}
+  .kh-home-page .ki-slider{margin-top:10px}
+}

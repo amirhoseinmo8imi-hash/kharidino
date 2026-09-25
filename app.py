@@ -794,6 +794,42 @@ def inject_globals():
 
 
 # =========================================================
+# PRODUCT IMAGE FALLBACKS
+# =========================================================
+PRODUCT_FALLBACK_IMAGES = {
+    "موبایل": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=700&q=85",
+    "لپ‌تاپ و کامپیوتر": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=700&q=85",
+    "کالای دیجیتال": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=700&q=85",
+    "هدفون و هندزفری": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=85",
+    "گیمینگ": "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=700&q=85",
+    "تلویزیون و صوتی تصویری": "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=700&q=85",
+    "ساعت و پوشیدنی": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=700&q=85",
+    "خانه و آشپزخانه": "https://images.unsplash.com/photo-1556910103-1c02745aae3?auto=format&fit=crop&w=700&q=85",
+    "زیبایی و سلامت": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=700&q=85",
+    "کتاب و لوازم‌التحریر": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=700&q=85",
+    "ورزش و سفر": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=700&q=85",
+    "ابزار": "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=700&q=85",
+    "خودرو": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=700&q=85",
+    "مد و پوشاک": "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=700&q=85",
+    "سوپرمارکتی": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=85",
+    "default": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=700&q=85",
+}
+
+
+def product_image_url(product):
+    image = (getattr(product, "image", "") or "").strip()
+    if image.startswith(("http://", "https://", "/")):
+        return image
+    if image:
+        return url_for("static", filename=image)
+    category = getattr(getattr(product, "category", None), "name", "") or ""
+    return PRODUCT_FALLBACK_IMAGES.get(category, PRODUCT_FALLBACK_IMAGES["default"])
+
+
+app.jinja_env.globals["product_image_url"] = product_image_url
+
+
+# =========================================================
 # CSRF PROTECTION
 # =========================================================
 

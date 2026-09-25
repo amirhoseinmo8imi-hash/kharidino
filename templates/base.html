@@ -47,13 +47,50 @@
       <i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>
     </button>
     <div class="km-category-mega" role="menu" aria-label="دسته‌بندی کالاها">
-      {% for cat in (categories|default([])) %}
-      <a class="km-category-mega-link" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
-        <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
-        <span>{{ cat.name }}</span>
-      </a>
-      {% else %}<div class="km-category-mega-empty">دسته‌بندی‌ای برای نمایش وجود ندارد.</div>{% endfor %}
-    </div>
+      <aside class="km-mega-sidebar">
+        <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>همه دسته‌بندی‌ها</span></div>
+        {% for cat in (categories|default([])) %}
+        <a class="km-mega-side-item{% if loop.first %} is-active{% endif %}" data-mega-target="mega-panel-{{ cat.id }}" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
+          <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
+          <span>{{ cat.name }}</span><i class="fa-solid fa-chevron-left"></i>
+        </a>
+        {% endfor %}
+      </aside>
+      <section class="km-mega-content">
+        {% for cat in (categories|default([])) %}
+        <div class="km-mega-panel{% if loop.first %} is-active{% endif %}" id="mega-panel-{{ cat.id }}" data-mega-panel="{{ cat.id }}">
+          <div class="km-mega-panel-head">
+            <div><span>خرید از دسته</span><h3>{{ cat.name }}</h3><p>{{ cat.description }}</p></div>
+            <a href="{{ url_for('category', category_id=cat.id) }}">مشاهده همه <i class="fa-solid fa-arrow-left"></i></a>
+          </div>
+          <div class="km-mega-columns">
+            <div class="km-mega-column">
+              <h4><i class="fa-solid fa-fire"></i> محصولات محبوب</h4>
+              {% for product in cat.products[:7] %}
+              <a href="{{ url_for('product_detail', product_id=product.id) }}">{{ product.name }}</a>
+              {% else %}
+              <a href="{{ url_for('category', category_id=cat.id) }}">مشاهده محصولات {{ cat.name }}</a>
+              {% endfor %}
+            </div>
+            <div class="km-mega-column">
+              <h4><i class="fa-solid fa-bolt"></i> خرید سریع</h4>
+              <a href="{{ url_for('category', category_id=cat.id) }}">همه محصولات {{ cat.name }}</a>
+              <a href="{{ url_for('category', category_id=cat.id, sort='price_low') }}">ارزان‌ترین‌ها</a>
+              <a href="{{ url_for('category', category_id=cat.id, sort='newest') }}">جدیدترین‌ها</a>
+              <a href="{{ url_for('compare') }}">مقایسه محصولات</a>
+            </div>
+            <div class="km-mega-column">
+              <h4><i class="fa-solid fa-tag"></i> پیشنهادهای خرید</h4>
+              <a href="{{ url_for('category', category_id=cat.id) }}">پیشنهادهای ویژه</a>
+              <a href="{{ url_for('stores') }}">فروشگاه‌های این دسته</a>
+              <a href="{{ url_for('home', q=cat.name) }}">جستجوی {{ cat.name }}</a>
+              <a href="{{ url_for('category', category_id=cat.id) }}">راهنمای انتخاب</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+    </div>    </div>
   </div>
   {% for cat in (categories|default([]))[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}
 </div></nav>

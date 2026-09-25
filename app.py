@@ -50,11 +50,26 @@ for folder in [
 
 app = Flask(__name__)
 
-configured_secret = os.environ.get("SECRET_KEY", "").strip()
+configured_secret = (
+    os.environ.get("KHARIDINO_SECRET_KEY", "").strip()
+    or os.environ.get("SECRET_KEY", "").strip()
+)
+
 if configured_secret:
     app.config["SECRET_KEY"] = configured_secret
 else:
-    app.config["SECRET_KEY"] = secrets.token_urlsafe(48)
+    # Keep local sessions stable across restarts. The generated file is ignored
+    # by git and can still be overridden by an environment variable in production.
+    local_secret_file = BASE_DIR / ".kharidino-secret"
+    try:
+        if local_secret_file.exists():
+            local_secret = local_secret_file.read_text(encoding="utf-8").strip()
+        else:
+            local_secret = secrets.token_urlsafe(64)
+            local_secret_file.write_text(local_secret, encoding="utf-8")
+        app.config["SECRET_KEY"] = local_secret or secrets.token_urlsafe(64)
+    except OSError:
+        app.config["SECRET_KEY"] = secrets.token_urlsafe(64)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + str(BASE_DIR / "kharidino.db")
@@ -595,7 +610,29 @@ def inject_globals():
     # GLOBAL TEMPLATE VARIABLES
     # =====================================================
 
+    # Shared catalog data keeps the mega-menu/footer/search shell connected
+    # on every page, not only on the home route.
+    global_categories = (
+        Category.query
+        .filter_by(active=True)
+        .order_by(Category.id.asc())
+        .all()
+    )
+    global_stores = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
+
     return {
+
+        "categories": global_categories,
+        "stores": global_stores,
+        "category_count": len(global_categories),
+        "store_count": len(global_stores),
+        "product_count": Product.query.filter_by(active=True).count(),
+        "offer_count": Offer.query.count(),
 
         # =================================================
         # SITE
@@ -1151,31 +1188,91 @@ def home():
 )
 def category(category_id):
 
-    cat = Category.query.get_or_404(
-        category_id
-    )
+    cat = Category.query.get_or_404(category_id)
 
     sort = request.args.get("sort", "newest").strip()
-    query = Product.query.filter_by(category_id=cat.id, active=True)
+    store_id = request.args.get("store", "").strip()
+    q = request.args.get("q", "").strip()[:100]
 
-    if sort == "price_low":
-        query = query.order_by(Product.price.asc(), Product.id.desc())
-    elif sort == "price_high":
-        query = query.order_by(Product.price.desc(), Product.id.desc())
-    elif sort == "name":
-        query = query.order_by(Product.name.asc())
-    else:
-        sort = "newest"
-        query = query.order_by(Product.id.desc())
+    try:
+        min_price = max(0, int(request.args.get("min_price", "0") or 0))
+        max_price = max(0, int(request.args.get("max_price", "0") or 0))
+    except (TypeError, ValueError):
+        min_price = max_price = 0
+
+    if min_price and max_price and min_price > max_price:
+        min_price, max_price = max_price, min_price
+
+    query = Product.query.filter(
+        Product.category_id == cat.id,
+        Product.active.is_(True),
+    )
+
+    if q:
+        needle = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Product.name.ilike(needle),
+                Product.description.ilike(needle),
+            )
+        )
 
     products = query.all()
+
+    # Filter using the same effective price users see on product cards.
+    filtered = []
+    for product in products:
+        if store_id.isdigit():
+            store = db.session.get(Store, int(store_id))
+            if not store:
+                filtered.append(product)
+                continue
+            matching = [
+                offer for offer in product.offers
+                if offer.store_id == store.id
+                and offer.in_stock
+                and offer.price
+                and offer.price > 0
+                and store.active
+            ]
+            if not matching:
+                continue
+
+        effective = lowest_price(product)
+        if min_price and effective < min_price:
+            continue
+        if max_price and effective > max_price:
+            continue
+        filtered.append(product)
+
+    if sort == "price_low":
+        filtered.sort(key=lambda item: (lowest_price(item), -item.id))
+    elif sort == "price_high":
+        filtered.sort(key=lambda item: (-lowest_price(item), -item.id))
+    elif sort == "name":
+        filtered.sort(key=lambda item: item.name.lower())
+    else:
+        sort = "newest"
+        filtered.sort(key=lambda item: item.id, reverse=True)
+
+    store_options = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
 
     return render_template(
         "category.html",
         category=cat,
-        products=products,
+        products=filtered,
         sort=sort,
-        lowest_price=lowest_price
+        q=q,
+        store_id=store_id,
+        min_price=min_price,
+        max_price=max_price,
+        store_options=store_options,
+        lowest_price=lowest_price,
     )
 
 

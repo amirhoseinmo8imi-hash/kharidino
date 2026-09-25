@@ -29,6 +29,15 @@
 </head>
 <body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
+{% if request.endpoint == 'home' %}
+<div class="kh-top-promo">
+  <div class="kh-top-promo-inner">
+    <span><i class="fa-solid fa-bolt"></i> خرید هوشمند در خریدینو</span>
+    <strong>مقایسه قیمت و پیدا کردن بهترین پیشنهاد</strong>
+    <a href="#deals">مشاهده پیشنهادهای ویژه <i class="fa-solid fa-arrow-left"></i></a>
+  </div>
+</div>
+{% endif %}
 <header class="km-topbar">
   <div class="km-header">
     <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a>

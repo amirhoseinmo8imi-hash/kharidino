@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}تأیید حساب | خریدینو{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-profile-final.css', v='2026-09-26-verify-1') }}">{% endblock %}
+{% block content %}
+<section class="kh-profile-page"><div class="container kh-profile-wrap">
+  <div class="kh-profile-head">
+    <div class="kh-profile-title"><h1>تأیید حساب برای چت</h1><p>برای ارتباط امن با فروشنده، ایمیل و شماره تلفنت را تأیید کن.</p></div>
+    <a class="kh-profile-btn" href="{{ url_for('profile') }}"><i class="fa-solid fa-arrow-right"></i> پروفایل</a>
+  </div>
+  <div class="kh-verification-grid">
+    <article class="kh-profile-card kh-verification-card">
+      <div class="kh-verification-icon"><i class="fa-solid fa-envelope"></i></div>
+      <div class="kh-verification-content"><h2>تأیید ایمیل</h2><p>{{ current_user.email }}</p>
+      {% if verification.email_verified %}<span class="kh-verified"><i class="fa-solid fa-circle-check"></i> تأیید شده</span>
+      {% else %}
+      <form method="post" action="{{ url_for('vehicle_email_send') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="kh-profile-btn primary" type="submit">ارسال کد به ایمیل</button></form>
+      <form class="kh-verify-code-form" method="post" action="{{ url_for('vehicle_email_confirm') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="code" inputmode="numeric" maxlength="6" placeholder="کد ۶ رقمی"><button class="kh-profile-btn" type="submit">تأیید کد</button></form>
+      {% endif %}</div>
+    </article>
+    <article class="kh-profile-card kh-verification-card">
+      <div class="kh-verification-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+      <div class="kh-verification-content"><h2>تأیید تلفن</h2><p>{{ verification.phone or "هنوز شماره‌ای ثبت نشده" }}</p>
+      {% if verification.phone_verified %}<span class="kh-verified"><i class="fa-solid fa-circle-check"></i> تأیید شده</span>
+      {% else %}
+      <form method="post" action="{{ url_for('vehicle_phone_send') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="phone" value="{{ verification.phone or '' }}" inputmode="tel" maxlength="30" placeholder="09xxxxxxxxx" required><button class="kh-profile-btn primary" type="submit">ارسال کد پیامکی</button></form>
+      <form class="kh-verify-code-form" method="post" action="{{ url_for('vehicle_phone_confirm') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="code" inputmode="numeric" maxlength="6" placeholder="کد ۶ رقمی"><button class="kh-profile-btn" type="submit">تأیید کد</button></form>
+      {% endif %}</div>
+    </article>
+  </div>
+  {% if verification.email_verified and verification.phone_verified %}
+  <div class="kh-verification-success"><i class="fa-solid fa-comments"></i><div><strong>چت برای حساب شما فعال است.</strong><p>حالا در آگهی‌های خودرو و وسایل نقلیه، کنار گزینه تماس می‌توانی با فروشنده گفت‌وگو کنی.</p></div></div>
+  {% endif %}
+</div></section>
+{% endblock %}

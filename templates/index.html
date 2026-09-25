@@ -39,6 +39,26 @@
     </div>
   </section>
 
+  <section class="kh-portal-switch" aria-label="انتخاب بخش خریدینو">
+    <div class="kh-portal-head">
+      <span>خریدینو، بیشتر از یک فروشگاه</span>
+      <h2>انتخاب کن از کجا شروع کنی</h2>
+      <p>محصولات را مثل یک فروشگاه آنلاین پیدا کن، یا وارد بازار آگهی‌های خودرو و وسایل نقلیه شو.</p>
+    </div>
+    <div class="kh-portal-grid">
+      <a class="kh-portal-card kh-portal-shop" href="#categories">
+        <div class="kh-portal-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+        <div class="kh-portal-copy"><span>SHOPPING</span><strong>فروشگاه خریدینو</strong><p>محصولات، فروشگاه‌ها، مقایسه قیمت و پیشنهادهای ویژه</p></div>
+        <i class="fa-solid fa-arrow-left kh-portal-arrow"></i>
+      </a>
+      <a class="kh-portal-card kh-portal-auto" href="{{ url_for('vehicles') }}">
+        <div class="kh-portal-icon"><i class="fa-solid fa-car-side"></i></div>
+        <div class="kh-portal-copy"><span>AUTO MARKET</span><strong>خریدینو خودرو</strong><p>خرید و فروش خودرو، موتورسیکلت و وسایل نقلیه</p></div>
+        <i class="fa-solid fa-arrow-left kh-portal-arrow"></i>
+      </a>
+    </div>
+  </section>
+
   <section class="kh-market-hero" aria-label="پیشنهادهای ویژه خریدینو">
     <div class="kh-market-hero-copy">
       <span class="kh-market-eyebrow"><i class="fa-solid fa-bolt"></i> جشنواره خریدینو</span>
@@ -120,7 +140,7 @@
   })();
   </script>
 
-  <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
+  <section class="kh-auto-zone" aria-label="بازار خودرو و وسایل نقلیه">\n    <div class="kh-auto-zone-bar"><div><span><i class="fa-solid fa-car-side"></i> KHARIDINO AUTO</span><strong>بازار خرید و فروش وسایل نقلیه</strong></div><a href="{{ url_for('vehicles') }}">ورود به بازار خودرو <i class="fa-solid fa-arrow-left"></i></a></div>\n  <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
     <div class="kh-vcat-head">
       <div><span><i class="fa-solid fa-road"></i> MARKETPLACE</span><h2>هر چیزی که <strong>حرکت می‌کند</strong></h2><p>بازار اختصاصی وسایل نقلیه خریدینو</p></div>
       <a href="{{ url_for('vehicles') }}">ورود به بازار <i class="fa-solid fa-arrow-left"></i></a>
@@ -136,7 +156,7 @@
   </section>
   {% endif %}
 
-  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
+  </section>\n\n  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
     <a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span><small>هزاران محصول</small></a>
     <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span><small>انتخاب اقتصادی</small></a>
     <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span><small>فروشنده‌ها</small></a>

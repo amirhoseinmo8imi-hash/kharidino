@@ -98,3 +98,6 @@
 .vehicle-market-insight{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin:16px 0}.vehicle-market-insight>div{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;background:#f8f9fb;border:1px solid #eee}.vehicle-market-insight i{font-size:20px}.vehicle-market-insight strong,.vehicle-market-insight small{display:block}.vehicle-market-insight small{color:#777;margin-top:4px;font-size:12px}.vehicle-similar-section{margin-top:34px}.vehicle-grid-similar{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:850px){.vehicle-market-insight{grid-template-columns:1fr}.vehicle-grid-similar{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.vehicle-grid-similar{grid-template-columns:1fr}}
+
+
+.vehicle-report-box{margin-top:14px;padding:14px 16px;border:1px solid #eee;border-radius:16px;background:#fff}.vehicle-report-box>button{border:0;background:transparent;color:#777;cursor:pointer;font:inherit}.vehicle-report-box form{display:grid;gap:8px;margin-top:10px}.vehicle-report-box select,.vehicle-report-box textarea{border:1px solid #ddd;border-radius:10px;padding:10px;font:inherit}.vehicle-report-box textarea{min-height:75px;resize:vertical}.vehicle-report-box form button{justify-self:start;border:0;border-radius:10px;padding:9px 14px;background:#222;color:#fff;cursor:pointer;font:inherit}

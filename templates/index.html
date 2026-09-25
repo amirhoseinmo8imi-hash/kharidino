@@ -24,7 +24,22 @@
           {% if session.get('user_id') %}<form class="km-action km-action--logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="km-logout-button"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></button></form>{% endif %}
         </div>
       </div>
-      <nav class="km-nav"><div class="km-nav-inner"><a href="#categories"><i class="fa-solid fa-bars"></i> دسته‌بندی کالاها</a>{% for cat in categories[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}</div></nav>
+      <nav class="km-nav" aria-label="ناوبری فروشگاه"><div class="km-nav-inner">
+  <div class="km-cat-menu-wrap">
+    <button type="button" class="km-cat-menu-trigger" aria-haspopup="true" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>
+    </button>
+    <div class="km-category-mega" role="menu" aria-label="دسته‌بندی کالاها">
+      {% for cat in (categories|default([])) %}
+      <a class="km-category-mega-link" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
+        <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
+        <span>{{ cat.name }}</span>
+      </a>
+      {% else %}<div class="km-category-mega-empty">دسته‌بندی‌ای برای نمایش وجود ندارد.</div>{% endfor %}
+    </div>
+  </div>
+  {% for cat in (categories|default([]))[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}
+</div></nav>
     </header>
 
     <section class="ki-slider" aria-label="پیشنهادهای خریدینو"><div class="ki-slides" id="kiSlides">

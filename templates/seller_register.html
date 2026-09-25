@@ -23,12 +23,13 @@
           <span class="ki-register-card-icon"><i class="fa-solid fa-store"></i></span>
           <div><span>شروع همکاری</span><h2>ثبت‌نام فروشنده</h2><p>اطلاعات اولیه فروشگاهت را وارد کن.</p></div>
         </div>
-        {% if current_user and current_user.role == 'seller' and current_user.merchant_account %}
+        {% set merchant = current_user.merchant_account if current_user and (current_user.merchant_account is defined) else none %}
+        {% if current_user and current_user.role == 'seller' and merchant %}
           <div class="ki-register-status">
             <i class="fa-solid fa-hourglass-half"></i>
-            <div><strong>درخواست فروشگاه ثبت شده</strong><p>وضعیت فعلی: <b>{{ {'pending':'در انتظار تأیید','approved':'تأیید شده','rejected':'رد شده','suspended':'تعلیق شده'}.get(current_user.merchant_account.status, current_user.merchant_account.status) }}</b></p></div>
+            <div><strong>درخواست فروشگاه ثبت شده</strong><p>وضعیت فعلی: <b>{{ {'pending':'در انتظار تأیید','approved':'تأیید شده','rejected':'رد شده','suspended':'تعلیق شده'}.get(merchant.status, merchant.status) }}</b></p></div>
           </div>
-          {% if current_user.merchant_account.status == 'approved' %}<a class="ki-seller-btn ki-seller-btn--primary ki-register-full-btn" href="{{ url_for('seller_dashboard') }}">ورود به پنل فروشگاه <i class="fa-solid fa-arrow-left"></i></a>{% endif %}
+          {% if merchant.status == 'approved' %}<a class="ki-seller-btn ki-seller-btn--primary ki-register-full-btn" href="{{ url_for('seller_dashboard') }}">ورود به پنل فروشگاه <i class="fa-solid fa-arrow-left"></i></a>{% endif %}
         {% else %}
           <form method="post" class="ki-register-form">
             <label><span>نام و نام خانوادگی</span><input name="name" autocomplete="name" placeholder="مثلاً امیر محسنی" required></label>

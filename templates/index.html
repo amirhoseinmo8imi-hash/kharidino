@@ -11,10 +11,60 @@
 {% endblock %}
 {% block content %}
 <div class="km-home">
-    <section class="ki-slider" aria-label="پیشنهادهای خریدینو"><div class="ki-slides" id="kiSlides">
-      <article class="ki-slide is-active"><div class="ki-slide-copy"><span class="ki-slide-badge"><i class="fa-solid fa-bolt"></i> خرید هوشمند با خریدینو</span><h1>{{ setting("hero_title", "بهترین قیمت را قبل از خرید پیدا کن") }}</h1><p>{{ setting("hero_subtitle", "قیمت محصولات را بین فروشگاه‌ها مقایسه کن و با آگاهی بیشتر خرید کن.") }}</p><a class="ki-slide-btn" href="#products">مشاهده پیشنهادها <i class="fa-solid fa-arrow-left"></i></a></div><div class="ki-slide-art"><div class="ki-art-circle"></div><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></div></article>
-      {% for product in products[:2] %}<article class="ki-slide{% if loop.first %} is-next{% endif %}"><div class="ki-slide-copy"><span class="ki-slide-badge"><i class="fa-solid fa-tags"></i> پیشنهاد ویژه خریدینو</span><h2>{{ product.name }}</h2><p>قیمت این محصول را بین فروشگاه‌ها مقایسه کن و بهترین پیشنهاد موجود را پیدا کن.</p><a class="ki-slide-btn" href="{{ url_for('product_detail', product_id=product.id) }}">مشاهده محصول <i class="fa-solid fa-arrow-left"></i></a></div><div class="ki-slide-product">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}<div class="ki-slide-product-price">از <strong>{{ lowest_price(product)|money }}</strong> تومان</div></div></article>{% endfor %}
-    </div><button class="ki-slider-arrow ki-prev" type="button" aria-label="اسلاید قبلی" onclick="kiMoveSlide(-1)"><i class="fa-solid fa-chevron-right"></i></button><button class="ki-slider-arrow ki-next" type="button" aria-label="اسلاید بعدی" onclick="kiMoveSlide(1)"><i class="fa-solid fa-chevron-left"></i></button><div class="ki-dots" id="kiDots"><button class="is-active" type="button" onclick="kiGoSlide(0)"></button>{% for product in products[:2] %}<button type="button" onclick="kiGoSlide({{ loop.index }})"></button>{% endfor %}</div></section>
+<div class="kh-promo-bar">
+  <span><i class="fa-solid fa-bolt"></i> خرید هوشمند، مقایسه شفاف، انتخاب بهتر</span>
+  <a href="#deals">مشاهده پیشنهادهای ویژه <i class="fa-solid fa-arrow-left"></i></a>
+</div>
+    <section class="ki-slider" aria-label="پیشنهادهای خریدینو">
+      <div class="ki-slides" id="kiSlides">
+        <article class="ki-slide is-active">
+          <div class="ki-slide-copy">
+            <span class="ki-slide-badge"><i class="fa-solid fa-scale-balanced"></i> خرید هوشمند با خریدینو</span>
+            <h1>بهترین قیمت را قبل از خرید پیدا کن</h1>
+            <p>قیمت یک محصول را بین فروشگاه‌ها مقایسه کن، موجودی و پیشنهادها را ببین و بعد با خیال راحت انتخاب کن.</p>
+            <a class="ki-slide-btn" href="#products">مشاهده پیشنهادها <i class="fa-solid fa-arrow-left"></i></a>
+          </div>
+          <div class="ki-slide-art ki-slide-art--compare">
+            <div class="ki-art-circle"></div>
+            <i class="fa-solid fa-scale-balanced"></i>
+            <span>مقایسه قیمت</span>
+          </div>
+        </article>
+        <article class="ki-slide">
+          <div class="ki-slide-copy">
+            <span class="ki-slide-badge"><i class="fa-solid fa-tags"></i> پیشنهادهای ویژه خریدینو</span>
+            <h2>تخفیف‌ها و پیشنهادهای جذاب را یکجا ببین</h2>
+            <p>از میان محصولات و فروشگاه‌های متنوع، پیشنهاد مناسب را پیدا کن و برای خریدت سریع‌تر تصمیم بگیر.</p>
+            <a class="ki-slide-btn" href="#deals">دیدن تخفیف‌ها <i class="fa-solid fa-arrow-left"></i></a>
+          </div>
+          <div class="ki-slide-art ki-slide-art--deal">
+            <div class="ki-art-circle"></div>
+            <i class="fa-solid fa-tags"></i>
+            <span>پیشنهاد ویژه</span>
+          </div>
+        </article>
+        <article class="ki-slide">
+          <div class="ki-slide-copy">
+            <span class="ki-slide-badge"><i class="fa-solid fa-store"></i> بازار خریدینو</span>
+            <h2>فروشگاه‌ها را مقایسه کن، انتخابت را دقیق‌تر کن</h2>
+            <p>پیشنهاد فروشگاه‌های مختلف را کنار هم ببین و با اطلاعات شفاف‌تر خرید کن.</p>
+            <a class="ki-slide-btn" href="{{ url_for('stores') }}">مشاهده فروشگاه‌ها <i class="fa-solid fa-arrow-left"></i></a>
+          </div>
+          <div class="ki-slide-art ki-slide-art--store">
+            <div class="ki-art-circle"></div>
+            <i class="fa-solid fa-store"></i>
+            <span>فروشگاه‌های متنوع</span>
+          </div>
+        </article>
+      </div>
+      <button class="ki-slider-arrow ki-prev" type="button" aria-label="اسلاید قبلی" onclick="kiMoveSlide(-1)"><i class="fa-solid fa-chevron-right"></i></button>
+      <button class="ki-slider-arrow ki-next" type="button" aria-label="اسلاید بعدی" onclick="kiMoveSlide(1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="ki-dots" id="kiDots">
+        <button class="is-active" type="button" onclick="kiGoSlide(0)"></button>
+        <button type="button" onclick="kiGoSlide(1)"></button>
+        <button type="button" onclick="kiGoSlide(2)"></button>
+      </div>
+    </section>
 
     <section class="ki-feature-strip"><div class="ki-feature"><span><i class="fa-solid fa-scale-balanced"></i></span><div><strong>مقایسه قیمت</strong><small>چند فروشگاه در یک نگاه</small></div></div><div class="ki-feature"><span><i class="fa-solid fa-tags"></i></span><div><strong>پیشنهادهای ویژه</strong><small>انتخاب بهتر برای خرید</small></div></div><div class="ki-feature"><span><i class="fa-solid fa-store"></i></span><div><strong>فروشگاه‌های متنوع</strong><small>پیشنهادهای مختلف</small></div></div><div class="ki-feature"><span><i class="fa-solid fa-shield-heart"></i></span><div><strong>انتخاب مطمئن</strong><small>اطلاعات شفاف قبل از خرید</small></div></div></section>
 

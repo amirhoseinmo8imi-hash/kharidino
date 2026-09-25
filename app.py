@@ -2693,6 +2693,10 @@ def checkout():
 
         shipping_method = request.form.get("shipping_method", "استاندارد").strip()
         delivery_fee = {"استاندارد": 0, "اکسپرس": 120000, "ارسال فروشنده": 50000}.get(shipping_method, 0)
+        payment_method = request.form.get("payment_method", "پرداخت هنگام تحویل").strip()
+        if payment_method not in {"پرداخت هنگام تحویل", "کیف پول"}:
+            payment_method = "پرداخت هنگام تحویل"
+        final_total = max(0, int(total) - int(discount) + int(delivery_fee))
 
         for row in items:
             stock = int(getattr(row["product"], "stock_quantity", 0) or 0)

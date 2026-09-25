@@ -62,6 +62,16 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
 
     VehicleAdModel = VehicleAd
 
+    class VehicleSavedSearch(db.Model):
+        __tablename__ = "vehicle_saved_search"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        name = db.Column(db.String(120), nullable=False)
+        filters_json = db.Column(db.Text, nullable=False, default="{}")
+        created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+        alert_enabled = db.Column(db.Boolean, default=True, nullable=False)
+        user = db.relationship("User", backref=db.backref("vehicle_saved_searches", lazy=True))
+
     class VehicleFavorite(db.Model):
         __tablename__ = "vehicle_favorite"
         id = db.Column(db.Integer, primary_key=True)
@@ -180,6 +190,69 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
         ).all()
         ads=[row.vehicle_ad for row in rows if row.vehicle_ad and row.vehicle_ad.status=="approved"]
         return render_template("vehicle_favorites.html", ads=ads)
+
+    @app.route("/vehicle-compare")
+    def vehicle_compare():
+        ids=[]
+        for raw in session.get("vehicle_compare_ids", []):
+            try: ids.append(int(raw))
+            except (TypeError, ValueError): pass
+        ads=VehicleAd.query.filter(VehicleAd.id.in_(ids), VehicleAd.status=="approved").all() if ids else []
+        by_id={ad.id:ad for ad in ads}
+        ads=[by_id[i] for i in ids if i in by_id]
+        return render_template("vehicle_compare.html", ads=ads)
+
+    @app.post("/api/vehicle/<int:ad_id>/compare")
+    def toggle_vehicle_compare(ad_id):
+        ad=VehicleAd.query.get_or_404(ad_id)
+        if ad.status!="approved": abort(404)
+        ids=[]
+        for raw in session.get("vehicle_compare_ids", []):
+            try: ids.append(int(raw))
+            except (TypeError, ValueError): pass
+        if ad_id in ids:
+            ids.remove(ad_id); selected=False
+        else:
+            if len(ids)>=4:
+                return {"ok":False,"message":"حداکثر ۴ خودرو را می‌توانی مقایسه کنی."},400
+            ids.append(ad_id); selected=True
+        session["vehicle_compare_ids"]=ids
+        session.modified=True
+        return {"ok":True,"selected":selected,"count":len(ids),"message":"به مقایسه اضافه شد." if selected else "از مقایسه حذف شد."}
+
+    @app.post("/api/vehicle-compare/clear")
+    def clear_vehicle_compare():
+        session.pop("vehicle_compare_ids",None)
+        return {"ok":True}
+
+    @app.post("/vehicle-searches/save")
+    @login_required
+    def save_vehicle_search():
+        import json
+        filters={k:request.form.get(k,"").strip() for k in ("q","category","city","min_price","max_price","min_year","max_year","fuel","gearbox","seller_type","sort") if request.form.get(k,"").strip()}
+        name=request.form.get("name","").strip()[:120] or "جستجوی ذخیره‌شده"
+        existing=VehicleSavedSearch.query.filter_by(user_id=session["user_id"],name=name).first()
+        if existing:
+            existing.filters_json=json.dumps(filters,ensure_ascii=False)
+            existing.alert_enabled=True
+        else:
+            db.session.add(VehicleSavedSearch(user_id=session["user_id"],name=name,filters_json=json.dumps(filters,ensure_ascii=False)))
+        db.session.commit()
+        flash("جستجو ذخیره شد؛ بعداً می‌توانی همین فیلترها را دوباره اجرا کنی.","success")
+        return redirect(url_for("vehicles",**filters))
+
+    @app.get("/vehicle-searches")
+    @login_required
+    def vehicle_searches():
+        return render_template("vehicle_searches.html",searches=VehicleSavedSearch.query.filter_by(user_id=session["user_id"]).order_by(VehicleSavedSearch.id.desc()).all())
+
+    @app.post("/vehicle-searches/<int:search_id>/delete")
+    @login_required
+    def delete_vehicle_search(search_id):
+        item=VehicleSavedSearch.query.filter_by(id=search_id,user_id=session["user_id"]).first_or_404()
+        db.session.delete(item); db.session.commit()
+        flash("جستجوی ذخیره‌شده حذف شد.","success")
+        return redirect(url_for("vehicle_searches"))
 
     @app.route("/vehicles/post",methods=["GET","POST"])
     @login_required

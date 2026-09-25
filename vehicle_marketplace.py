@@ -139,7 +139,7 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
         elif sort=="year_high": query=query.order_by(VehicleAd.year.desc(),VehicleAd.id.desc())
         else: sort="newest"; query=query.order_by(VehicleAd.id.desc())
         filters={"q":q,"category":category,"city":city,"sort":sort}
-        return render_template("vehicles.html",ads=query.limit(100).all(),filters=filters,vehicle_categories=VEHICLE_CATEGORIES,status_labels=VEHICLE_STATUS_LABELS)
+        return render_template("vehicles.html",ads=query.limit(100).all(),filters=filters,vehicle_categories=VEHICLE_CATEGORIES,status_labels=VEHICLE_STATUS_LABELS,vehicle_compare_ids=session.get("vehicle_compare_ids",[]))
 
     @app.route("/vehicle/<int:ad_id>")
     def vehicle_detail(ad_id):
@@ -156,6 +156,7 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
             gallery=[x for x in (ad.gallery or "").split("|") if x],
             status_labels=VEHICLE_STATUS_LABELS,
             vehicle_favorite=favorite,
+            vehicle_compare_selected=ad.id in session.get("vehicle_compare_ids", []),
         )
 
     @app.post("/api/vehicle/<int:ad_id>/favorite")

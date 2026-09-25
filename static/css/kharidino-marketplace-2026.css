@@ -28,3 +28,49 @@
 .kdg-price-compare-banner strong{font-size:13px}.kdg-price-compare-banner span{display:block;color:#c7c9ce;font-size:9px;margin-top:4px}.kdg-price-compare-banner a{background:#fff;color:#202124;text-decoration:none;border-radius:9px;padding:10px 14px;font-size:9px;font-weight:900;white-space:nowrap}
 @media(max-width:900px){.km-nav-inner{overflow-x:auto!important}.km-nav-link--support{margin-right:0!important}.kdg-quick-links{grid-template-columns:repeat(3,1fr)}.kdg-price-compare-banner{grid-template-columns:auto 1fr}.kdg-price-compare-banner a{grid-column:1/-1;text-align:center}}
 @media(max-width:600px){.kdg-quick-links{grid-template-columns:repeat(2,1fr)}.kdg-hero-main{padding:30px 24px!important}.kdg-price-compare-banner{padding:14px}.kdg-price-compare-banner strong{font-size:11px}}
+
+/* =========================================================
+   2026 MARKETPLACE HOMEPAGE — premium storefront hero
+   ========================================================= */
+body.kh-home-page{background:#f5f6f8!important}
+.kh-home-page .kg-main{padding-top:0!important}
+.kh-home-page .kdg-home{width:min(1240px,calc(100% - 32px));margin:0 auto!important}
+.kh-market-hero{
+  position:relative;display:grid;grid-template-columns:1.02fr .98fr;min-height:365px;
+  margin:0 0 14px;overflow:hidden;border-radius:0 0 18px 18px;
+  background:linear-gradient(115deg,#5d1d83 0%,#8f3db4 48%,#c34a9f 100%);
+  color:#fff;box-shadow:0 10px 30px rgba(77,35,103,.16);
+  direction:rtl;
+}
+.kh-market-hero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 25% 15%,rgba(255,255,255,.16),transparent 30%),radial-gradient(circle at 80% 85%,rgba(255,255,255,.12),transparent 28%);pointer-events:none}
+.kh-market-hero-copy{position:relative;z-index:4;padding:55px 55px 38px 30px;display:flex;flex-direction:column;justify-content:center}
+.kh-market-eyebrow{display:inline-flex;align-items:center;gap:7px;width:max-content;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);font-size:10px;font-weight:900}
+.kh-market-eyebrow i{color:#ffd66b}
+.kh-market-hero h1{font-size:34px;line-height:1.35;margin:17px 0 8px;font-weight:700;letter-spacing:-.5px}
+.kh-market-hero h1 strong{font-weight:950;color:#fff}
+.kh-market-hero-copy>p{font-size:11px;line-height:2;color:rgba(255,255,255,.82);max-width:480px;margin:0 0 18px}
+.kh-market-hero-actions{display:flex;gap:9px;align-items:center}
+.kh-market-primary,.kh-market-secondary{height:40px;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:10px;text-decoration:none;font-size:10px;font-weight:900}
+.kh-market-primary{background:#fff;color:#5e227f}.kh-market-secondary{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.kh-market-primary:hover,.kh-market-secondary:hover{transform:translateY(-1px)}
+.kh-market-hero-trust{display:flex;gap:18px;margin-top:21px;color:rgba(255,255,255,.76);font-size:8px}.kh-market-hero-trust span{display:inline-flex;align-items:center;gap:5px}.kh-market-hero-trust i{color:#ffd66b}
+.kh-market-hero-stage{position:relative;min-height:365px;overflow:hidden}
+.kh-hero-orb{position:absolute;border-radius:50%;filter:blur(.2px);background:rgba(255,255,255,.12)}
+.kh-hero-orb-a{width:290px;height:290px;right:115px;top:35px}.kh-hero-orb-b{width:145px;height:145px;right:30px;bottom:-15px;background:rgba(255,208,102,.18)}
+.kh-hero-products{position:absolute;inset:0}
+.kh-hero-product{position:absolute;z-index:3;width:155px;padding:10px;border-radius:15px;background:#fff;color:#272a30;text-decoration:none;box-shadow:0 18px 32px rgba(35,15,48,.2);transition:transform .2s}
+.kh-hero-product:hover{transform:translateY(-7px) rotate(0)!important}
+.kh-hero-product>div{height:130px;border-radius:11px;background:#f7f7f8;display:grid;place-items:center;overflow:hidden}
+.kh-hero-product img{width:100%;height:100%;object-fit:contain}.kh-hero-product>div i{font-size:45px;color:#bbb}
+.kh-hero-product span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:8px;margin:8px 2px 5px}.kh-hero-product strong{display:block;color:#ef4056;font-size:11px}.kh-hero-product strong small{font-size:7px;color:#777}
+.kh-hero-product-1{right:55px;top:45px;transform:rotate(-5deg)}.kh-hero-product-2{right:235px;top:120px;transform:rotate(2deg);z-index:4}.kh-hero-product-3{right:400px;top:45px;transform:rotate(6deg);z-index:2}
+.kh-hero-floating{position:absolute;z-index:6;left:35px;top:28px;width:132px;padding:10px;border-radius:12px;background:rgba(255,255,255,.95);color:#4e1d6b;box-shadow:0 12px 25px rgba(30,10,40,.14);display:grid;grid-template-columns:28px 1fr;column-gap:8px;align-items:center}.kh-hero-floating i{grid-row:1/3;width:28px;height:28px;border-radius:8px;background:#fff0f5;color:#ef4056;display:grid;place-items:center;font-size:11px}.kh-hero-floating span{font-size:7px;color:#888}.kh-hero-floating strong{font-size:8px}
+.kh-hero-price-card{position:absolute;left:28px;bottom:28px;z-index:6;width:185px;padding:13px 15px;border-radius:13px;background:#4d176f;color:#fff;border:1px solid rgba(255,255,255,.2);box-shadow:0 12px 25px rgba(40,10,50,.2)}.kh-hero-price-card span{font-size:7px;color:#ffd66b;display:block}.kh-hero-price-card strong{display:block;font-size:11px;margin:3px 0}.kh-hero-price-card small{font-size:7px;color:#ddd}.kh-hero-price-card>i{position:absolute;left:13px;bottom:15px;color:#ffd66b}
+.kh-market-shortcuts{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:7px;background:#fff;padding:12px 9px;margin-bottom:14px;border-radius:15px;border:1px solid #e8e9ec;box-shadow:0 4px 16px rgba(0,0,0,.035);direction:rtl}
+.kh-market-shortcuts a{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:5px 3px;color:#333;text-decoration:none;text-align:center;border-radius:11px}.kh-market-shortcuts a:hover{background:#fff5f7}.kh-market-shortcuts i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#f4f5f7;color:#3e4249;font-size:17px}.kh-market-shortcuts a:nth-child(4) i{background:#fff0f3;color:#ef4056}.kh-market-shortcuts span{font-size:9px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.kh-market-shortcuts small{font-size:7px;color:#9a9da3;white-space:nowrap}
+.kh-home-page .kdg-search-chips{margin:0 0 12px;padding:0 3px}
+.kh-home-page .kdg-quick-links{display:none}
+.kh-home-page .kdg-price-compare-banner{margin-top:18px}
+@media(max-width:1050px){.kh-market-hero{grid-template-columns:1fr .9fr}.kh-market-hero-copy{padding-right:35px}.kh-market-hero h1{font-size:29px}.kh-hero-product{width:135px}.kh-hero-product>div{height:110px}.kh-hero-product-2{right:180px}.kh-hero-product-3{right:305px}.kh-market-shortcuts{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:720px){.kh-home-page .kdg-home{width:calc(100% - 14px)}.kh-market-hero{grid-template-columns:1fr;min-height:510px;border-radius:0 0 14px 14px}.kh-market-hero-copy{padding:30px 24px 10px;justify-content:flex-start}.kh-market-hero h1{font-size:27px;margin-top:12px}.kh-market-hero-copy>p{font-size:10px}.kh-market-hero-trust{margin-top:13px}.kh-market-hero-stage{min-height:280px}.kh-hero-product{width:120px}.kh-hero-product>div{height:100px}.kh-hero-product-1{right:10%;top:20px}.kh-hero-product-2{right:37%;top:62px}.kh-hero-product-3{right:64%;top:18px}.kh-hero-floating{left:14px;top:8px}.kh-hero-price-card{left:14px;bottom:8px}.kh-market-shortcuts{grid-template-columns:repeat(5,1fr);gap:3px;padding:8px 4px;overflow:hidden}.kh-market-shortcuts a{padding:4px 1px}.kh-market-shortcuts i{width:38px;height:38px;font-size:14px}.kh-market-shortcuts span{font-size:7px}.kh-market-shortcuts small{display:none}}
+@media(max-width:460px){.kh-market-hero{min-height:540px}.kh-market-hero h1{font-size:24px}.kh-market-hero-actions{flex-wrap:wrap}.kh-market-hero-trust{gap:9px}.kh-hero-product{width:100px}.kh-hero-product>div{height:85px}.kh-market-shortcuts{grid-template-columns:repeat(5,1fr)}.kh-market-shortcuts i{width:34px;height:34px}.kh-market-shortcuts span{font-size:6.5px}}

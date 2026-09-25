@@ -7,8 +7,20 @@ from werkzeug.utils import secure_filename
 VEHICLE_CATEGORIES = ["خودرو سواری","موتورسیکلت","خودرو سنگین","ماشین‌آلات و تجهیزات","قایق و وسایل دریایی","قطعات و لوازم نقلیه"]
 VEHICLE_STATUS_LABELS = {"pending":"در انتظار بررسی","approved":"منتشر شده","rejected":"رد شده","sold":"فروخته شد"}
 ALLOWED_IMAGES = {"png","jpg","jpeg","webp","gif"}
+VehicleAdModel = None
+
+DEMO_VEHICLE_IMAGES = {
+    "car": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1000&q=82",
+    "car2": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=82",
+    "car3": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1000&q=82",
+    "motorcycle": "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1000&q=82",
+    "boat": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1000&q=82",
+    "machine": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1000&q=82",
+    "parts": "https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&w=1000&q=82",
+}
 
 def register_vehicle_marketplace(app, db, User, login_required, admin_required):
+    global VehicleAdModel
     class VehicleAd(db.Model):
         __tablename__ = "vehicle_ad"
         id = db.Column(db.Integer, primary_key=True)
@@ -37,6 +49,7 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
         created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
         user = db.relationship("User", backref=db.backref("vehicle_ads", lazy=True))
 
+    VehicleAdModel = VehicleAd
     upload_dir = Path(app.root_path) / "static" / "uploads" / "vehicles"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
@@ -152,3 +165,72 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
 
     app.jinja_env.globals["vehicle_status_label"]=lambda s: VEHICLE_STATUS_LABELS.get(s,s)
     return VehicleAd
+
+
+def seed_demo_vehicle_ads(db, User):
+    """Create a diverse set of approved demo classifieds for a fresh local catalog.
+    Images are loaded from stable Unsplash image URLs and are used only when the
+    vehicle catalog is empty.
+    """
+    if VehicleAdModel is None or VehicleAdModel.query.count():
+        return 0
+
+    owner = User.query.filter_by(role="admin").order_by(User.id.asc()).first()
+    if not owner:
+        owner = User.query.order_by(User.id.asc()).first()
+    if not owner:
+        return 0
+
+    rows = [
+        ("پژو 207 اتوماتیک پانوراما", "خودرو سواری", "تهران", "سعادت‌آباد", 1180000000, "پژو", "207", 1402, 28000, "بنزین", "اتوماتیک", "سفید", "TU5", "بدون تصادف", "شخصی", "car"),
+        ("دنا پلاس توربو اتومات", "خودرو سواری", "مشهد", "احمدآباد", 1045000000, "دنا", "پلاس توربو", 1401, 41000, "بنزین", "اتوماتیک", "مشکی", "EF7 Turbo", "بدون تصادف", "شخصی", "car2"),
+        ("سمند LX تمیز و کم‌کار", "خودرو سواری", "اصفهان", "مرداویج", 690000000, "سمند", "LX", 1399, 76000, "بنزین", "دستی", "نقره‌ای", "EF7", "یک لکه رنگ", "شخصی", "car3"),
+        ("هیوندای النترا مدل 2018", "خودرو سواری", "شیراز", "معالی‌آباد", 2380000000, "هیوندای", "النترا", 1397, 93000, "بنزین", "اتوماتیک", "قرمز", "2.0", "بدون تصادف", "نمایشگاه", "car2"),
+        ("کیا سراتو مونتاژ آپشنال", "خودرو سواری", "تبریز", "ولیعصر", 1560000000, "کیا", "سراتو", 1398, 68000, "بنزین", "اتوماتیک", "سفید", "2.0", "بدون تصادف", "نمایشگاه", "car3"),
+
+        ("موتورسیکلت هوندا 125 سالم", "موتورسیکلت", "تهران", "تهرانپارس", 185000000, "هوندا", "125", 1401, 19000, "بنزین", "دستی", "مشکی", "125cc", "بدون تصادف", "شخصی", "motorcycle"),
+        ("بنلی 249 دو سیلندر", "موتورسیکلت", "کرج", "گوهردشت", 420000000, "بنلی", "249", 1402, 12000, "بنزین", "دستی", "قرمز", "249cc", "بدون تصادف", "شخصی", "motorcycle"),
+        ("باجاج پالس NS200", "موتورسیکلت", "رشت", "گلسار", 315000000, "باجاج", "NS200", 1400, 24000, "بنزین", "دستی", "مشکی", "200cc", "بدون تصادف", "شخصی", "motorcycle"),
+        ("کویر موتور 150 شهری", "موتورسیکلت", "قم", "صفائیه", 145000000, "کویر", "150", 1399, 31000, "بنزین", "دستی", "آبی", "150cc", "یک لکه رنگ", "شخصی", "motorcycle"),
+        ("وسپا Primavera کارکرده", "موتورسیکلت", "اهواز", "کیانپارس", 610000000, "وسپا", "Primavera", 1401, 9000, "بنزین", "اتوماتیک", "سبز", "150cc", "بدون تصادف", "شخصی", "motorcycle"),
+
+        ("کشنده ولوو FH500", "خودرو سنگین", "تهران", "شهرک صنعتی", 8750000000, "ولوو", "FH500", 1398, 520000, "گازوئیل", "اتوماتیک", "سفید", "D13", "بدون تصادف", "نمایشگاه", "machine"),
+        ("کامیونت ایسوزو 6 تن", "خودرو سنگین", "مشهد", "طوس", 3300000000, "ایسوزو", "NPR75", 1400, 210000, "گازوئیل", "دستی", "سفید", "4HK1", "بدون تصادف", "شخصی", "machine"),
+        ("خاور 608 مدل 1379", "خودرو سنگین", "اصفهان", "دولت‌آباد", 1750000000, "مرسدس", "608", 1379, 480000, "گازوئیل", "دستی", "آبی", "OM352", "بدون تصادف", "شخصی", "machine"),
+        ("تریلی کفی سه محور", "خودرو سنگین", "تبریز", "جاده سنتو", 2450000000, "ماموت", "کفی", 1396, 0, "گازوئیل", "دستی", "قرمز", "کشنده", "بدون تصادف", "نمایشگاه", "machine"),
+        ("اتوبوس شهری کارکرده", "خودرو سنگین", "شیراز", "بلوار مدرس", 4200000000, "اسکانیا", "شهری", 1395, 650000, "گازوئیل", "اتوماتیک", "سفید", "DC9", "بدون تصادف", "نمایشگاه", "machine"),
+
+        ("بیل مکانیکی کوماتسو PC200", "ماشین‌آلات و تجهیزات", "تهران", "حسن‌آباد", 12600000000, "کوماتسو", "PC200", 1397, 7200, "گازوئیل", "هیدرواستاتیک", "زرد", "SAA6D107", "بدون تصادف", "نمایشگاه", "machine"),
+        ("لودر ولوو L90", "ماشین‌آلات و تجهیزات", "مشهد", "شهرک صنعتی", 9800000000, "ولوو", "L90", 1396, 8300, "گازوئیل", "اتوماتیک", "زرد", "D6", "بدون تصادف", "شخصی", "machine"),
+        ("لیفتراک 3 تن دوگانه‌سوز", "ماشین‌آلات و تجهیزات", "اصفهان", "شاهین‌شهر", 1850000000, "تويوتا", "3 تن", 1398, 4100, "دوگانه‌سوز", "اتوماتیک", "نارنجی", "4Y", "بدون تصادف", "نمایشگاه", "machine"),
+        ("غلتک راه‌سازی 10 تن", "ماشین‌آلات و تجهیزات", "کرمان", "جاده ماهان", 3200000000, "هپکو", "10 تن", 1395, 5200, "گازوئیل", "هیدرواستاتیک", "زرد", "دیزل", "بدون تصادف", "نمایشگاه", "machine"),
+        ("تراکتور کشاورزی فرگوسن", "ماشین‌آلات و تجهیزات", "ارومیه", "جاده سلماس", 2750000000, "فرگوسن", "285", 1399, 3600, "گازوئیل", "دستی", "قرمز", "4 سیلندر", "بدون تصادف", "شخصی", "machine"),
+
+        ("قایق تفریحی فایبرگلاس 6 نفره", "قایق و وسایل دریایی", "بندرعباس", "ساحل سورو", 2950000000, "فایبرگلاس", "تفریحی", 1400, 0, "بنزین", "دستی", "سفید", "150HP", "بدون تصادف", "شخصی", "boat"),
+        ("جت اسکی یاماها", "قایق و وسایل دریایی", "کیش", "مرکز جزیره", 2450000000, "یاماها", "WaveRunner", 1401, 0, "بنزین", "اتوماتیک", "آبی", "1800cc", "بدون تصادف", "نمایشگاه", "boat"),
+        ("قایق ماهیگیری فایبرگلاس", "قایق و وسایل دریایی", "بوشهر", "بندرگاه", 1350000000, "فایبرگلاس", "ماهیگیری", 1398, 0, "بنزین", "دستی", "سفید", "115HP", "بدون تصادف", "شخصی", "boat"),
+        ("موتور قایق سوزوکی 60 اسب", "قایق و وسایل دریایی", "انزلی", "بندر انزلی", 580000000, "سوزوکی", "60HP", 1400, 0, "بنزین", "دستی", "مشکی", "60HP", "بدون تصادف", "شخصی", "boat"),
+        ("قایق کابین‌دار خانوادگی", "قایق و وسایل دریایی", "چابهار", "لیپار", 5200000000, "فایبرگلاس", "Cabin", 1399, 0, "بنزین", "اتوماتیک", "سفید", "250HP", "بدون تصادف", "نمایشگاه", "boat"),
+
+        ("رینگ آلومینیومی اسپرت 17 اینچ", "قطعات و لوازم نقلیه", "تهران", "چراغی", 78000000, "BBS", "17", 1403, 0, "", "", "مشکی", "", "نو", "شخصی", "parts"),
+        ("لاستیک چهار حلقه 205/55R16", "قطعات و لوازم نقلیه", "مشهد", "خیابان امام", 42000000, "هانکوک", "205/55R16", 1404, 0, "", "", "مشکی", "", "نو", "نمایشگاه", "parts"),
+        ("موتور کامل پژو TU5", "قطعات و لوازم نقلیه", "اصفهان", "امیرکبیر", 185000000, "پژو", "TU5", 1401, 0, "", "", "نقره‌ای", "TU5", "سالم", "شخصی", "parts"),
+        ("چراغ جلو دنا پلاس جفت", "قطعات و لوازم نقلیه", "شیراز", "بلوار امیرکبیر", 14500000, "دنا", "پلاس", 1403, 0, "", "", "شفاف", "", "نو", "نمایشگاه", "parts"),
+        ("گیربکس اتوماتیک کیا سراتو", "قطعات و لوازم نقلیه", "کرج", "مهرشهر", 265000000, "کیا", "سراتو", 1398, 0, "", "اتوماتیک", "نقره‌ای", "", "سالم", "شخصی", "parts"),
+    ]
+
+    image_map = DEMO_VEHICLE_IMAGES
+    created = []
+    for row in rows:
+        title, category, city, district, price, brand, model, year, mileage, fuel, gearbox, color, engine, accident, seller, image_key = row
+        image = image_map[image_key]
+        created.append(VehicleAdModel(
+            user_id=owner.id, title=title, category=category, city=city, district=district,
+            price=price, negotiable=True, description=f"آگهی نمونه خریدینو برای نمایش امکانات بازارچه. وضعیت: {accident}. برای اطلاعات بیشتر با آگهی‌دهنده تماس بگیرید.",
+            phone="09120000000", brand=brand, model=model, year=year, mileage=mileage, fuel=fuel,
+            gearbox=gearbox, body_color=color, engine=engine, accident_status=accident,
+            seller_type=seller, image=image, gallery=image, status="approved"
+        ))
+    db.session.add_all(created)
+    db.session.commit()
+    return len(created)

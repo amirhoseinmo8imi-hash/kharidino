@@ -174,11 +174,11 @@
 </body></html>
 <script>
 (function(){
- const badge=document.querySelector('[data-vehicle-unread]'); if(!badge)return; let last=0;
+ const badge=document.querySelector('[data-vehicle-unread]'); if(!badge)return; let last=0, initialized=false;
  async function check(){
   try{const r=await fetch('/api/vehicle-chats/unread',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)return;const d=await r.json(),c=Number(d.count||0);badge.textContent=c>99?'99+':c;badge.hidden=c<=0;
-   if(c>last&&last>0&&document.hidden&&'Notification' in window&&Notification.permission==='granted') new Notification('پیام جدید در خریدینو',{body:'یک پیام جدید در چت خودرو داری.',icon:'/static/icons/icon-192.svg'});
-   last=c;
+   if(initialized&&c>last&&document.hidden&&'Notification' in window&&Notification.permission==='granted') new Notification('پیام جدید در خریدینو',{body:'یک پیام جدید در چت خودرو داری.',icon:'/static/icons/icon-192.svg'});
+   last=c; initialized=true;
   }catch(e){}
  }
  check();setInterval(check,3000);

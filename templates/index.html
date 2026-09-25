@@ -120,13 +120,19 @@
     <div class="kdg-section-head"><div><span>جستجوی خریدینو</span><h2>نتایج جستجو برای «{{ q }}»</h2></div><strong>{{ products|length }} محصول</strong></div>
     <div class="kdg-products">
       {% for product in products %}
-      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
-        <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>
-        <small>{% if product.category %}{{ product.category.name }}{% else %}محصول خریدینو{% endif %}</small>
-        <h3>{{ product.name }}</h3>
-        <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>
-        <div class="kdg-offer-meta"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<em>موجود</em>{% endif %}</div>
-      </a>
+      <article class="kdg-card-wrap">
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
+          <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>
+          <small>{% if product.category %}{{ product.category.name }}{% else %}محصول خریدینو{% endif %}</small>
+          <h3>{{ product.name }}</h3>
+          <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>
+          <div class="kdg-offer-meta"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<em>موجود</em>{% endif %}</div>
+        </a>
+        <form method="post" action="{{ url_for('compare_add', product_id=product.id) }}" class="kdg-card-compare">
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+          <button type="submit"><i class="fa-solid fa-scale-balanced"></i> مقایسه</button>
+        </form>
+      </article>
       {% else %}<div class="kdg-empty">محصولی برای این جستجو پیدا نشد.</div>{% endfor %}
     </div>
   </section>

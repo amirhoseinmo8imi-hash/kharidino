@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}
-{% block extra_css %}
+{% block extra_css %}\n<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-redesign-2026.css', v='2026-09-26-1') }}">\n
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-3') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-26-2') }}">
 {% endblock %}

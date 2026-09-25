@@ -1,0 +1,100 @@
+/* Kharidino Header UX 2026
+   Structural polish for the unified shopping + vehicle marketplace.
+*/
+:root{
+  --kh-header-ink:#18202a;
+  --kh-header-muted:#697386;
+  --kh-header-line:#e9edf2;
+  --kh-header-surface:#fff;
+  --kh-header-soft:#f7f8fa;
+  --kh-header-accent:#ef4056;
+  --kh-header-auto:#24313d;
+}
+
+.km-topbar{position:relative;z-index:1000;background:var(--kh-header-surface);border-bottom:1px solid var(--kh-header-line);box-shadow:0 4px 18px rgba(20,28,38,.045)}
+.km-header{max-width:1440px;margin:0 auto;min-height:78px;padding:12px 24px;display:grid;grid-template-columns:auto minmax(320px,1fr) auto;gap:24px;align-items:center}
+.km-logo{display:inline-flex;align-items:center;gap:10px;color:var(--kh-header-ink);font-weight:950;font-size:24px;text-decoration:none;white-space:nowrap}
+.km-logo-mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#ef4056,#d92f47);color:#fff;box-shadow:0 8px 18px rgba(239,64,86,.2)}
+.km-search{height:48px;max-width:760px;width:100%;justify-self:center;display:flex;align-items:center;background:#f4f6f8;border:1px solid transparent;border-radius:15px;overflow:hidden;transition:.2s ease}
+.km-search:focus-within{background:#fff;border-color:#dfe4ea;box-shadow:0 0 0 4px rgba(239,64,86,.07)}
+.km-search>i{margin:0 14px;color:#8a94a4}
+.km-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:var(--kh-header-ink);font:inherit}
+.km-search button{height:38px;margin:5px;padding:0 18px;border:0;border-radius:11px;background:#fff;color:#343d4b;font-weight:800;cursor:pointer}
+.km-user-actions{display:flex;align-items:center;gap:6px}
+.km-action{position:relative;min-height:42px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:7px;color:#343d4b;text-decoration:none;border-radius:11px;font-size:13px;font-weight:750;white-space:nowrap}
+.km-action:hover{background:#f5f6f8;color:#111827}
+.km-action--cart{border:1px solid var(--kh-header-line);padding-inline:13px}
+.km-cart-badge,.km-message-badge{position:absolute;top:-4px;right:-2px;min-width:18px;height:18px;padding:0 4px;border-radius:99px;display:grid;place-items:center;background:var(--kh-header-accent);color:#fff;font-size:10px;font-weight:900}
+.km-message-badge[hidden]{display:none}
+.km-account-menu{position:relative}
+.km-account-menu:hover .km-account-dropdown,.km-account-menu:focus-within .km-account-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.km-account-trigger{cursor:pointer}
+.km-account-chevron{font-size:9px;color:#9aa3b2}
+.km-account-dropdown{position:absolute;top:calc(100% + 10px);right:0;width:250px;padding:8px;background:#fff;border:1px solid var(--kh-header-line);border-radius:16px;box-shadow:0 18px 50px rgba(15,23,42,.13);opacity:0;visibility:hidden;transform:translateY(-5px);transition:.18s ease}
+.km-account-dropdown-head{display:flex;gap:10px;align-items:center;padding:11px;border-radius:12px;background:#f7f8fa;margin-bottom:5px}
+.km-account-dropdown-head>i{font-size:28px;color:#667085}
+.km-account-dropdown-head strong,.km-account-dropdown-head small{display:block}
+.km-account-dropdown-head strong{font-size:13px;color:#1f2937}
+.km-account-dropdown-head small{font-size:10px;color:#8a94a4;margin-top:3px}
+.km-account-dropdown>a,.km-account-dropdown button{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:10px;color:#374151;text-decoration:none;font:inherit;font-size:12px;font-weight:700;text-align:right;cursor:pointer}
+.km-account-dropdown>a:hover,.km-account-dropdown button:hover{background:#f5f6f8}
+.km-account-dropdown form{border-top:1px solid #eef0f3;margin-top:5px;padding-top:5px}
+
+.km-nav{background:#fff}
+.km-nav-inner{max-width:1440px;margin:0 auto;padding:0 24px;min-height:50px;display:flex;align-items:center;gap:4px;overflow:visible}
+.km-cat-menu-wrap{position:relative;align-self:stretch;display:flex;align-items:center}
+.km-cat-menu-trigger,.km-nav-business-trigger{height:38px;border:0;background:transparent;color:#303846;border-radius:10px;padding:0 12px;display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:12px;font-weight:850;cursor:pointer}
+.km-cat-menu-trigger{background:#f7f8fa}
+.km-cat-menu-trigger:hover,.km-nav-business-trigger:hover{background:#f0f2f5}
+.km-cat-chevron{font-size:9px;color:#8992a1}
+.km-nav-link{height:38px;padding:0 11px;display:inline-flex;align-items:center;gap:7px;border-radius:10px;color:#596273;text-decoration:none;font-size:11.5px;font-weight:750;white-space:nowrap;transition:.16s ease}
+.km-nav-link:hover{background:#f5f6f8;color:#202733}
+.km-nav-link--hot{color:#df334b}
+.km-nav-link--auto{color:#2c3743;background:#f1f3f5}
+.km-nav-link--auto:hover{background:#e7eaed;color:#17202a}
+.km-nav-link--support{margin-right:auto}
+.km-nav-business{position:relative}
+.km-nav-business:hover .km-nav-business-menu,.km-nav-business:focus-within .km-nav-business-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.km-nav-business-menu{position:absolute;top:calc(100% + 4px);right:0;width:245px;padding:7px;background:#fff;border:1px solid var(--kh-header-line);border-radius:14px;box-shadow:0 18px 48px rgba(15,23,42,.12);opacity:0;visibility:hidden;transform:translateY(-5px);transition:.18s ease}
+.km-nav-business-menu a{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;color:#374151;text-decoration:none}
+.km-nav-business-menu a:hover{background:#f6f7f9}
+.km-nav-business-menu a>i{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#f0f2f5}
+.km-nav-business-menu strong,.km-nav-business-menu small{display:block}
+.km-nav-business-menu strong{font-size:11px}
+.km-nav-business-menu small{font-size:9px;color:#8a94a4;margin-top:3px}
+
+.km-category-mega{border-radius:18px;overflow:hidden}
+.km-mega-sidebar{background:#fbfbfc}
+.km-mega-side-item{min-height:42px}
+.km-mega-side-item:hover,.km-mega-side-item.is-active{background:#f1f3f5}
+.km-mega-panel-head h3{margin-bottom:3px}
+
+@media (max-width:1100px){
+  .km-header{grid-template-columns:auto 1fr auto;gap:12px;padding-inline:16px}
+  .km-action span{display:none}
+  .km-action{padding-inline:9px}
+  .km-nav-inner{padding-inline:16px}
+  .km-nav-link{padding-inline:8px;font-size:10.5px}
+}
+@media (max-width:860px){
+  .km-header{grid-template-columns:auto 1fr;grid-template-areas:"logo actions" "search search";padding:10px 14px}
+  .km-logo{grid-area:logo}
+  .km-user-actions{grid-area:actions;justify-self:end}
+  .km-search{grid-area:search;max-width:none}
+  .km-nav{display:none}
+  .km-global-rail,.kh-global-rail{display:none!important}
+}
+@media (max-width:560px){
+  .km-header{min-height:116px}
+  .km-logo{font-size:20px}
+  .km-logo-mark{width:38px;height:38px}
+  .km-user-actions{gap:2px}
+  .km-action{min-height:38px;padding-inline:7px}
+  .km-action--cart{padding-inline:9px}
+  .km-search{height:46px;border-radius:13px}
+  .km-search button{padding-inline:13px}
+  .km-account-dropdown{position:fixed;top:105px;right:12px;left:12px;width:auto}
+}
+@media (prefers-reduced-motion:reduce){
+  .km-account-dropdown,.km-nav-business-menu,.km-search{transition:none}
+}

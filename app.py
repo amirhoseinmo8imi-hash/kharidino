@@ -859,17 +859,43 @@ def validate_csrf():
 
 
 def send_kharidino_email(to_email, subject, body):
-    """Send optional SMTP email. Returns True when SMTP is configured and delivery succeeds."""
+    """Send SMTP email using either Kharidino or standard .env variable names."""
     to_email = (to_email or "").strip()
-    smtp_host = os.environ.get("KHARIDINO_SMTP_HOST", "").strip()
-    smtp_user = os.environ.get("KHARIDINO_SMTP_USER", "").strip()
-    smtp_password = os.environ.get("KHARIDINO_SMTP_PASSWORD", "")
+    smtp_host = (
+        os.environ.get("KHARIDINO_SMTP_HOST", "").strip()
+        or os.environ.get("SMTP_HOST", "").strip()
+    )
+    smtp_user = (
+        os.environ.get("KHARIDINO_SMTP_USER", "").strip()
+        or os.environ.get("SMTP_USERNAME", "").strip()
+    )
+    smtp_password = (
+        os.environ.get("KHARIDINO_SMTP_PASSWORD", "")
+        or os.environ.get("SMTP_PASSWORD", "")
+    )
     if not to_email or not smtp_host or not smtp_user or not smtp_password:
+        app.logger.error("Kharidino SMTP is not fully configured.")
         return False
 
-    smtp_port = int(os.environ.get("KHARIDINO_SMTP_PORT", "587"))
-    sender = os.environ.get("KHARIDINO_SMTP_FROM", smtp_user).strip()
-    use_ssl = os.environ.get("KHARIDINO_SMTP_SSL", "0").strip().lower() in {"1", "true", "yes"}
+    try:
+        smtp_port = int(
+            os.environ.get("KHARIDINO_SMTP_PORT", "").strip()
+            or os.environ.get("SMTP_PORT", "587").strip()
+        )
+    except ValueError:
+        app.logger.error("Invalid SMTP port configuration.")
+        return False
+
+    sender = (
+        os.environ.get("KHARIDINO_SMTP_FROM", "").strip()
+        or os.environ.get("MAIL_FROM", "").strip()
+        or smtp_user
+    )
+    use_ssl = (
+        os.environ.get("KHARIDINO_SMTP_SSL", "").strip()
+        or os.environ.get("SMTP_USE_SSL", "0").strip()
+    ).lower() in {"1", "true", "yes"}
+
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = sender
@@ -878,16 +904,17 @@ def send_kharidino_email(to_email, subject, body):
 
     try:
         if use_ssl:
-            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15) as server:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=20) as server:
                 server.login(smtp_user, smtp_password)
                 server.send_message(msg)
         else:
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
                 server.login(smtp_user, smtp_password)
                 server.send_message(msg)
+        app.logger.info("Kharidino email sent successfully to %s", to_email)
         return True
     except Exception:
         app.logger.exception("Kharidino SMTP notification failed")

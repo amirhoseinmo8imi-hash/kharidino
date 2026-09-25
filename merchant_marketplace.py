@@ -16,6 +16,7 @@ from app import (
 
 class MerchantStore(db.Model):
     __tablename__ = "kharidino_merchant_store"
+    __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"), unique=True, nullable=False)

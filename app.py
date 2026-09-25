@@ -2299,7 +2299,7 @@ def profile_settings():
                         "کد تأیید تغییر ایمیل خریدینو",
                         f"کد تأیید تغییر ایمیل خریدینو: {code}\nاین کد 10 دقیقه اعتبار دارد.\nاگر این درخواست از طرف شما نبوده، آن را نادیده بگیرید.",
                     ):
-                                                if not pending:
+                        if not pending:
                             pending = AccountEmailChange(user_id=user.id, pending_email=new_email)
                             db.session.add(pending)
                         pending.pending_email = new_email

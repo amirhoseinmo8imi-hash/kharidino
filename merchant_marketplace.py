@@ -32,7 +32,7 @@ class SellerProduct(db.Model):
     store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-    __table_args__ = (db.UniqueConstraint("store_id", "product_id", name="uq_seller_product_store_product"),)
+    __table_args__ = (db.UniqueConstraint("store_id", "product_id", name="uq_seller_product_store_product"), {"extend_existing": True})
     store = db.relationship("Store", backref=db.backref("seller_products", lazy=True))
     product = db.relationship("Product", backref=db.backref("seller_links", lazy=True))
 

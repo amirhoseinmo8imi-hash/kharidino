@@ -2705,6 +2705,15 @@ def checkout():
         address = request.form.get("address", "").strip()
         note = request.form.get("note", "").strip()
 
+        if payment_method == "کیف پول":
+            wallet = ensure_wallet(session["user_id"])
+            if int(wallet.balance or 0) < final_total:
+                flash("موجودی کیف پول برای این سفارش کافی نیست.", "warning")
+                return render_template("checkout.html", items=items, total=total, discount=discount,
+                                       final_total=final_total, coupon_code=coupon_code,
+                                       shipping_method=shipping_method, delivery_fee=delivery_fee,
+                                       payment_method=payment_method)
+
         if not name or not phone or not address:
             flash("نام، شماره تماس و آدرس الزامی است.", "warning")
             return render_template("checkout.html", items=items, total=total, discount=discount,
@@ -2714,7 +2723,7 @@ def checkout():
 
         order = Order(
             user_id=session["user_id"],
-            total=max(0, total - discount) + delivery_fee,
+            total=final_total,
             coupon_code=coupon.code if coupon else "",
             discount=discount,
             customer_name=name,
@@ -2722,8 +2731,8 @@ def checkout():
             address=address,
             note=note,
             status="در انتظار بررسی",
-            payment_status="پرداخت نشده",
-            payment_method="پرداخت هنگام تحویل",
+            payment_status="پرداخت شده" if payment_method == "کیف پول" else "پرداخت نشده",
+            payment_method=payment_method,
             shipping_method=shipping_method,
             delivery_fee=delivery_fee
         )

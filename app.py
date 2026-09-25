@@ -1221,22 +1221,20 @@ def category(category_id):
         )
 
     products = query.all()
+    selected_store = db.session.get(Store, int(store_id)) if store_id.isdigit() else None
 
     # Filter using the same effective price users see on product cards.
     filtered = []
     for product in products:
         if store_id.isdigit():
-            store = db.session.get(Store, int(store_id))
-            if not store:
-                filtered.append(product)
+            if not selected_store or not selected_store.active:
                 continue
             matching = [
                 offer for offer in product.offers
-                if offer.store_id == store.id
+                if offer.store_id == selected_store.id
                 and offer.in_stock
                 and offer.price
                 and offer.price > 0
-                and store.active
             ]
             if not matching:
                 continue

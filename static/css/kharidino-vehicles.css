@@ -62,3 +62,12 @@
 .vehicle-safety-box p{font-size:12px;line-height:1.9;color:#64748b;margin:6px 0 0}
 @media(max-width:900px){.vehicle-detail-layout{grid-template-columns:1fr}.vehicle-detail-main{max-width:760px}.vehicle-detail-bottom{grid-template-columns:1fr}.vehicle-seller-box{flex-wrap:wrap}.vehicle-contact-actions{width:100%;min-width:0}}
 @media(max-width:560px){.vehicle-detail-page.vehicle-detail-pro{padding:12px 10px 40px}.vehicle-detail-heading h1{font-size:22px}.vehicle-detail-actions{gap:0}.vehicle-spec-grid-pro{grid-template-columns:1fr}.vehicle-spec-grid-pro>div:nth-child(odd){border-left:0}.vehicle-spec-grid-pro>div:nth-last-child(-n+2){border-bottom:1px solid #f1f5f9}.vehicle-spec-grid-pro>div:last-child{border-bottom:0}.vehicle-contact-actions{grid-template-columns:1fr 1fr}.vehicle-under-media{font-size:10px}}
+
+.km-action--messages{position:relative}
+.km-message-badge{position:absolute;top:2px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ef4056;color:#fff;font-size:10px;line-height:18px;text-align:center;border:2px solid #fff}
+.vehicle-chat-head-tools{display:flex;align-items:center;gap:8px}
+.vehicle-chat-notify-btn{border:1px solid #e2e8f0;background:#fff;color:#475569;border-radius:9px;padding:8px 10px;font:inherit;font-size:11px;cursor:pointer}
+.vehicle-chat-notify-btn:hover{border-color:#10b981;color:#059669}
+.vehicle-chat-unread{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#ef4056;color:#fff;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.vehicle-chat-list-item{position:relative}
+@media(max-width:600px){.vehicle-chat-head-tools{gap:5px}.vehicle-chat-notify-btn{padding:7px 8px}.vehicle-chat-ad-link{font-size:11px}}

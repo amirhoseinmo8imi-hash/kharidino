@@ -442,7 +442,13 @@ def register_vehicle_chat(app, db, User, login_required):
         chats = VehicleChat.query.filter(
             db.or_(VehicleChat.buyer_id == user_id, VehicleChat.seller_id == user_id)
         ).order_by(VehicleChat.updated_at.desc()).all()
-        return render_template("my_vehicle_chats.html", chats=chats)
+        unread_by_chat = {
+            chat.id: VehicleChatMessage.query.filter_by(chat_id=chat.id, read_at=None).filter(
+                VehicleChatMessage.sender_id != user_id
+            ).count()
+            for chat in chats
+        }
+        return render_template("my_vehicle_chats.html", chats=chats, unread_by_chat=unread_by_chat)
 
 
 def _is_verified(db, model, user):

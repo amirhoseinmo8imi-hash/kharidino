@@ -1,6 +1,7 @@
 import os
 import secrets
 import uuid
+from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urlparse
@@ -413,6 +414,51 @@ class OrderItem(db.Model):
     product = db.relationship(
         "Product"
     )
+
+
+
+class OrganizationRequest(db.Model):
+    __tablename__ = "organization_request"
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(250), nullable=False)
+    national_id = db.Column(db.String(30), default="")
+    economic_code = db.Column(db.String(30), default="")
+    registration_number = db.Column(db.String(50), default="")
+    postal_code = db.Column(db.String(20), default="")
+    phone = db.Column(db.String(40), default="")
+    address = db.Column(db.Text, default="")
+    contact_name = db.Column(db.String(150), nullable=False)
+    contact_email = db.Column(db.String(254), default="")
+    contract_subject = db.Column(db.String(300), default="")
+    estimated_value = db.Column(db.String(80), default="")
+    payment_terms = db.Column(db.String(150), default="")
+    invoice_required = db.Column(db.Boolean, default=True)
+    message = db.Column(db.Text, default="")
+    status = db.Column(db.String(40), default="در انتظار بررسی", nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Invoice(db.Model):
+    __tablename__ = "invoice"
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False, unique=True)
+    invoice_number = db.Column(db.String(60), unique=True, nullable=False)
+    invoice_type = db.Column(db.String(30), default="فروش")
+    buyer_type = db.Column(db.String(30), default="مصرف‌کننده")
+    buyer_name = db.Column(db.String(250), nullable=False)
+    buyer_national_id = db.Column(db.String(30), default="")
+    buyer_economic_code = db.Column(db.String(30), default="")
+    buyer_registration_number = db.Column(db.String(50), default="")
+    buyer_postal_code = db.Column(db.String(20), default="")
+    buyer_phone = db.Column(db.String(40), default="")
+    buyer_address = db.Column(db.Text, default="")
+    subtotal = db.Column(db.Integer, default=0, nullable=False)
+    discount = db.Column(db.Integer, default=0, nullable=False)
+    tax = db.Column(db.Integer, default=0, nullable=False)
+    total = db.Column(db.Integer, default=0, nullable=False)
+    status = db.Column(db.String(30), default="صادر نشده")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    order = db.relationship("Order", backref=db.backref("invoice", uselist=False))
 
 
 class Review(db.Model):
@@ -2619,6 +2665,108 @@ def my_orders():
         "orders.html",
         orders=orders
     )
+
+
+
+# =========================================================
+# ORGANIZATIONS / B2B
+# =========================================================
+@app.route("/organizations")
+def organizations():
+    return render_template("organizations.html")
+
+
+@app.post("/organizations/request")
+def organization_request():
+    company_name = request.form.get("company_name", "").strip()
+    contact_name = request.form.get("contact_name", "").strip()
+    if not company_name or not contact_name:
+        flash("نام سازمان و نام شخص رابط الزامی است.", "warning")
+        return redirect(url_for("organizations"))
+    inquiry = OrganizationRequest(
+        company_name=company_name,
+        national_id=request.form.get("national_id", "").strip(),
+        economic_code=request.form.get("economic_code", "").strip(),
+        registration_number=request.form.get("registration_number", "").strip(),
+        postal_code=request.form.get("postal_code", "").strip(),
+        phone=request.form.get("phone", "").strip(),
+        address=request.form.get("address", "").strip(),
+        contact_name=contact_name,
+        contact_email=request.form.get("contact_email", "").strip(),
+        contract_subject=request.form.get("contract_subject", "").strip(),
+        estimated_value=request.form.get("estimated_value", "").strip(),
+        payment_terms=request.form.get("payment_terms", "").strip(),
+        invoice_required=bool(request.form.get("invoice_required")),
+        message=request.form.get("message", "").strip(),
+    )
+    db.session.add(inquiry)
+    db.session.commit()
+    flash("درخواست همکاری سازمانی ثبت شد. واحد فروش خریدینو با شما تماس خواهد گرفت.", "success")
+    return redirect(url_for("organizations"))
+
+
+def _company_profile():
+    return {
+        "legal_name": setting("company_legal_name", setting("site_name", "خریدینو")),
+        "national_id": setting("company_national_id", ""),
+        "economic_code": setting("company_economic_code", ""),
+        "registration_number": setting("company_registration_number", ""),
+        "postal_code": setting("company_postal_code", ""),
+        "phone": setting("company_phone", ""),
+        "address": setting("company_address", ""),
+        "website": setting("company_website", ""),
+        "email": setting("company_email", ""),
+        "bank_name": setting("company_bank_name", ""),
+        "iban": setting("company_iban", ""),
+    }
+
+
+@app.route("/admin/business-profile", methods=["GET", "POST"])
+@admin_required
+def admin_business_profile():
+    fields = {
+        "company_legal_name": "نام حقوقی شرکت",
+        "company_national_id": "شناسه ملی",
+        "company_economic_code": "شماره اقتصادی",
+        "company_registration_number": "شماره ثبت",
+        "company_postal_code": "کد پستی",
+        "company_phone": "تلفن",
+        "company_address": "نشانی",
+        "company_website": "وب‌سایت",
+        "company_email": "ایمیل",
+        "company_bank_name": "نام بانک",
+        "company_iban": "شماره شبا",
+    }
+    if request.method == "POST":
+        for key in fields:
+            set_setting(key, request.form.get(key, "").strip())
+        db.session.commit()
+        flash("اطلاعات حقوقی و صدور فاکتور ذخیره شد.", "success")
+        return redirect(url_for("admin_business_profile"))
+    return render_template("admin_business_profile.html", fields=fields, profile=_company_profile())
+
+
+@app.route("/orders/<int:order_id>/invoice")
+@login_required
+def order_invoice(order_id):
+    order = db.session.get(Order, order_id)
+    if not order or order.user_id != session["user_id"]:
+        abort(404)
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        invoice = Invoice(
+            order_id=order.id,
+            invoice_number=f"KH-{datetime.utcnow().strftime('%Y%m%d')}-{order.id:06d}",
+            buyer_name=order.customer_name,
+            buyer_phone=order.phone,
+            buyer_address=order.address,
+            subtotal=order.total,
+            total=order.total,
+            status="پیش‌نویس",
+        )
+        db.session.add(invoice)
+        db.session.commit()
+    return render_template("invoice.html", invoice=invoice, order=order, company=_company_profile())
 
 
 # =========================================================

@@ -1925,6 +1925,23 @@ def favorites():
 
 
 # =========================================================
+# SELLER REGISTRATION
+# =========================================================
+
+@app.route("/seller/register", methods=["GET", "POST"])
+def seller_register():
+    """
+    Keep the seller-registration entry point available.
+
+    The current application does not yet expose the merchant-account workflow
+    required by the dedicated seller_register template, so route the user into
+    the existing account-registration flow instead of allowing Jinja's
+    url_for('seller_register') to raise a BuildError.
+    """
+    return redirect(url_for("register"))
+
+
+# =========================================================
 # STORES
 # =========================================================
 

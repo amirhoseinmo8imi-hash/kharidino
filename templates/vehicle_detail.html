@@ -1,44 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ ad.title }} | خریدینو
-<script>
-(function(){
-  const fav=document.getElementById('vehicleFavoriteBtn');
-  const share=document.getElementById('vehicleShareBtn');
-  const toast=(msg)=>{
-    let el=document.querySelector('.vehicle-action-toast');
-    if(!el){el=document.createElement('div');el.className='vehicle-action-toast';document.body.appendChild(el);}
-    el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200);
-  };
-  if(fav){
-    fav.addEventListener('click',async function(){
-      try{
-        const res=await fetch('{{ url_for("toggle_vehicle_favorite", ad_id=ad.id) }}',{method:'POST',headers:{'Accept':'application/json'}});
-        const contentType=res.headers.get('content-type')||'';
-        if(res.status===401||res.status===403||!contentType.includes('application/json')){
-          window.location.href='{{ url_for("login", next=request.path) }}';return;
-        }
-        const data=await res.json();
-        if(!data.ok){toast('ذخیره آگهی انجام نشد.');return;}
-        fav.classList.toggle('active',!!data.saved);
-        fav.dataset.saved=data.saved?'1':'0';
-        fav.setAttribute('aria-pressed',data.saved?'true':'false');
-        fav.innerHTML='<i class="fa-'+(data.saved?'solid':'regular')+' fa-heart"></i><span>'+(data.saved?'ذخیره شد':'ذخیره')+'</span>';
-        toast(data.message);
-      }catch(e){toast('اتصال برقرار نشد؛ دوباره تلاش کن.');}
-    });
-  }
-  if(share){
-    share.addEventListener('click',async function(){
-      const shareData={title:{{ ad.title|tojson }},text:'{{ ad.title|e }} در بازار خودرو خریدینو',url:window.location.href};
-      try{
-        if(navigator.share){await navigator.share(shareData);toast('صفحه برای اشتراک‌گذاری آماده شد.');}
-        else if(navigator.clipboard){await navigator.clipboard.writeText(window.location.href);toast('لینک آگهی کپی شد.');}
-        else {const ta=document.createElement('textarea');ta.value=window.location.href;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('لینک آگهی کپی شد.');}
-      }catch(e){if(e&&e.name!=='AbortError')toast('اشتراک‌گذاری انجام نشد.');}
-    });
-  }
-})();
-</script>
+
 {% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-25-3') }}">{% endblock %}
 {% block content %}
@@ -66,6 +28,7 @@
           <button type="button" class="vehicle-action-btn{% if vehicle_favorite %} active{% endif %}" id="vehicleFavoriteBtn" data-saved="{{ '1' if vehicle_favorite else '0' }}" aria-pressed="{{ 'true' if vehicle_favorite else 'false' }}">
             <i class="fa-{% if vehicle_favorite %}solid{% else %}regular{% endif %} fa-heart"></i><span>{% if vehicle_favorite %}ذخیره شد{% else %}ذخیره{% endif %}</span>
           </button>
+          <button type="button" class="vehicle-action-btn{% if vehicle_compare_selected %} active{% endif %}" id="vehicleCompareBtn" data-selected="{{ '1' if vehicle_compare_selected else '0' }}"><i class="fa-solid fa-scale-balanced"></i><span>{% if vehicle_compare_selected %}در مقایسه{% else %}مقایسه{% endif %}</span></button>
           <button type="button" class="vehicle-action-btn" id="vehicleShareBtn">
             <i class="fa-solid fa-share-nodes"></i><span>اشتراک</span>
           </button>
@@ -108,5 +71,53 @@
   {% if current_user and current_user.id==ad.user_id %}
   <form class="vehicle-owner-actions" method="post" action="{{ url_for('vehicle_delete', ad_id=ad.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="vehicle-danger" type="submit"><i class="fa-solid fa-trash"></i> حذف آگهی</button></form>
   {% endif %}
-</section>
+</section><script>
+(function(){
+ const btn=document.getElementById('vehicleCompareBtn');
+ if(btn)btn.addEventListener('click',async function(){
+  try{const r=await fetch('{{ url_for("toggle_vehicle_compare",ad_id=ad.id) }}',{method:'POST',headers:{Accept:'application/json'}});const d=await r.json();
+   if(!d.ok){toast(d.message);return;}btn.classList.toggle('active',d.selected);btn.querySelector('span').textContent=d.selected?'در مقایسه':'مقایسه';toast(d.message+' ('+d.count+'/4)');
+  }catch(e){toast('مقایسه در دسترس نیست.');}
+ });
+})();
+</script>
+<script>
+(function(){
+  const fav=document.getElementById('vehicleFavoriteBtn');
+  const share=document.getElementById('vehicleShareBtn');
+  const toast=(msg)=>{
+    let el=document.querySelector('.vehicle-action-toast');
+    if(!el){el=document.createElement('div');el.className='vehicle-action-toast';document.body.appendChild(el);}
+    el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200);
+  };
+  if(fav){
+    fav.addEventListener('click',async function(){
+      try{
+        const res=await fetch('{{ url_for("toggle_vehicle_favorite", ad_id=ad.id) }}',{method:'POST',headers:{'Accept':'application/json'}});
+        const contentType=res.headers.get('content-type')||'';
+        if(res.status===401||res.status===403||!contentType.includes('application/json')){
+          window.location.href='{{ url_for("login", next=request.path) }}';return;
+        }
+        const data=await res.json();
+        if(!data.ok){toast('ذخیره آگهی انجام نشد.');return;}
+        fav.classList.toggle('active',!!data.saved);
+        fav.dataset.saved=data.saved?'1':'0';
+        fav.setAttribute('aria-pressed',data.saved?'true':'false');
+        fav.innerHTML='<i class="fa-'+(data.saved?'solid':'regular')+' fa-heart"></i><span>'+(data.saved?'ذخیره شد':'ذخیره')+'</span>';
+        toast(data.message);
+      }catch(e){toast('اتصال برقرار نشد؛ دوباره تلاش کن.');}
+    });
+  }
+  if(share){
+    share.addEventListener('click',async function(){
+      const shareData={title:{{ ad.title|tojson }},text:'{{ ad.title|e }} در بازار خودرو خریدینو',url:window.location.href};
+      try{
+        if(navigator.share){await navigator.share(shareData);toast('صفحه برای اشتراک‌گذاری آماده شد.');}
+        else if(navigator.clipboard){await navigator.clipboard.writeText(window.location.href);toast('لینک آگهی کپی شد.');}
+        else {const ta=document.createElement('textarea');ta.value=window.location.href;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('لینک آگهی کپی شد.');}
+      }catch(e){if(e&&e.name!=='AbortError')toast('اشتراک‌گذاری انجام نشد.');}
+    });
+  }
+})();
+</script>
 {% endblock %}

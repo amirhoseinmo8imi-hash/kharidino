@@ -1,18 +1,41 @@
 {% extends "base.html" %}
+{% block title %}همه کالاها | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-3') }}">{% endblock %}
 {% block content %}
-<section class="container py-4">
-  <h1>محصولات</h1>
-  <form method="get" class="glass-card p-3 mb-4">
-    <div class="row g-2">
-      <div class="col-md-4"><input class="form-control" name="q" value="{{ q }}" placeholder="جستجوی محصول"></div>
-      <div class="col-md-2"><select class="form-select" name="brand"><option value="">همه برندها</option>{% for b in brands %}<option value="{{ b.slug }}" {% if brand_slug==b.slug %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></div>
-      <div class="col-md-2"><select class="form-select" name="category"><option value="">همه دسته‌ها</option>{% for c in categories %}<option value="{{ c.id }}" {% if category_id==c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
-      <div class="col-md-2"><input class="form-control" type="number" min="0" name="min_price" value="{{ min_price or '' }}" placeholder="حداقل قیمت"></div>
-      <div class="col-md-2"><input class="form-control" type="number" min="0" name="max_price" value="{{ max_price or '' }}" placeholder="حداکثر قیمت"></div>
-      <div class="col-md-3"><select class="form-select" name="sort"><option value="newest" {% if sort=='newest' %}selected{% endif %}>جدیدترین</option><option value="price_low" {% if sort=='price_low' %}selected{% endif %}>ارزان‌ترین</option><option value="price_high" {% if sort=='price_high' %}selected{% endif %}>گران‌ترین</option><option value="name" {% if sort=='name' %}selected{% endif %}>نام</option></select></div>
-      <div class="col-md-2"><button class="btn btn-primary w-100">اعمال فیلتر</button></div>
-    </div>
-  </form>
-  <div class="row g-3">{% for product in products %}<div class="col-6 col-md-3"><a class="text-decoration-none" href="{{ url_for('product_detail', product_id=product.id) }}"><div class="card h-100 p-2"><img src="{{ url_for('static', filename=product.image) if product.image and not product.image.startswith('http') else (product.image or url_for('static', filename='img/placeholder.png')) }}" class="card-img-top" style="height:180px;object-fit:contain"><div class="card-body"><h3 class="h6">{{ product.name }}</h3><div>{{ product.price|money }} تومان</div></div></div></a></div>{% else %}<p>محصولی پیدا نشد.</p>{% endfor %}</div>
-</section>
+<div class="kdg-category-page">
+  <div class="kdg-breadcrumb"><a href="{{ url_for('home') }}">خانه</a><i class="fa-solid fa-chevron-left"></i><strong>همه کالاها</strong></div>
+  <section class="kdg-category-head">
+    <div class="kdg-category-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+    <div><span>کاتالوگ خریدینو</span><h1>همه کالاها</h1><p>محصولات را جستجو کن، فیلتر کن و قیمت فروشگاه‌ها را قبل از خرید مقایسه کن.</p></div>
+  </section>
+
+  <section class="kdg-catalog-toolbar">
+    <form method="get">
+      <div class="kdg-catalog-search"><i class="fa-solid fa-magnifying-glass"></i><input name="q" value="{{ q }}" placeholder="نام محصول، مدل یا برند..." autocomplete="off"></div>
+      <select name="category"><option value="">همه دسته‌ها</option>{% for c in categories %}<option value="{{ c.id }}" {% if category_id==c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+      <select name="brand"><option value="">همه برندها</option>{% for b in brands %}<option value="{{ b.slug }}" {% if brand_slug==b.slug %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select>
+      <input type="number" name="min_price" min="0" value="{{ min_price or '' }}" placeholder="حداقل قیمت">
+      <input type="number" name="max_price" min="0" value="{{ max_price or '' }}" placeholder="حداکثر قیمت">
+      <select name="sort"><option value="newest" {% if sort=='newest' %}selected{% endif %}>جدیدترین</option><option value="price_low" {% if sort=='price_low' %}selected{% endif %}>ارزان‌ترین</option><option value="price_high" {% if sort=='price_high' %}selected{% endif %}>گران‌ترین</option><option value="name" {% if sort=='name' %}selected{% endif %}>الفبایی</option></select>
+      <button type="submit"><i class="fa-solid fa-filter"></i> اعمال</button>
+      <a href="{{ url_for('catalog_products') }}">پاک‌کردن</a>
+    </form>
+  </section>
+
+  <div class="kdg-results-head"><strong>{{ products|length }} محصول</strong><span>مقایسه قیمت بین فروشگاه‌ها و انتخاب آگاهانه</span></div>
+  <section class="kdg-products">
+    {% for product in products %}
+    <article class="kdg-card-wrap">
+      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
+        <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid {{ product.category.icon if product.category else 'fa-box-open' }}"></i>{% endif %}</div>
+        <small>{{ product.category.name if product.category else 'بدون دسته‌بندی' }}</small>
+        <h3>{{ product.name }}</h3>
+        <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>
+        <div class="kdg-offer-meta"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<em>موجود</em>{% else %}<em style="color:#999">بدون پیشنهاد</em>{% endif %}</div>
+      </a>
+      <form method="post" action="{{ url_for('compare_add', product_id=product.id) }}" class="kdg-card-compare"><input type="hidden" name="next" value="{{ request.full_path }}"><button type="submit"><i class="fa-solid fa-scale-balanced"></i> مقایسه</button></form>
+    </article>
+    {% else %}<div class="kdg-empty">محصولی با این فیلترها پیدا نشد.</div>{% endfor %}
+  </section>
+</div>
 {% endblock %}

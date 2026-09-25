@@ -4,8 +4,8 @@ Security rule: all mutations remain POST-only and rely on Kharidino's global CSR
 """
 from datetime import datetime
 from flask import flash, redirect, render_template, request, url_for
-from sqlalchemy import Table, Column, Integer, ForeignKey
-from app import app, db, Product, Category, admin_required, validate_external_url
+from sqlalchemy import Table, Column, Integer, ForeignKey, func
+from app import app, db, Product, Category, Store, Offer, admin_required, validate_external_url
 
 product_brand = Table(
     "kharidino_product_brand",
@@ -117,14 +117,29 @@ def catalog_products():
             query = query.filter(db.false())
     if category_id.isdigit():
         query = query.filter(Product.category_id == int(category_id))
+
+    lowest_offer_price = (
+        db.session.query(func.min(Offer.price))
+        .join(Store, Offer.store_id == Store.id)
+        .filter(
+            Offer.product_id == Product.id,
+            Offer.in_stock.is_(True),
+            Store.active.is_(True),
+            Offer.price > 0,
+        )
+        .correlate(Product)
+        .scalar_subquery()
+    )
+    effective_price = func.coalesce(lowest_offer_price, Product.price)
+
     if min_price:
-        query = query.filter(Product.price >= min_price)
+        query = query.filter(effective_price >= min_price)
     if max_price:
-        query = query.filter(Product.price <= max_price)
+        query = query.filter(effective_price <= max_price)
     if sort == "price_low":
-        query = query.order_by(Product.price.asc(), Product.id.desc())
+        query = query.order_by(effective_price.asc(), Product.id.desc())
     elif sort == "price_high":
-        query = query.order_by(Product.price.desc(), Product.id.desc())
+        query = query.order_by(effective_price.desc(), Product.id.desc())
     elif sort == "name":
         query = query.order_by(Product.name.asc())
     else:

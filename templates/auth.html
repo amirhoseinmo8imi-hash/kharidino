@@ -2,7 +2,6 @@
 {% block title %}{{ 'ورود' if mode == 'login' else 'ثبت‌نام' }} | {{ site_name }}{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-v2.css', v='3') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-1') }}">{% endblock %}
 {% block content %}
-{% set _auth_csrf = csrf_token() if csrf_token is defined and not (csrf_token is string) else (csrf_token|default('', true)) %}
 <section class="kh-auth-screen">
   <div class="kh-auth-card">
     <div class="kh-auth-top">
@@ -19,7 +18,7 @@
     </div>
 
     <form method="post" novalidate class="kh-auth-form">
-      <input type="hidden" name="csrf_token" value="{{ _auth_csrf }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% if mode == 'register' %}
       <label class="kh-auth-field">
         <span>نام و نام خانوادگی</span>

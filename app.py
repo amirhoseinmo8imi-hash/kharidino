@@ -1303,6 +1303,67 @@ def home():
 
 
 # =========================================================
+# CATALOG
+# =========================================================
+
+@app.route("/products")
+def catalog_products():
+    """Display the complete active product catalog."""
+    q = request.args.get("q", "").strip()
+    sort = request.args.get("sort", "newest").strip()
+
+    query = Product.query.filter_by(active=True)
+
+    if q:
+        search = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Product.name.ilike(search),
+                Product.description.ilike(search),
+                Product.category.has(Category.name.ilike(search)),
+            )
+        )
+
+    products = query.all()
+
+    if sort == "price_low":
+        products.sort(key=lambda item: (lowest_price(item), -item.id))
+    elif sort == "price_high":
+        products.sort(key=lambda item: (-lowest_price(item), -item.id))
+    elif sort == "name":
+        products.sort(key=lambda item: item.name.lower())
+    else:
+        sort = "newest"
+        products.sort(key=lambda item: item.id, reverse=True)
+
+    categories = (
+        Category.query
+        .filter_by(active=True)
+        .order_by(Category.id.asc())
+        .all()
+    )
+
+    stores = (
+        Store.query
+        .filter_by(active=True)
+        .order_by(Store.name.asc())
+        .all()
+    )
+
+    return render_template(
+        "index.html",
+        products=products,
+        categories=categories,
+        stores=stores,
+        q=q,
+        sort=sort,
+        category_id="",
+        selected_category=None,
+        lowest_price=lowest_price,
+    )
+
+
+# =========================================================
 # CATEGORY
 # =========================================================
 

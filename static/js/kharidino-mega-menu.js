@@ -86,36 +86,64 @@
   }
 
   function init(){
-    var links=Array.prototype.slice.call(document.querySelectorAll('.km-nav-inner a'));
-    links.forEach(function(link){
-      if(!/دسته‌بندی|دسته بندی/.test(link.textContent||'')) return;
-      if(link.parentElement && link.parentElement.classList.contains('km-cat-menu-wrap')) return;
-      var wrapper=document.createElement('div');
-      wrapper.className='km-cat-menu-wrap';
-      var trigger=link.cloneNode(true);
-      trigger.className='km-cat-menu-trigger';
-      trigger.innerHTML='<i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>';
-      trigger.removeAttribute('href');
-      trigger.setAttribute('tabindex','0');
-      var panel=document.createElement('div');
-      panel.className='km-category-mega';
-      panel.setAttribute('role','menu');
-      panel.innerHTML='<div class="km-category-mega-empty">در حال بارگذاری دسته‌بندی‌ها…</div>';
-      wrapper.appendChild(trigger); wrapper.appendChild(panel);
-      link.replaceWith(wrapper);
-      positionMenu(wrapper);
-      getHomeCategories().then(function(categories){buildMenu(wrapper,categories);positionMenu(wrapper);});
-      document.addEventListener('click',function(event){
-        if(!wrapper.contains(event.target)){wrapper.classList.remove('is-open');trigger.setAttribute('aria-expanded','false');}
+    var wrappers=Array.prototype.slice.call(document.querySelectorAll('.km-cat-menu-wrap'));
+    wrappers.forEach(function(wrapper){
+      var trigger=wrapper.querySelector('.km-cat-menu-trigger');
+      if(!trigger || wrapper.dataset.kmMegaReady==='1') return;
+      wrapper.dataset.kmMegaReady='1';
+      trigger.setAttribute('aria-haspopup','true');
+      trigger.setAttribute('aria-expanded','false');
+
+      function setOpen(open){
+        wrapper.classList.toggle('is-open',!!open);
+        trigger.setAttribute('aria-expanded',open?'true':'false');
+      }
+
+      trigger.addEventListener('click',function(event){
+        if(window.matchMedia('(max-width: 720px)').matches){
+          event.preventDefault();
+          setOpen(!wrapper.classList.contains('is-open'));
+        }
+      });
+
+      trigger.addEventListener('keydown',function(event){
+        if(event.key==='Enter' || event.key===' '){
+          event.preventDefault();
+          setOpen(!wrapper.classList.contains('is-open'));
+        } else if(event.key==='Escape'){
+          setOpen(false);
+          trigger.blur();
+        }
+      });
+
+      wrapper.addEventListener('mouseenter',function(){
+        trigger.setAttribute('aria-expanded','true');
+      });
+      wrapper.addEventListener('mouseleave',function(){
+        if(!wrapper.classList.contains('is-open')) trigger.setAttribute('aria-expanded','false');
+      });
+      wrapper.addEventListener('focusout',function(){
+        setTimeout(function(){
+          if(!wrapper.contains(document.activeElement) && !wrapper.matches(':hover')) setOpen(false);
+        },0);
       });
     });
-    window.addEventListener('resize',function(){document.querySelectorAll('.km-cat-menu-wrap').forEach(positionMenu);},{passive:true});
-    window.addEventListener('scroll',function(){document.querySelectorAll('.km-cat-menu-wrap').forEach(function(w){
-      if(w.matches(':hover') || w.classList.contains('is-open')) positionMenu(w);
-    });},{passive:true});
-    document.querySelectorAll('.km-topbar').forEach(function(topbar){
-      topbar.addEventListener('scroll',function(){document.querySelectorAll('.km-cat-menu-wrap.is-open').forEach(function(w){w.classList.remove('is-open');});},{passive:true});
+
+    document.addEventListener('click',function(event){
+      wrappers.forEach(function(wrapper){
+        if(!wrapper.contains(event.target)){
+          wrapper.classList.remove('is-open');
+          var trigger=wrapper.querySelector('.km-cat-menu-trigger');
+          if(trigger) trigger.setAttribute('aria-expanded','false');
+        }
+      });
     });
+
+    window.addEventListener('resize',function(){
+      wrappers.forEach(function(wrapper){
+        if(window.innerWidth>720) wrapper.classList.remove('is-open');
+      });
+    },{passive:true});
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();

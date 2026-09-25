@@ -11,6 +11,11 @@ from flask import jsonify, request, session
 
 from app import app, db
 
+# SellerOrder owns the referenced seller-order table. Import it before
+# defining Shipment/ReturnRequest so standalone module imports have the
+# referenced table in SQLAlchemy metadata.
+from merchant_marketplace_v2 import SellerOrder  # noqa: F401
+
 
 class WishlistItem(db.Model):
     __tablename__ = "kharidino_wishlist_item"

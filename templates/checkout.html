@@ -165,8 +165,11 @@
                   <label><input type="radio" name="shipping_method" value="ارسال فروشنده" {% if shipping_method=='ارسال فروشنده' %}checked{% endif %}> ارسال فروشنده <b>۵۰,۰۰۰ تومان</b></label>
                 </div>
 
-                <!-- PAYMENT NOTE -->
-
+                <div class="form-section-title"><i class="fa-solid fa-money-check-dollar"></i> روش پرداخت</div>
+                <div class="shipping-options payment-options">
+                  <label><input type="radio" name="payment_method" value="پرداخت هنگام تحویل" {% if payment_method|default('پرداخت هنگام تحویل')=='پرداخت هنگام تحویل' %}checked{% endif %}> پرداخت هنگام تحویل</label>
+                  <label><input type="radio" name="payment_method" value="کیف پول" {% if payment_method=='کیف پول' %}checked{% endif %}> پرداخت از کیف پول</label>
+                </div>
 
                 <div class="coupon-box">
                     <div class="form-section-title"><i class="fa-solid fa-ticket"></i> کد تخفیف</div>
@@ -190,8 +193,8 @@
                         </strong>
 
                         <span>
-                            در این نسخه سفارش شما ثبت می‌شود.
-                            پرداخت آنلاین می‌تواند در مرحله بعد به درگاه بانکی متصل شود.
+                            پرداخت هنگام تحویل یا از موجودی کیف پول قابل انتخاب است.
+                            اتصال درگاه بانکی واقعی در مرحله بعد با تنظیمات ارائه‌دهنده پرداخت انجام می‌شود.
                         </span>
 
                     </div>
@@ -319,7 +322,7 @@
                 <span>هزینه ارسال</span>
 
                 <strong class="free-shipping">
-                    رایگان
+                    {% if delivery_fee|default(0) %}{{ delivery_fee|money }} تومان{% else %}رایگان{% endif %}
                 </strong>
 
             </div>

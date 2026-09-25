@@ -5130,6 +5130,12 @@ def seed():
 
 
 # =========================================================
+# VEHICLE CLASSIFIEDS MODULE
+# =========================================================
+from vehicle_marketplace import register_vehicle_marketplace
+register_vehicle_marketplace(app, db, User, login_required, admin_required)
+
+# =========================================================
 # DATABASE INIT
 # =========================================================
 

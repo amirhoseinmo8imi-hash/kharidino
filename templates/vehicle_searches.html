@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}جستجوهای ذخیره‌شده | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-26-2') }}">{% endblock %}
+{% block content %}
+<section class="vehicle-page vehicle-searches-page">
+<div class="vehicle-section-title"><div><span>جستجوی هوشمند</span><h1>جستجوهای ذخیره‌شده</h1></div><a href="{{ url_for('vehicles') }}">بازار خودرو <i class="fa-solid fa-arrow-left"></i></a></div>
+{% if searches %}
+<div class="vehicle-saved-search-grid">
+{% for item in searches %}
+<article class="vehicle-saved-search-card">
+<i class="fa-solid fa-bell"></i><div><h3>{{ item.name }}</h3><small>ذخیره شده در {{ item.created_at.strftime('%Y/%m/%d') if item.created_at else '' }}</small></div>
+<div class="vehicle-saved-search-actions"><a href="{{ url_for('vehicles') }}?{{ item.filters_json|replace('{','')|replace('}','') }}" data-filter-json="{{ item.filters_json|e }}">اجرای جستجو</a><form method="post" action="{{ url_for('delete_vehicle_search',search_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>حذف</button></form></div>
+</article>
+{% endfor %}
+</div>
+<script>
+document.querySelectorAll('[data-filter-json]').forEach(a=>{try{const o=JSON.parse(a.dataset.filterJson);a.href='{{ url_for("vehicles") }}?'+new URLSearchParams(o).toString();}catch(e){}});
+</script>
+{% else %}
+<div class="vehicle-empty"><i class="fa-solid fa-bell"></i><h2>جستجویی ذخیره نشده</h2><p>فیلترها را تنظیم کن و جستجوی خودت را ذخیره کن.</p><a class="vehicle-primary" href="{{ url_for('vehicles') }}">ساخت جستجو</a></div>
+{% endif %}
+</section>
+{% endblock %}

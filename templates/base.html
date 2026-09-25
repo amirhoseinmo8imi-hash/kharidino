@@ -26,6 +26,7 @@
   {% block extra_css %}{% endblock %}
   {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-07-3') }}">{% endif %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-mega-menu.css', v='2026-09-25-2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-25-1') }}">
 </head>
 <body class="{% if request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
@@ -100,7 +101,16 @@
       </section>
     </div>    </div>
   </div>
-  {% for cat in (categories|default([]))[:8] %}<a href="{{ url_for('category', category_id=cat.id) }}">{{ cat.name }}</a>{% endfor %}
+  <a class="km-nav-link km-nav-link--hot" href="{{ url_for('home') }}#offers"><i class="fa-solid fa-fire"></i><span>پیشنهادهای ویژه</span></a>
+  <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+  <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
+  <a class="km-nav-link" href="{{ url_for('features') }}"><i class="fa-solid fa-circle-info"></i><span>راهنمای خرید</span></a>
+  <a class="km-nav-link" href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span>ثبت فروشگاه</span></a>
+  {% if current_user %}
+  <a class="km-nav-link km-nav-link--support" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i><span>پیگیری سفارش‌ها</span></a>
+  {% else %}
+  <a class="km-nav-link km-nav-link--support" href="{{ url_for('contact') }}"><i class="fa-solid fa-headset"></i><span>پشتیبانی</span></a>
+  {% endif %}
 </div></nav>
 </header>
 {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}{% endwith %}

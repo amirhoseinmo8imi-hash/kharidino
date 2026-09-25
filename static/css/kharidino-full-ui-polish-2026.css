@@ -1,0 +1,148 @@
+/* Kharidino 2026 — full storefront visual system polish.
+   Header -> main -> cards -> footer, desktop + mobile. */
+:root{
+  --khx-red:#ef4056;
+  --khx-red-dark:#c92f43;
+  --khx-ink:#17191d;
+  --khx-muted:#737983;
+  --khx-line:#e8e9ed;
+  --khx-bg:#f6f7f9;
+  --khx-card:#fff;
+  --khx-shadow:0 10px 35px rgba(18,24,35,.065);
+  --khx-radius:18px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--khx-bg)!important;color:var(--khx-ink)!important}
+.site-content{min-height:100vh;background:var(--khx-bg)!important}
+.km-topbar{margin-bottom:0!important}
+.kg-main{width:100%!important;max-width:none!important;padding:0 0 72px!important;background:var(--khx-bg)!important}
+.kdg-home{width:min(1320px,calc(100% - 32px))!important;margin:0 auto!important}
+
+/* Header: cleaner hierarchy */
+.km-topbar{border-bottom:1px solid #e4e5e9!important;box-shadow:0 5px 22px rgba(20,25,35,.055)!important}
+.km-topbar .km-header{min-height:74px!important}
+.km-logo{position:relative!important;overflow:hidden!important}
+.km-logo:after{content:"";position:absolute;inset:0 auto 0 -45%;width:35%;transform:skewX(-18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);animation:khxLogoShine 5s ease-in-out infinite}
+@keyframes khxLogoShine{0%,70%{left:-45%}100%{left:125%}}
+.km-search{box-shadow:inset 0 0 0 1px rgba(0,0,0,.015)!important}
+.km-search button{box-shadow:0 5px 14px rgba(239,64,86,.14)!important}
+.km-user-actions{align-items:center}
+.km-action{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease!important}
+.km-action:hover{transform:translateY(-2px)!important}
+.km-nav{box-shadow:0 1px 0 rgba(0,0,0,.025)}
+.km-nav-inner a{position:relative}
+.km-nav-inner a:after{content:"";position:absolute;right:12px;left:12px;bottom:0;height:2px;border-radius:2px;background:var(--khx-red);transform:scaleX(0);transition:transform .2s ease}
+.km-nav-inner a:hover:after,.km-nav-inner a:focus-visible:after{transform:scaleX(1)}
+
+/* The empty-looking bridge directly under the navigation */
+.kh-global-rail{
+  width:min(1320px,calc(100% - 32px));
+  margin:12px auto 0;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  direction:rtl;
+}
+.kh-global-rail a{
+  min-height:48px;display:flex;align-items:center;gap:10px;padding:8px 12px;
+  background:rgba(255,255,255,.92);border:1px solid var(--khx-line);border-radius:14px;
+  color:var(--khx-ink);text-decoration:none;box-shadow:0 4px 16px rgba(18,24,35,.035);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.kh-global-rail a:hover{transform:translateY(-2px);box-shadow:var(--khx-shadow);border-color:#dfe1e6}
+.kh-global-rail i{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:#fff1f3;color:var(--khx-red);flex:0 0 auto}
+.kh-global-rail strong{font-size:10px;display:block}
+.kh-global-rail span{font-size:8px;color:var(--khx-muted);display:block;margin-top:2px}
+
+/* Home hero and major sections */
+.kh-home-hero-pro,.kh-market-hero,.kh-luxury-banner,.kh-vehicle-categories,.kh-vehicle-showcase{
+  border:1px solid var(--khx-line)!important;
+  box-shadow:var(--khx-shadow)!important;
+}
+.kh-home-hero-pro{margin-top:12px!important;border-radius:22px!important;overflow:hidden!important}
+.kh-market-hero{margin-top:14px!important;border-radius:22px!important}
+.kh-luxury-banner,.kh-vehicle-categories,.kh-vehicle-showcase{margin-top:16px!important;border-radius:20px!important}
+.kh-market-shortcuts{margin-top:12px!important}
+.kh-market-shortcuts a,.kdg-quick-link{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important}
+.kh-market-shortcuts a:hover,.kdg-quick-link:hover{transform:translateY(-3px)!important;box-shadow:var(--khx-shadow)!important}
+.kdg-search-chips{margin-top:12px!important}
+.kdg-section,.kdg-deals,.kdg-cta,.kdg-service-row{margin-top:16px!important}
+.kdg-section{box-shadow:0 5px 22px rgba(18,24,35,.045)!important}
+.kdg-deals{box-shadow:0 12px 34px rgba(190,25,57,.12)!important}
+.kdg-products,.kdg-deals-grid{border-radius:15px!important}
+.kdg-product,.kdg-deal-card{transition:transform .22s ease,box-shadow .22s ease!important}
+.kdg-product-image img{transition:transform .3s ease!important}
+.kdg-product:hover .kdg-product-image img,.kdg-deal-card:hover .kdg-product-image img{transform:scale(1.045)}
+.kdg-cta{box-shadow:var(--khx-shadow)!important}
+
+/* Vehicle marketplace cards */
+.kh-vehicle-card{transition:transform .25s ease,box-shadow .25s ease!important}
+.kh-vehicle-card:hover{transform:translateY(-5px)!important;box-shadow:0 14px 34px rgba(20,25,35,.12)!important}
+.kh-vcat-card{transition:transform .2s ease,box-shadow .2s ease!important}
+.kh-vcat-card:hover{transform:translateY(-4px)!important;box-shadow:0 12px 28px rgba(20,25,35,.08)!important}
+
+/* Shared inner pages: keep content from looking detached */
+body.kh-inner-page .kg-main{padding-top:12px!important}
+body.kh-inner-page .kg-main>*:first-child{margin-top:0!important}
+body.kh-inner-page .page-hero,body.kh-inner-page .cart-page-hero,body.kh-inner-page .profile-hero,body.kh-inner-page .admin-hero{
+  border-radius:18px!important;box-shadow:var(--khx-shadow)!important;
+}
+body.kh-inner-page .section,body.kh-inner-page .km-section,body.kh-inner-page .orders-section{
+  border-color:var(--khx-line)!important;
+}
+
+/* Footer: stronger visual ending */
+.kh-footer{position:relative;overflow:hidden;background:#17191d!important;color:#dfe2e7!important;border-top:0!important;margin-top:18px;padding:0 0 20px!important}
+.kh-footer:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 15% 0,rgba(239,64,86,.12),transparent 32%),radial-gradient(circle at 85% 100%,rgba(255,255,255,.035),transparent 28%);pointer-events:none}
+.kh-footer .container{position:relative;z-index:1}
+.kh-footer-top{padding-top:42px!important}
+.kh-footer a{transition:color .18s ease,transform .18s ease!important}
+.kh-footer a:hover{color:#fff!important}
+.kh-footer-logo{color:#fff!important}
+.kh-footer-logo-mark{background:linear-gradient(135deg,var(--khx-red),#b51f36)!important}
+.kh-footer h3{color:#fff!important}
+.kh-footer p,.kh-footer-links a,.kh-footer-support small{color:#aeb4bd!important}
+.kh-footer-links h4{color:#fff!important}
+.kh-footer-stats{border-color:rgba(255,255,255,.1)!important}
+.kh-footer-stats strong{color:#fff!important}
+.kh-footer-stats span{color:#9da4ae!important}
+.kh-footer-bottom{border-color:rgba(255,255,255,.1)!important;color:#9299a3!important}
+
+/* Focus/accessibility */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid rgba(239,64,86,.22)!important;outline-offset:2px!important;
+}
+
+/* Mobile: compact, thumb-friendly and no horizontal page drift */
+@media(max-width:760px){
+  .kh-global-rail{width:calc(100% - 16px);grid-template-columns:repeat(4,minmax(150px,1fr));overflow-x:auto;padding:1px 2px 4px;scrollbar-width:none}
+  .kh-global-rail::-webkit-scrollbar{display:none}
+  .kh-global-rail a{min-width:150px}
+  .kdg-home{width:calc(100% - 16px)!important}
+  .kh-home-hero-pro,.kh-market-hero,.kh-luxury-banner,.kh-vehicle-categories,.kh-vehicle-showcase{border-radius:16px!important}
+  .kh-home-hero-pro{margin-top:9px!important}
+  .kh-market-hero{margin-top:10px!important}
+  .kh-luxury-banner,.kh-vehicle-categories,.kh-vehicle-showcase{margin-top:12px!important}
+  .kdg-section,.kdg-deals,.kdg-cta{border-radius:15px!important}
+  .kdg-section{padding:14px!important}
+  .kdg-section-head h2,.kdg-deals-head h2{font-size:16px!important}
+  .kdg-products{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .kdg-product{min-height:285px!important}
+  .kdg-product-image{height:145px!important}
+  .kh-footer{padding-bottom:88px!important}
+}
+@media(max-width:430px){
+  .kh-global-rail a{min-width:142px}
+  .kdg-home{width:calc(100% - 12px)!important}
+  .kdg-products{gap:1px!important}
+  .kdg-product{padding:9px!important}
+  .kdg-product-image{height:135px!important}
+  .kh-footer-top{padding-top:30px!important}
+}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .km-logo:after{animation:none}
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}

@@ -4580,6 +4580,15 @@ def request_return(order_id):
     order = Order.query.get_or_404(order_id)
     if order.user_id != session["user_id"]:
         abort(403)
+    if order.status not in {"تحویل شد", "ارسال شد"}:
+        flash("برای این سفارش هنوز امکان ثبت درخواست مرجوعی فعال نیست.", "warning")
+        return redirect(url_for("order_detail", order_id=order.id))
+    existing_return = ReturnRequest.query.filter_by(order_id=order.id, user_id=session["user_id"]).filter(
+        ReturnRequest.status.in_({"در انتظار بررسی", "تأیید شد", "کالا دریافت شد"})
+    ).first()
+    if existing_return:
+        flash("برای این سفارش یک درخواست مرجوعی در حال بررسی دارید.", "warning")
+        return redirect(url_for("order_detail", order_id=order.id))
     reason = request.form.get("reason", "").strip()
     if not reason:
         flash("دلیل مرجوعی را بنویس.", "warning")
@@ -4645,13 +4654,34 @@ def admin_return_status(return_id):
     status = request.form.get("status", "")
     if status in {"در انتظار بررسی","تأیید شد","کالا دریافت شد","بازپرداخت شد","رد شد"}:
         rr.status = status
-        if status == "بازپرداخت شد":
+        if status == "بازپرداخت شد" and rr.status != "بازپرداخت شد":
             wallet = ensure_wallet(rr.user_id)
-            wallet.balance += int(rr.order.total or 0)
-            db.session.add(WalletTransaction(user_id=rr.user_id, amount=int(rr.order.total or 0), kind="refund", description=f"بازپرداخت سفارش #{rr.order_id}"))
+            refund_amount = int(rr.order.total or 0)
+            wallet.balance += refund_amount
+            db.session.add(WalletTransaction(user_id=rr.user_id, amount=refund_amount, kind="refund", description=f"بازپرداخت سفارش #{rr.order_id}"))
             notify(rr.user_id, "بازپرداخت انجام شد", f"مبلغ سفارش #{rr.order_id} به کیف پول اضافه شد.", "refund")
         db.session.commit()
     return redirect(url_for("admin") + "#returns-admin")
+
+
+@app.post("/notifications/read/<int:notification_id>")
+@login_required
+def notification_read(notification_id):
+    item = Notification.query.filter_by(id=notification_id, user_id=session["user_id"]).first_or_404()
+    item.is_read = True
+    db.session.commit()
+    return redirect(url_for("notifications"))
+
+
+@app.post("/notifications/read-all")
+@login_required
+def notifications_read_all():
+    Notification.query.filter_by(user_id=session["user_id"], is_read=False).update(
+        {"is_read": True},
+        synchronize_session=False
+    )
+    db.session.commit()
+    return redirect(url_for("notifications"))
 
 
 @app.get("/api/notifications/count")

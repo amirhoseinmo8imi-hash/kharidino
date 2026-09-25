@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-mega-menu.css', v='2026-09-25-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-25-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-site-polish-2026.css', v='2026-09-25-2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-stability-2026.css', v='2026-09-25-1') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">

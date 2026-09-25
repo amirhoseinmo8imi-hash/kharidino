@@ -5,7 +5,6 @@
 <div class="kh-b2b-title"><i class="fa-solid fa-building-shield"></i><div><h1>اطلاعات حقوقی و صدور فاکتور</h1><small>این اطلاعات روی پیش‌فاکتور و فاکتور خریدینو نمایش داده می‌شود. فقط اطلاعات واقعی و ثبت‌شده شرکت را وارد کنید.</small></div></div>
 <form method="post" class="kh-company-form">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-{% for key,label in fields.items() %}<label><span>{{ label }}</span><input name="{{ key }}" value="{{ profile[key|replace('company_','') if false else key.replace('company_','')] if false else '' }}"></label>{% endfor %}
 <div class="kh-company-fields">
 <label><span>نام حقوقی شرکت</span><input name="company_legal_name" value="{{ profile.legal_name }}"></label>
 <label><span>شناسه ملی</span><input name="company_national_id" value="{{ profile.national_id }}"></label>

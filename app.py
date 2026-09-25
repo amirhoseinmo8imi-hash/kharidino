@@ -1127,7 +1127,8 @@ def home():
         query = query.filter(
             db.or_(
                 Product.name.ilike(search),
-                Product.description.ilike(search)
+                Product.description.ilike(search),
+                Product.category.has(Category.name.ilike(search)),
             )
         )
 
@@ -1137,18 +1138,18 @@ def home():
         except ValueError:
             category_id = ""
 
+    products = query.all()
+
+    # Sort by the effective price shown to users, not the stale base price.
     if sort == "price_low":
-        # قیمت پایه مرتب می‌شود؛ قیمت واقعی کارت‌ها همچنان lowest_price است.
-        query = query.order_by(Product.price.asc(), Product.id.desc())
+        products.sort(key=lambda item: (lowest_price(item), -item.id))
     elif sort == "price_high":
-        query = query.order_by(Product.price.desc(), Product.id.desc())
+        products.sort(key=lambda item: (-lowest_price(item), -item.id))
     elif sort == "name":
-        query = query.order_by(Product.name.asc())
+        products.sort(key=lambda item: item.name.lower())
     else:
         sort = "newest"
-        query = query.order_by(Product.id.desc())
-
-    products = query.all()
+        products.sort(key=lambda item: item.id, reverse=True)
 
     categories = (
         Category.query

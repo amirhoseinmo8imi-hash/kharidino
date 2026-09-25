@@ -42,3 +42,40 @@ body.kh-inner-page .stores-page,body.kh-inner-page .kdg-category-page,body.kh-in
 @media(max-width:1200px){.stores-page .store-grid,.kdg-products{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:900px){.stores-page .store-grid,.kdg-products{grid-template-columns:repeat(2,minmax(0,1fr))!important}.kdg-category-layout{grid-template-columns:1fr!important}.kdg-filter{position:static!important}}
 @media(max-width:600px){body.kh-inner-page .stores-page,body.kh-inner-page .kdg-category-page{width:calc(100% - 24px);padding-top:18px}.stores-page .store-grid,.kdg-products{grid-template-columns:1fr!important}.kdg-product-image{height:240px!important}}
+
+
+/* --- Inner-page vertical rhythm / mega-menu overlay stability --- */
+body.kh-inner-page .site-content{
+  margin:0!important;
+  padding:0!important;
+}
+body.kh-inner-page .km-topbar{
+  margin-bottom:0!important;
+}
+body.kh-inner-page .kg-main{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+body.kh-inner-page .kg-main > .stores-page,
+body.kh-inner-page .kg-main > .kdg-category-page,
+body.kh-inner-page .kg-main > .store-detail-page{
+  margin-top:0!important;
+}
+.km-category-mega{
+  margin:0!important;
+  z-index:6000!important;
+}
+.km-cat-menu-wrap,
+.km-category-mega{
+  box-sizing:border-box!important;
+}
+.km-cat-menu-wrap.is-open ~ *{
+  /* Keep navigation siblings in normal document flow; mega menu is fixed overlay. */
+  transform:none!important;
+}
+@media(max-width:720px){
+  body.kh-inner-page .kg-main{padding-top:0!important}
+}

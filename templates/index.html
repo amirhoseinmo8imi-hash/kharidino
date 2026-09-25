@@ -33,6 +33,52 @@
     </div>
   </section>
 
+  {% if not q %}
+  <section class="kh-luxury-banner" aria-label="ویژه ساعت و اکسسوری لوکس">
+    <div class="kh-luxury-glow kh-luxury-glow-a"></div>
+    <div class="kh-luxury-glow kh-luxury-glow-b"></div>
+    <div class="kh-luxury-copy">
+      <span class="kh-luxury-kicker"><i class="fa-regular fa-gem"></i> COLLECTION 2026</span>
+      <div class="kh-omega-word">OMEGA</div>
+      <h2>زمان، با <strong>کلاس</strong> حرکت می‌کند.</h2>
+      <p>ساعت و اکسسوری‌های لوکس را در خریدینو کشف کن؛ انتخابی برای کسانی که جزئیات برایشان مهم است.</p>
+      <div class="kh-luxury-actions">
+        <a href="{{ url_for('home', q='ساعت') }}">مشاهده ساعت‌ها <i class="fa-solid fa-arrow-left"></i></a>
+        <span><i class="fa-solid fa-shield-halved"></i> انتخاب هوشمند</span>
+      </div>
+    </div>
+    <div class="kh-luxury-watch" aria-hidden="true">
+      <div class="kh-watch-halo"></div>
+      <div class="kh-watch-strap kh-watch-strap-top"></div>
+      <div class="kh-watch-strap kh-watch-strap-bottom"></div>
+      <div class="kh-watch-case">
+        <div class="kh-watch-dial">
+          <span class="kh-watch-brand">OMEGA</span>
+          <span class="kh-watch-mark kh-mark-12">12</span><span class="kh-watch-mark kh-mark-3">3</span><span class="kh-watch-mark kh-mark-6">6</span><span class="kh-watch-mark kh-mark-9">9</span>
+          <i class="kh-watch-hand kh-hand-h"></i><i class="kh-watch-hand kh-hand-m"></i><i class="kh-watch-hand kh-hand-s"></i>
+          <b class="kh-watch-center"></b>
+        </div>
+      </div>
+      <div class="kh-watch-spark kh-spark-1"></div><div class="kh-watch-spark kh-spark-2"></div>
+    </div>
+    <div class="kh-luxury-bottom"><span>TIMELESS DESIGN</span><span>PRECISION</span><span>ICONIC STYLE</span></div>
+  </section>
+
+  <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
+    <div class="kh-vcat-head">
+      <div><span><i class="fa-solid fa-road"></i> MARKETPLACE</span><h2>هر چیزی که <strong>حرکت می‌کند</strong></h2><p>بازار اختصاصی وسایل نقلیه خریدینو</p></div>
+      <a href="{{ url_for('vehicles') }}">ورود به بازار <i class="fa-solid fa-arrow-left"></i></a>
+    </div>
+    <div class="kh-vcat-grid">
+      {% set vicons = ['fa-car-side','fa-motorcycle','fa-truck','fa-tractor','fa-sailboat','fa-gears','fa-car-tunnel','fa-gem','fa-flag-checkered','fa-bicycle'] %}
+      {% for cat in vehicle_categories %}
+      <a href="{{ url_for('vehicles', category=cat) }}" class="kh-vcat-card" style="--i:{{ loop.index0 }}">
+        <i class="fa-solid {{ vicons[loop.index0] }}"></i><span>{{ cat }}</span><b><i class="fa-solid fa-chevron-left"></i></b>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
   <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
     <a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span><small>هزاران محصول</small></a>
     <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span><small>انتخاب اقتصادی</small></a>

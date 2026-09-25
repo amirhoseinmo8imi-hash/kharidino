@@ -13,7 +13,10 @@
     fav.addEventListener('click',async function(){
       try{
         const res=await fetch('{{ url_for("toggle_vehicle_favorite", ad_id=ad.id) }}',{method:'POST',headers:{'Accept':'application/json'}});
-        if(res.status===401||res.status===403){window.location.href='{{ url_for("login", next=request.path) }}';return;}
+        const contentType=res.headers.get('content-type')||'';
+        if(res.status===401||res.status===403||!contentType.includes('application/json')){
+          window.location.href='{{ url_for("login", next=request.path) }}';return;
+        }
         const data=await res.json();
         if(!data.ok){toast('ذخیره آگهی انجام نشد.');return;}
         fav.classList.toggle('active',!!data.saved);

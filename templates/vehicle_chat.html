@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}چت با فروشنده | {{ ad.title }} | خریدینو{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-26-chat-1') }}">{% endblock %}
+{% block content %}
+<section class="vehicle-chat-page">
+  <div class="vehicle-chat-shell">
+    <div class="vehicle-chat-head">
+      <a href="{{ url_for('vehicle_detail', ad_id=ad.id) }}" class="vehicle-chat-back"><i class="fa-solid fa-arrow-right"></i></a>
+      <div><strong>{{ ad.title }}</strong><span><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</span></div>
+      <a href="{{ url_for('vehicle_detail', ad_id=ad.id) }}" class="vehicle-chat-ad-link">مشاهده آگهی</a>
+    </div>
+    <div class="vehicle-chat-messages">
+      {% if messages %}
+        {% for message in messages %}
+        <div class="vehicle-chat-message {% if message.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
+          <div>{{ message.body|e|replace('\n','<br>')|safe }}</div>
+          <small>{{ message.created_at.strftime('%Y/%m/%d %H:%M') if message.created_at else '' }}</small>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="vehicle-chat-empty"><i class="fa-regular fa-comments"></i><strong>گفت‌وگو را شروع کن</strong><span>سؤال خودت درباره خودرو یا وسیله نقلیه را برای فروشنده بفرست.</span></div>
+      {% endif %}
+    </div>
+    <form class="vehicle-chat-compose" method="post" action="{{ url_for('vehicle_chat_send', ad_id=ad.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if chat %}<input type="hidden" name="chat_id" value="{{ chat.id }}">{% endif %}
+      <textarea name="body" maxlength="4000" rows="2" placeholder="پیامت را بنویس..." required></textarea>
+      <button type="submit"><i class="fa-solid fa-paper-plane"></i><span>ارسال</span></button>
+    </form>
+  </div>
+</section>
+{% endblock %}

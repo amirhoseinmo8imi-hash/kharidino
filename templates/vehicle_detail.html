@@ -18,7 +18,7 @@
         {% for img in gallery %}<button type="button" class="vehicle-thumb {% if loop.first %}active{% endif %}" onclick="document.getElementById('vehicleMainImage').src=this.dataset.src;document.querySelectorAll('.vehicle-thumb').forEach(x=>x.classList.remove('active'));this.classList.add('active')" data-src="{{ img if img.startswith('http') else url_for('static', filename=img) }}"><img src="{{ img if img.startswith('http') else url_for('static', filename=img) }}" alt="{{ ad.title }}"></button>{% endfor %}
       </div>
       {% endif %}
-      <div class="vehicle-under-media"><span><i class="fa-regular fa-clock"></i> آگهی {{ ad.created_at.strftime('%Y/%m/%d') if ad.created_at else '' }}</span><span><i class="fa-solid fa-shield-halved"></i> آگهی تأیید شده</span></div>
+      <div class="vehicle-under-media"><span><i class="fa-solid fa-eye"></i> {{ view_count }} بازدید</span><span><i class="fa-regular fa-clock"></i> آگهی {{ ad.created_at.strftime('%Y/%m/%d') if ad.created_at else '' }}</span><span><i class="fa-solid fa-shield-halved"></i> آگهی تأیید شده</span></div>
     </div>
 
     <div class="vehicle-detail-main">
@@ -70,7 +70,15 @@
 
   <div class="vehicle-detail-bottom">
     <article class="vehicle-description vehicle-description-pro"><div class="vehicle-content-title"><i class="fa-solid fa-align-right"></i><h2>توضیحات آگهی</h2></div><p>{{ ad.description or "توضیحی برای این آگهی ثبت نشده است." }}</p></article>
-    <aside class="vehicle-safety-box"><i class="fa-solid fa-shield-halved"></i><div><strong>نکات ایمنی خرید</strong><p>قبل از معامله، خودرو و مدارک را بررسی کن و از پرداخت بیعانه بدون اطمینان از فروشنده خودداری کن.</p></div></aside>
+    <div class="vehicle-report-box">
+  <button type="button" id="vehicleReportToggle"><i class="fa-regular fa-flag"></i> گزارش آگهی</button>
+  <form id="vehicleReportForm" hidden>
+    <select name="reason" required><option value="">دلیل گزارش را انتخاب کن</option><option>آگهی تکراری</option><option>اطلاعات نادرست</option><option>محتوای نامناسب</option><option>احتمال کلاهبرداری</option><option>خودرو فروخته شده</option><option>سایر</option></select>
+    <textarea name="details" maxlength="500" placeholder="اگر لازم است توضیح کوتاهی بنویس..."></textarea>
+    <button type="submit">ارسال گزارش</button>
+  </form>
+</div>
+<aside class="vehicle-safety-box"><i class="fa-solid fa-shield-halved"></i><div><strong>نکات ایمنی خرید</strong><p>قبل از معامله، خودرو و مدارک را بررسی کن و از پرداخت بیعانه بدون اطمینان از فروشنده خودداری کن.</p></div></aside>
   </div>
 
 {% if similar_ads %}
@@ -90,6 +98,12 @@
   <form class="vehicle-owner-actions" method="post" action="{{ url_for('vehicle_delete', ad_id=ad.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="vehicle-danger" type="submit"><i class="fa-solid fa-trash"></i> حذف آگهی</button></form>
   {% endif %}
 </section><script>
+(function(){
+ const t=document.getElementById('vehicleReportToggle'),f=document.getElementById('vehicleReportForm');
+ if(t&&f)t.onclick=()=>f.hidden=!f.hidden;
+ if(f)f.onsubmit=async e=>{e.preventDefault();try{const r=await fetch('{{ url_for("report_vehicle",ad_id=ad.id) }}',{method:'POST',body:new FormData(f),headers:{Accept:'application/json'}});const d=await r.json();toast(d.message);if(d.ok){f.reset();f.hidden=true;}}catch(e){toast('ارسال گزارش انجام نشد.');}};
+})();
+</script><script>
 (function(){
  const btn=document.getElementById('vehicleCompareBtn');
  if(btn)btn.addEventListener('click',async function(){

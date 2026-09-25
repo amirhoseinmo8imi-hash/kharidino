@@ -87,23 +87,61 @@
 
   function init(){
     var wrappers=Array.prototype.slice.call(document.querySelectorAll('.km-cat-menu-wrap'));
+
     wrappers.forEach(function(wrapper){
       var trigger=wrapper.querySelector('.km-cat-menu-trigger');
-      if(!trigger || wrapper.dataset.kmMegaReady==='1') return;
+      var panel=wrapper.querySelector('.km-category-mega');
+      if(!trigger || !panel || wrapper.dataset.kmMegaReady==='1') return;
       wrapper.dataset.kmMegaReady='1';
-      trigger.setAttribute('aria-haspopup','true');
-      trigger.setAttribute('aria-expanded','false');
+
+      function positionMenu(){
+        var r=trigger.getBoundingClientRect();
+        var top=Math.min(window.innerHeight-80,Math.max(70,r.bottom+2));
+        wrapper.style.setProperty('--km-mega-top',top+'px');
+      }
 
       function setOpen(open){
+        positionMenu();
         wrapper.classList.toggle('is-open',!!open);
         trigger.setAttribute('aria-expanded',open?'true':'false');
       }
 
+      function activate(id){
+        wrapper.querySelectorAll('.km-mega-side-item').forEach(function(item){
+          item.classList.toggle('is-active',item.getAttribute('data-mega-target')===id);
+        });
+        wrapper.querySelectorAll('.km-mega-panel').forEach(function(item){
+          item.classList.toggle('is-active',item.id===id);
+        });
+      }
+
+      var sideItems=Array.prototype.slice.call(wrapper.querySelectorAll('.km-mega-side-item'));
+      sideItems.forEach(function(item,index){
+        item.addEventListener('mouseenter',function(){
+          activate(item.getAttribute('data-mega-target'));
+          setOpen(true);
+        });
+        item.addEventListener('focus',function(){
+          activate(item.getAttribute('data-mega-target'));
+          setOpen(true);
+        });
+        item.addEventListener('click',function(event){
+          if(window.matchMedia('(max-width: 720px)').matches){
+            event.preventDefault();
+            activate(item.getAttribute('data-mega-target'));
+          }
+        });
+        if(index===0) activate(item.getAttribute('data-mega-target'));
+      });
+
+      wrapper.addEventListener('mouseenter',function(){ setOpen(true); });
+      wrapper.addEventListener('mouseleave',function(){
+        if(window.innerWidth>720) setOpen(false);
+      });
+
       trigger.addEventListener('click',function(event){
-        if(window.matchMedia('(max-width: 720px)').matches){
-          event.preventDefault();
-          setOpen(!wrapper.classList.contains('is-open'));
-        }
+        event.preventDefault();
+        setOpen(!wrapper.classList.contains('is-open'));
       });
 
       trigger.addEventListener('keydown',function(event){
@@ -116,17 +154,17 @@
         }
       });
 
-      wrapper.addEventListener('mouseenter',function(){
-        trigger.setAttribute('aria-expanded','true');
+      panel.addEventListener('mouseenter',function(){ setOpen(true); });
+      panel.addEventListener('mouseleave',function(){
+        if(window.innerWidth>720) setOpen(false);
       });
-      wrapper.addEventListener('mouseleave',function(){
-        if(!wrapper.classList.contains('is-open')) trigger.setAttribute('aria-expanded','false');
-      });
-      wrapper.addEventListener('focusout',function(){
-        setTimeout(function(){
-          if(!wrapper.contains(document.activeElement) && !wrapper.matches(':hover')) setOpen(false);
-        },0);
-      });
+
+      window.addEventListener('resize',function(){
+        if(wrapper.classList.contains('is-open')) positionMenu();
+      },{passive:true});
+      window.addEventListener('scroll',function(){
+        if(wrapper.classList.contains('is-open')) positionMenu();
+      },{passive:true});
     });
 
     document.addEventListener('click',function(event){
@@ -138,12 +176,6 @@
         }
       });
     });
-
-    window.addEventListener('resize',function(){
-      wrappers.forEach(function(wrapper){
-        if(window.innerWidth>720) wrapper.classList.remove('is-open');
-      });
-    },{passive:true});
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();

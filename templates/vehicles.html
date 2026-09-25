@@ -57,6 +57,14 @@
     <span class="vehicle-result-count">{{ ads|length }} نتیجه</span>
   </div>
 
+  <div class="vehicle-market-tools">
+  <div><strong>ابزارهای هوشمند</strong><span>خودروها را ذخیره، مقایسه و جستجوهایت را نگه دار.</span></div>
+  <div class="vehicle-market-tool-actions">
+    <a href="{{ url_for('vehicle_compare') }}"><i class="fa-solid fa-scale-balanced"></i> مقایسه <b data-vehicle-compare-count>{{ vehicle_compare_ids|length }}</b></a>
+    {% if current_user %}<a href="{{ url_for('vehicle_searches') }}"><i class="fa-solid fa-bell"></i> جستجوهای من</a>{% endif %}
+  </div>
+</div>
+
   <div class="vehicle-layout">
     <aside class="vehicle-filters">
       <div class="vehicle-filter-head"><div><span>جستجوی دقیق</span><h2>فیلتر آگهی‌ها</h2></div><i class="fa-solid fa-filter"></i></div>
@@ -76,6 +84,9 @@
         <label><span>مرتب‌سازی</span><select name="sort"><option value="newest" {% if request.args.get('sort','newest')=='newest' %}selected{% endif %}>جدیدترین</option><option value="price_low" {% if request.args.get('sort')=='price_low' %}selected{% endif %}>ارزان‌ترین</option><option value="price_high" {% if request.args.get('sort')=='price_high' %}selected{% endif %}>گران‌ترین</option><option value="year_high" {% if request.args.get('sort')=='year_high' %}selected{% endif %}>مدل جدیدتر</option></select></label>
         <button class="vehicle-filter-btn" type="submit"><i class="fa-solid fa-sliders"></i> اعمال فیلتر</button>
         <a class="vehicle-clear-filter" href="{{ url_for('vehicles') }}">پاک کردن فیلترها</a>
+{% if current_user %}
+        <div class="vehicle-save-search"><form method="post" action="{{ url_for('save_vehicle_search') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="q" value="{{ filters.q }}"><input type="hidden" name="category" value="{{ filters.category }}"><input type="hidden" name="city" value="{{ filters.city }}"><input type="hidden" name="min_price" value="{{ request.args.get('min_price','') }}"><input type="hidden" name="max_price" value="{{ request.args.get('max_price','') }}"><input type="hidden" name="min_year" value="{{ request.args.get('min_year','') }}"><input type="hidden" name="max_year" value="{{ request.args.get('max_year','') }}"><input type="hidden" name="seller_type" value="{{ request.args.get('seller_type','') }}"><input type="hidden" name="sort" value="{{ request.args.get('sort','newest') }}"><input name="name" placeholder="نام جستجو؛ مثلاً 207 تهران" required><button type="submit"><i class="fa-solid fa-bell"></i> ذخیره این جستجو</button></form></div>
+        {% endif %}
       </form>
     </aside>
 
@@ -87,6 +98,7 @@
             <div class="vehicle-card-image">
               {% if ad.image %}<img src="{{ ad.image if ad.image.startswith('http') else url_for('static', filename=ad.image) }}" alt="{{ ad.title }}" loading="lazy">{% else %}<i class="fa-solid fa-car-side"></i>{% endif %}
               <span class="vehicle-card-tag">{{ ad.category }}</span>
+              <button type="button" class="vehicle-compare-toggle{% if ad.id in vehicle_compare_ids %} active{% endif %}" data-vehicle-compare="{{ ad.id }}" aria-pressed="{{ 'true' if ad.id in vehicle_compare_ids else 'false' }}"><i class="fa-solid fa-scale-balanced"></i><span>{% if ad.id in vehicle_compare_ids %}در مقایسه{% else %}مقایسه{% endif %}</span></button>
               <span class="vehicle-card-status"><i class="fa-solid fa-circle-check"></i> تأیید شده</span>
             </div>
             <div class="vehicle-card-body">
@@ -111,4 +123,13 @@
     </main>
   </div>
 </section>
-{% endblock %}
+{% endblock %}<script>
+document.querySelectorAll('[data-vehicle-compare]').forEach(function(btn){
+ btn.addEventListener('click',async function(e){
+  e.preventDefault();e.stopPropagation();
+  try{const r=await fetch('/api/vehicle/'+btn.dataset.vehicleCompare+'/compare',{method:'POST',headers:{Accept:'application/json'}});const d=await r.json();
+   if(!d.ok){alert(d.message);return;} btn.classList.toggle('active',d.selected);btn.setAttribute('aria-pressed',d.selected?'true':'false');btn.querySelector('span').textContent=d.selected?'در مقایسه':'مقایسه';const c=document.querySelector('[data-vehicle-compare-count]');if(c)c.textContent=d.count;
+  }catch(e){}
+ });
+});
+</script>

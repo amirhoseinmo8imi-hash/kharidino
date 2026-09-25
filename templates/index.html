@@ -6,6 +6,39 @@
 {% endblock %}
 {% block content %}
 <div class="kdg-home">
+  <section class="kh-home-hero-pro" aria-label="معرفی خریدینو">
+    <div class="kh-home-hero-pro-glow kh-home-hero-pro-glow-a"></div>
+    <div class="kh-home-hero-pro-glow kh-home-hero-pro-glow-b"></div>
+    <div class="kh-home-hero-pro-copy">
+      <span class="kh-home-hero-pro-kicker"><i class="fa-solid fa-sparkles"></i> خریدینو ۲۰۲۶</span>
+      <h1>هر چیزی که می‌خواهی،<br><strong>هوشمندانه پیدا کن.</strong></h1>
+      <p>محصولات، فروشگاه‌ها و بازار وسایل نقلیه را در یک تجربه سریع و یکپارچه پیدا و مقایسه کن.</p>
+      <form class="kh-home-hero-search" method="get" action="{{ url_for('home') }}">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" name="q" value="{{ q|default('') }}" placeholder="دنبال چه چیزی می‌گردی؟ مثلاً آیفون، لپ‌تاپ، خودرو..." autocomplete="off">
+        <button type="submit">جستجو</button>
+      </form>
+      <div class="kh-home-hero-actions">
+        <a href="#offers" class="kh-home-hero-btn kh-home-hero-btn-primary"><i class="fa-solid fa-fire"></i> پیشنهادهای ویژه</a>
+        <a href="{{ url_for('vehicles') }}" class="kh-home-hero-btn"><i class="fa-solid fa-car-side"></i> بازار خودرو</a>
+        <a href="{{ url_for('vehicles') }}" class="kh-home-hero-list"><i class="fa-solid fa-plus"></i> ثبت آگهی</a>
+      </div>
+    </div>
+    <div class="kh-home-hero-visual" aria-hidden="true">
+      <div class="kh-home-hero-ring kh-home-hero-ring-a"></div>
+      <div class="kh-home-hero-ring kh-home-hero-ring-b"></div>
+      <div class="kh-home-hero-orbit kh-home-hero-orbit-a"><span><i class="fa-solid fa-scale-balanced"></i></span></div>
+      <div class="kh-home-hero-orbit kh-home-hero-orbit-b"><span><i class="fa-solid fa-car-side"></i></span></div>
+      <div class="kh-home-hero-card kh-home-hero-card-main">
+        <div class="kh-home-hero-card-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+        <span>خریدینو</span><strong>انتخاب، مقایسه، خرید</strong>
+        <small>همه‌چیز یکجا</small>
+      </div>
+      <div class="kh-home-hero-mini kh-home-hero-mini-a"><i class="fa-solid fa-tag"></i><span>قیمت بهتر</span></div>
+      <div class="kh-home-hero-mini kh-home-hero-mini-b"><i class="fa-solid fa-shield-halved"></i><span>انتخاب مطمئن</span></div>
+    </div>
+  </section>
+
   <section class="kh-market-hero" aria-label="پیشنهادهای ویژه خریدینو">
     <div class="kh-market-hero-copy">
       <span class="kh-market-eyebrow"><i class="fa-solid fa-bolt"></i> جشنواره خریدینو</span>

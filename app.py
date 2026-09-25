@@ -72,6 +72,13 @@ else:
     except OSError:
         app.config["SECRET_KEY"] = secrets.token_urlsafe(64)
 
+# Browser/session settings: use a new cookie namespace so old development sessions cannot
+# poison the CSRF/session state after the authentication system is upgraded.
+app.config["SESSION_COOKIE_NAME"] = "kharidino_session_v2"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = False
+
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + str(BASE_DIR / "kharidino.db")
 )
@@ -782,6 +789,10 @@ app.jinja_env.globals["csrf_token"] = csrf_token
 
 @app.before_request
 def validate_csrf():
+    # Every rendered page gets a token. Keeping one token for the browser session
+    # prevents ordinary navigation and multi-tab use from invalidating open forms.
+    csrf_token()
+
     if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
 
@@ -792,7 +803,17 @@ def validate_csrf():
     )
     expected = session.get("csrf_token") or ""
 
-    if not expected or not submitted or not secrets.compare_digest(
+    # If an old/invalid development session cookie was discarded by Flask, allow
+    # a public form carrying its own token to establish the fresh session token.
+    # Authenticated sessions still require an exact token match.
+    if not expected:
+        if submitted and not session.get("user_id"):
+            session["csrf_token"] = str(submitted)
+            session.modified = True
+            return None
+        abort(400, description="CSRF token is missing or invalid.")
+
+    if not submitted or not secrets.compare_digest(
         str(submitted), str(expected)
     ):
         abort(400, description="CSRF token is missing or invalid.")

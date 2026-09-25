@@ -46,7 +46,7 @@
     <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a>
     <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
     <div class="km-user-actions">
-      {% if current_user %}<a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
+      {% if current_user %}<a class="km-action km-action--messages" href="{{ url_for('my_vehicle_chats') }}"><i class="fa-regular fa-comments"></i><span>چت‌ها</span><b class="km-message-badge" data-vehicle-unread hidden>0</b></a><a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
       <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
       {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
       {% if current_user %}<form class="km-action km-action--logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ _csrf_value }}"><button type="submit" class="km-logout-button"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></button></form>{% endif %}
@@ -172,3 +172,15 @@
   }
 </script>
 </body></html>
+<script>
+(function(){
+ const badge=document.querySelector('[data-vehicle-unread]'); if(!badge)return; let last=0;
+ async function check(){
+  try{const r=await fetch('/api/vehicle-chats/unread',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)return;const d=await r.json(),c=Number(d.count||0);badge.textContent=c>99?'99+':c;badge.hidden=c<=0;
+   if(c>last&&last>0&&document.hidden&&'Notification' in window&&Notification.permission==='granted') new Notification('پیام جدید در خریدینو',{body:'یک پیام جدید در چت خودرو داری.',icon:'/static/icons/icon-192.svg'});
+   last=c;
+  }catch(e){}
+ }
+ check();setInterval(check,3000);
+})();
+</script>

@@ -282,11 +282,23 @@ def register_vehicle_chat(app, db, User, login_required):
             abort(404)
         user_id = session["user_id"]
         if user_id == ad.user_id:
-            chats = VehicleChat.query.filter_by(vehicle_ad_id=ad.id, seller_id=user_id).all()
-            if not chats:
+            requested_chat_id = request.args.get("chat_id", "").strip()
+            try:
+                requested_chat_id = int(requested_chat_id) if requested_chat_id else None
+            except ValueError:
+                requested_chat_id = None
+            chat = db.session.get(VehicleChat, requested_chat_id) if requested_chat_id else None
+            if chat and (chat.vehicle_ad_id != ad.id or chat.seller_id != user_id):
+                abort(403)
+            if not chat:
+                chat = VehicleChat.query.filter_by(
+                    vehicle_ad_id=ad.id,
+                    seller_id=user_id,
+                ).order_by(VehicleChat.updated_at.desc()).first()
+            if not chat:
                 flash("هنوز گفت‌وگویی برای این آگهی ایجاد نشده است.", "info")
                 return redirect(url_for("vehicle_detail", ad_id=ad.id))
-            chat = chats[0]
+            
         else:
             chat = VehicleChat.query.filter_by(
                 vehicle_ad_id=ad.id,

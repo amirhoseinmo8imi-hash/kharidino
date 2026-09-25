@@ -11,6 +11,7 @@
       <p>خودرو، موتور، ماشین‌آلات و تجهیزات را با فیلترهای تخصصی پیدا کن؛ سریع‌تر مقایسه کن و مستقیم با فروشنده تماس بگیر.</p>
       <div class="vehicle-hero-actions">
         <a class="vehicle-primary" href="{{ url_for('vehicle_post') }}"><i class="fa-solid fa-plus"></i> ثبت آگهی رایگان</a>
+        {% if current_user %}<a class="vehicle-hero-link" href="{{ url_for('vehicle_favorites') }}"><i class="fa-solid fa-heart"></i> علاقه‌مندی‌های من</a>{% endif %}
         <a class="vehicle-hero-link" href="#vehicle-list"><i class="fa-solid fa-arrow-down"></i> دیدن آگهی‌ها</a>
       </div>
     </div>

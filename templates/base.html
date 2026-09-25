@@ -67,7 +67,13 @@
     </div>
   </div>
   <nav class="km-nav" aria-label="ناوبری فروشگاه"><div class="km-nav-inner">
-  <div class="km-cat-menu-wrap">
+  <div class="km-nav-primary" aria-label="دسترسی‌های اصلی">
+  <a class="km-nav-link km-nav-link--hot" href="{{ url_for('home') }}#offers"><i class="fa-solid fa-fire"></i><span>پیشنهادهای ویژه</span></a>
+    <a class="km-nav-link" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span></a>
+    <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+    <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
+    <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
+    <div class="km-cat-menu-wrap">
     <button type="button" class="km-cat-menu-trigger" aria-haspopup="true" aria-expanded="false">
       <i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>
     </button>
@@ -121,13 +127,7 @@
       </section>
     </div>    </div>
   </div>
-  <div class="km-nav-primary" aria-label="دسترسی‌های اصلی">
-  <a class="km-nav-link km-nav-link--hot" href="{{ url_for('home') }}#offers"><i class="fa-solid fa-fire"></i><span>پیشنهادهای ویژه</span></a>
-    <a class="km-nav-link" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span></a>
-    <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
-    <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
-    <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
-    <div class="km-nav-business">
+  <div class="km-nav-business">
       <button type="button" class="km-nav-business-trigger" aria-haspopup="true"><i class="fa-solid fa-briefcase"></i><span>کسب‌وکار</span><i class="fa-solid fa-chevron-down"></i></button>
       <div class="km-nav-business-menu">
         <a href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span><strong>ثبت فروشگاه</strong><small>فروشنده خریدینو شوید</small></span></a>

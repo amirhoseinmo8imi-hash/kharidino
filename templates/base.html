@@ -46,10 +46,22 @@
     <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a>
     <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
     <div class="km-user-actions">
-      {% if current_user %}<a class="km-action km-action--messages" href="{{ url_for('my_vehicle_chats') }}"><i class="fa-regular fa-comments"></i><span>چت‌ها</span><b class="km-message-badge" data-vehicle-unread hidden>0</b></a><a class="km-action" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب کاربری</span></a>{% else %}<a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>{% endif %}
+      {% if current_user %}
+      <a class="km-action km-action--messages" href="{{ url_for('my_vehicle_chats') }}"><i class="fa-regular fa-comments"></i><span>چت‌ها</span><b class="km-message-badge" data-vehicle-unread hidden>0</b></a>
+      <div class="km-account-menu">
+        <a class="km-action km-account-trigger" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب من</span><i class="fa-solid fa-chevron-down km-account-chevron"></i></a>
+        <div class="km-account-dropdown">
+          <div class="km-account-dropdown-head"><i class="fa-regular fa-circle-user"></i><div><strong>{{ current_user.name }}</strong><small>حساب کاربری خریدینو</small></div></div>
+          <a href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i> پروفایل و تنظیمات</a>
+          <a href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i> سفارش‌های من</a>
+          {% if current_user.role == 'admin' %}<a href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i> مدیریت سایت</a>{% endif %}
+          <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ _csrf_value }}"><button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i> خروج از حساب</button></form>
+        </div>
+      </div>
+      {% else %}
+      <a class="km-action" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i><span>ورود / ثبت‌نام</span></a>
+      {% endif %}
       <a class="km-action km-action--cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد خرید</span>{% if cart_count %}<b class="km-cart-badge">{{ cart_count }}</b>{% endif %}</a>
-      {% if current_user and current_user.role == 'admin' %}<a class="km-action km-action--admin" href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i><span>مدیریت سایت</span></a>{% endif %}
-      {% if current_user %}<form class="km-action km-action--logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ _csrf_value }}"><button type="submit" class="km-logout-button"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span></button></form>{% endif %}
     </div>
   </div>
   <nav class="km-nav" aria-label="ناوبری فروشگاه"><div class="km-nav-inner">
@@ -60,7 +72,11 @@
     <div class="km-category-mega" role="menu" aria-label="دسته‌بندی کالاها">
       <aside class="km-mega-sidebar">
         <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>همه دسته‌بندی‌ها</span></div>
-        {% for cat in (categories|default([])) %}
+        {% set hidden_store_categories = ['خودرو'] %}
+        {% set hidden_duplicate_categories = ['لپ‌تاپ', 'هدفون', 'تلویزیون', 'ساعت هوشمند'] %}
+        {% set shown_category_names = namespace(items=[]) %}
+        {% for cat in (categories|default([])) if cat.name not in hidden_store_categories and cat.name not in hidden_duplicate_categories and cat.name not in shown_category_names.items %}
+        {% set shown_category_names.items = shown_category_names.items + [cat.name] %}
         <a class="km-mega-side-item{% if loop.first %} is-active{% endif %}" data-mega-target="mega-panel-{{ cat.id }}" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
           <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
           <span>{{ cat.name }}</span><i class="fa-solid fa-chevron-left"></i>
@@ -68,7 +84,7 @@
         {% endfor %}
       </aside>
       <section class="km-mega-content">
-        {% for cat in (categories|default([])) %}
+        {% for cat in (categories|default([])) if cat.name not in hidden_store_categories and cat.name not in hidden_duplicate_categories and cat.name in shown_category_names.items %}
         <div class="km-mega-panel{% if loop.first %} is-active{% endif %}" id="mega-panel-{{ cat.id }}" data-mega-panel="{{ cat.id }}">
           <div class="km-mega-panel-head">
             <div><span>خرید از دسته</span><h3>{{ cat.name }}</h3><p>{{ cat.description }}</p></div>
@@ -106,13 +122,18 @@
   <a class="km-nav-link km-nav-link--hot" href="{{ url_for('home') }}#offers"><i class="fa-solid fa-fire"></i><span>پیشنهادهای ویژه</span></a>
   <a class="km-nav-link" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span></a>
   <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
-  <a class="km-nav-link" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>خودرو و وسایل نقلیه</span></a>
-  <a class="km-nav-link km-nav-link--business" href="{{ url_for('organizations') }}"><i class="fa-solid fa-building"></i><span>سازمان‌ها</span></a>
+  <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
   <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
+  <div class="km-nav-business">
+    <button type="button" class="km-nav-business-trigger" aria-haspopup="true"><i class="fa-solid fa-briefcase"></i><span>کسب‌وکار</span><i class="fa-solid fa-chevron-down"></i></button>
+    <div class="km-nav-business-menu">
+      <a href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span><strong>ثبت فروشگاه</strong><small>فروشنده خریدینو شوید</small></span></a>
+      <a href="{{ url_for('organizations') }}"><i class="fa-solid fa-building"></i><span><strong>خدمات سازمانی</strong><small>خرید و همکاری سازمانی</small></span></a>
+    </div>
+  </div>
   <a class="km-nav-link" href="{{ url_for('features') }}"><i class="fa-solid fa-circle-info"></i><span>راهنمای خرید</span></a>
-  <a class="km-nav-link" href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span>ثبت فروشگاه</span></a>
   {% if current_user %}
-  <a class="km-nav-link km-nav-link--support" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i><span>پیگیری سفارش‌ها</span></a>
+  <a class="km-nav-link km-nav-link--support" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i><span>پیگیری سفارش</span></a>
   {% else %}
   <a class="km-nav-link km-nav-link--support" href="{{ url_for('contact') }}"><i class="fa-solid fa-headset"></i><span>پشتیبانی</span></a>
   {% endif %}

@@ -106,14 +106,45 @@ def register_vehicle_chat(app, db, User, login_required):
         return bool(stored and code and check_password_hash(stored, str(code)))
 
     def send_email(to_email, code):
-        host = os.environ.get("KHARIDINO_SMTP_HOST", "").strip()
-        user = os.environ.get("KHARIDINO_SMTP_USER", "").strip()
-        password = os.environ.get("KHARIDINO_SMTP_PASSWORD", "")
+        # Support both the current KHARIDINO_* names and the SMTP_* names
+        # already documented in .env.example.
+        host = (
+            os.environ.get("KHARIDINO_SMTP_HOST")
+            or os.environ.get("SMTP_HOST")
+            or ""
+        ).strip()
+        user = (
+            os.environ.get("KHARIDINO_SMTP_USER")
+            or os.environ.get("SMTP_USERNAME")
+            or ""
+        ).strip()
+        password = (
+            os.environ.get("KHARIDINO_SMTP_PASSWORD")
+            or os.environ.get("SMTP_PASSWORD")
+            or ""
+        )
         if not host or not user or not password or not to_email:
+            app.logger.error("Vehicle verification email skipped: SMTP is not configured.")
             return False
-        port = int(os.environ.get("KHARIDINO_SMTP_PORT", "587"))
-        sender = os.environ.get("KHARIDINO_SMTP_FROM", user).strip()
-        use_ssl = os.environ.get("KHARIDINO_SMTP_SSL", "0").lower() in {"1", "true", "yes"}
+        try:
+            port = int(
+                os.environ.get("KHARIDINO_SMTP_PORT")
+                or os.environ.get("SMTP_PORT")
+                or "587"
+            )
+        except ValueError:
+            app.logger.error("Vehicle verification email failed: invalid SMTP port.")
+            return False
+        sender = (
+            os.environ.get("KHARIDINO_SMTP_FROM")
+            or os.environ.get("MAIL_FROM")
+            or user
+        ).strip()
+        use_ssl = (
+            os.environ.get("KHARIDINO_SMTP_SSL")
+            or os.environ.get("SMTP_USE_SSL")
+            or "0"
+        ).lower() in {"1", "true", "yes"}
         subject = "کد تأیید حساب خریدینو"
         body = f"کد تأیید ایمیل خریدینو: {code}\nاین کد 10 دقیقه اعتبار دارد."
         try:

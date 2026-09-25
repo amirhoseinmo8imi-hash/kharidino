@@ -1,4 +1,56 @@
 {% extends "base.html" %}
 {% block title %}{{ ad.title }} | خریدینو{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-25-1') }}">{% endblock %}
-{% block content %}<section class="vehicle-detail-page"><a class="vehicle-back" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-arrow-right"></i> بازگشت به آگهی‌ها</a><div class="vehicle-detail-grid"><div class="vehicle-gallery"><div class="vehicle-main-photo">{% if ad.image %}<img src="{{ ad.image if ad.image.startswith('http') else url_for('static', filename=ad.image) }}" alt="{{ ad.title }}">{% else %}<i class="fa-solid fa-car-side"></i>{% endif %}</div>{% if gallery|length>1 %}<div class="vehicle-thumbs">{% for img in gallery %}<img src="{{ img if img.startswith('http') else url_for('static', filename=img) }}" alt="{{ ad.title }}">{% endfor %}</div>{% endif %}</div><div class="vehicle-detail-card"><span class="vehicle-category">{{ ad.category }}</span><h1>{{ ad.title }}</h1><p class="vehicle-location"><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</p><div class="vehicle-price-big">{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}{% if ad.negotiable %}<small>قابل مذاکره</small>{% endif %}</div><div class="vehicle-spec-grid">{% for label,val in [('برند',ad.brand),('مدل',ad.model),('سال',ad.year),('کارکرد',ad.mileage),('سوخت',ad.fuel),('گیربکس',ad.gearbox),('رنگ',ad.body_color),('موتور',ad.engine),('بدنه',ad.accident_status),('فروشنده',ad.seller_type)] %}{% if val %}<div><span>{{ label }}</span><strong>{{ "{:,}".format(val) if label=="کارکرد" else val }}{% if label=="کارکرد" %} کیلومتر{% endif %}</strong></div>{% endif %}{% endfor %}</div><div class="vehicle-contact"><strong>تماس با آگهی‌دهنده</strong><a href="tel:{{ ad.phone }}"><i class="fa-solid fa-phone"></i> {{ ad.phone }}</a></div>{% if current_user and current_user.id==ad.user_id %}<form method="post" action="{{ url_for('vehicle_delete', ad_id=ad.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="vehicle-danger">حذف آگهی</button></form>{% endif %}</div></div><div class="vehicle-description"><h2>توضیحات آگهی</h2><p>{{ ad.description or "توضیحی ثبت نشده است." }}</p></div></section>{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-vehicles.css', v='2026-09-25-3') }}">{% endblock %}
+{% block content %}
+<section class="vehicle-detail-page vehicle-detail-pro">
+  <div class="vehicle-breadcrumb"><a href="{{ url_for('vehicles') }}"><i class="fa-solid fa-arrow-right"></i> خودرو و وسایل نقلیه</a><span>/</span><span>{{ ad.category }}</span></div>
+
+  <div class="vehicle-detail-layout">
+    <div class="vehicle-detail-media">
+      <div class="vehicle-main-photo vehicle-main-photo-pro">
+        {% if ad.image %}<img id="vehicleMainImage" src="{{ ad.image if ad.image.startswith('http') else url_for('static', filename=ad.image) }}" alt="{{ ad.title }}">{% else %}<i class="fa-solid fa-car-side"></i>{% endif %}
+        <button type="button" class="vehicle-photo-count"><i class="fa-regular fa-images"></i> {{ gallery|length if gallery else 1 }} عکس</button>
+      </div>
+      {% if gallery|length > 1 %}
+      <div class="vehicle-thumbs vehicle-thumbs-pro">
+        {% for img in gallery %}<button type="button" class="vehicle-thumb {% if loop.first %}active{% endif %}" onclick="document.getElementById('vehicleMainImage').src=this.dataset.src;document.querySelectorAll('.vehicle-thumb').forEach(x=>x.classList.remove('active'));this.classList.add('active')" data-src="{{ img if img.startswith('http') else url_for('static', filename=img) }}"><img src="{{ img if img.startswith('http') else url_for('static', filename=img) }}" alt="{{ ad.title }}"></button>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="vehicle-under-media"><span><i class="fa-regular fa-clock"></i> آگهی {{ ad.created_at.strftime('%Y/%m/%d') if ad.created_at else '' }}</span><span><i class="fa-solid fa-shield-halved"></i> آگهی تأیید شده</span></div>
+    </div>
+
+    <div class="vehicle-detail-main">
+      <div class="vehicle-detail-heading">
+        <div><span class="vehicle-detail-category">{{ ad.category }}</span><h1>{{ ad.title }}</h1><p><i class="fa-solid fa-location-dot"></i> {{ ad.city }}{% if ad.district %}، {{ ad.district }}{% endif %}</p></div>
+        <div class="vehicle-detail-actions"><button type="button" onclick="this.classList.toggle('active')"><i class="fa-regular fa-heart"></i><span>ذخیره</span></button><button type="button" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.href)"><i class="fa-solid fa-share-nodes"></i><span>اشتراک</span></button></div>
+      </div>
+
+      <div class="vehicle-price-panel"><span>قیمت</span><strong>{% if ad.price %}{{ "{:,}".format(ad.price) }} تومان{% else %}توافقی{% endif %}</strong>{% if ad.negotiable %}<small><i class="fa-solid fa-circle-check"></i> قابل مذاکره</small>{% endif %}</div>
+
+      <div class="vehicle-spec-box">
+        <div class="vehicle-spec-title">مشخصات</div>
+        <div class="vehicle-spec-grid vehicle-spec-grid-pro">
+          {% for label,val in [('برند',ad.brand),('مدل',ad.model),('سال',ad.year),('کارکرد',ad.mileage),('سوخت',ad.fuel),('گیربکس',ad.gearbox),('رنگ',ad.body_color),('موتور',ad.engine),('وضعیت بدنه',ad.accident_status),('فروشنده',ad.seller_type)] %}
+            {% if val %}<div><span>{{ label }}</span><strong>{{ "{:,}".format(val) if label=="کارکرد" else val }}{% if label=="کارکرد" %} کیلومتر{% endif %}</strong></div>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="vehicle-seller-box">
+        <div class="vehicle-seller-avatar"><i class="fa-solid fa-user"></i></div>
+        <div class="vehicle-seller-info"><span>فروشنده</span><strong>{{ ad.seller_type }}</strong><small><i class="fa-solid fa-circle-check"></i> عضو خریدینو</small></div>
+        <a class="vehicle-call-btn" href="tel:{{ ad.phone }}"><i class="fa-solid fa-phone"></i> تماس</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="vehicle-detail-bottom">
+    <article class="vehicle-description vehicle-description-pro"><div class="vehicle-content-title"><i class="fa-solid fa-align-right"></i><h2>توضیحات آگهی</h2></div><p>{{ ad.description or "توضیحی برای این آگهی ثبت نشده است." }}</p></article>
+    <aside class="vehicle-safety-box"><i class="fa-solid fa-shield-halved"></i><div><strong>نکات ایمنی خرید</strong><p>قبل از معامله، خودرو و مدارک را بررسی کن و از پرداخت بیعانه بدون اطمینان از فروشنده خودداری کن.</p></div></aside>
+  </div>
+
+  {% if current_user and current_user.id==ad.user_id %}
+  <form class="vehicle-owner-actions" method="post" action="{{ url_for('vehicle_delete', ad_id=ad.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="vehicle-danger" type="submit"><i class="fa-solid fa-trash"></i> حذف آگهی</button></form>
+  {% endif %}
+</section>
+{% endblock %}

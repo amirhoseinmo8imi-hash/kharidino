@@ -14,6 +14,10 @@
 <div class="kh-profile-note">برای امنیت، اطلاعات حساس مثل رمز عبور، شماره کارت و مدارک هویتی در این صفحه ذخیره نمی‌شوند.</div>
 </aside>
 <main>
+<div class="kh-verification-profile-card">
+  <div><div><span class="kh-verification-label">امنیت حساب برای چت خودرو</span><strong>{% if vehicle_chat_enabled %}<i class="fa-solid fa-circle-check"></i> چت فعال است{% else %}تأیید تلفن و ایمیل لازم است{% endif %}</strong></div><p>{% if vehicle_chat_enabled %}می‌توانی در آگهی‌های خودرو و وسایل نقلیه با فروشنده چت کنی.{% else %}برای فعال شدن چت، هر دو مورد را تأیید کن.{% endif %}</p></div>
+  <a class="kh-profile-btn {% if vehicle_chat_enabled %}primary{% endif %}" href="{{ url_for('vehicle_verification') }}">{% if vehicle_chat_enabled %}مشاهده وضعیت{% else %}تأیید تلفن و ایمیل{% endif %}</a>
+</div>
 <div class="kh-stats"><a class="kh-stat" href="{{ url_for('my_orders') }}"><strong>—</strong><span>سفارش‌های من</span></a><a class="kh-stat" href="{{ url_for('favorites') }}"><strong>{{ favorite_ids|length }}</strong><span>علاقه‌مندی‌ها</span></a><a class="kh-stat" href="{{ url_for('compare') }}"><strong>{{ compare_count }}</strong><span>مقایسه‌ها</span></a></div>
 <form class="kh-profile-card" method="post" action="{{ url_for('update_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><h2 class="kh-section-title">اطلاعات شخصی</h2><div class="kh-form-grid">
 <div class="kh-field"><label>نام</label><input name="first_name" value="{{ user_profile.first_name or '' }}" maxlength="120" autocomplete="given-name"></div><div class="kh-field"><label>نام خانوادگی</label><input name="last_name" value="{{ user_profile.last_name or '' }}" maxlength="120" autocomplete="family-name"></div>

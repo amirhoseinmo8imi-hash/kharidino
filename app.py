@@ -683,6 +683,41 @@ def inject_globals():
 
 
 # =========================================================
+# CSRF PROTECTION
+# =========================================================
+
+def csrf_token():
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.before_request
+def validate_csrf():
+    if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+        return None
+
+    submitted = (
+        request.form.get("csrf_token")
+        or request.headers.get("X-CSRF-Token")
+        or ""
+    )
+    expected = session.get("csrf_token") or ""
+
+    if not expected or not submitted or not secrets.compare_digest(
+        str(submitted), str(expected)
+    ):
+        abort(400, description="CSRF token is missing or invalid.")
+
+    return None
+
+
+# =========================================================
 # AUTH HELPERS
 # =========================================================
 
@@ -1747,6 +1782,80 @@ def register():
 # =========================================================
 # LOGIN
 # =========================================================
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        if not name or not email or len(password) < 8:
+            flash("نام، ایمیل و رمز عبور حداقل ۸ کاراکتری الزامی است.", "warning")
+            return render_template("auth.html", mode="register")
+
+        if User.query.filter_by(email=email).first():
+            flash("این ایمیل قبلاً ثبت شده است.", "warning")
+            return render_template("auth.html", mode="register")
+
+        user = User(
+            name=name,
+            email=email,
+            password=generate_password_hash(password),
+            role="user",
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        session["user_id"] = user.id
+        session.modified = True
+        flash("حساب کاربری با موفقیت ساخته شد. خوش آمدی 👋", "success")
+        return redirect(url_for("home"))
+
+    return render_template("auth.html", mode="register")
+
+
+@app.route("/seller/register", methods=["GET", "POST"])
+def seller_register():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        store_name = request.form.get("store_name", "").strip()
+        website = request.form.get("website", "").strip()
+
+        if not name or not email or len(password) < 8 or not store_name:
+            flash("نام، ایمیل، رمز عبور حداقل ۸ کاراکتری و نام فروشگاه الزامی است.", "warning")
+            return render_template("seller_register.html")
+
+        if User.query.filter_by(email=email).first():
+            flash("این ایمیل قبلاً ثبت شده است. از صفحه ورود وارد شوید.", "warning")
+            return render_template("seller_register.html")
+
+        user = User(
+            name=name,
+            email=email,
+            password=generate_password_hash(password),
+            role="seller",
+        )
+        db.session.add(user)
+        db.session.flush()
+
+        store = Store(
+            name=store_name,
+            website=website,
+            active=True,
+        )
+        db.session.add(store)
+        db.session.commit()
+
+        session["user_id"] = user.id
+        session.modified = True
+        flash("درخواست فروشندگی و حساب شما ثبت شد. فروشگاه برای تکمیل تنظیمات آماده است.", "success")
+        return redirect(url_for("seller_register"))
+
+    return render_template("seller_register.html")
+
 
 @app.route(
     "/login",

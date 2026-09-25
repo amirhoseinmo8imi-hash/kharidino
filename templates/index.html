@@ -23,7 +23,7 @@
       <div class="kh-hero-products">
         {% for product in products[:3] %}
         <a class="kh-hero-product kh-hero-product-{{ loop.index }}" href="{{ url_for('product_detail', product_id=product.id) }}">
-          <div>{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="eager">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>
+          <div><img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="eager" onerror="this.onerror=null;this.src='{{ product_image_url(product) }}';"></div>
           <span>{{ product.name }}</span>
           <strong>{{ lowest_price(product)|money }} <small>تومان</small></strong>
         </a>
@@ -189,7 +189,7 @@
       <article class="kdg-card-wrap kdg-card-wrap--deal">
         <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-deal-card">
           <div class="kdg-product-image">
-            {% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}
+            <img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="lazy">
             <b>پیشنهاد ویژه</b>
           </div>
           <small>{% if product.category %}{{ product.category.name }}{% else %}محصول{% endif %}</small>
@@ -212,7 +212,7 @@
       {% for product in products[:10] %}
       <article class="kdg-card-wrap">
         <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
-          <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>
+          <div class="kdg-product-image"><img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="lazy"></div>
           <small>{% if product.category %}{{ product.category.name }}{% else %}محصول خریدینو{% endif %}</small>
           <h3>{{ product.name }}</h3>
           <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>
@@ -242,7 +242,7 @@
       {% for product in products %}
       <article class="kdg-card-wrap">
         <a href="{{ url_for('product_detail', product_id=product.id) }}" class="kdg-product">
-          <div class="kdg-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid fa-box-open"></i>{% endif %}</div>
+          <div class="kdg-product-image"><img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="lazy"></div>
           <small>{% if product.category %}{{ product.category.name }}{% else %}محصول خریدینو{% endif %}</small>
           <h3>{{ product.name }}</h3>
           <div class="kdg-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>

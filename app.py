@@ -1063,6 +1063,8 @@ def lowest_price(product):
     except (TypeError, ValueError):
         return 0
 
+app.jinja_env.globals["lowest_price"] = lowest_price
+
 # =========================================================
 # REVIEWS
 # =========================================================

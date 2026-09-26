@@ -3245,6 +3245,14 @@ def admin_business_profile():
     return render_template("admin_business_profile.html", fields=fields, profile=_company_profile())
 
 
+@app.route("/orders/<int:order_id>")
+@login_required
+def order_detail(order_id):
+    order = db.session.get(Order, order_id)
+    if not order or order.user_id != session["user_id"]:
+        abort(404)
+    return render_template("order_detail.html", order=order)
+
 @app.route("/orders/<int:order_id>/invoice")
 @login_required
 def order_invoice(order_id):

@@ -1311,6 +1311,51 @@ def money(value):
         return "0"
 
 
+
+# =========================================================
+# SMART SEARCH HELPERS
+# =========================================================
+
+_PERSIAN_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
+_ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
+def normalize_search_text(value):
+    return (value or "").translate(_PERSIAN_DIGITS).translate(_ARABIC_DIGITS).strip()
+
+def parse_search_intent(value):
+    """Parse common Persian shopping price intents deterministically."""
+    raw = normalize_search_text(value)
+    lower = raw.lower()
+    import re
+
+    def amount(number, unit):
+        try:
+            n = float(number.replace(",", "").replace("٬", ""))
+        except (TypeError, ValueError):
+            return None
+        unit = (unit or "").lower()
+        if "میلیون" in unit:
+            n *= 1_000_000
+        elif "هزار" in unit:
+            n *= 1_000
+        return int(n)
+
+    nums = re.findall(r"(\\d+(?:[.,]\\d+)?)\\s*(میلیون|هزار)?", lower)
+    values = [amount(n, u) for n, u in nums]
+    values = [v for v in values if v is not None and v > 0]
+    min_price = max_price = None
+    if values:
+        if re.search(r"(زیر|کمتر از|حداکثر|تا)", lower):
+            max_price = values[-1]
+        elif re.search(r"(بالای|بیشتر از|حداقل|از)", lower) and len(values) == 1:
+            min_price = values[-1]
+        elif len(values) >= 2:
+            min_price, max_price = sorted(values[-2:])
+    cleaned = re.sub(r"(زیر|کمتر از|بیشتر از|بالای|حداکثر|حداقل|بین|میلیون|هزار|تومان|تا)", " ", raw)
+    cleaned = re.sub(r"\\d+(?:[.,]\\d+)?", " ", cleaned)
+    cleaned = re.sub(r"\\s+", " ", cleaned).strip()
+    return {"original": value or "", "query": cleaned, "min_price": min_price, "max_price": max_price}
+
 # =========================================================
 # HOME
 # =========================================================
@@ -1319,13 +1364,15 @@ def money(value):
 def home():
 
     q = request.args.get("q", "").strip()
+    intent = parse_search_intent(q)
+    search_q = intent["query"] or q
     sort = request.args.get("sort", "newest").strip()
     category_id = request.args.get("category", "").strip()
 
     query = Product.query.filter_by(active=True)
 
-    if q:
-        search = f"%{q}%"
+    if search_q:
+        search = f"%{search_q}%"
         query = query.filter(
             db.or_(
                 Product.name.ilike(search),
@@ -1341,6 +1388,8 @@ def home():
             category_id = ""
 
     products = query.all()
+    if intent["min_price"] is not None or intent["max_price"] is not None:
+        products = [p for p in products if (intent["min_price"] is None or lowest_price(p) >= intent["min_price"]) and (intent["max_price"] is None or lowest_price(p) <= intent["max_price"])]
 
     # Sort by the effective price shown to users, not the stale base price.
     if sort == "price_low":
@@ -1728,6 +1777,18 @@ def product_detail(product_id):
         product
     )
 
+    related_products = (
+        Product.query
+        .filter(
+            Product.active.is_(True),
+            Product.id != product.id,
+            Product.category_id == product.category_id,
+        )
+        .order_by(Product.id.desc())
+        .limit(8)
+        .all()
+    )
+
     # -----------------------------------------------------
     # DEBUG
     # -----------------------------------------------------
@@ -1801,7 +1862,8 @@ def product_detail(product_id):
         product=product,
         offers=offers,
         lowest_price=lowest,
-        rating=rating
+        rating=rating,
+        related_products=related_products
     )
 
 # =========================================================

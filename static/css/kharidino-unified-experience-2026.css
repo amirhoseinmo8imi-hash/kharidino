@@ -920,3 +920,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   html{scroll-behavior:auto}
   .kdg-card-wrap,.kd-offer-card,.kh-related-card{transition:none!important}
 }
+
+
+/* Final storefront stacking contract. */
+.kh-global-rail,.kh-trust-strip,.site-content{position:relative;z-index:1}
+.km-topbar{z-index:5000}

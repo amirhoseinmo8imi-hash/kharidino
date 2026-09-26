@@ -22,9 +22,15 @@
   if(collapse) collapse.addEventListener('click',function(){
     if(window.innerWidth<=860){ closeMobile(); return; }
     sidebar.classList.toggle('is-collapsed');
+    const layout=document.querySelector('.admin-layout');
+    if(layout) layout.style.gridTemplateColumns=sidebar.classList.contains('is-collapsed')?'86px minmax(0,1fr)':'292px minmax(0,1fr)';
     localStorage.setItem('kharidino-admin-collapsed',sidebar.classList.contains('is-collapsed')?'1':'0');
   });
-  if(localStorage.getItem('kharidino-admin-collapsed')==='1' && window.innerWidth>860 && sidebar) sidebar.classList.add('is-collapsed');
+  if(localStorage.getItem('kharidino-admin-collapsed')==='1' && window.innerWidth>860 && sidebar){
+    sidebar.classList.add('is-collapsed');
+    const layout=document.querySelector('.admin-layout');
+    if(layout) layout.style.gridTemplateColumns='86px minmax(0,1fr)';
+  }
 
   const navLinks=[...document.querySelectorAll('[data-admin-target]')];
   const sections=[...document.querySelectorAll('.admin-section[id]')];

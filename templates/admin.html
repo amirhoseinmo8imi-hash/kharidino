@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}مدیریت | {{ site_name }}{% endblock %}
+{% block title %}مدیریت | {{ site_name }}    <script src="{{ url_for('static', filename='js/kharidino-admin-2026.js', v='2026-09-26-1') }}" defer></script>
+{% endblock %}
 
 {% block content %}
 
@@ -10,95 +11,56 @@
          SIDEBAR
     ====================================================== -->
 
-    <aside class="admin-sidebar">
-
-        <div class="admin-brand">
-            <div class="admin-brand-icon">
-                <i class="fa-solid fa-gauge-high"></i>
-            </div>
-
-            <div>
-                <strong>پنل مدیریت</strong>
-                <small>{{ site_name }}</small>
-            </div>
+    <aside class="admin-sidebar" aria-label="ناوبری مدیریت">
+        <div class="admin-sidebar-head">
+            <a class="admin-brand admin-brand-pro" href="{{ url_for('admin') }}" aria-label="داشبورد مدیریت">
+                <span class="admin-brand-mark"><i class="fa-solid fa-bag-shopping"></i></span>
+                <span class="admin-brand-copy"><strong>خریدینو</strong><small>مرکز فرمان مدیریت</small></span>
+            </a>
+            <button type="button" class="admin-sidebar-collapse" data-admin-collapse aria-label="جمع کردن منوی مدیریت">
+                <i class="fa-solid fa-angles-right"></i>
+            </button>
         </div>
 
+        <div class="admin-store-status">
+            <span class="admin-status-pulse"></span>
+            <div><strong>فروشگاه آنلاین</strong><small>سیستم فعال و آماده مدیریت</small></div>
+            <span class="admin-status-dot" title="Online"></span>
+        </div>
 
-        <nav class="admin-nav">
+        <nav class="admin-nav admin-nav-pro">
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">نمای کلی</span>
+                <a href="#dashboard" class="is-active" data-admin-target="dashboard"><i class="fa-solid fa-grid-2"></i><span>داشبورد</span><kbd>01</kbd></a>
+                <a href="#orders-admin" data-admin-target="orders-admin"><i class="fa-solid fa-bag-shopping"></i><span>سفارش‌ها</span>{% if stats.pending_orders %}<b class="admin-nav-badge">{{ stats.pending_orders }}</b>{% endif %}</a>
+                <a href="#products-admin" data-admin-target="products-admin"><i class="fa-solid fa-box-open"></i><span>محصولات</span></a>
+                <a href="#offers-admin" data-admin-target="offers-admin"><i class="fa-solid fa-tags"></i><span>قیمت و پیشنهادها</span>{% if stats.out_of_stock_offers %}<b class="admin-nav-badge admin-nav-badge--warning">{{ stats.out_of_stock_offers }}</b>{% endif %}</a>
+            </div>
 
-            <a href="#dashboard">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>داشبورد</span>
-            </a>
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">فروشگاه</span>
+                <a href="#categories-admin" data-admin-target="categories-admin"><i class="fa-solid fa-layer-group"></i><span>دسته‌بندی‌ها</span></a>
+                <a href="#stores-admin" data-admin-target="stores-admin"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+                <a href="{{ url_for('admin_organization_requests') }}"><i class="fa-solid fa-building"></i><span>درخواست‌های سازمانی</span>{% if stats.pending_org_requests %}<b class="admin-nav-badge">{{ stats.pending_org_requests }}</b>{% endif %}</a>
+            </div>
 
-            <a href="#products-admin">
-                <i class="fa-solid fa-box"></i>
-                <span>محصولات</span>
-            </a>
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">مشتریان</span>
+                <a href="#users-admin" data-admin-target="users-admin"><i class="fa-solid fa-users"></i><span>کاربران</span></a>
+                <a href="{{ url_for('admin_business_profile') }}"><i class="fa-solid fa-file-invoice"></i><span>حقوقی و فاکتور</span></a>
+            </div>
 
-            <a href="#categories-admin">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>دسته‌بندی‌ها</span>
-            </a>
-
-            <a href="#stores-admin">
-                <i class="fa-solid fa-store"></i>
-                <span>فروشگاه‌ها</span>
-            </a>
-
-            <a href="#offers-admin">
-                <i class="fa-solid fa-tags"></i>
-                <span>قیمت‌ها</span>
-            </a>
-
-            <a href="#users-admin">
-                <i class="fa-solid fa-users"></i>
-                <span>کاربران</span>
-            </a>
-
-            <a href="#orders-admin">
-                <i class="fa-solid fa-bag-shopping"></i>
-                <span>سفارش‌ها</span>
-            </a>
-
-            <a href="{{ url_for('admin_organization_requests') }}">
-                <i class="fa-solid fa-file-invoice-dollar"></i>
-                <span>درخواست‌های سازمانی</span>
-            </a>
-
-            <a href="#appearance-admin">
-                <i class="fa-solid fa-palette"></i>
-                <span>ظاهر سایت</span>
-            </a>
-
-            <a href="{{ url_for('admin_business_profile') }}">
-                <i class="fa-solid fa-file-invoice"></i>
-                <span>اطلاعات حقوقی و فاکتور</span>
-            </a>
-
-            <div class="admin-nav-group-label">سیستم</div>
-            <a href="#settings">
-                <i class="fa-solid fa-gear"></i>
-                <span>تنظیمات سایت</span>
-            </a>
-
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">سایت</span>
+                <a href="#appearance-admin" data-admin-target="appearance-admin"><i class="fa-solid fa-palette"></i><span>ظاهر و رسانه</span></a>
+                <a href="#settings" data-admin-target="settings"><i class="fa-solid fa-sliders"></i><span>تنظیمات</span></a>
+            </div>
         </nav>
 
-
-        <div class="admin-sidebar-bottom">
-
-            <a href="{{ url_for('home') }}">
-                <i class="fa-solid fa-arrow-right"></i>
-                بازگشت به سایت
-            </a>
-
-            <a href="{{ url_for('logout') }}">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                خروج
-            </a>
-
+        <div class="admin-sidebar-bottom admin-sidebar-bottom-pro">
+            <a href="{{ url_for('home') }}"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>مشاهده فروشگاه</span></a>
+            <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span>خروج امن</span></a>
         </div>
-
     </aside>
 
 
@@ -107,6 +69,32 @@
     ====================================================== -->
 
     <div class="admin-main container">
+        <div class="admin-mobile-backdrop" data-admin-backdrop></div>
+        <header class="admin-topbar">
+            <div class="admin-topbar-left">
+                <button type="button" class="admin-mobile-menu" data-admin-mobile-menu aria-label="باز کردن منوی مدیریت"><i class="fa-solid fa-bars-staggered"></i></button>
+                <div class="admin-breadcrumb"><span>مدیریت</span><i class="fa-solid fa-chevron-left"></i><strong data-admin-breadcrumb>داشبورد</strong></div>
+            </div>
+            <div class="admin-topbar-actions">
+                <button type="button" class="admin-top-action" data-admin-search-toggle title="جستجوی مدیریت"><i class="fa-solid fa-magnifying-glass"></i><span>جستجو</span><kbd>⌘ K</kbd></button>
+                <button type="button" class="admin-top-action" data-admin-theme title="حالت کم‌نور"><i class="fa-solid fa-moon"></i></button>
+                <a class="admin-top-action admin-top-site" href="{{ url_for('home') }}" title="مشاهده سایت"><i class="fa-solid fa-globe"></i></a>
+                <div class="admin-top-user">
+                    <span class="admin-avatar">{{ current_user.name[:1]|upper }}</span>
+                    <span><strong>{{ current_user.name }}</strong><small>مدیر سیستم</small></span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-search-panel" data-admin-search-panel hidden>
+            <div class="admin-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" data-admin-search-input placeholder="در پنل مدیریت جستجو کن؛ مثلاً سفارش، محصول، کاربر..." autocomplete="off">
+                <kbd>ESC</kbd>
+            </div>
+            <div class="admin-search-results" data-admin-search-results></div>
+        </div>
 
 
         <!-- =================================================
@@ -176,6 +164,32 @@
 
                 {% endfor %}
 
+            </div>
+
+            <div class="admin-welcome-grid">
+                <div class="admin-welcome-copy">
+                    <span class="section-kicker">مرکز فرمان خریدینو</span>
+                    <h2>امروز چه چیزی را مدیریت می‌کنیم؟</h2>
+                    <p>وضعیت فروش، سفارش‌ها، موجودی و مشتری‌ها را از یک نمای واحد کنترل کن.</p>
+                    <div class="admin-welcome-actions">
+                        <a href="#products-admin" class="admin-hero-btn admin-hero-btn--primary"><i class="fa-solid fa-plus"></i> محصول جدید</a>
+                        <a href="#orders-admin" class="admin-hero-btn"><i class="fa-solid fa-arrow-left"></i> بررسی سفارش‌ها</a>
+                    </div>
+                </div>
+                <div class="admin-welcome-visual">
+                    <div class="admin-orbit admin-orbit-1"></div><div class="admin-orbit admin-orbit-2"></div>
+                    <span class="admin-orbit-icon"><i class="fa-solid fa-chart-simple"></i></span>
+                    <span class="admin-floating-chip chip-one"><i class="fa-solid fa-arrow-trend-up"></i> فروش</span>
+                    <span class="admin-floating-chip chip-two"><i class="fa-solid fa-box"></i> کالا</span>
+                    <span class="admin-floating-chip chip-three"><i class="fa-solid fa-users"></i> مشتری</span>
+                </div>
+            </div>
+
+            <div class="admin-insight-strip">
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-truck-fast"></i></span><div><small>سفارش‌های در انتظار</small><strong>{{ stats.pending_orders }}</strong></div><a href="#orders-admin">بررسی</a></div>
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-circle-check"></i></span><div><small>نرخ تکمیل سفارش</small><strong>{{ stats.completion_rate }}٪</strong></div><a href="#orders-admin">گزارش</a></div>
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-user-group"></i></span><div><small>کاربران عادی</small><strong>{{ stats.active_users }}</strong></div><a href="#users-admin">مشاهده</a></div>
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-building"></i></span><div><small>درخواست سازمانی</small><strong>{{ stats.pending_org_requests }}</strong></div><a href="{{ url_for('admin_organization_requests') }}">بررسی</a></div>
             </div>
 
             <div class="admin-command-bar">

@@ -3458,6 +3458,18 @@ def order_invoice(order_id):
     return render_template("invoice.html", invoice=invoice, order=order, company=_company_profile())
 
 
+
+@app.route("/admin/orders/<int:order_id>/invoice")
+@admin_required
+def admin_order_invoice(order_id):
+    order = db.session.get(Order, order_id)
+    if not order:
+        abort(404)
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        abort(404)
+    return render_template("invoice.html", invoice=invoice, order=order, company=_company_profile())
+
 @app.route("/orders/<int:order_id>/invoice/pdf")
 @login_required
 def order_invoice_pdf(order_id):

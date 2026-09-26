@@ -46,7 +46,8 @@
             <div class="admin-nav-group">
                 <span class="admin-nav-label">مشتریان</span>
                 <a href="#users-admin" data-admin-target="users-admin"><i class="fa-solid fa-users"></i><span>کاربران</span></a>
-                <a href="{{ url_for('admin_business_profile') }}"><i class="fa-solid fa-file-invoice"></i><span>حقوقی و فاکتور</span></a>
+                <a href="#invoices-admin" data-admin-target="invoices-admin"><i class="fa-solid fa-file-invoice"></i><span>فاکتورها</span>{% if stats.invoices %}<b class="admin-nav-badge">{{ stats.invoices }}</b>{% endif %}</a>
+                <a href="{{ url_for('admin_business_profile') }}"><i class="fa-solid fa-building-columns"></i><span>اطلاعات حقوقی</span></a>
             </div>
 
             <div class="admin-nav-group">
@@ -254,6 +255,43 @@
 
         </section>
 
+
+        <!-- =================================================
+             INVOICES
+        ================================================== -->
+        <section id="invoices-admin" class="admin-section">
+            <div class="section-head">
+                <div>
+                    <span class="section-kicker">مالی و اسناد</span>
+                    <h2>مرکز فاکتورهای خریدینو</h2>
+                    <p>صدور، مشاهده، دانلود و ارسال فاکتور مشتریان از یک محل.</p>
+                </div>
+                <div class="invoice-admin-summary"><strong>{{ stats.invoices }}</strong><span>فاکتور ثبت‌شده</span></div>
+            </div>
+            <div class="admin-card invoice-admin-card">
+                <div class="invoice-admin-head">
+                    <div><i class="fa-solid fa-file-circle-check"></i><div><strong>فاکتورهای اخیر</strong><small>برای صدور فاکتور، سفارش مربوطه را انتخاب کن.</small></div></div>
+                    <a class="btn" href="#orders-admin"><i class="fa-solid fa-bag-shopping"></i> رفتن به سفارش‌ها</a>
+                </div>
+                <div class="invoice-admin-table">
+                    <div class="invoice-admin-row invoice-admin-row--head"><span>شماره</span><span>خریدار</span><span>مبلغ</span><span>وضعیت</span><span>عملیات</span></div>
+                    {% for inv in invoices %}
+                    <div class="invoice-admin-row">
+                        <span><strong>{{ inv.invoice_number }}</strong><small>{{ inv.created_at.strftime('%Y/%m/%d') if inv.created_at else '—' }}</small></span>
+                        <span><strong>{{ inv.buyer_name }}</strong><small>{{ inv.buyer_phone or '—' }}</small></span>
+                        <span><strong>{{ inv.total|money }}</strong><small>تومان</small></span>
+                        <span><em class="invoice-status-pill">{{ inv.status }}</em></span>
+                        <span class="invoice-admin-actions">
+                            <a class="btn" href="{{ url_for('admin_order_invoice', order_id=inv.order_id) }}"><i class="fa-solid fa-eye"></i> مشاهده</a>
+                            <a class="btn" href="{{ url_for('order_invoice_pdf', order_id=inv.order_id) }}"><i class="fa-solid fa-download"></i> PDF</a>
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="invoice-admin-empty"><i class="fa-solid fa-file-circle-plus"></i><strong>هنوز فاکتوری صادر نشده</strong><span>از بخش سفارش‌ها اولین فاکتور را صادر کن.</span><a class="btn btn-primary" href="#orders-admin">مشاهده سفارش‌ها</a></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
 
         <!-- =================================================
              SITE SETTINGS

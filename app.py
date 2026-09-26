@@ -1678,16 +1678,22 @@ def product_detail(product_id):
 
         if text:
 
-            review = Review(
+            review = Review.query.filter_by(
                 product_id=product.id,
-                user_id=session["user_id"],
-                rating=rating,
-                text=text
-            )
+                user_id=session["user_id"]
+            ).first()
 
-            db.session.add(
-                review
-            )
+            if review:
+                review.rating = rating
+                review.text = text
+            else:
+                review = Review(
+                    product_id=product.id,
+                    user_id=session["user_id"],
+                    rating=rating,
+                    text=text
+                )
+                db.session.add(review)
 
             db.session.commit()
 

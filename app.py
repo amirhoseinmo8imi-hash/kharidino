@@ -3,6 +3,7 @@ from email.message import EmailMessage
 import os
 import secrets
 import uuid
+from io import BytesIO
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
@@ -18,6 +19,7 @@ from flask import (
     flash,
     abort,
     jsonify,
+    send_file,
 )
 
 from flask_sqlalchemy import SQLAlchemy
@@ -974,6 +976,186 @@ def send_kharidino_email(to_email, subject, body):
     except Exception:
         app.logger.exception("Kharidino SMTP notification failed")
         return False
+
+
+def _invoice_pdf_bytes(invoice, order, company):
+    """Build a printable Persian invoice PDF in memory."""
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+        from reportlab.lib.units import mm
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        import arabic_reshaper
+        from bidi.algorithm import get_display
+    except ImportError as exc:
+        raise RuntimeError("برای PDF فاکتور باید پکیج‌های reportlab، arabic-reshaper و python-bidi نصب باشند.") from exc
+
+    def rtl(value):
+        text = str(value or "—")
+        return get_display(arabic_reshaper.reshape(text))
+
+    font_candidates = [
+        os.path.join(os.environ.get("WINDIR", r"C:\\Windows"), "Fonts", "tahoma.ttf"),
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed.ttf",
+    ]
+    font_path = next((p for p in font_candidates if os.path.exists(p)), None)
+    if not font_path:
+        raise RuntimeError("فونت فارسی مناسب برای ساخت PDF روی سرور پیدا نشد.")
+    pdfmetrics.registerFont(TTFont("KharidinoRTL", font_path))
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4, rightMargin=14*mm, leftMargin=14*mm,
+        topMargin=14*mm, bottomMargin=14*mm,
+        title=f"فاکتور {invoice.invoice_number}",
+        author="Kharidino",
+    )
+    styles = getSampleStyleSheet()
+    body = ParagraphStyle("rtl", parent=styles["Normal"], fontName="KharidinoRTL",
+                          fontSize=9.5, leading=14, alignment=TA_RIGHT)
+    title = ParagraphStyle("title", parent=body, fontSize=18, leading=23, alignment=TA_CENTER)
+    small = ParagraphStyle("small", parent=body, fontSize=8, leading=11)
+
+    story = [
+        Paragraph(rtl("خریدینو"), title),
+        Paragraph(rtl("فاکتور فروش"), title),
+        Spacer(1, 5*mm),
+    ]
+    meta = [
+        [Paragraph(rtl("شماره فاکتور"), body), Paragraph(rtl(invoice.invoice_number), body),
+         Paragraph(rtl("تاریخ صدور"), body), Paragraph(rtl(invoice.created_at.strftime("%Y/%m/%d") if invoice.created_at else "—"), body)],
+        [Paragraph(rtl("خریدار"), body), Paragraph(rtl(invoice.buyer_name), body),
+         Paragraph(rtl("تلفن"), body), Paragraph(rtl(invoice.buyer_phone), body)],
+        [Paragraph(rtl("نشانی"), body), Paragraph(rtl(invoice.buyer_address), body),
+         Paragraph(rtl("وضعیت"), body), Paragraph(rtl(invoice.status), body)],
+    ]
+    meta_table = Table(meta, colWidths=[25*mm, 65*mm, 25*mm, 65*mm], repeatRows=0)
+    meta_table.setStyle(TableStyle([
+        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
+        ("GRID",(0,0),(-1,-1),0.4,colors.HexColor("#e5e7eb")),
+        ("BACKGROUND",(0,0),(0,-1),colors.HexColor("#f8fafc")),
+        ("BACKGROUND",(2,0),(2,-1),colors.HexColor("#f8fafc")),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+        ("RIGHTPADDING",(0,0),(-1,-1),6),
+        ("LEFTPADDING",(0,0),(-1,-1),6),
+        ("TOPPADDING",(0,0),(-1,-1),6),
+        ("BOTTOMPADDING",(0,0),(-1,-1),6),
+    ]))
+    story += [meta_table, Spacer(1, 7*mm)]
+
+    rows = [[rtl("ردیف"), rtl("شرح کالا / خدمت"), rtl("تعداد"), rtl("مبلغ واحد"), rtl("مبلغ کل")]]
+    for idx, item in enumerate(order.items, 1):
+        rows.append([
+            rtl(idx), rtl(item.product_name), rtl(item.quantity),
+            rtl(f"{item.price:,}"), rtl(f"{item.price * item.quantity:,}")
+        ])
+    table = Table(rows, colWidths=[14*mm, 80*mm, 18*mm, 35*mm, 38*mm], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
+        ("FONTSIZE",(0,0),(-1,-1),8.5),
+        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#f1f5f9")),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.HexColor("#111827")),
+        ("GRID",(0,0),(-1,-1),0.4,colors.HexColor("#dbe2ea")),
+        ("ALIGN",(0,0),(-1,-1),"RIGHT"),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+        ("TOPPADDING",(0,0),(-1,-1),6),
+        ("BOTTOMPADDING",(0,0),(-1,-1),6),
+    ]))
+    story += [table, Spacer(1, 6*mm)]
+
+    totals = [
+        [Paragraph(rtl("جمع کالاها"), body), Paragraph(rtl(f"{invoice.subtotal:,} تومان"), body)],
+        [Paragraph(rtl("تخفیف"), body), Paragraph(rtl(f"{invoice.discount:,} تومان"), body)],
+        [Paragraph(rtl("مالیات و عوارض"), body), Paragraph(rtl(f"{invoice.tax:,} تومان"), body)],
+        [Paragraph(rtl("مبلغ نهایی"), body), Paragraph(rtl(f"{invoice.total:,} تومان"), body)],
+    ]
+    totals_table = Table(totals, colWidths=[95*mm, 90*mm])
+    totals_table.setStyle(TableStyle([
+        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
+        ("GRID",(0,0),(-1,-1),0.4,colors.HexColor("#e5e7eb")),
+        ("BACKGROUND",(0,3),(-1,3),colors.HexColor("#fce7f3")),
+        ("FONTNAME",(0,3),(-1,3),"KharidinoRTL"),
+        ("FONTSIZE",(0,3),(-1,3),11),
+        ("TOPPADDING",(0,0),(-1,-1),7),
+        ("BOTTOMPADDING",(0,0),(-1,-1),7),
+    ]))
+    story += [totals_table, Spacer(1, 8*mm),
+              Paragraph(rtl(company.get("legal_name") or "خریدینو"), body),
+              Paragraph(rtl("این فاکتور به صورت الکترونیکی صادر شده است."), small)]
+    doc.build(story)
+    return buffer.getvalue()
+
+
+def _send_invoice_email(invoice, order, company, pdf_bytes):
+    recipient = (order.user.email if order.user else "").strip()
+    if not recipient:
+        return False
+
+    items_html = "".join(
+        f"<tr><td style='padding:10px;border-bottom:1px solid #eee'>{item.product_name}</td>"
+        f"<td style='padding:10px;border-bottom:1px solid #eee;text-align:center'>{item.quantity}</td>"
+        f"<td style='padding:10px;border-bottom:1px solid #eee'>{item.price * item.quantity:,} تومان</td></tr>"
+        for item in order.items
+    )
+    html = render_template(
+        "email_invoice.html",
+        invoice=invoice,
+        order=order,
+        company=company,
+        items_html=items_html,
+    )
+    plain = (
+        f"فاکتور خریدینو صادر شد.\n\n"
+        f"شماره فاکتور: {invoice.invoice_number}\n"
+        f"خریدار: {invoice.buyer_name}\n"
+        f"مبلغ نهایی: {invoice.total:,} تومان\n\n"
+        "فایل PDF فاکتور نیز به این ایمیل پیوست شده است."
+    )
+
+    smtp_host = os.environ.get("KHARIDINO_SMTP_HOST", "").strip() or os.environ.get("SMTP_HOST", "").strip()
+    smtp_user = os.environ.get("KHARIDINO_SMTP_USER", "").strip() or os.environ.get("SMTP_USERNAME", "").strip()
+    smtp_password = os.environ.get("KHARIDINO_SMTP_PASSWORD", "") or os.environ.get("SMTP_PASSWORD", "")
+    if not smtp_host or not smtp_user or not smtp_password:
+        app.logger.error("Invoice email skipped: SMTP is not fully configured.")
+        return False
+    try:
+        port = int(os.environ.get("KHARIDINO_SMTP_PORT", "").strip() or os.environ.get("SMTP_PORT", "587").strip())
+    except ValueError:
+        return False
+    sender = os.environ.get("KHARIDINO_SMTP_FROM", "").strip() or os.environ.get("MAIL_FROM", "").strip() or smtp_user
+    use_ssl = (os.environ.get("KHARIDINO_SMTP_SSL", "").strip() or os.environ.get("SMTP_USE_SSL", "0").strip()).lower() in {"1","true","yes"}
+
+    msg = EmailMessage()
+    msg["Subject"] = f"فاکتور خریدینو | {invoice.invoice_number}"
+    msg["From"] = sender
+    msg["To"] = recipient
+    msg.set_content(plain)
+    msg.add_alternative(html, subtype="html")
+    msg.add_attachment(pdf_bytes, maintype="application", subtype="pdf",
+                       filename=f"{invoice.invoice_number}.pdf")
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, port, timeout=20) as server:
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(smtp_host, port, timeout=20) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        app.logger.info("Invoice email sent to %s", recipient)
+        return True
+    except Exception:
+        app.logger.exception("Invoice email failed")
+        return False
+
 
 # =========================================================
 # AUTH HELPERS
@@ -3274,6 +3456,68 @@ def order_invoice(order_id):
         db.session.add(invoice)
         db.session.commit()
     return render_template("invoice.html", invoice=invoice, order=order, company=_company_profile())
+
+
+@app.route("/orders/<int:order_id>/invoice/pdf")
+@login_required
+def order_invoice_pdf(order_id):
+    order = db.session.get(Order, order_id)
+    if not order or order.user_id != session["user_id"]:
+        abort(404)
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        abort(404)
+    try:
+        pdf = _invoice_pdf_bytes(invoice, order, _company_profile())
+    except RuntimeError as exc:
+        app.logger.exception("Invoice PDF generation is unavailable")
+        return ("<h1>PDF unavailable</h1><p>%s</p>" % exc, 503)
+    return send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"{invoice.invoice_number}.pdf",
+    )
+
+
+@app.route("/admin/orders/<int:order_id>/invoice/issue", methods=["POST"])
+@admin_required
+def admin_issue_invoice(order_id):
+    order = db.session.get(Order, order_id)
+    if not order:
+        abort(404)
+
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        invoice = Invoice(
+            order_id=order.id,
+            invoice_number=f"KH-{datetime.utcnow().strftime('%Y%m%d')}-{order.id:06d}",
+        )
+        db.session.add(invoice)
+
+    invoice.buyer_name = order.customer_name
+    invoice.buyer_phone = order.phone
+    invoice.buyer_address = order.address
+    invoice.subtotal = sum(int(item.price or 0) * int(item.quantity or 0) for item in order.items)
+    invoice.discount = max(invoice.subtotal - int(order.total or 0), 0)
+    invoice.tax = 0
+    invoice.total = int(order.total or 0)
+    invoice.status = "صادر شد"
+    db.session.commit()
+
+    try:
+        pdf = _invoice_pdf_bytes(invoice, order, _company_profile())
+        sent = _send_invoice_email(invoice, order, _company_profile(), pdf)
+        if sent:
+            invoice.status = "صادر و ایمیل شد"
+            db.session.commit()
+            flash(f"فاکتور #{invoice.invoice_number} صادر و به ایمیل خریدار ارسال شد.", "success")
+        else:
+            flash(f"فاکتور #{invoice.invoice_number} صادر شد، اما ایمیل ارسال نشد؛ تنظیمات SMTP را بررسی کن.", "warning")
+    except RuntimeError as exc:
+        app.logger.exception("Invoice issue failed")
+        flash(f"فاکتور صادر شد اما PDF ساخته نشد: {exc}", "warning")
+    return redirect(url_for("admin"))
 
 
 # =========================================================

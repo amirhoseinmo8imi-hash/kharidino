@@ -554,3 +554,15 @@
 .km-header{position:relative;z-index:5100}
 .km-user-actions,.km-account-menu{position:relative;z-index:5300}
 .km-account-dropdown{z-index:5400!important}
+
+/* Click-controlled account menu */
+.km-account-menu.is-open .km-account-dropdown{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+}
+.km-account-trigger{
+  border:0;
+  font:inherit;
+  text-align:inherit;
+}

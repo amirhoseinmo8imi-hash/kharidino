@@ -87,3 +87,31 @@
     },{passive:true});
   });
 })();
+
+/* Account menu: keep admin/account actions reachable on mouse and touch. */
+(function(){
+  function initAccountMenu(){
+    document.querySelectorAll('.km-account-menu').forEach(function(menu){
+      if(menu.dataset.accountMenuReady==='1') return;
+      menu.dataset.accountMenuReady='1';
+      const trigger=menu.querySelector('.km-account-trigger');
+      const dropdown=menu.querySelector('.km-account-dropdown');
+      if(!trigger||!dropdown) return;
+      let closeTimer=null;
+      function open(){clearTimeout(closeTimer);menu.classList.add('is-open');dropdown.style.opacity='1';dropdown.style.visibility='visible';dropdown.style.transform='translateY(0)';}
+      function close(){closeTimer=setTimeout(function(){if(!menu.matches(':hover')&&!menu.contains(document.activeElement)){menu.classList.remove('is-open');dropdown.style.opacity='';dropdown.style.visibility='';dropdown.style.transform='';}},180);}
+      menu.addEventListener('mouseenter',open);
+      menu.addEventListener('mouseleave',close);
+      menu.addEventListener('focusin',open);
+      menu.addEventListener('focusout',close);
+      trigger.addEventListener('click',function(e){
+        if(window.matchMedia('(max-width: 860px)').matches){
+          e.preventDefault();
+          if(menu.classList.contains('is-open')) close(); else open();
+        }
+      });
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initAccountMenu);
+  else initAccountMenu();
+})();

@@ -773,3 +773,15 @@ body.kh-inner-page .mobile-bottom-nav .mobile-nav-item:first-child{
   .kh-related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .kh-related-card img,.kh-related-placeholder{height:125px}
 }
+
+.kh-search-intent{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin:0 0 12px;padding:11px 13px;
+  border:1px solid #f5d4d9;border-radius:14px;
+  background:linear-gradient(90deg,#fff7f8,#fff);
+  color:#666d76;font-size:10px;
+}
+.kh-search-intent>i{color:var(--kh-red)}
+.kh-search-intent strong{color:var(--kh-red);font-size:11px}
+.kh-search-intent small{width:100%;color:#969ca4}
+@media(max-width:520px){.kh-search-intent{font-size:9px}}

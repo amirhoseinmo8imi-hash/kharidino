@@ -3415,7 +3415,7 @@ def admin():
 
     orders_total = Order.query.count()
     pending_orders = Order.query.filter_by(status="در انتظار بررسی").count()
-    completed_orders = Order.query.filter_by(status="تکمیل شد").count()
+    completed_orders = Order.query.filter(Order.status.in_(["تکمیل شد", "تحویل شد"])).count()
     revenue = sum(int(o.total or 0) for o in Order.query.filter(Order.status != "لغو شد").all())
     out_of_stock_offers = Offer.query.filter_by(in_stock=False).count()
     active_users = User.query.filter_by(role="user").count()

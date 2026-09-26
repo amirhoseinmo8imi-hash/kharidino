@@ -88,7 +88,8 @@
   });
 })();
 
-/* Account menu: keep admin/account actions reachable on mouse and touch. */
+
+/* Account menu: click-to-toggle, stable until outside click. */
 (function(){
   function initAccountMenu(){
     document.querySelectorAll('.km-account-menu').forEach(function(menu){
@@ -97,18 +98,28 @@
       const trigger=menu.querySelector('.km-account-trigger');
       const dropdown=menu.querySelector('.km-account-dropdown');
       if(!trigger||!dropdown) return;
-      let closeTimer=null;
-      function open(){clearTimeout(closeTimer);menu.classList.add('is-open');dropdown.style.opacity='1';dropdown.style.visibility='visible';dropdown.style.transform='translateY(0)';}
-      function close(){closeTimer=setTimeout(function(){if(!menu.matches(':hover')&&!menu.contains(document.activeElement)){menu.classList.remove('is-open');dropdown.style.opacity='';dropdown.style.visibility='';dropdown.style.transform='';}},180);}
-      menu.addEventListener('mouseenter',open);
-      menu.addEventListener('mouseleave',close);
-      menu.addEventListener('focusin',open);
-      menu.addEventListener('focusout',close);
+      function open(){
+        document.querySelectorAll('.km-account-menu.is-open').forEach(function(other){
+          if(other!==menu) other.classList.remove('is-open');
+        });
+        menu.classList.add('is-open');
+        trigger.setAttribute('aria-expanded','true');
+      }
+      function close(){
+        menu.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded','false');
+      }
       trigger.addEventListener('click',function(e){
-        if(window.matchMedia('(max-width: 860px)').matches){
-          e.preventDefault();
-          if(menu.classList.contains('is-open')) close(); else open();
-        }
+        e.preventDefault();
+        e.stopPropagation();
+        menu.classList.contains('is-open') ? close() : open();
+      });
+      dropdown.addEventListener('click',function(e){e.stopPropagation();});
+      document.addEventListener('click',function(e){
+        if(!menu.contains(e.target)) close();
+      });
+      document.addEventListener('keydown',function(e){
+        if(e.key==='Escape') close();
       });
     });
   }

@@ -1340,20 +1340,20 @@ def parse_search_intent(value):
             n *= 1_000
         return int(n)
 
-    nums = re.findall(r"(\\d+(?:[.,]\\d+)?)\\s*(میلیون|هزار)?", lower)
+    nums = re.findall(r"(\d+(?:[.,]\d+)?)\s*(میلیون|هزار)?", lower)
     values = [amount(n, u) for n, u in nums]
     values = [v for v in values if v is not None and v > 0]
     min_price = max_price = None
     if values:
-        if re.search(r"(زیر|کمتر از|حداکثر|تا)", lower):
-            max_price = values[-1]
-        elif re.search(r"(بالای|بیشتر از|حداقل|از)", lower) and len(values) == 1:
-            min_price = values[-1]
-        elif len(values) >= 2:
+        if len(values) >= 2 and re.search(r"(بین|از).*?(تا|-)", lower):
             min_price, max_price = sorted(values[-2:])
+        elif re.search(r"(زیر|کمتر از|حداکثر|تا)", lower):
+            max_price = values[-1]
+        elif re.search(r"(بالای|بیشتر از|حداقل|از)", lower):
+            min_price = values[-1]
     cleaned = re.sub(r"(زیر|کمتر از|بیشتر از|بالای|حداکثر|حداقل|بین|میلیون|هزار|تومان|تا)", " ", raw)
-    cleaned = re.sub(r"\\d+(?:[.,]\\d+)?", " ", cleaned)
-    cleaned = re.sub(r"\\s+", " ", cleaned).strip()
+    cleaned = re.sub(r"\d+(?:[.,]\d+)?", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return {"original": value or "", "query": cleaned, "min_price": min_price, "max_price": max_price}
 
 # =========================================================
@@ -1451,12 +1451,14 @@ def home():
 def catalog_products():
     """Display the complete active product catalog."""
     q = request.args.get("q", "").strip()
+    intent = parse_search_intent(q)
+    search_q = intent["query"] or q
     sort = request.args.get("sort", "newest").strip()
 
     query = Product.query.filter_by(active=True)
 
-    if q:
-        search = f"%{q}%"
+    if search_q:
+        search = f"%{search_q}%"
         query = query.filter(
             db.or_(
                 Product.name.ilike(search),
@@ -1466,6 +1468,12 @@ def catalog_products():
         )
 
     products = query.all()
+    if intent["min_price"] is not None or intent["max_price"] is not None:
+        products = [
+            p for p in products
+            if (intent["min_price"] is None or lowest_price(p) >= intent["min_price"])
+            and (intent["max_price"] is None or lowest_price(p) <= intent["max_price"])
+        ]
 
     if sort == "price_low":
         products.sort(key=lambda item: (lowest_price(item), -item.id))

@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}</title>
   <meta name="description" content="{{ setting('meta_description', site_tagline) }}">
+  <link rel="canonical" href="{{ request.base_url }}">
   <meta name="theme-color" content="#ef4056">
   <meta name="csrf-token" content="{{ _csrf_value }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='2026-09-08-1') }}">
@@ -46,7 +47,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-full-ui-polish-2026.css', v='2026-09-26-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-header-ux-2026.css', v='2026-09-26-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-premium-design-system-2026.css', v='2026-09-26-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-experience-2026.css', v='2026-09-26-3') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-experience-2026.css', v='2026-09-26-4') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;background:#f5f7fb;font-family:Tahoma,Arial,sans-serif;color:#172033">
+<div style="max-width:720px;margin:24px auto;background:#fff;border:1px solid #e6eaf0;border-radius:20px;overflow:hidden">
+  <div style="padding:28px 30px;background:linear-gradient(135deg,#fff,#fff0f5);border-bottom:1px solid #eee">
+    <div style="font-size:28px;font-weight:900;color:#e51d5d">🛍️ خریدینو</div>
+    <div style="margin-top:8px;color:#667085">فاکتور فروش شما با موفقیت صادر شد.</div>
+  </div>
+  <div style="padding:30px">
+    <h2 style="margin:0 0 8px">سلام {{ invoice.buyer_name }} عزیز</h2>
+    <p style="line-height:2;color:#4b5563">فاکتور سفارش شما در خریدینو صادر شده است. نسخه PDF نیز به همین ایمیل پیوست شده و می‌توانید آن را برای بایگانی نگه دارید.</p>
+    <div style="padding:18px;background:#f8fafc;border-radius:14px;margin:20px 0">
+      <div style="display:flex;justify-content:space-between;padding:7px 0"><span>شماره فاکتور</span><strong>{{ invoice.invoice_number }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0"><span>مبلغ نهایی</span><strong style="color:#e51d5d">{{ invoice.total|money }} تومان</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0"><span>وضعیت</span><strong style="color:#079455">صادر شده</strong></div>
+    </div>
+    <h3>جزئیات خرید</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead><tr style="background:#f8fafc"><th style="padding:10px;text-align:right">کالا</th><th style="padding:10px">تعداد</th><th style="padding:10px;text-align:left">مبلغ</th></tr></thead>
+      <tbody>{{ items_html|safe }}</tbody>
+    </table>
+    <div style="margin-top:24px;padding:16px;border:1px solid #f0d5df;border-radius:14px;background:#fff9fb">
+      <strong>فایل PDF فاکتور در همین ایمیل پیوست شده است.</strong><br>
+      <span style="color:#667085">برای مشاهده نسخه کامل، وارد حساب کاربری خریدینو شوید.</span>
+    </div>
+  </div>
+  <div style="padding:20px 30px;background:#fafafa;color:#667085;font-size:12px;text-align:center">
+    {{ company.legal_name or 'خریدینو' }} · {{ company.phone or '' }} · {{ company.website or '' }}
+  </div>
+</div>
+</body></html>

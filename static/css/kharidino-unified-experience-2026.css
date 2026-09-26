@@ -812,3 +812,111 @@ body.kh-inner-page .mobile-bottom-nav .mobile-nav-item:first-child{
   .kh-price-alert-form input{width:100%}
 }
 @media(max-width:520px){.kh-price-alert{width:calc(100% - 16px);padding:14px;border-radius:17px}}
+
+
+/* =========================================================
+   KHARIDINO 2026 — FINAL CONSISTENCY / RESPONSIVE LAYER
+   One visual language across storefront, catalog, product, cart,
+   checkout and vehicle pages. Kept as a final override layer so
+   existing working components remain intact.
+   ========================================================= */
+:root{
+  --kh-final-bg:#f5f6f8;
+  --kh-final-surface:#fff;
+  --kh-final-ink:#17202a;
+  --kh-final-muted:#737d8d;
+  --kh-final-line:#e6e9ee;
+  --kh-final-red:#ef4056;
+  --kh-final-radius:18px;
+  --kh-final-shadow:0 8px 28px rgba(18,25,38,.055);
+}
+html{scroll-behavior:smooth}
+body{background:var(--kh-final-bg);color:var(--kh-final-ink)}
+body.kh-home-page{background:radial-gradient(circle at 50% -10%,#fff 0,#f7f8fa 42%,#f3f4f6 100%)}
+body.kh-inner-page .kg-main{min-height:60vh}
+.kdg-category-page,.kd-product-page,.kp-page,.cart-page-hero,.kh-checkout-page,.vehicle-page,.vehicle-detail-page{width:min(1320px,calc(100% - 32px));margin-inline:auto}
+.kdg-breadcrumb{margin-bottom:14px;color:var(--kh-final-muted);font-size:11px}
+.kdg-breadcrumb a{color:#687386;text-decoration:none}
+.kdg-breadcrumb strong{color:var(--kh-final-ink)}
+.kdg-category-head{border:1px solid var(--kh-final-line);background:rgba(255,255,255,.94);box-shadow:var(--kh-final-shadow);border-radius:22px;padding:22px;margin-bottom:16px}
+.kdg-catalog-toolbar{position:sticky;top:0;z-index:40;background:rgba(245,246,248,.92);backdrop-filter:blur(14px);padding:10px 0}
+.kdg-catalog-toolbar form{border:1px solid var(--kh-final-line);background:#fff;border-radius:18px;padding:10px;box-shadow:var(--kh-final-shadow)}
+.kdg-catalog-toolbar input,.kdg-catalog-toolbar select{height:42px;border:1px solid #e0e4e9!important;background:#fff!important;color:var(--kh-final-ink)!important}
+.kdg-catalog-toolbar button{height:42px;border:0;border-radius:11px;background:var(--kh-final-red);color:#fff;font-weight:900;padding-inline:16px}
+.kdg-catalog-toolbar>a{height:42px;display:inline-flex;align-items:center;justify-content:center;padding-inline:12px;border-radius:11px;color:#697386;background:#f2f3f5;text-decoration:none;font-weight:800}
+.kdg-results-head{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 2px}
+.kdg-results-head strong{font-size:13px;color:var(--kh-final-ink)}
+.kdg-results-head span{font-size:10px;color:var(--kh-final-muted)}
+.kdg-products{align-items:stretch}
+.kdg-card-wrap{min-width:0;overflow:hidden;background:#fff;border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.kdg-card-wrap:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(18,25,38,.09);border-color:#dfe3e8}
+.kdg-product{height:100%}
+.kdg-product-image{background:linear-gradient(180deg,#fff,#f7f8fa);overflow:hidden}
+.kdg-product-image img{object-fit:contain;mix-blend-mode:multiply}
+.kdg-product h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:42px}
+.kdg-price{display:flex;align-items:baseline;gap:5px}
+.kdg-card-compare button{transition:.16s ease}
+.kh-search-intent{width:100%;margin:8px 0 12px;padding:11px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border:1px solid #f1d6db;border-radius:14px;background:#fff7f8;color:#5e6674}
+.kh-search-intent>i{color:var(--kh-final-red)}
+.kh-search-intent small{color:#8b93a0}
+.kd-product-page{padding-bottom:80px}
+.kd-product-hero{border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);border-radius:24px;overflow:hidden;background:#fff}
+.kd-price-section,.kh-product-reviews,.kh-related-products,.kd-benefits{border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);border-radius:22px;background:#fff}
+.kd-price-section,.kh-product-reviews,.kh-related-products{padding:20px}
+.kd-offer-card{border:1px solid var(--kh-final-line);border-radius:16px;background:#fff;transition:.18s ease}
+.kd-offer-card:hover{border-color:#d9dde3;box-shadow:0 10px 24px rgba(18,25,38,.06);transform:translateY(-2px)}
+.kh-price-alert{box-shadow:var(--kh-final-shadow)!important}
+.kh-review-card{border:1px solid var(--kh-final-line);border-radius:16px;background:#fff}
+.kh-related-card{border:1px solid var(--kh-final-line);border-radius:16px;background:#fff;transition:.18s ease}
+.kh-related-card:hover{transform:translateY(-2px);box-shadow:var(--kh-final-shadow)}
+.kh-checkout-page{padding-bottom:70px}
+.kh-checkout-card,.kh-order-summary{border:1px solid var(--kh-final-line)!important;box-shadow:var(--kh-final-shadow)!important;border-radius:22px!important;background:#fff!important}
+.kh-checkout-submit{min-height:50px;border-radius:13px}
+.kh-summary-item{border-bottom:1px solid #eef0f3}
+.cart-page,.cart-layout{width:min(1320px,calc(100% - 32px));margin-inline:auto}
+.cart-item,.cart-summary,.cart-card{border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);border-radius:18px}
+.vehicle-page,.vehicle-detail-page{background:transparent}
+.vehicle-page .vehicle-hero,.vehicle-detail-page .vehicle-detail-pro{border-radius:24px;overflow:hidden}
+/* Header/search suggestions */
+.km-search{position:relative;z-index:50}
+.km-search-suggestions{position:absolute;top:calc(100% + 8px);right:0;left:0;display:grid;gap:3px;padding:7px;background:#fff;border:1px solid var(--kh-final-line);border-radius:15px;box-shadow:0 18px 50px rgba(15,23,42,.14);z-index:1600;overflow:hidden}
+.km-search-suggestions a{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;color:#374151;text-decoration:none;font-size:11px}
+.km-search-suggestions a:hover{background:#f6f7f9}
+.km-search-suggestions a>i{color:var(--kh-final-red)}
+.km-search-suggestions a small{color:#8a94a4;font-size:9px;white-space:nowrap}
+/* Accessible and consistent focus */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(239,64,86,.18);outline-offset:2px}
+/* Mobile: one predictable content rhythm and reachable controls */
+@media(max-width:860px){
+  .kdg-category-page,.kd-product-page,.kp-page,.cart-page-hero,.kh-checkout-page,.vehicle-page,.vehicle-detail-page,.cart-page,.cart-layout{width:calc(100% - 20px)}
+  .kdg-catalog-toolbar{position:static;background:transparent;padding:0 0 8px}
+  .kdg-catalog-toolbar form{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+  .kdg-catalog-toolbar .kdg-catalog-search{grid-column:1/-1}
+  .kdg-catalog-toolbar input,.kdg-catalog-toolbar select,.kdg-catalog-toolbar button,.kdg-catalog-toolbar>a{width:100%;min-width:0}
+  .kdg-results-head{padding:10px 0}
+  .kdg-results-head span{display:none}
+  .kd-product-hero{border-radius:18px}
+  .kd-price-section,.kh-product-reviews,.kh-related-products{padding:14px;border-radius:18px}
+  .kh-search-intent{font-size:10px}
+}
+@media(max-width:560px){
+  .kdg-category-head{padding:16px;border-radius:17px}
+  .kdg-category-head h1{font-size:22px}
+  .kdg-products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .kdg-card-wrap{border-radius:14px}
+  .kdg-product{padding-bottom:8px}
+  .kdg-product-image{min-height:130px!important}
+  .kdg-product h3{font-size:11px!important;min-height:38px}
+  .kdg-price strong{font-size:14px!important}
+  .kdg-card-compare{padding-inline:8px!important}
+  .kdg-card-compare button{min-height:34px!important;font-size:10px}
+  .kdg-catalog-toolbar form{grid-template-columns:1fr!important}
+  .kdg-catalog-toolbar .kdg-catalog-search{grid-column:auto}
+  .kh-search-intent{align-items:flex-start;padding:10px}
+  .kh-search-intent small{width:100%}
+  .kh-checkout-page{padding-bottom:30px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .kdg-card-wrap,.kd-offer-card,.kh-related-card{transition:none!important}
+}

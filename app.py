@@ -1085,9 +1085,31 @@ def _invoice_pdf_bytes(invoice, order, company):
         ("TOPPADDING",(0,0),(-1,-1),7),
         ("BOTTOMPADDING",(0,0),(-1,-1),7),
     ]))
-    story += [totals_table, Spacer(1, 8*mm),
-              Paragraph(rtl(company.get("legal_name") or "خریدینو"), body),
-              Paragraph(rtl("این فاکتور به صورت الکترونیکی صادر شده است."), small)]
+    signature_data = [
+        [Paragraph(rtl("مهر و امضای فروشنده"), body), Paragraph(rtl("مهر و امضای خریدار"), body)],
+        [Paragraph(rtl(""), body), Paragraph(rtl(""), body)],
+        [Paragraph(rtl("نام و امضای مجاز"), small), Paragraph(rtl("تأیید دریافت کالا / خدمات"), small)],
+    ]
+    signature_table = Table(signature_data, colWidths=[92.5*mm, 92.5*mm], rowHeights=[8*mm, 27*mm, 8*mm])
+    signature_table.setStyle(TableStyle([
+        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
+        ("BOX",(0,0),(0,-1),0.5,colors.HexColor("#cbd5e1")),
+        ("BOX",(1,0),(1,-1),0.5,colors.HexColor("#cbd5e1")),
+        ("LINEBELOW",(0,0),(0,0),0.5,colors.HexColor("#e5e7eb")),
+        ("LINEBELOW",(1,0),(1,0),0.5,colors.HexColor("#e5e7eb")),
+        ("ALIGN",(0,0),(-1,-1),"CENTER"),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+        ("TOPPADDING",(0,0),(-1,-1),4),
+        ("BOTTOMPADDING",(0,0),(-1,-1),4),
+    ]))
+    story += [
+        totals_table,
+        Spacer(1, 7*mm),
+        signature_table,
+        Spacer(1, 5*mm),
+        Paragraph(rtl(company.get("legal_name") or "خریدینو"), body),
+        Paragraph(rtl("این فاکتور به صورت الکترونیکی صادر شده است."), small),
+    ]
     doc.build(story)
     return buffer.getvalue()
 

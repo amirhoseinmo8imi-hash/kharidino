@@ -9,7 +9,7 @@
 
   ready(function(){
     const body=document.body;
-    const topbar=document.querySelector('.km-topbar');
+    let backTop=null;
 
     function onScroll(){
       body.classList.toggle('kh-header-scrolled',window.scrollY>12);
@@ -19,7 +19,7 @@
     onScroll();
 
     /* Back-to-top */
-    const backTop=document.createElement('button');
+    backTop=document.createElement('button');
     backTop.type='button';
     backTop.className='kh-back-top';
     backTop.setAttribute('aria-label','بازگشت به بالای صفحه');

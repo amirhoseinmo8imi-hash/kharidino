@@ -6,6 +6,7 @@ import uuid
 from io import BytesIO
 from datetime import datetime, timedelta
 from functools import wraps
+from html import escape
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -1097,7 +1098,7 @@ def _send_invoice_email(invoice, order, company, pdf_bytes):
         return False
 
     items_html = "".join(
-        f"<tr><td style='padding:10px;border-bottom:1px solid #eee'>{item.product_name}</td>"
+        f"<tr><td style='padding:10px;border-bottom:1px solid #eee'>{escape(str(item.product_name or ''))}</td>"
         f"<td style='padding:10px;border-bottom:1px solid #eee;text-align:center'>{item.quantity}</td>"
         f"<td style='padding:10px;border-bottom:1px solid #eee'>{item.price * item.quantity:,} تومان</td></tr>"
         for item in order.items

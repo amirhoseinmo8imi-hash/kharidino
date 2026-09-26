@@ -1,0 +1,331 @@
+/* Kharidino Unified Experience Layer — 2026
+   UX direction:
+   Digikala -> storefront depth and merchandising
+   Torob -> comparison/search clarity
+   Divar -> marketplace/vehicle utility
+   Kharidino -> one premium RTL visual language
+*/
+:root{
+  --kh-ux-bg:#f5f6f8;
+  --kh-ux-surface:#fff;
+  --kh-ux-surface-soft:#fafbfc;
+  --kh-ux-ink:#151a22;
+  --kh-ux-text:#343b48;
+  --kh-ux-muted:#7b8492;
+  --kh-ux-line:#e6e9ee;
+  --kh-ux-red:#ef4056;
+  --kh-ux-red-soft:#fff1f3;
+  --kh-ux-dark:#1d242d;
+  --kh-ux-radius:18px;
+  --kh-ux-shadow:0 10px 30px rgba(15,23,42,.055);
+  --kh-ux-shadow-hover:0 18px 45px rgba(15,23,42,.095);
+}
+
+body.kh-inner-page,body.kh-home-page{background:var(--kh-ux-bg)}
+.site-content>main{width:100%}
+.container,.kdg-home,.kdg-category-page,.vehicle-page,.vehicle-detail-page,.vehicle-compare-page,.kp-page{
+  width:min(1440px,calc(100% - 32px));
+  margin-inline:auto;
+}
+
+/* Global section rhythm */
+.kdg-section,.kh-market-section,.vehicle-section,.kp-section{margin-top:28px}
+.kdg-section-head,.vehicle-section-title{display:flex;align-items:end;justify-content:space-between;gap:16px}
+.kdg-section-head h2,.vehicle-section-title h2{margin:0;color:var(--kh-ux-ink);font-size:21px;font-weight:950;letter-spacing:-.3px}
+.kdg-section-head p,.vehicle-section-title p{color:var(--kh-ux-muted)}
+
+/* Home: marketplace-first hierarchy */
+.kh-home-hero-pro{
+  min-height:430px!important;
+  border-radius:28px!important;
+  margin-top:18px!important;
+  overflow:hidden!important;
+  box-shadow:var(--kh-ux-shadow-hover)!important;
+}
+.kh-portal-switch{margin-top:22px!important}
+.kh-portal-grid{gap:14px!important}
+.kh-portal-card{
+  min-height:142px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.kh-portal-card:hover{transform:translateY(-4px)!important;box-shadow:var(--kh-ux-shadow-hover)!important}
+.kh-market-hero{
+  margin-top:22px!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  border:1px solid var(--kh-ux-line)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+
+/* Product/category merchandising */
+.kdg-category-page{padding-top:18px;padding-bottom:20px}
+.kdg-breadcrumb,.kd-breadcrumb,.vehicle-breadcrumb{
+  display:flex;align-items:center;gap:8px;
+  min-height:38px;color:var(--kh-ux-muted);
+  font-size:11px;
+}
+.kdg-breadcrumb a,.kd-breadcrumb a,.vehicle-breadcrumb a{color:#687181;text-decoration:none}
+.kdg-breadcrumb a:hover,.kd-breadcrumb a:hover,.vehicle-breadcrumb a:hover{color:var(--kh-ux-red)}
+.kdg-category-head{
+  margin-top:10px!important;
+  padding:24px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:22px!important;
+  background:linear-gradient(135deg,#fff,#fafbfc)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.kdg-category-head h1{margin:3px 0 5px!important;font-size:29px!important;letter-spacing:-.6px}
+.kdg-category-head p{color:var(--kh-ux-muted)!important}
+.kdg-catalog-toolbar{
+  margin-top:14px!important;
+  padding:12px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.kdg-catalog-toolbar form{gap:8px!important}
+.kdg-catalog-search{
+  min-height:44px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:12px!important;
+  background:#f8f9fb!important;
+}
+.kdg-catalog-toolbar select,.kdg-catalog-toolbar input{
+  min-height:44px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  background:#fff!important;
+}
+.kdg-catalog-toolbar button{
+  min-height:44px!important;
+  border-radius:12px!important;
+  background:var(--kh-ux-red)!important;
+  color:#fff!important;
+  border:0!important;
+  font-weight:900!important;
+}
+.kdg-results-head{
+  margin:18px 2px 10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  color:var(--kh-ux-muted)!important;
+}
+.kdg-results-head strong{color:var(--kh-ux-ink)!important;font-size:14px!important}
+.kdg-products{align-items:stretch!important}
+.kdg-card-wrap{height:100%;display:flex;flex-direction:column}
+.kdg-product{height:100%;display:flex;flex-direction:column}
+.kdg-product h3{min-height:50px}
+.kdg-card-compare{margin-top:auto}
+
+/* Category filters */
+.kdg-category-layout{gap:18px!important;align-items:start!important}
+.kdg-filter{
+  position:sticky!important;
+  top:16px;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  overflow:hidden!important;
+}
+.kdg-filter-form{padding:16px!important}
+.kdg-filter-form>strong{display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #eef0f3}
+.kdg-filter-form label{color:#596273!important}
+.kdg-filter-form input,.kdg-filter-form select{background:#fafbfc!important;border-color:#e4e7ec!important}
+.kdg-filter-submit{border-radius:11px!important;font-weight:900!important}
+
+/* Product detail */
+.kd-product-page{background:transparent!important}
+.kd-product-hero{
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:24px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  padding:18px!important;
+}
+.kd-product-image-card,.kd-product-info-card,.kd-offers-card,.kd-specs-card{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+.product-top-actions{display:flex;justify-content:flex-start;gap:8px;margin:8px 0 12px}
+.product-top-actions .btn{border-radius:11px!important}
+.kd-price-offers,.kd-offer-row{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:15px!important;
+}
+.kd-offer-row{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.kd-offer-row:hover{transform:translateY(-2px);box-shadow:var(--kh-ux-shadow);border-color:#dce1e7!important}
+
+/* Compare: Torob-like decision workspace */
+.kp-page{padding-top:18px;padding-bottom:28px}
+.kp-hero{
+  border-radius:24px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  background:linear-gradient(135deg,#fff,#fafbfc)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.kp-hero h1{letter-spacing:-.5px}
+.kp-table,.kp-card,.kp-product-card{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  background:#fff!important;
+}
+.kp-table{overflow:hidden}
+.kp-table th{background:#f8f9fb!important;color:#687181!important}
+.kp-table td{border-color:#eef0f3!important}
+
+/* Stores */
+.kdg-stores-page,.stores-page,.store-page{padding-top:18px}
+.kdg-store,.store-card,.storefront-card{
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.kdg-store:hover,.store-card:hover,.storefront-card:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--kh-ux-shadow-hover)!important;
+  border-color:#dfe3e8!important;
+}
+
+/* Vehicle portal: Divar utility, but Kharidino identity */
+.vehicle-page,.vehicle-detail-page,.vehicle-compare-page{
+  --vehicle-red:var(--kh-ux-red);
+}
+.vehicle-page{
+  padding-top:18px;
+  padding-bottom:30px;
+}
+.vehicle-page,.vehicle-detail-page{color:#e9edf2}
+.vehicle-hero,.vehicle-market-hero,.vehicle-filter-panel,.vehicle-filters,.vehicle-detail-layout,.vehicle-seller-box,.vehicle-spec-box{
+  border-color:#303842!important;
+}
+.vehicle-filters{
+  border-radius:20px!important;
+  background:#20272f!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.18)!important;
+}
+.vehicle-filters input,.vehicle-filters select{
+  background:#171d23!important;
+  border-color:#37404a!important;
+  color:#f3f5f7!important;
+}
+.vehicle-layout{gap:18px!important}
+.vehicle-card,.vehicle-listing-card{
+  border:1px solid #303842!important;
+  border-radius:17px!important;
+  background:#20272f!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.14)!important;
+  overflow:hidden!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.vehicle-card:hover,.vehicle-listing-card:hover{
+  transform:translateY(-3px);
+  border-color:#49535f!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.2)!important;
+}
+.vehicle-category-chip{
+  border:1px solid #343d47!important;
+  background:#20272f!important;
+  border-radius:15px!important;
+}
+.vehicle-category-chip.active,.vehicle-category-chip:hover{
+  border-color:rgba(239,64,86,.55)!important;
+  background:#2a2024!important;
+}
+.vehicle-price-panel{
+  border-radius:17px!important;
+  background:#20272f!important;
+  border:1px solid #353e48!important;
+}
+.vehicle-action-btn{
+  border:1px solid #39434e!important;
+  background:#20272f!important;
+}
+.vehicle-action-btn:hover,.vehicle-action-btn.active{
+  border-color:rgba(239,64,86,.5)!important;
+  background:#2a2024!important;
+}
+.vehicle-detail-layout{
+  border-radius:24px!important;
+  background:#171d23!important;
+  box-shadow:0 20px 60px rgba(0,0,0,.2)!important;
+}
+.vehicle-main-photo{background:#11171c!important}
+.vehicle-spec-grid-pro>div{background:#20272f!important;border-color:#343d47!important}
+
+/* Keep vehicle typography high contrast */
+.vehicle-page h1,.vehicle-page h2,.vehicle-page h3,
+.vehicle-detail-page h1,.vehicle-detail-page h2,.vehicle-detail-page h3,
+.vehicle-page strong,.vehicle-detail-page strong{color:#f5f7fa}
+.vehicle-page p,.vehicle-page small,.vehicle-detail-page p,.vehicle-detail-page small{color:#aeb6c1}
+
+/* Cart + checkout */
+.cart-page-hero,.kh-checkout-head{
+  width:min(1200px,calc(100% - 32px));
+  margin-inline:auto;
+}
+.cart-section,.kh-checkout-page{padding-bottom:30px}
+.cart-main,.cart-summary,.kh-checkout-card,.kh-order-summary{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:20px!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.cart-item{
+  border-color:#eef0f3!important;
+  transition:background .18s ease!important;
+}
+.cart-item:hover{background:#fafbfc!important}
+.kh-checkout-card,.kh-order-summary{background:#fff!important}
+.kh-checkout-submit{border-radius:13px!important;box-shadow:0 8px 20px rgba(239,64,86,.16)!important}
+
+/* Header / mega-menu consistency */
+.km-topbar{box-shadow:0 3px 16px rgba(20,28,38,.04)!important}
+.km-header{max-width:1440px}
+.km-nav-inner{max-width:1440px}
+.km-category-mega{border-color:#e2e6eb!important;box-shadow:0 22px 65px rgba(15,23,42,.15)!important}
+
+/* Empty states */
+.kdg-empty,.vehicle-empty,.kp-empty{
+  min-height:180px;
+  display:grid;
+  place-items:center;
+  border:1px dashed #d9dde4;
+  border-radius:18px;
+  background:#fff;
+  color:var(--kh-ux-muted);
+  padding:30px;
+}
+
+/* Responsive */
+@media(max-width:900px){
+  .container,.kdg-home,.kdg-category-page,.vehicle-page,.vehicle-detail-page,.vehicle-compare-page,.kp-page{
+    width:min(100% - 20px,1440px);
+  }
+  .kdg-filter{position:static!important}
+  .kdg-category-head{padding:18px!important}
+  .kdg-category-head h1{font-size:23px!important}
+  .vehicle-layout{grid-template-columns:1fr!important}
+  .vehicle-filters{order:0}
+}
+@media(max-width:560px){
+  .container,.kdg-home,.kdg-category-page,.vehicle-page,.vehicle-detail-page,.vehicle-compare-page,.kp-page{
+    width:calc(100% - 16px);
+  }
+  .kh-home-hero-pro{min-height:520px!important;border-radius:20px!important}
+  .kh-portal-card{min-height:125px!important}
+  .kdg-category-head{border-radius:17px!important}
+  .kdg-results-head{align-items:flex-start!important;flex-direction:column!important}
+  .product-top-actions{flex-wrap:wrap}
+  .vehicle-detail-layout{border-radius:18px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .kh-portal-card,.kdg-store,.store-card,.storefront-card,.vehicle-card,.vehicle-listing-card,.kd-offer-row{transition:none!important}
+}

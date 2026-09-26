@@ -980,139 +980,584 @@ def send_kharidino_email(to_email, subject, body):
 
 
 def _invoice_pdf_bytes(invoice, order, company):
-    """Build a printable Persian invoice PDF in memory."""
+    """Build a premium, print-ready Persian A4 invoice PDF in memory."""
     try:
         from reportlab.lib import colors
+        from reportlab.lib.colors import HexColor
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.enums import TA_RIGHT, TA_CENTER
         from reportlab.lib.units import mm
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.platypus import (
+            SimpleDocTemplate,
+            Paragraph,
+            Spacer,
+            Table,
+            TableStyle,
+            KeepTogether,
+            HRFlowable,
+        )
         import arabic_reshaper
         from bidi.algorithm import get_display
     except ImportError as exc:
-        raise RuntimeError("برای PDF فاکتور باید پکیج‌های reportlab، arabic-reshaper و python-bidi نصب باشند.") from exc
+        raise RuntimeError(
+            "برای PDF فاکتور باید پکیج‌های reportlab، arabic-reshaper و python-bidi نصب باشند."
+        ) from exc
 
     def rtl(value):
         text = str(value or "—")
         return get_display(arabic_reshaper.reshape(text))
 
+    def money(value):
+        try:
+            return f"{int(value or 0):,}"
+        except (TypeError, ValueError):
+            return "0"
+
+    def safe_text(value, fallback="—"):
+        value = str(value or "").strip()
+        return value if value else fallback
+
     font_candidates = [
-        os.path.join(os.environ.get("WINDIR", r"C:\\Windows"), "Fonts", "tahoma.ttf"),
+        os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "tahoma.ttf"),
+        os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "segoeui.ttf"),
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed.ttf",
     ]
     font_path = next((p for p in font_candidates if os.path.exists(p)), None)
     if not font_path:
         raise RuntimeError("فونت فارسی مناسب برای ساخت PDF روی سرور پیدا نشد.")
-    pdfmetrics.registerFont(TTFont("KharidinoRTL", font_path))
+
+    font_name = "KharidinoRTL"
+    if font_name not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(TTFont(font_name, font_path))
+
+    # Palette: premium Kharidino charcoal + rose accent + clean paper tones.
+    ink = HexColor("#101828")
+    muted = HexColor("#667085")
+    soft = HexColor("#F7F8FA")
+    line = HexColor("#E4E7EC")
+    accent = HexColor("#D31852")
+    accent_soft = HexColor("#FFF0F4")
+    success = HexColor("#087443")
+    success_soft = HexColor("#ECFDF3")
+    white = colors.white
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(
-        buffer, pagesize=A4, rightMargin=14*mm, leftMargin=14*mm,
-        topMargin=14*mm, bottomMargin=14*mm,
+        buffer,
+        pagesize=A4,
+        rightMargin=13*mm,
+        leftMargin=13*mm,
+        topMargin=17*mm,
+        bottomMargin=17*mm,
         title=f"فاکتور {invoice.invoice_number}",
         author="Kharidino",
+        subject="فاکتور فروش خریدینو",
     )
+
     styles = getSampleStyleSheet()
-    body = ParagraphStyle("rtl", parent=styles["Normal"], fontName="KharidinoRTL",
-                          fontSize=9.5, leading=14, alignment=TA_RIGHT)
-    title = ParagraphStyle("title", parent=body, fontSize=18, leading=23, alignment=TA_CENTER)
-    small = ParagraphStyle("small", parent=body, fontSize=8, leading=11)
+    body = ParagraphStyle(
+        "KharidinoBody",
+        parent=styles["Normal"],
+        fontName=font_name,
+        fontSize=8.5,
+        leading=12.5,
+        alignment=TA_RIGHT,
+        textColor=ink,
+        spaceAfter=0,
+    )
+    small = ParagraphStyle(
+        "KharidinoSmall",
+        parent=body,
+        fontSize=7.2,
+        leading=10,
+        textColor=muted,
+    )
+    tiny = ParagraphStyle(
+        "KharidinoTiny",
+        parent=body,
+        fontSize=6.4,
+        leading=8.5,
+        textColor=muted,
+    )
+    label = ParagraphStyle(
+        "KharidinoLabel",
+        parent=body,
+        fontSize=6.7,
+        leading=9,
+        textColor=muted,
+    )
+    value = ParagraphStyle(
+        "KharidinoValue",
+        parent=body,
+        fontSize=8.2,
+        leading=11.5,
+        textColor=ink,
+    )
+    center = ParagraphStyle(
+        "KharidinoCenter",
+        parent=body,
+        alignment=TA_CENTER,
+    )
+    center_small = ParagraphStyle(
+        "KharidinoCenterSmall",
+        parent=small,
+        alignment=TA_CENTER,
+    )
+    total_value = ParagraphStyle(
+        "KharidinoTotal",
+        parent=body,
+        fontSize=11.5,
+        leading=15,
+        alignment=TA_RIGHT,
+        textColor=accent,
+    )
+    section = ParagraphStyle(
+        "KharidinoSection",
+        parent=body,
+        fontSize=10,
+        leading=13,
+        textColor=ink,
+    )
+
+    issued_at = (
+        invoice.created_at.strftime("%Y/%m/%d")
+        if invoice.created_at
+        else "—"
+    )
+    order_date = (
+        order.created_at.strftime("%Y/%m/%d")
+        if order.created_at
+        else issued_at
+    )
+
+    seller_name = safe_text(company.get("legal_name"), "خریدینو")
+    buyer_name = safe_text(invoice.buyer_name)
+    order_status = safe_text(order.status)
+    invoice_status = safe_text(invoice.status)
+
+    # ---------------------------------------------------------
+    # Reusable card builders
+    # ---------------------------------------------------------
+    def info_card(title_fa, eyebrow, rows, width):
+        head = Table(
+            [[
+                Paragraph(rtl(eyebrow.upper()), tiny),
+                Paragraph(rtl(title_fa), section),
+            ]],
+            colWidths=[width-18*mm, 18*mm],
+        )
+        head.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("ALIGN", (0,0), (0,0), "RIGHT"),
+            ("ALIGN", (1,0), (1,0), "RIGHT"),
+            ("LEFTPADDING", (0,0), (-1,-1), 7),
+            ("RIGHTPADDING", (0,0), (-1,-1), 7),
+            ("TOPPADDING", (0,0), (-1,-1), 6),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ("BACKGROUND", (0,0), (-1,-1), soft),
+            ("LINEBELOW", (0,0), (-1,-1), 0.6, line),
+        ]))
+
+        body_rows = []
+        for row in rows:
+            k, v = row
+            body_rows.append([
+                Paragraph(rtl(safe_text(v)), value),
+                Paragraph(rtl(k), label),
+            ])
+        body_table = Table(body_rows, colWidths=[width-34*mm, 34*mm])
+        body_table.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+            ("LEFTPADDING", (0,0), (-1,-1), 7),
+            ("RIGHTPADDING", (0,0), (-1,-1), 7),
+            ("TOPPADDING", (0,0), (-1,-1), 4.5),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 4.5),
+            ("LINEBELOW", (0,0), (-1,-2), 0.35, line),
+        ]))
+        outer = Table([[head], [body_table]], colWidths=[width])
+        outer.setStyle(TableStyle([
+            ("BOX", (0,0), (-1,-1), 0.65, line),
+            ("BACKGROUND", (0,0), (-1,-1), white),
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("LEFTPADDING", (0,0), (-1,-1), 0),
+            ("RIGHTPADDING", (0,0), (-1,-1), 0),
+            ("TOPPADDING", (0,0), (-1,-1), 0),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 0),
+        ]))
+        return outer
+
+    # ---------------------------------------------------------
+    # Header
+    # ---------------------------------------------------------
+    brand = Table(
+        [[
+            Paragraph(rtl("خریدینو"), ParagraphStyle(
+                "brand",
+                parent=body,
+                fontSize=18,
+                leading=21,
+                textColor=white,
+            )),
+            Paragraph(rtl("فاکتور فروش"), ParagraphStyle(
+                "invoice_title",
+                parent=body,
+                fontSize=17,
+                leading=21,
+                alignment=TA_RIGHT,
+                textColor=white,
+            )),
+        ]],
+        colWidths=[76*mm, 91*mm],
+    )
+    brand.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("BACKGROUND", (0,0), (-1,-1), HexColor("#121926")),
+        ("LEFTPADDING", (0,0), (-1,-1), 10),
+        ("RIGHTPADDING", (0,0), (-1,-1), 10),
+        ("TOPPADDING", (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+        ("BOX", (0,0), (-1,-1), 0.8, HexColor("#121926")),
+    ]))
+
+    invoice_meta = Table(
+        [[
+            Paragraph(rtl("شماره فاکتور"), label),
+            Paragraph(rtl(invoice.invoice_number), value),
+            Paragraph(rtl("تاریخ صدور"), label),
+            Paragraph(rtl(issued_at), value),
+        ]],
+        colWidths=[28*mm, 52*mm, 28*mm, 59*mm],
+    )
+    invoice_meta.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("BACKGROUND", (0,0), (-1,-1), HexColor("#F9FAFB")),
+        ("BOX", (0,0), (-1,-1), 0.6, line),
+        ("INNERGRID", (0,0), (-1,-1), 0.35, line),
+        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+    ]))
+
+    status_table = Table(
+        [[
+            Paragraph(rtl("وضعیت سفارش"), label),
+            Paragraph(rtl(order_status), value),
+            Paragraph(rtl("وضعیت فاکتور"), label),
+            Paragraph(rtl(invoice_status), value),
+            Paragraph(rtl("شماره سفارش"), label),
+            Paragraph(rtl(f"#{order.id}"), value),
+        ]],
+        colWidths=[28*mm, 42*mm, 28*mm, 42*mm, 27*mm, 20*mm],
+    )
+    status_table.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("BACKGROUND", (0,0), (-1,-1), white),
+        ("BOX", (0,0), (-1,-1), 0.6, line),
+        ("INNERGRID", (0,0), (-1,-1), 0.35, line),
+        ("LEFTPADDING", (0,0), (-1,-1), 5),
+        ("RIGHTPADDING", (0,0), (-1,-1), 5),
+        ("TOPPADDING", (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+    ]))
+
+    # ---------------------------------------------------------
+    # Seller / buyer cards
+    # ---------------------------------------------------------
+    seller_rows = [
+        ("نام حقوقی", seller_name),
+        ("شناسه ملی", company.get("national_id")),
+        ("شماره اقتصادی", company.get("economic_code")),
+        ("شماره ثبت", company.get("registration_number")),
+        ("کد پستی", company.get("postal_code")),
+        ("تلفن", company.get("phone")),
+        ("نشانی", company.get("address")),
+    ]
+    buyer_rows = [
+        ("نام خریدار", buyer_name),
+        ("نوع خریدار", invoice.buyer_type),
+        ("شناسه ملی", invoice.buyer_national_id),
+        ("شماره اقتصادی", invoice.buyer_economic_code),
+        ("شماره ثبت", invoice.buyer_registration_number),
+        ("کد پستی", invoice.buyer_postal_code),
+        ("تلفن", invoice.buyer_phone),
+        ("نشانی", invoice.buyer_address),
+    ]
+    party_width = 90*mm
+    parties = Table(
+        [[
+            info_card("خریدار", "CUSTOMER", buyer_rows, party_width),
+            info_card("فروشنده", "SELLER", seller_rows, party_width),
+        ]],
+        colWidths=[91*mm, 91*mm],
+    )
+    parties.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("LEFTPADDING", (0,0), (-1,-1), 0),
+        ("RIGHTPADDING", (0,0), (-1,-1), 0),
+        ("TOPPADDING", (0,0), (-1,-1), 0),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 0),
+    ]))
+
+    # ---------------------------------------------------------
+    # Items table
+    # ---------------------------------------------------------
+    rows = [[
+        Paragraph(rtl("ردیف"), center_small),
+        Paragraph(rtl("شرح کالا / خدمت"), body),
+        Paragraph(rtl("تعداد"), center_small),
+        Paragraph(rtl("قیمت واحد (تومان)"), center_small),
+        Paragraph(rtl("مبلغ کل (تومان)"), center_small),
+    ]]
+    for idx, item in enumerate(order.items, 1):
+        quantity = int(item.quantity or 0)
+        unit_price = int(item.price or 0)
+        line_total = unit_price * quantity
+        rows.append([
+            Paragraph(rtl(idx), center_small),
+            Paragraph(rtl(safe_text(item.product_name)), value),
+            Paragraph(rtl(quantity), center_small),
+            Paragraph(rtl(money(unit_price)), center_small),
+            Paragraph(rtl(money(line_total)), center_small),
+        ])
+
+    if len(rows) == 1:
+        rows.append([
+            Paragraph(rtl("—"), center_small),
+            Paragraph(rtl("موردی برای نمایش ثبت نشده است."), center),
+            Paragraph(rtl("0"), center_small),
+            Paragraph(rtl("0"), center_small),
+            Paragraph(rtl("0"), center_small),
+        ])
+
+    items_table = Table(
+        rows,
+        colWidths=[13*mm, 78*mm, 18*mm, 37*mm, 37*mm],
+        repeatRows=1,
+        hAlign="RIGHT",
+    )
+    items_table.setStyle(TableStyle([
+        ("FONTNAME", (0,0), (-1,-1), font_name),
+        ("BACKGROUND", (0,0), (-1,0), HexColor("#F1F4F7")),
+        ("TEXTCOLOR", (0,0), (-1,0), ink),
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("INNERGRID", (0,0), (-1,-1), 0.35, line),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("ALIGN", (0,0), (0,-1), "CENTER"),
+        ("ALIGN", (2,0), (-1,-1), "CENTER"),
+        ("LEFTPADDING", (0,0), (-1,-1), 5),
+        ("RIGHTPADDING", (0,0), (-1,-1), 5),
+        ("TOPPADDING", (0,0), (-1,0), 7),
+        ("BOTTOMPADDING", (0,0), (-1,0), 7),
+        ("TOPPADDING", (0,1), (-1,-1), 7),
+        ("BOTTOMPADDING", (0,1), (-1,-1), 7),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [white, HexColor("#FCFCFD")]),
+    ]))
+
+    # ---------------------------------------------------------
+    # Totals + payment/order summary
+    # ---------------------------------------------------------
+    totals_rows = [
+        [Paragraph(rtl("جمع کالاها"), body), Paragraph(rtl(f"{money(invoice.subtotal)} تومان"), value)],
+        [Paragraph(rtl("تخفیف"), body), Paragraph(rtl(f"{money(invoice.discount)} تومان"), value)],
+        [Paragraph(rtl("مالیات و عوارض"), body), Paragraph(rtl(f"{money(invoice.tax)} تومان"), value)],
+        [Paragraph(rtl("مبلغ قابل پرداخت"), ParagraphStyle(
+            "totalLabel", parent=body, fontSize=9.5, textColor=accent
+        )), Paragraph(rtl(f"{money(invoice.total)} تومان"), total_value)],
+    ]
+    totals_table = Table(totals_rows, colWidths=[54*mm, 51*mm])
+    totals_table.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("INNERGRID", (0,0), (-1,-2), 0.35, line),
+        ("BACKGROUND", (0,0), (-1,-2), white),
+        ("BACKGROUND", (0,3), (-1,3), accent_soft),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("LEFTPADDING", (0,0), (-1,-1), 7),
+        ("RIGHTPADDING", (0,0), (-1,-1), 7),
+        ("TOPPADDING", (0,0), (-1,-1), 7),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 7),
+    ]))
+
+    order_summary = Table([
+        [Paragraph(rtl("جزئیات تکمیلی"), section)],
+        [Paragraph(rtl(f"تاریخ ثبت سفارش: {order_date}"), small)],
+        [Paragraph(rtl(f"روش/وضعیت پرداخت: {invoice_status}"), small)],
+        [Paragraph(rtl(f"وضعیت سفارش: {order_status}"), small)],
+        [Paragraph(rtl(f"شماره سفارش: #{order.id}"), small)],
+    ], colWidths=[72*mm])
+    order_summary.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("BACKGROUND", (0,0), (-1,0), soft),
+        ("LINEBELOW", (0,0), (-1,0), 0.6, line),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+    ]))
+
+    summary = Table(
+        [[order_summary, totals_table]],
+        colWidths=[74*mm, 108*mm],
+    )
+    summary.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("LEFTPADDING", (0,0), (-1,-1), 0),
+        ("RIGHTPADDING", (0,0), (-1,-1), 0),
+        ("TOPPADDING", (0,0), (-1,-1), 0),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 0),
+    ]))
+
+    # ---------------------------------------------------------
+    # Notes + signature / stamp
+    # ---------------------------------------------------------
+    note_text = safe_text(
+        order.note,
+        "شرایط پرداخت و ارسال مطابق اطلاعات ثبت‌شده در سفارش است."
+    )
+    notes = Table([
+        [Paragraph(rtl("توضیحات و یادداشت سفارش"), section)],
+        [Paragraph(rtl(note_text), small)],
+        [Paragraph(rtl("این سند به صورت الکترونیکی از سامانه خریدینو صادر شده است."), tiny)],
+    ], colWidths=[182*mm])
+    notes.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("BACKGROUND", (0,0), (-1,0), soft),
+        ("LINEBELOW", (0,0), (-1,0), 0.6, line),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+    ]))
+
+    signature_box_style = ParagraphStyle(
+        "SignatureTitle",
+        parent=center,
+        fontSize=8.5,
+        leading=11,
+        textColor=ink,
+    )
+    signature_boxes = Table([
+        [
+            Paragraph(rtl("مهر و امضای فروشنده"), signature_box_style),
+            Paragraph(rtl("مهر و امضای خریدار"), signature_box_style),
+        ],
+        [
+            Paragraph(rtl(""), center),
+            Paragraph(rtl(""), center),
+        ],
+        [
+            Paragraph(rtl("نام و امضای مجاز"), tiny),
+            Paragraph(rtl("تأیید دریافت کالا / خدمات"), tiny),
+        ],
+    ], colWidths=[91*mm, 91*mm], rowHeights=[8*mm, 28*mm, 8*mm])
+    signature_boxes.setStyle(TableStyle([
+        ("BOX", (0,0), (0,-1), 0.65, line),
+        ("BOX", (1,0), (1,-1), 0.65, line),
+        ("LINEBELOW", (0,0), (-1,0), 0.35, line),
+        ("ALIGN", (0,0), (-1,-1), "CENTER"),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("BACKGROUND", (0,0), (-1,0), soft),
+        ("LEFTPADDING", (0,0), (-1,-1), 7),
+        ("RIGHTPADDING", (0,0), (-1,-1), 7),
+        ("TOPPADDING", (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+    ]))
+
+    # ---------------------------------------------------------
+    # Page chrome
+    # ---------------------------------------------------------
+    def draw_page_chrome(canvas, doc_obj):
+        canvas.saveState()
+        width, height = A4
+
+        # Thin premium top accent.
+        canvas.setFillColor(accent)
+        canvas.rect(0, height-3.2*mm, width, 3.2*mm, stroke=0, fill=1)
+
+        # Subtle footer rule.
+        canvas.setStrokeColor(line)
+        canvas.setLineWidth(0.5)
+        canvas.line(13*mm, 11.5*mm, width-13*mm, 11.5*mm)
+
+        canvas.setFont("Helvetica", 6.5)
+        canvas.setFillColor(muted)
+        canvas.drawString(13*mm, 7.2*mm, "KHARIDINO • SALES INVOICE")
+        canvas.drawRightString(width-13*mm, 7.2*mm, f"Page {canvas.getPageNumber()}")
+
+        canvas.restoreState()
 
     story = [
-        Paragraph(rtl("خریدینو"), title),
-        Paragraph(rtl("فاکتور فروش"), title),
+        brand,
+        Spacer(1, 3.5*mm),
+        invoice_meta,
+        Spacer(1, 2.5*mm),
+        status_table,
+        Spacer(1, 5.5*mm),
+        parties,
+        Spacer(1, 6*mm),
+        Table(
+            [[
+                Paragraph(rtl("اقلام فاکتور"), section),
+                Paragraph(rtl("INVOICE ITEMS"), tiny),
+            ]],
+            colWidths=[145*mm, 37*mm],
+            style=TableStyle([
+                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+                ("LINEBELOW", (0,0), (-1,-1), 1.2, ink),
+                ("LEFTPADDING", (0,0), (-1,-1), 0),
+                ("RIGHTPADDING", (0,0), (-1,-1), 0),
+                ("TOPPADDING", (0,0), (-1,-1), 0),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+            ]),
+        ),
+        Spacer(1, 2.5*mm),
+        items_table,
+        Spacer(1, 5.5*mm),
+        summary,
         Spacer(1, 5*mm),
-    ]
-    meta = [
-        [Paragraph(rtl("شماره فاکتور"), body), Paragraph(rtl(invoice.invoice_number), body),
-         Paragraph(rtl("تاریخ صدور"), body), Paragraph(rtl(invoice.created_at.strftime("%Y/%m/%d") if invoice.created_at else "—"), body)],
-        [Paragraph(rtl("خریدار"), body), Paragraph(rtl(invoice.buyer_name), body),
-         Paragraph(rtl("تلفن"), body), Paragraph(rtl(invoice.buyer_phone), body)],
-        [Paragraph(rtl("نشانی"), body), Paragraph(rtl(invoice.buyer_address), body),
-         Paragraph(rtl("وضعیت"), body), Paragraph(rtl(invoice.status), body)],
-    ]
-    meta_table = Table(meta, colWidths=[25*mm, 65*mm, 25*mm, 65*mm], repeatRows=0)
-    meta_table.setStyle(TableStyle([
-        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
-        ("GRID",(0,0),(-1,-1),0.4,colors.HexColor("#e5e7eb")),
-        ("BACKGROUND",(0,0),(0,-1),colors.HexColor("#f8fafc")),
-        ("BACKGROUND",(2,0),(2,-1),colors.HexColor("#f8fafc")),
-        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
-        ("RIGHTPADDING",(0,0),(-1,-1),6),
-        ("LEFTPADDING",(0,0),(-1,-1),6),
-        ("TOPPADDING",(0,0),(-1,-1),6),
-        ("BOTTOMPADDING",(0,0),(-1,-1),6),
-    ]))
-    story += [meta_table, Spacer(1, 7*mm)]
-
-    rows = [[rtl("ردیف"), rtl("شرح کالا / خدمت"), rtl("تعداد"), rtl("مبلغ واحد"), rtl("مبلغ کل")]]
-    for idx, item in enumerate(order.items, 1):
-        rows.append([
-            rtl(idx), rtl(item.product_name), rtl(item.quantity),
-            rtl(f"{item.price:,}"), rtl(f"{item.price * item.quantity:,}")
-        ])
-    table = Table(rows, colWidths=[14*mm, 80*mm, 18*mm, 35*mm, 38*mm], repeatRows=1)
-    table.setStyle(TableStyle([
-        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
-        ("FONTSIZE",(0,0),(-1,-1),8.5),
-        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#f1f5f9")),
-        ("TEXTCOLOR",(0,0),(-1,0),colors.HexColor("#111827")),
-        ("GRID",(0,0),(-1,-1),0.4,colors.HexColor("#dbe2ea")),
-        ("ALIGN",(0,0),(-1,-1),"RIGHT"),
-        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
-        ("TOPPADDING",(0,0),(-1,-1),6),
-        ("BOTTOMPADDING",(0,0),(-1,-1),6),
-    ]))
-    story += [table, Spacer(1, 6*mm)]
-
-    totals = [
-        [Paragraph(rtl("جمع کالاها"), body), Paragraph(rtl(f"{invoice.subtotal:,} تومان"), body)],
-        [Paragraph(rtl("تخفیف"), body), Paragraph(rtl(f"{invoice.discount:,} تومان"), body)],
-        [Paragraph(rtl("مالیات و عوارض"), body), Paragraph(rtl(f"{invoice.tax:,} تومان"), body)],
-        [Paragraph(rtl("مبلغ نهایی"), body), Paragraph(rtl(f"{invoice.total:,} تومان"), body)],
-    ]
-    totals_table = Table(totals, colWidths=[95*mm, 90*mm])
-    totals_table.setStyle(TableStyle([
-        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
-        ("GRID",(0,0),(-1,-1),0.4,colors.HexColor("#e5e7eb")),
-        ("BACKGROUND",(0,3),(-1,3),colors.HexColor("#fce7f3")),
-        ("FONTNAME",(0,3),(-1,3),"KharidinoRTL"),
-        ("FONTSIZE",(0,3),(-1,3),11),
-        ("TOPPADDING",(0,0),(-1,-1),7),
-        ("BOTTOMPADDING",(0,0),(-1,-1),7),
-    ]))
-    signature_data = [
-        [Paragraph(rtl("مهر و امضای فروشنده"), body), Paragraph(rtl("مهر و امضای خریدار"), body)],
-        [Paragraph(rtl(""), body), Paragraph(rtl(""), body)],
-        [Paragraph(rtl("نام و امضای مجاز"), small), Paragraph(rtl("تأیید دریافت کالا / خدمات"), small)],
-    ]
-    signature_table = Table(signature_data, colWidths=[92.5*mm, 92.5*mm], rowHeights=[8*mm, 27*mm, 8*mm])
-    signature_table.setStyle(TableStyle([
-        ("FONTNAME",(0,0),(-1,-1),"KharidinoRTL"),
-        ("BOX",(0,0),(0,-1),0.5,colors.HexColor("#cbd5e1")),
-        ("BOX",(1,0),(1,-1),0.5,colors.HexColor("#cbd5e1")),
-        ("LINEBELOW",(0,0),(0,0),0.5,colors.HexColor("#e5e7eb")),
-        ("LINEBELOW",(1,0),(1,0),0.5,colors.HexColor("#e5e7eb")),
-        ("ALIGN",(0,0),(-1,-1),"CENTER"),
-        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
-        ("TOPPADDING",(0,0),(-1,-1),4),
-        ("BOTTOMPADDING",(0,0),(-1,-1),4),
-    ]))
-    story += [
-        totals_table,
-        Spacer(1, 7*mm),
-        signature_table,
+        notes,
         Spacer(1, 5*mm),
-        Paragraph(rtl(company.get("legal_name") or "خریدینو"), body),
-        Paragraph(rtl("این فاکتور به صورت الکترونیکی صادر شده است."), small),
+        signature_boxes,
+        Spacer(1, 4*mm),
+        Table(
+            [[
+                Paragraph(rtl(company.get("website") or "خریدینو"), tiny),
+                Paragraph(rtl(company.get("email") or ""), tiny),
+                Paragraph(rtl(company.get("phone") or ""), tiny),
+            ]],
+            colWidths=[61*mm, 61*mm, 60*mm],
+            style=TableStyle([
+                ("ALIGN", (0,0), (-1,-1), "CENTER"),
+                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("LEFTPADDING", (0,0), (-1,-1), 4),
+                ("RIGHTPADDING", (0,0), (-1,-1), 4),
+                ("TOPPADDING", (0,0), (-1,-1), 3),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+            ]),
+        ),
     ]
-    doc.build(story)
+
+    doc.build(
+        story,
+        onFirstPage=draw_page_chrome,
+        onLaterPages=draw_page_chrome,
+    )
     return buffer.getvalue()
-
 
 def _send_invoice_email(invoice, order, company, pdf_bytes):
     recipient = (order.user.email if order.user else "").strip()

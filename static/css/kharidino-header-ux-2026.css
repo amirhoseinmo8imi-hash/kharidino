@@ -529,3 +529,21 @@
   .km-account-dropdown{top:105px}
   .km-account-dropdown::before{display:none}
 }
+
+
+/* Robust account-menu hover/click bridge */
+.km-account-menu{z-index:10020}
+.km-account-menu:hover,.km-account-menu:focus-within{z-index:10030}
+.km-account-dropdown{
+  z-index:10040;
+  top:calc(100% - 1px);
+  margin-top:0;
+}
+.km-account-dropdown::before{
+  top:-14px;
+  height:15px;
+  z-index:-1;
+}
+.km-account-dropdown a,
+.km-account-dropdown button,
+.km-account-dropdown form{position:relative;z-index:1}

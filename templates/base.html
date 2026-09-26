@@ -39,7 +39,8 @@
   }
   </script>
   {% block extra_css %}{% endblock %}
-  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-26-3') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-26-8') }}">{% endif %}
+  {% if request.endpoint and request.endpoint.startswith('admin') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-products-final.css', v='2026-09-26-3') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-admin-workspace.css', v='2026-09-26-9') }}">{% endif %}
+{% if request.endpoint in ['order_invoice', 'admin_order_invoice'] %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-invoice.css', v='2026-09-26-1') }}">{% endif %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-mega-menu.css', v='2026-09-25-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-25-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-site-polish-2026.css', v='2026-09-25-2') }}">

@@ -1068,7 +1068,7 @@
 
                     <div class="admin-order-actions">
                         {% if o.invoice %}
-                        <a class="btn" href="{{ url_for('order_invoice', order_id=o.id) }}"><i class="fa-solid fa-file-invoice"></i> مشاهده فاکتور</a>
+                        <a class="btn" href="{{ url_for('admin_order_invoice', order_id=o.id) }}"><i class="fa-solid fa-file-invoice"></i> مشاهده فاکتور</a>
                         {% if o.invoice.status != 'صادر و ایمیل شد' %}
                         <form method="post" action="{{ url_for('admin_issue_invoice', order_id=o.id) }}" style="display:inline">
                             <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> صدور و ارسال</button>

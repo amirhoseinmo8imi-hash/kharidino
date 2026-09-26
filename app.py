@@ -17,6 +17,7 @@ from flask import (
     session,
     flash,
     abort,
+    jsonify,
 )
 
 from flask_sqlalchemy import SQLAlchemy
@@ -1468,13 +1469,23 @@ def home():
 
 @app.route("/products")
 def catalog_products():
-    """Display the complete active product catalog."""
-    q = request.args.get("q", "").strip()
+    """Display the complete active product catalog with one consistent filter model."""
+    q = request.args.get("q", "").strip()[:100]
     intent = parse_search_intent(q)
     search_q = intent["query"] or q
     sort = request.args.get("sort", "newest").strip()
+    category_id = request.args.get("category", "").strip()
 
-    query = Product.query.filter_by(active=True)
+    try:
+        min_price = max(0, int(request.args.get("min_price", "0") or 0))
+        max_price = max(0, int(request.args.get("max_price", "0") or 0))
+    except (TypeError, ValueError):
+        min_price = max_price = 0
+
+    if min_price and max_price and min_price > max_price:
+        min_price, max_price = max_price, min_price
+
+    query = Product.query.filter(Product.active.is_(True))
 
     if search_q:
         search = f"%{search_q}%"
@@ -1486,12 +1497,22 @@ def catalog_products():
             )
         )
 
+    if category_id:
+        try:
+            query = query.filter(Product.category_id == int(category_id))
+        except (TypeError, ValueError):
+            category_id = ""
+
     products = query.all()
-    if intent["min_price"] is not None or intent["max_price"] is not None:
+
+    # Keep natural-language price intent and explicit toolbar filters compatible.
+    effective_min = intent["min_price"] if intent["min_price"] is not None else min_price
+    effective_max = intent["max_price"] if intent["max_price"] is not None else max_price
+    if effective_min is not None or effective_max is not None:
         products = [
             p for p in products
-            if (intent["min_price"] is None or lowest_price(p) >= intent["min_price"])
-            and (intent["max_price"] is None or lowest_price(p) <= intent["max_price"])
+            if (effective_min in (None, 0) or lowest_price(p) >= effective_min)
+            and (effective_max in (None, 0) or lowest_price(p) <= effective_max)
         ]
 
     if sort == "price_low":
@@ -1511,25 +1532,64 @@ def catalog_products():
         .all()
     )
 
-    stores = (
-        Store.query
-        .filter_by(active=True)
-        .order_by(Store.name.asc())
-        .all()
-    )
+    selected_category = None
+    if category_id.isdigit():
+        selected_category = db.session.get(Category, int(category_id))
 
     return render_template(
-        "index.html",
+        "catalog_products.html",
         products=products,
         categories=categories,
-        stores=stores,
         q=q,
         search_intent=intent,
         sort=sort,
-        category_id="",
-        selected_category=None,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        selected_category=selected_category,
         lowest_price=lowest_price,
     )
+
+
+@app.get("/api/catalog/search")
+def api_catalog_search():
+    """Small, fast autocomplete endpoint used by the global header search."""
+    q = normalize_search_text(request.args.get("q", ""))[:100]
+    try:
+        limit = max(1, min(10, int(request.args.get("per_page", "7") or 7)))
+    except (TypeError, ValueError):
+        limit = 7
+
+    if len(q) < 2:
+        return jsonify({"items": []})
+
+    needle = f"%{q}%"
+    products = (
+        Product.query
+        .filter(
+            Product.active.is_(True),
+            db.or_(
+                Product.name.ilike(needle),
+                Product.description.ilike(needle),
+                Product.category.has(Category.name.ilike(needle)),
+            ),
+        )
+        .order_by(Product.id.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return jsonify({
+        "items": [
+            {
+                "id": product.id,
+                "name": product.name,
+                "price": lowest_price(product),
+                "url": url_for("product_detail", product_id=product.id),
+            }
+            for product in products
+        ]
+    })
 
 
 # =========================================================
@@ -1870,70 +1930,6 @@ def product_detail(product_id):
         .limit(8)
         .all()
     )
-
-    # -----------------------------------------------------
-    # DEBUG
-    # -----------------------------------------------------
-
-    print("")
-    print("==============================================")
-    print("KHARIDINO PRODUCT DEBUG")
-    print("==============================================")
-    print(
-        "Product ID:",
-        product.id
-    )
-    print(
-        "Product:",
-        product.name
-    )
-    print(
-        "Offers:",
-        len(offers)
-    )
-
-    for offer in offers:
-
-        print(
-            "----------------------------------------------"
-        )
-
-        print(
-            "Offer ID:",
-            offer.id
-        )
-
-        print(
-            "Store ID:",
-            offer.store_id
-        )
-
-        print(
-            "Store:",
-            offer.store.name
-            if offer.store
-            else "NO STORE"
-        )
-
-        print(
-            "Price:",
-            offer.price
-        )
-
-        print(
-            "Stock:",
-            offer.in_stock
-        )
-
-        print(
-            "Store Active:",
-            offer.store.active
-            if offer.store
-            else False
-        )
-
-    print("==============================================")
-    print("")
 
     # -----------------------------------------------------
     # RENDER
@@ -3000,47 +2996,40 @@ def checkout():
     # ثبت سفارش
     # =====================================================
 
+    checkout_nonce = session.get("checkout_nonce")
+
+    if request.method == "GET" or not checkout_nonce:
+        checkout_nonce = secrets.token_urlsafe(24)
+        session["checkout_nonce"] = checkout_nonce
+
     if request.method == "POST":
 
-        name = request.form.get(
-            "customer_name",
-            ""
-        ).strip()
+        submitted_nonce = request.form.get("checkout_nonce", "")
+        if not submitted_nonce or not checkout_nonce or not secrets.compare_digest(
+            str(submitted_nonce), str(checkout_nonce)
+        ):
+            flash("این فرم قبلاً ثبت شده یا منقضی شده است. لطفاً دوباره تلاش کن.", "warning")
+            return redirect(url_for("checkout"))
 
-        phone = request.form.get(
-            "phone",
-            ""
-        ).strip()
+        name = request.form.get("customer_name", "").strip()[:120]
+        phone = normalize_search_text(request.form.get("phone", "")).strip()[:30]
+        address = request.form.get("address", "").strip()[:2000]
+        note = request.form.get("note", "").strip()[:2000]
 
-        address = request.form.get(
-            "address",
-            ""
-        ).strip()
-
-        note = request.form.get(
-            "note",
-            ""
-        ).strip()
-
-        # =================================================
-        # بررسی اطلاعات
-        # =================================================
-
+        # نام، آدرس و شماره تماس را قبل از ساخت سفارش اعتبارسنجی می‌کنیم.
+        phone_digits = "".join(ch for ch in phone if ch.isdigit())
         if (
             not name
-            or not phone
             or not address
+            or len(phone_digits) < 10
+            or len(phone_digits) > 15
         ):
-
-            flash(
-                "نام، شماره تماس و آدرس الزامی است.",
-                "warning"
-            )
-
+            flash("نام، شماره تماس معتبر و آدرس کامل الزامی است.", "warning")
             return render_template(
                 "checkout.html",
                 items=items,
-                total=total
+                total=total,
+                checkout_nonce=checkout_nonce,
             )
 
         # =================================================
@@ -3104,7 +3093,7 @@ def checkout():
         # =================================================
 
         session["cart"] = {}
-
+        session.pop("checkout_nonce", None)
         session.modified = True
 
         flash(
@@ -3123,7 +3112,8 @@ def checkout():
     return render_template(
         "checkout.html",
         items=items,
-        total=total
+        total=total,
+        checkout_nonce=checkout_nonce,
     )
 
 

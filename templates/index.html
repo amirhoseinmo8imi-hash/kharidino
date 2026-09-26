@@ -315,6 +315,18 @@
   {% else %}
   <section class="kdg-section" id="all-products">
     <div class="kdg-section-head"><div><span>جستجوی خریدینو</span><h2>نتایج جستجو برای «{{ q }}»</h2></div><strong>{{ products|length }} محصول</strong></div>
+    {% if search_intent and (search_intent.min_price or search_intent.max_price) %}
+    <div class="kh-search-intent">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>فیلتر هوشمند قیمت فعال شد:</span>
+      <strong>
+        {% if search_intent.min_price %}از {{ search_intent.min_price|money }} تومان{% endif %}
+        {% if search_intent.min_price and search_intent.max_price %} تا {% endif %}
+        {% if search_intent.max_price %}{{ search_intent.max_price|money }} تومان{% endif %}
+      </strong>
+      <small>عبارت جستجو همزمان روی نام و دسته‌بندی اعمال شده است.</small>
+    </div>
+    {% endif %}
     <div class="kdg-products">
       {% for product in products %}
       <article class="kdg-card-wrap">

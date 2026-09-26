@@ -512,3 +512,20 @@
     max-height:none;
   }
 }
+
+/* Keep the account dropdown connected to its trigger while the pointer moves into it. */
+.km-account-menu{padding-bottom:8px;margin-bottom:-8px}
+.km-account-dropdown{top:100%;margin-top:0}
+.km-account-dropdown::before{
+  content:"";
+  position:absolute;
+  top:-9px;
+  right:0;
+  width:100%;
+  height:10px;
+}
+@media(max-width:860px){
+  .km-account-menu{padding-bottom:0;margin-bottom:0}
+  .km-account-dropdown{top:105px}
+  .km-account-dropdown::before{display:none}
+}

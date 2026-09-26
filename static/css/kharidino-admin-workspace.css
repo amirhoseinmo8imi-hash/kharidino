@@ -21,3 +21,109 @@
 @media(max-width:1200px){.kh-admin-page .stat-grid{grid-template-columns:repeat(3,1fr)}.kh-admin-page .admin-layout{grid-template-columns:220px minmax(0,1fr)}}
 @media(max-width:850px){.kh-admin-page .admin-layout{display:block}.kh-admin-page .admin-sidebar{position:sticky;height:auto;top:0;padding:10px;overflow:visible;border-left:0;border-bottom:1px solid #e4e4e7}.kh-admin-page .admin-brand{display:none}.kh-admin-page .admin-nav{display:flex;overflow:auto;padding:2px}.kh-admin-page .admin-nav a{white-space:nowrap;padding:9px 11px}.kh-admin-page .admin-nav a span{font-size:11px}.kh-admin-page .admin-sidebar-bottom{display:none}.kh-admin-page .admin-main{padding:18px 12px 35px}.kh-admin-page .stat-grid{grid-template-columns:repeat(2,1fr)}.kh-admin-page .admin-section:not(#dashboard){padding:16px;border-radius:15px}.kh-admin-page .admin-title{flex-direction:column}.kh-admin-page .admin-item{grid-template-columns:48px minmax(0,1fr);align-items:start}.kh-admin-page .admin-item>.edit-details,.kh-admin-page .admin-item>form{grid-column:2}.kh-admin-page .mini-image,.kh-admin-page .mini-icon{width:48px;height:48px}.kh-admin-page .form-grid,.kh-admin-page .inline-edit,.kh-admin-page .table-edit{grid-template-columns:1fr}.kh-admin-page .form-grid .wide,.kh-admin-page .inline-edit textarea,.kh-admin-page .inline-edit button,.kh-admin-page .inline-edit .check{grid-column:auto}.kh-admin-page .admin-order{grid-template-columns:1fr}.kh-admin-page .admin-order form{display:grid;grid-template-columns:1fr}.kh-admin-page .admin-order select{width:100%}}
 @media(max-width:480px){.kh-admin-page .stat-grid{gap:9px}.kh-admin-page .stat-card{padding:12px}.kh-admin-page .stat-card strong{font-size:17px}.kh-admin-page .stat-icon{width:36px;height:36px;flex-basis:36px}.kh-admin-page .admin-title h1{font-size:22px}.kh-admin-page .admin-title h2{font-size:18px}}
+
+
+/* =========================================================
+   ADMIN COMMAND CENTER — 2026
+   Scoped to the admin workspace only.
+   ========================================================= */
+.kh-admin-page .admin-nav-group-label{
+  padding:14px 12px 5px;
+  color:#a1a1aa;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+.kh-admin-page .admin-command-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin:16px 0 14px;
+  padding:14px 16px;
+  border:1px solid #e4e4e7;
+  border-radius:16px;
+  background:linear-gradient(135deg,#ffffff,#fafafa);
+  box-shadow:0 8px 24px rgba(24,24,27,.045);
+}
+.kh-admin-page .admin-command-copy{display:flex;align-items:center;gap:11px;min-width:0}
+.kh-admin-page .admin-command-copy>div{display:grid;gap:3px}
+.kh-admin-page .admin-command-copy strong{font-size:13px}
+.kh-admin-page .admin-command-copy small{font-size:10px;color:#71717a}
+.kh-admin-page .admin-command-dot{width:10px;height:10px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 5px #dcfce7;flex:0 0 auto}
+.kh-admin-page .admin-command-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.kh-admin-page .admin-quick-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 11px;border:1px solid #e4e4e7;border-radius:10px;
+  background:#fff;color:#3f3f46;text-decoration:none;font-size:10px;font-weight:900;
+}
+.kh-admin-page .admin-quick-btn:hover{border-color:#fda4af;background:#fff7f8;color:#ef4056;transform:translateY(-1px)}
+.kh-admin-page .admin-quick-btn.primary{background:#ef4056;border-color:#ef4056;color:#fff;box-shadow:0 7px 18px rgba(239,64,86,.18)}
+.kh-admin-page .admin-quick-btn.primary:hover{background:#d92d43;color:#fff}
+
+.kh-admin-page .admin-dashboard-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(300px,.8fr);
+  gap:14px;
+  margin-bottom:28px;
+}
+.kh-admin-page .admin-dashboard-card{
+  min-width:0;background:#fff;border:1px solid #e4e4e7;border-radius:16px;
+  padding:18px;box-shadow:0 8px 28px rgba(24,24,27,.05);
+}
+.kh-admin-page .admin-dashboard-card--wide{grid-column:1}
+.kh-admin-page .admin-dashboard-card--revenue{grid-column:2}
+.kh-admin-page .admin-dashboard-card--recent{grid-column:1}
+.kh-admin-page .admin-dashboard-card--shortcuts{grid-column:2}
+.kh-admin-page .admin-dashboard-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
+.kh-admin-page .admin-dashboard-card-head h3{margin:7px 0 0;font-size:16px;color:#27272a}
+.kh-admin-page .admin-dashboard-card-head>a{font-size:10px;color:#71717a;text-decoration:none;padding-top:9px}
+.kh-admin-page .admin-dashboard-card-head>a:hover{color:#ef4056}
+.kh-admin-page .admin-live-badge{display:inline-flex;align-items:center;gap:6px;color:#067647;background:#ecfdf3;border-radius:999px;padding:6px 9px;font-size:9px;font-weight:900}
+.kh-admin-page .admin-live-badge i{font-size:6px}
+.kh-admin-page .admin-health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.kh-admin-page .admin-health-item{
+  display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:9px;
+  padding:11px;border:1px solid #f0f0f2;border-radius:12px;background:#fafafa;
+}
+.kh-admin-page .admin-health-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#fff1f3;color:#ef4056}
+.kh-admin-page .admin-health-item div{min-width:0}
+.kh-admin-page .admin-health-item strong,.kh-admin-page .admin-health-item small{display:block}
+.kh-admin-page .admin-health-item strong{font-size:15px}
+.kh-admin-page .admin-health-item small{font-size:9px;color:#71717a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kh-admin-page .admin-health-item a{font-size:9px;color:#ef4056;text-decoration:none;font-weight:900}
+.kh-admin-page .admin-revenue-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#f0fdf4;color:#16a34a}
+.kh-admin-page .admin-revenue-value{display:block;font-size:25px;letter-spacing:-.5px;margin:6px 0 3px}
+.kh-admin-page .admin-dashboard-card--revenue>small{font-size:9px;color:#71717a}
+.kh-admin-page .admin-mini-progress{height:7px;background:#f4f4f5;border-radius:999px;overflow:hidden;margin:22px 0 8px}
+.kh-admin-page .admin-mini-progress span{display:block;height:100%;max-width:100%;border-radius:inherit;background:#ef4056}
+.kh-admin-page .admin-revenue-meta{display:flex;justify-content:space-between;color:#71717a;font-size:9px}
+.kh-admin-page .admin-recent-orders{display:grid;gap:6px}
+.kh-admin-page .admin-recent-order{display:grid;grid-template-columns:34px minmax(0,1fr) 18px;align-items:center;gap:9px;padding:8px;border-radius:11px;text-decoration:none;color:inherit}
+.kh-admin-page .admin-recent-order:hover{background:#fafafa}
+.kh-admin-page .admin-order-avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff1f3;color:#ef4056;font-weight:900;font-size:11px}
+.kh-admin-page .admin-recent-order-main{min-width:0}
+.kh-admin-page .admin-recent-order-main strong,.kh-admin-page .admin-recent-order-main small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kh-admin-page .admin-recent-order-main strong{font-size:10px}
+.kh-admin-page .admin-recent-order-main small{font-size:9px;color:#71717a;margin-top:2px}
+.kh-admin-page .admin-order-arrow{color:#a1a1aa;font-size:9px}
+.kh-admin-page .admin-empty-mini{padding:24px;text-align:center;color:#a1a1aa;font-size:10px}
+.kh-admin-page .admin-shortcuts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kh-admin-page .admin-shortcuts-grid a{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid #f0f0f2;border-radius:11px;color:#52525b;text-decoration:none;font-size:10px;font-weight:800}
+.kh-admin-page .admin-shortcuts-grid a i{color:#ef4056;width:18px;text-align:center}
+.kh-admin-page .admin-shortcuts-grid a:hover{background:#fff7f8;border-color:#fecdd3;color:#ef4056}
+
+@media(max-width:1000px){
+  .kh-admin-page .admin-dashboard-grid{grid-template-columns:1fr}
+  .kh-admin-page .admin-dashboard-card--wide,.kh-admin-page .admin-dashboard-card--revenue,.kh-admin-page .admin-dashboard-card--recent,.kh-admin-page .admin-dashboard-card--shortcuts{grid-column:1}
+}
+@media(max-width:700px){
+  .kh-admin-page .admin-command-bar{align-items:stretch;flex-direction:column}
+  .kh-admin-page .admin-command-actions{justify-content:flex-start}
+  .kh-admin-page .admin-health-grid{grid-template-columns:1fr}
+  .kh-admin-page .admin-dashboard-card{padding:14px}
+}
+@media(max-width:480px){
+  .kh-admin-page .admin-quick-btn{flex:1 1 calc(50% - 7px);justify-content:center}
+  .kh-admin-page .admin-shortcuts-grid{grid-template-columns:1fr}
+}

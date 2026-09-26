@@ -547,3 +547,10 @@
 .km-account-dropdown a,
 .km-account-dropdown button,
 .km-account-dropdown form{position:relative;z-index:1}
+
+
+/* Header layer hierarchy: account menu stays above mega categories. */
+.km-topbar{position:relative;z-index:5000}
+.km-header{position:relative;z-index:5100}
+.km-user-actions,.km-account-menu{position:relative;z-index:5300}
+.km-account-dropdown{z-index:5400!important}

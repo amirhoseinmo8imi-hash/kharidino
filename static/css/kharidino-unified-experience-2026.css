@@ -697,3 +697,79 @@ body.kh-inner-page .mobile-bottom-nav .mobile-nav-item:first-child{
   html{scroll-behavior:auto}
   .km-topbar,.mobile-nav-item,.kh-back-top,.kdg-product,.kdg-deal-card,.kdg-store,.store-card,.storefront-card,.vehicle-listing-card,.vehicle-card{transition:none!important}
 }
+
+
+/* Product reviews + recommendations */
+.kh-product-reviews,.kh-related-products{
+  width:min(1280px,calc(100% - 32px));
+  margin:18px auto 0;
+  padding:22px;
+  border:1px solid #e5e7eb;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 10px 30px rgba(15,23,42,.045);
+}
+.kh-reviews-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:16px;
+}
+.kh-reviews-head h2{margin:5px 0 0;font-size:20px}
+.kh-review-summary{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 14px;border-radius:14px;background:#fff7f8;border:1px solid #fde0e4;
+}
+.kh-review-summary strong{font-size:22px;color:var(--kh-red)}
+.kh-review-summary span{font-size:11px;font-weight:800}
+.kh-review-summary small{color:#8a919b}
+.kh-review-layout{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.7fr);gap:18px;
+}
+.kh-review-list{display:grid;gap:9px}
+.kh-review-card{
+  display:flex;gap:11px;padding:14px;border:1px solid #eceef1;border-radius:16px;background:#fcfcfd;
+}
+.kh-review-avatar{
+  width:38px;height:38px;flex:0 0 38px;border-radius:12px;
+  display:grid;place-items:center;background:#f1f3f5;color:#7c838d;
+}
+.kh-review-body{min-width:0;flex:1}
+.kh-review-meta{display:flex;justify-content:space-between;gap:10px}
+.kh-review-meta strong{font-size:11px}.kh-review-meta span{color:#f0a400;letter-spacing:1px}
+.kh-review-body p{margin:7px 0;font-size:11px;line-height:2;color:#464b53}
+.kh-review-body small{color:#969ca4}
+.kh-review-form{
+  align-self:start;padding:16px;border-radius:17px;background:#f7f8fa;border:1px solid #e7e9ed;
+}
+.kh-review-form h3{margin:0 0 12px;font-size:14px}
+.kh-review-form label{display:grid;gap:6px;margin-bottom:10px;font-size:10px;font-weight:900}
+.kh-review-form select,.kh-review-form textarea{
+  width:100%;border:1px solid #dfe2e6;border-radius:12px;padding:10px;background:#fff;font:inherit;
+}
+.kh-review-form textarea{resize:vertical;line-height:1.9}
+.kh-review-empty{
+  padding:35px 20px;text-align:center;border:1px dashed #dfe2e6;border-radius:16px;color:#858c95;
+}
+.kh-review-empty i{font-size:28px;margin-bottom:8px}.kh-review-empty h3{margin:5px 0;color:#333}
+.kh-related-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.kh-related-card{
+  min-width:0;display:grid;gap:7px;padding:10px;border:1px solid #e7e9ed;border-radius:15px;
+  text-decoration:none;color:inherit;background:#fff;transition:.2s ease;
+}
+.kh-related-card:hover{transform:translateY(-3px);box-shadow:0 12px 25px rgba(15,23,42,.08)}
+.kh-related-card img,.kh-related-placeholder{width:100%;height:150px;object-fit:contain;border-radius:11px;background:#f8f9fa}
+.kh-related-placeholder{display:grid;place-items:center;color:#a1a6ad;font-size:28px}
+.kh-related-card strong{font-size:10px;line-height:1.8}
+.kh-related-card span{font-size:10px;font-weight:900;color:var(--kh-red)}
+@media(max-width:800px){
+  .kh-review-layout{grid-template-columns:1fr}
+  .kh-related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+  .kh-product-reviews,.kh-related-products{width:calc(100% - 16px);padding:14px;border-radius:18px}
+  .kh-reviews-head{align-items:flex-start;flex-direction:column}
+  .kh-related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kh-related-card img,.kh-related-placeholder{height:125px}
+}

@@ -990,6 +990,8 @@ def _invoice_pdf_bytes(invoice, order, company):
         from reportlab.lib.units import mm
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
+        from reportlab.graphics.shapes import Drawing, Circle, Line
+        from reportlab.graphics.barcode.qr import QrCodeWidget
         from reportlab.platypus import (
             SimpleDocTemplate,
             Paragraph,
@@ -1279,6 +1281,8 @@ def _invoice_pdf_bytes(invoice, order, company):
         ("شماره ثبت", company.get("registration_number")),
         ("کد پستی", company.get("postal_code")),
         ("تلفن", company.get("phone")),
+        ("بانک", company.get("bank_name")),
+        ("شماره شبا", company.get("iban")),
         ("نشانی", company.get("address")),
     ]
     buyer_rows = [

@@ -1532,6 +1532,29 @@ def _invoice_pdf_bytes(invoice, order, company):
         ("TOPPADDING",(0,0),(-1,-1),0), ("BOTTOMPADDING",(0,0),(-1,-1),0),
     ]))
 
+    stamp_box = Table([[Paragraph(rtl("مهر خریدینو"), ParagraphStyle(
+        "Stamp", parent=center, fontSize=9, textColor=accent, leading=11
+    ))]], colWidths=[42*mm], rowHeights=[20*mm])
+    stamp_box.setStyle(TableStyle([
+        ("BOX",(0,0),(-1,-1),1.1,accent),
+        ("BACKGROUND",(0,0),(-1,-1),accent_soft),
+        ("ALIGN",(0,0),(-1,-1),"CENTER"),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+    ]))
+
+    delivery_panel = Table([
+        [Paragraph(rtl("اطلاعات ارسال و تحویل"), section)],
+        [Paragraph(rtl(f"گیرنده: {safe_text(order.customer_name)}"), small)],
+        [Paragraph(rtl(f"تلفن: {safe_text(order.phone)}"), small)],
+        [Paragraph(rtl(f"نشانی تحویل: {safe_text(order.address)}"), small)],
+    ], colWidths=[140*mm])
+    delivery_panel.setStyle(TableStyle([
+        ("BOX",(0,0),(-1,-1),0.65,line), ("BACKGROUND",(0,0),(-1,0),soft),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"), ("ALIGN",(0,0),(-1,-1),"RIGHT"),
+        ("LEFTPADDING",(0,0),(-1,-1),7), ("RIGHTPADDING",(0,0),(-1,-1),7),
+        ("TOPPADDING",(0,0),(-1,-1),5), ("BOTTOMPADDING",(0,0),(-1,-1),5),
+    ]))
+
     story = [
         brand,
         Spacer(1, 3.5*mm),
@@ -1564,7 +1587,9 @@ def _invoice_pdf_bytes(invoice, order, company):
         Spacer(1, 5*mm),
         notes,
         Spacer(1, 5*mm),
-        payment_panel,
+        delivery_panel,
+        Spacer(1, 4*mm),
+        Table([[payment_panel, stamp_box]], colWidths=[140*mm, 42*mm], style=TableStyle([("VALIGN",(0,0),(-1,-1),"MIDDLE"),("LEFTPADDING",(0,0),(-1,-1),0),("RIGHTPADDING",(0,0),(-1,-1),0),("TOPPADDING",(0,0),(-1,-1),0),("BOTTOMPADDING",(0,0),(-1,-1),0)])),
         Spacer(1, 5*mm),
         signature_boxes,
         Spacer(1, 4*mm),

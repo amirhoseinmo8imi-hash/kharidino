@@ -1384,7 +1384,9 @@ def home():
 
     q = request.args.get("q", "").strip()
     intent = parse_search_intent(q)
-    search_q = intent["query"] or q
+    # If the query is price-only (for example «زیر ۵ میلیون»),
+    # the price intent should filter the catalog instead of becoming a text query.
+    search_q = intent["query"]
     sort = request.args.get("sort", "newest").strip()
     category_id = request.args.get("category", "").strip()
 
@@ -1472,7 +1474,9 @@ def catalog_products():
     """Display the complete active product catalog with one consistent filter model."""
     q = request.args.get("q", "").strip()[:100]
     intent = parse_search_intent(q)
-    search_q = intent["query"] or q
+    # If the query is price-only (for example «زیر ۵ میلیون»),
+    # the price intent should filter the catalog instead of becoming a text query.
+    search_q = intent["query"]
     sort = request.args.get("sort", "newest").strip()
     category_id = request.args.get("category", "").strip()
 

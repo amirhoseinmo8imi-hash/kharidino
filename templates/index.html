@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}
-{% block extra_css %}\n<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-redesign-2026.css', v='2026-09-26-1') }}">\n
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-redesign-2026.css', v='2026-09-26-1') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-3') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-26-2') }}">
 {% endblock %}
@@ -141,7 +141,7 @@
   </script>
 
   {% if not q %}
-  <section class="kh-auto-zone" aria-label="بازار خودرو و وسایل نقلیه">\n    <div class="kh-auto-zone-bar"><div><span><i class="fa-solid fa-car-side"></i> KHARIDINO AUTO</span><strong>بازار خرید و فروش وسایل نقلیه</strong></div><a href="{{ url_for('vehicles') }}">ورود به بازار خودرو <i class="fa-solid fa-arrow-left"></i></a></div>\n  <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
+  <section class="kh-auto-zone" aria-label="بازار خودرو و وسایل نقلیه">    <div class="kh-auto-zone-bar"><div><span><i class="fa-solid fa-car-side"></i> KHARIDINO AUTO</span><strong>بازار خرید و فروش وسایل نقلیه</strong></div><a href="{{ url_for('vehicles') }}">ورود به بازار خودرو <i class="fa-solid fa-arrow-left"></i></a></div>  <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
     <div class="kh-vcat-head">
       <div><span><i class="fa-solid fa-road"></i> MARKETPLACE</span><h2>هر چیزی که <strong>حرکت می‌کند</strong></h2><p>بازار اختصاصی وسایل نقلیه خریدینو</p></div>
       <a href="{{ url_for('vehicles') }}">ورود به بازار <i class="fa-solid fa-arrow-left"></i></a>
@@ -157,7 +157,7 @@
   </section>
   {% endif %}
 
-  </section>\n  {% endif %}\n\n  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
+  </section>  {% endif %}  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
     <a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span><small>هزاران محصول</small></a>
     <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span><small>انتخاب اقتصادی</small></a>
     <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span><small>فروشنده‌ها</small></a>

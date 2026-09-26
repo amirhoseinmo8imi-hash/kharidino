@@ -476,7 +476,8 @@
 
 
 /* 2026-09-26 navigation height guard
-   Keep the primary navigation row from expanding when the mega menu is nested inside it. */
+   Keep the primary navigation row compact while the mega menu remains a viewport overlay.
+   Position values are supplied by kharidino-mega-menu.js using trigger coordinates. */
 .km-nav-inner{
   height:56px;
   min-height:56px;
@@ -500,6 +501,9 @@
 }
 .km-nav-primary .km-category-mega{
   position:fixed;
+  top:var(--km-mega-top,150px);
+  right:var(--km-mega-right,24px);
+  width:var(--km-mega-width,min(1000px,calc(100vw - 32px)));
 }
 @media(max-width:860px){
   .km-nav-inner,.km-nav-primary,.km-nav-primary .km-cat-menu-wrap{

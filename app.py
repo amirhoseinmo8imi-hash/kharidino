@@ -5468,6 +5468,25 @@ register_vehicle_chat(app, db, User, login_required)
 # DATABASE INIT
 # =========================================================
 
+@app.context_processor
+def inject_request_helpers():
+    return {"canonical_url": request.base_url}
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("404.html"), 404
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return render_template("404.html", error_message="حجم فایل یا درخواست بیش از حد مجاز است."), 413
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    db.session.rollback()
+    app.logger.exception("Unhandled Kharidino server error")
+    return render_template("404.html", error_message="خطای داخلی رخ داد. لطفاً دوباره تلاش کن."), 500
+
+
 with app.app_context():
 
     db.create_all()

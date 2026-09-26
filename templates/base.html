@@ -73,6 +73,14 @@
     <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
     <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
     <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
+    </div>
+  <div class="km-nav-business">
+      <button type="button" class="km-nav-business-trigger" aria-haspopup="true"><i class="fa-solid fa-briefcase"></i><span>کسب‌وکار</span><i class="fa-solid fa-chevron-down"></i></button>
+      <div class="km-nav-business-menu">
+        <a href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span><strong>ثبت فروشگاه</strong><small>فروشنده خریدینو شوید</small></span></a>
+        <a href="{{ url_for('organizations') }}"><i class="fa-solid fa-building"></i><span><strong>خدمات سازمانی</strong><small>خرید و همکاری سازمانی</small></span></a>
+      </div>
+    </div>
     <div class="km-cat-menu-wrap">
     <button type="button" class="km-cat-menu-trigger" aria-haspopup="true" aria-expanded="false">
       <i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>
@@ -133,7 +141,6 @@
         <a href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span><strong>ثبت فروشگاه</strong><small>فروشنده خریدینو شوید</small></span></a>
         <a href="{{ url_for('organizations') }}"><i class="fa-solid fa-building"></i><span><strong>خدمات سازمانی</strong><small>خرید و همکاری سازمانی</small></span></a>
       </div>
-    </div>
     <a class="km-nav-link" href="{{ url_for('features') }}"><i class="fa-solid fa-circle-info"></i><span>راهنمای خرید</span></a>
     {% if current_user %}
     <a class="km-nav-link km-nav-link--support" href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i><span>پیگیری سفارش</span></a>

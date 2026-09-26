@@ -3687,6 +3687,7 @@ def admin():
     pending_org_requests = OrganizationRequest.query.filter_by(status="در انتظار بررسی").count()
     completion_rate = round((completed_orders / orders_total) * 100) if orders_total else 0
     recent_orders = orders[:6]
+    invoices = Invoice.query.order_by(Invoice.id.desc()).all()
 
     stats = {
         "products": Product.query.count(),
@@ -3702,6 +3703,7 @@ def admin():
         "active_users": active_users,
         "pending_org_requests": pending_org_requests,
         "completion_rate": min(max(completion_rate, 0), 100),
+        "invoices": Invoice.query.count(),
     }
 
     return render_template(
@@ -3714,6 +3716,7 @@ def admin():
         orders=orders,
         stats=stats,
         recent_orders=recent_orders,
+        invoices=invoices,
         q=q
     )
 

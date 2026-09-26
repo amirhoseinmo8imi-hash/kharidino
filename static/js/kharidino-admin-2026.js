@@ -34,7 +34,7 @@
 
   const navLinks=[...document.querySelectorAll('[data-admin-target]')];
   const sections=[...document.querySelectorAll('.admin-section[id]')];
-  const labels={dashboard:'داشبورد', 'orders-admin':'سفارش‌ها','products-admin':'محصولات','offers-admin':'قیمت و پیشنهادها','categories-admin':'دسته‌بندی‌ها','stores-admin':'فروشگاه‌ها','users-admin':'کاربران','appearance-admin':'ظاهر و رسانه','settings':'تنظیمات'};
+  const labels={dashboard:'داشبورد', 'orders-admin':'سفارش‌ها','products-admin':'محصولات','offers-admin':'قیمت و پیشنهادها','categories-admin':'دسته‌بندی‌ها','stores-admin':'فروشگاه‌ها','users-admin':'کاربران','invoices-admin':'فاکتورها','appearance-admin':'ظاهر و رسانه','settings':'تنظیمات'};
   function activate(id,scroll){
     navLinks.forEach(a=>a.classList.toggle('is-active',a.dataset.adminTarget===id));
     if(breadcrumb) breadcrumb.textContent=labels[id]||'مدیریت';

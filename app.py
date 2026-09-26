@@ -537,6 +537,24 @@ class Review(db.Model):
     )
 
 
+class PriceAlert(db.Model):
+    __tablename__ = "price_alert"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    target_price = db.Column(db.Integer, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("price_alerts", lazy=True, cascade="all, delete-orphan"))
+    product = db.relationship("Product", backref=db.backref("price_alerts", lazy=True, cascade="all, delete-orphan"))
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "product_id", name="unique_user_product_price_alert"),
+    )
+
+
 class Favorite(db.Model):
     id = db.Column(
         db.Integer,
@@ -1610,6 +1628,46 @@ def category(category_id):
 
 
 # =========================================================
+# PRICE ALERT
+# =========================================================
+
+@app.post("/product/<int:product_id>/price-alert")
+@login_required
+def create_price_alert(product_id):
+    product = Product.query.get_or_404(product_id)
+    raw = request.form.get("target_price", "").strip().replace(",", "").replace("٬", "")
+    try:
+        target = int(normalize_search_text(raw))
+    except (TypeError, ValueError):
+        target = 0
+    if target <= 0:
+        flash("قیمت هدف معتبر وارد کن.", "warning")
+        return redirect(url_for("product_detail", product_id=product.id) + "#price-alert")
+
+    user_id = session["user_id"]
+    alert = PriceAlert.query.filter_by(user_id=user_id, product_id=product.id).first()
+    if alert:
+        alert.target_price = target
+        alert.active = True
+    else:
+        db.session.add(PriceAlert(user_id=user_id, product_id=product.id, target_price=target, active=True))
+    db.session.commit()
+    flash("هشدار قیمت برای این محصول فعال شد. 🔔", "success")
+    return redirect(url_for("product_detail", product_id=product.id) + "#price-alert")
+
+
+@app.post("/product/<int:product_id>/price-alert/remove")
+@login_required
+def remove_price_alert(product_id):
+    alert = PriceAlert.query.filter_by(user_id=session["user_id"], product_id=product_id).first()
+    if alert:
+        alert.active = False
+        db.session.commit()
+    flash("هشدار قیمت غیرفعال شد.", "success")
+    return redirect(url_for("product_detail", product_id=product_id) + "#price-alert")
+
+
+# =========================================================
 # PRODUCT
 # =========================================================
 
@@ -1793,6 +1851,14 @@ def product_detail(product_id):
         product
     )
 
+    price_alert = None
+    if session.get("user_id"):
+        price_alert = PriceAlert.query.filter_by(
+            user_id=session["user_id"],
+            product_id=product.id,
+            active=True,
+        ).first()
+
     related_products = (
         Product.query
         .filter(
@@ -1879,6 +1945,7 @@ def product_detail(product_id):
         offers=offers,
         lowest_price=lowest,
         rating=rating,
+        price_alert=price_alert,
         related_products=related_products
     )
 

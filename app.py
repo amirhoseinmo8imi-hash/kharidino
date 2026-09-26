@@ -1196,15 +1196,31 @@ def _invoice_pdf_bytes(invoice, order, company):
     # ---------------------------------------------------------
     # Header
     # ---------------------------------------------------------
+    logo_mark = Drawing(30, 30)
+    logo_mark.add(Circle(15, 15, 14, fillColor=accent, strokeColor=accent))
+    logo_mark.add(Line(8, 20, 11, 20, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Line(10, 20, 13, 11, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Line(13, 11, 24, 11, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Line(24, 11, 22, 18, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Circle(15, 7.5, 1.8, fillColor=white, strokeColor=white))
+    logo_mark.add(Circle(22, 7.5, 1.8, fillColor=white, strokeColor=white))
+
     brand = Table(
         [[
-            Paragraph(rtl("خریدینو"), ParagraphStyle(
+            Table([[logo_mark, Paragraph(rtl("خریدینو"), ParagraphStyle(
                 "brand",
                 parent=body,
                 fontSize=18,
                 leading=21,
                 textColor=white,
-            )),
+            ))]], colWidths=[34*mm, 42*mm], style=TableStyle([
+                ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+                ("ALIGN",(0,0),(-1,-1),"RIGHT"),
+                ("LEFTPADDING",(0,0),(-1,-1),0),
+                ("RIGHTPADDING",(0,0),(-1,-1),2),
+                ("TOPPADDING",(0,0),(-1,-1),0),
+                ("BOTTOMPADDING",(0,0),(-1,-1),0),
+            ])),
             Paragraph(rtl("فاکتور فروش"), ParagraphStyle(
                 "invoice_title",
                 parent=body,

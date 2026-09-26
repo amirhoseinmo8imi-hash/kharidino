@@ -68,7 +68,7 @@
       {% if current_user %}
       <a class="km-action km-action--messages" href="{{ url_for('my_vehicle_chats') }}"><i class="fa-regular fa-comments"></i><span>چت‌ها</span><b class="km-message-badge" data-vehicle-unread hidden>0</b></a>
       <div class="km-account-menu">
-        <a class="km-action km-account-trigger" href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i><span>حساب من</span><i class="fa-solid fa-chevron-down km-account-chevron"></i></a>
+        <button type="button" class="km-action km-account-trigger" aria-haspopup="true" aria-expanded="false"><i class="fa-regular fa-user"></i><span>حساب من</span><i class="fa-solid fa-chevron-down km-account-chevron"></i></button>
         <div class="km-account-dropdown">
           <div class="km-account-dropdown-head"><i class="fa-regular fa-circle-user"></i><div><strong>{{ current_user.name }}</strong><small>حساب کاربری خریدینو</small></div></div>
           <a href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i> پروفایل و تنظیمات</a>

@@ -3497,8 +3497,16 @@ def admin_order_invoice(order_id):
 @login_required
 def order_invoice_pdf(order_id):
     order = db.session.get(Order, order_id)
-    if not order or order.user_id != session["user_id"]:
+    if not order:
         abort(404)
+
+    # Customers may download only their own invoice; admins may download any invoice.
+    current_user = db.session.get(User, session.get("user_id")) if session.get("user_id") else None
+    if not current_user:
+        abort(404)
+    if current_user.role != "admin" and order.user_id != current_user.id:
+        abort(404)
+
     invoice = Invoice.query.filter_by(order_id=order.id).first()
     if not invoice:
         abort(404)

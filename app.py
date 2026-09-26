@@ -3417,6 +3417,11 @@ def admin():
     pending_orders = Order.query.filter_by(status="در انتظار بررسی").count()
     completed_orders = Order.query.filter_by(status="تکمیل شد").count()
     revenue = sum(int(o.total or 0) for o in Order.query.filter(Order.status != "لغو شد").all())
+    out_of_stock_offers = Offer.query.filter_by(in_stock=False).count()
+    active_users = User.query.filter_by(role="user").count()
+    pending_org_requests = OrganizationRequest.query.filter_by(status="در انتظار بررسی").count()
+    completion_rate = round((completed_orders / orders_total) * 100) if orders_total else 0
+    recent_orders = orders[:6]
 
     stats = {
         "products": Product.query.count(),
@@ -3428,6 +3433,10 @@ def admin():
         "pending_orders": pending_orders,
         "completed_orders": completed_orders,
         "revenue": revenue,
+        "out_of_stock_offers": out_of_stock_offers,
+        "active_users": active_users,
+        "pending_org_requests": pending_org_requests,
+        "completion_rate": min(max(completion_rate, 0), 100),
     }
 
     return render_template(
@@ -3439,6 +3448,7 @@ def admin():
         users=users,
         orders=orders,
         stats=stats,
+        recent_orders=recent_orders,
         q=q
     )
 

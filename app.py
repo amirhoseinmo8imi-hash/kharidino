@@ -1523,6 +1523,8 @@ def _invoice_pdf_bytes(invoice, order, company):
     qr_widget = QrCodeWidget(f"KHARIDINO|{invoice.invoice_number}|ORDER:{order.id}")
     qr_widget.barWidth = 24*mm
     qr_widget.barHeight = 24*mm
+    qr_drawing = Drawing(28*mm, 28*mm)
+    qr_drawing.add(qr_widget)
 
     bank_table = Table([
         [Paragraph(rtl("اطلاعات بانکی"), section)],
@@ -1538,7 +1540,7 @@ def _invoice_pdf_bytes(invoice, order, company):
 
     payment_panel = Table([[
         bank_table,
-        Table([[qr_widget], [Paragraph(rtl("QR فاکتور"), tiny)]], colWidths=[38*mm],
+        Table([[qr_drawing], [Paragraph(rtl("QR فاکتور"), tiny)]], colWidths=[38*mm],
               style=TableStyle([("ALIGN",(0,0),(-1,-1),"CENTER"),
                                 ("VALIGN",(0,0),(-1,-1),"MIDDLE")]))
     ]], colWidths=[130*mm, 52*mm])

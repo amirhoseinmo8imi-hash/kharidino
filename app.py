@@ -1255,7 +1255,7 @@ def _invoice_pdf_bytes(invoice, order, company):
             Paragraph(rtl("شماره سفارش"), label),
             Paragraph(rtl(f"#{order.id}"), value),
         ]],
-        colWidths=[28*mm, 42*mm, 28*mm, 42*mm, 27*mm, 20*mm],
+        colWidths=[26*mm, 36*mm, 26*mm, 36*mm, 26*mm, 34*mm],
     )
     status_table.setStyle(TableStyle([
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),

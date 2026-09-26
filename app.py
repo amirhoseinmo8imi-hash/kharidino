@@ -3,8 +3,10 @@ from email.message import EmailMessage
 import os
 import secrets
 import uuid
+from io import BytesIO
 from datetime import datetime, timedelta
 from functools import wraps
+from html import escape
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -17,6 +19,8 @@ from flask import (
     session,
     flash,
     abort,
+    jsonify,
+    send_file,
 )
 
 from flask_sqlalchemy import SQLAlchemy
@@ -537,6 +541,24 @@ class Review(db.Model):
     )
 
 
+class PriceAlert(db.Model):
+    __tablename__ = "price_alert"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    target_price = db.Column(db.Integer, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("price_alerts", lazy=True, cascade="all, delete-orphan"))
+    product = db.relationship("Product", backref=db.backref("price_alerts", lazy=True, cascade="all, delete-orphan"))
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "product_id", name="unique_user_product_price_alert"),
+    )
+
+
 class Favorite(db.Model):
     id = db.Column(
         db.Integer,
@@ -956,6 +978,730 @@ def send_kharidino_email(to_email, subject, body):
         app.logger.exception("Kharidino SMTP notification failed")
         return False
 
+
+def _invoice_pdf_bytes(invoice, order, company):
+    """Build a premium, print-ready Persian A4 invoice PDF in memory."""
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.colors import HexColor
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+        from reportlab.lib.units import mm
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        from reportlab.graphics.shapes import Drawing, Circle, Line
+        from reportlab.graphics.barcode.qr import QrCodeWidget
+        from reportlab.platypus import (
+            SimpleDocTemplate,
+            Paragraph,
+            Spacer,
+            Table,
+            TableStyle,
+            KeepTogether,
+            HRFlowable,
+        )
+        import arabic_reshaper
+        from bidi.algorithm import get_display
+    except ImportError as exc:
+        raise RuntimeError(
+            "برای PDF فاکتور باید پکیج‌های reportlab، arabic-reshaper و python-bidi نصب باشند."
+        ) from exc
+
+    def rtl(value):
+        text = str(value or "—")
+        return get_display(arabic_reshaper.reshape(text))
+
+    def money(value):
+        try:
+            return f"{int(value or 0):,}"
+        except (TypeError, ValueError):
+            return "0"
+
+    def safe_text(value, fallback="—"):
+        value = str(value or "").strip()
+        return value if value else fallback
+
+    font_candidates = [
+        os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "tahoma.ttf"),
+        os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "segoeui.ttf"),
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed.ttf",
+    ]
+    font_path = next((p for p in font_candidates if os.path.exists(p)), None)
+    if not font_path:
+        raise RuntimeError("فونت فارسی مناسب برای ساخت PDF روی سرور پیدا نشد.")
+
+    font_name = "KharidinoRTL"
+    if font_name not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(TTFont(font_name, font_path))
+
+    # Palette: premium Kharidino charcoal + rose accent + clean paper tones.
+    ink = HexColor("#101828")
+    muted = HexColor("#667085")
+    soft = HexColor("#F7F8FA")
+    line = HexColor("#E4E7EC")
+    accent = HexColor("#D31852")
+    accent_soft = HexColor("#FFF0F4")
+    success = HexColor("#087443")
+    success_soft = HexColor("#ECFDF3")
+    white = colors.white
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=13*mm,
+        leftMargin=13*mm,
+        topMargin=17*mm,
+        bottomMargin=17*mm,
+        title=f"فاکتور {invoice.invoice_number}",
+        author="Kharidino",
+        subject="فاکتور فروش خریدینو",
+    )
+
+    styles = getSampleStyleSheet()
+    body = ParagraphStyle(
+        "KharidinoBody",
+        parent=styles["Normal"],
+        fontName=font_name,
+        fontSize=8.5,
+        leading=12.5,
+        alignment=TA_RIGHT,
+        textColor=ink,
+        spaceAfter=0,
+    )
+    small = ParagraphStyle(
+        "KharidinoSmall",
+        parent=body,
+        fontSize=7.2,
+        leading=10,
+        textColor=muted,
+    )
+    tiny = ParagraphStyle(
+        "KharidinoTiny",
+        parent=body,
+        fontSize=6.4,
+        leading=8.5,
+        textColor=muted,
+    )
+    label = ParagraphStyle(
+        "KharidinoLabel",
+        parent=body,
+        fontSize=6.7,
+        leading=9,
+        textColor=muted,
+    )
+    value = ParagraphStyle(
+        "KharidinoValue",
+        parent=body,
+        fontSize=8.2,
+        leading=11.5,
+        textColor=ink,
+    )
+    center = ParagraphStyle(
+        "KharidinoCenter",
+        parent=body,
+        alignment=TA_CENTER,
+    )
+    center_small = ParagraphStyle(
+        "KharidinoCenterSmall",
+        parent=small,
+        alignment=TA_CENTER,
+    )
+    total_value = ParagraphStyle(
+        "KharidinoTotal",
+        parent=body,
+        fontSize=11.5,
+        leading=15,
+        alignment=TA_RIGHT,
+        textColor=accent,
+    )
+    section = ParagraphStyle(
+        "KharidinoSection",
+        parent=body,
+        fontSize=10,
+        leading=13,
+        textColor=ink,
+    )
+
+    issued_at = (
+        invoice.created_at.strftime("%Y/%m/%d")
+        if invoice.created_at
+        else "—"
+    )
+    order_date = (
+        order.created_at.strftime("%Y/%m/%d")
+        if order.created_at
+        else issued_at
+    )
+
+    seller_name = safe_text(company.get("legal_name"), "خریدینو")
+    buyer_name = safe_text(invoice.buyer_name)
+    order_status = safe_text(order.status)
+    invoice_status = safe_text(invoice.status)
+
+    # ---------------------------------------------------------
+    # Reusable card builders
+    # ---------------------------------------------------------
+    def info_card(title_fa, eyebrow, rows, width):
+        head = Table(
+            [[
+                Paragraph(rtl(eyebrow.upper()), tiny),
+                Paragraph(rtl(title_fa), section),
+            ]],
+            colWidths=[width-18*mm, 18*mm],
+        )
+        head.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("ALIGN", (0,0), (0,0), "RIGHT"),
+            ("ALIGN", (1,0), (1,0), "RIGHT"),
+            ("LEFTPADDING", (0,0), (-1,-1), 7),
+            ("RIGHTPADDING", (0,0), (-1,-1), 7),
+            ("TOPPADDING", (0,0), (-1,-1), 6),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ("BACKGROUND", (0,0), (-1,-1), soft),
+            ("LINEBELOW", (0,0), (-1,-1), 0.6, line),
+        ]))
+
+        body_rows = []
+        for row in rows:
+            k, v = row
+            body_rows.append([
+                Paragraph(rtl(safe_text(v)), value),
+                Paragraph(rtl(k), label),
+            ])
+        body_table = Table(body_rows, colWidths=[width-34*mm, 34*mm])
+        body_table.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+            ("LEFTPADDING", (0,0), (-1,-1), 7),
+            ("RIGHTPADDING", (0,0), (-1,-1), 7),
+            ("TOPPADDING", (0,0), (-1,-1), 4.5),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 4.5),
+            ("LINEBELOW", (0,0), (-1,-2), 0.35, line),
+        ]))
+        outer = Table([[head], [body_table]], colWidths=[width])
+        outer.setStyle(TableStyle([
+            ("BOX", (0,0), (-1,-1), 0.65, line),
+            ("BACKGROUND", (0,0), (-1,-1), white),
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("LEFTPADDING", (0,0), (-1,-1), 0),
+            ("RIGHTPADDING", (0,0), (-1,-1), 0),
+            ("TOPPADDING", (0,0), (-1,-1), 0),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 0),
+        ]))
+        return outer
+
+    # ---------------------------------------------------------
+    # Header
+    # ---------------------------------------------------------
+    logo_mark = Drawing(30, 30)
+    logo_mark.add(Circle(15, 15, 14, fillColor=accent, strokeColor=accent))
+    logo_mark.add(Line(8, 20, 11, 20, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Line(10, 20, 13, 11, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Line(13, 11, 24, 11, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Line(24, 11, 22, 18, strokeColor=white, strokeWidth=1.6))
+    logo_mark.add(Circle(15, 7.5, 1.8, fillColor=white, strokeColor=white))
+    logo_mark.add(Circle(22, 7.5, 1.8, fillColor=white, strokeColor=white))
+
+    brand = Table(
+        [[
+            Table([[logo_mark, Paragraph(rtl("خریدینو"), ParagraphStyle(
+                "brand",
+                parent=body,
+                fontSize=18,
+                leading=21,
+                textColor=white,
+            ))]], colWidths=[34*mm, 42*mm], style=TableStyle([
+                ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+                ("ALIGN",(0,0),(-1,-1),"RIGHT"),
+                ("LEFTPADDING",(0,0),(-1,-1),0),
+                ("RIGHTPADDING",(0,0),(-1,-1),2),
+                ("TOPPADDING",(0,0),(-1,-1),0),
+                ("BOTTOMPADDING",(0,0),(-1,-1),0),
+            ])),
+            Paragraph(rtl("فاکتور فروش"), ParagraphStyle(
+                "invoice_title",
+                parent=body,
+                fontSize=17,
+                leading=21,
+                alignment=TA_RIGHT,
+                textColor=white,
+            )),
+        ]],
+        colWidths=[76*mm, 91*mm],
+    )
+    brand.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("BACKGROUND", (0,0), (-1,-1), HexColor("#121926")),
+        ("LEFTPADDING", (0,0), (-1,-1), 10),
+        ("RIGHTPADDING", (0,0), (-1,-1), 10),
+        ("TOPPADDING", (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+        ("BOX", (0,0), (-1,-1), 0.8, HexColor("#121926")),
+    ]))
+
+    invoice_meta = Table(
+        [[
+            Paragraph(rtl("شماره فاکتور"), label),
+            Paragraph(rtl(invoice.invoice_number), value),
+            Paragraph(rtl("تاریخ صدور"), label),
+            Paragraph(rtl(issued_at), value),
+        ]],
+        colWidths=[28*mm, 52*mm, 28*mm, 59*mm],
+    )
+    invoice_meta.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("BACKGROUND", (0,0), (-1,-1), HexColor("#F9FAFB")),
+        ("BOX", (0,0), (-1,-1), 0.6, line),
+        ("INNERGRID", (0,0), (-1,-1), 0.35, line),
+        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+    ]))
+
+    status_table = Table(
+        [[
+            Paragraph(rtl("وضعیت سفارش"), label),
+            Paragraph(rtl(order_status), value),
+            Paragraph(rtl("وضعیت فاکتور"), label),
+            Paragraph(rtl(invoice_status), value),
+            Paragraph(rtl("شماره سفارش"), label),
+            Paragraph(rtl(f"#{order.id}"), value),
+        ]],
+        colWidths=[26*mm, 36*mm, 26*mm, 36*mm, 26*mm, 34*mm],
+    )
+    status_table.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("BACKGROUND", (0,0), (-1,-1), white),
+        ("BOX", (0,0), (-1,-1), 0.6, line),
+        ("INNERGRID", (0,0), (-1,-1), 0.35, line),
+        ("LEFTPADDING", (0,0), (-1,-1), 5),
+        ("RIGHTPADDING", (0,0), (-1,-1), 5),
+        ("TOPPADDING", (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+    ]))
+
+    # ---------------------------------------------------------
+    # Seller / buyer cards
+    # ---------------------------------------------------------
+    seller_rows = [
+        ("نام حقوقی", seller_name),
+        ("شناسه ملی", company.get("national_id")),
+        ("شماره اقتصادی", company.get("economic_code")),
+        ("شماره ثبت", company.get("registration_number")),
+        ("کد پستی", company.get("postal_code")),
+        ("تلفن", company.get("phone")),
+        ("بانک", company.get("bank_name")),
+        ("شماره شبا", company.get("iban")),
+        ("نشانی", company.get("address")),
+    ]
+    buyer_rows = [
+        ("نام خریدار", buyer_name),
+        ("نوع خریدار", invoice.buyer_type),
+        ("شناسه ملی", invoice.buyer_national_id),
+        ("شماره اقتصادی", invoice.buyer_economic_code),
+        ("شماره ثبت", invoice.buyer_registration_number),
+        ("کد پستی", invoice.buyer_postal_code),
+        ("تلفن", invoice.buyer_phone),
+        ("نشانی", invoice.buyer_address),
+    ]
+    party_width = 90*mm
+    parties = Table(
+        [[
+            info_card("خریدار", "CUSTOMER", buyer_rows, party_width),
+            info_card("فروشنده", "SELLER", seller_rows, party_width),
+        ]],
+        colWidths=[91*mm, 91*mm],
+    )
+    parties.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("LEFTPADDING", (0,0), (-1,-1), 0),
+        ("RIGHTPADDING", (0,0), (-1,-1), 0),
+        ("TOPPADDING", (0,0), (-1,-1), 0),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 0),
+    ]))
+
+    # ---------------------------------------------------------
+    # Items table
+    # ---------------------------------------------------------
+    rows = [[
+        Paragraph(rtl("ردیف"), center_small),
+        Paragraph(rtl("شرح کالا / خدمت"), body),
+        Paragraph(rtl("تعداد"), center_small),
+        Paragraph(rtl("قیمت واحد (تومان)"), center_small),
+        Paragraph(rtl("مبلغ کل (تومان)"), center_small),
+    ]]
+    for idx, item in enumerate(order.items, 1):
+        quantity = int(item.quantity or 0)
+        unit_price = int(item.price or 0)
+        line_total = unit_price * quantity
+        rows.append([
+            Paragraph(rtl(idx), center_small),
+            Paragraph(rtl(safe_text(item.product_name)), value),
+            Paragraph(rtl(quantity), center_small),
+            Paragraph(rtl(money(unit_price)), center_small),
+            Paragraph(rtl(money(line_total)), center_small),
+        ])
+
+    if len(rows) == 1:
+        rows.append([
+            Paragraph(rtl("—"), center_small),
+            Paragraph(rtl("موردی برای نمایش ثبت نشده است."), center),
+            Paragraph(rtl("0"), center_small),
+            Paragraph(rtl("0"), center_small),
+            Paragraph(rtl("0"), center_small),
+        ])
+
+    items_table = Table(
+        rows,
+        colWidths=[13*mm, 78*mm, 18*mm, 37*mm, 37*mm],
+        repeatRows=1,
+        hAlign="RIGHT",
+    )
+    items_table.setStyle(TableStyle([
+        ("FONTNAME", (0,0), (-1,-1), font_name),
+        ("BACKGROUND", (0,0), (-1,0), HexColor("#F1F4F7")),
+        ("TEXTCOLOR", (0,0), (-1,0), ink),
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("INNERGRID", (0,0), (-1,-1), 0.35, line),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("ALIGN", (0,0), (0,-1), "CENTER"),
+        ("ALIGN", (2,0), (-1,-1), "CENTER"),
+        ("LEFTPADDING", (0,0), (-1,-1), 5),
+        ("RIGHTPADDING", (0,0), (-1,-1), 5),
+        ("TOPPADDING", (0,0), (-1,0), 7),
+        ("BOTTOMPADDING", (0,0), (-1,0), 7),
+        ("TOPPADDING", (0,1), (-1,-1), 7),
+        ("BOTTOMPADDING", (0,1), (-1,-1), 7),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [white, HexColor("#FCFCFD")]),
+    ]))
+
+    # ---------------------------------------------------------
+    # Totals + payment/order summary
+    # ---------------------------------------------------------
+    totals_rows = [
+        [Paragraph(rtl("جمع کالاها"), body), Paragraph(rtl(f"{money(invoice.subtotal)} تومان"), value)],
+        [Paragraph(rtl("تخفیف"), body), Paragraph(rtl(f"{money(invoice.discount)} تومان"), value)],
+        [Paragraph(rtl("مالیات و عوارض"), body), Paragraph(rtl(f"{money(invoice.tax)} تومان"), value)],
+        [Paragraph(rtl("مبلغ قابل پرداخت"), ParagraphStyle(
+            "totalLabel", parent=body, fontSize=9.5, textColor=accent
+        )), Paragraph(rtl(f"{money(invoice.total)} تومان"), total_value)],
+    ]
+    totals_table = Table(totals_rows, colWidths=[54*mm, 51*mm])
+    totals_table.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("INNERGRID", (0,0), (-1,-2), 0.35, line),
+        ("BACKGROUND", (0,0), (-1,-2), white),
+        ("BACKGROUND", (0,3), (-1,3), accent_soft),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("LEFTPADDING", (0,0), (-1,-1), 7),
+        ("RIGHTPADDING", (0,0), (-1,-1), 7),
+        ("TOPPADDING", (0,0), (-1,-1), 7),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 7),
+    ]))
+
+    order_summary = Table([
+        [Paragraph(rtl("جزئیات تکمیلی"), section)],
+        [Paragraph(rtl(f"تاریخ ثبت سفارش: {order_date}"), small)],
+        [Paragraph(rtl(f"روش/وضعیت پرداخت: {invoice_status}"), small)],
+        [Paragraph(rtl(f"وضعیت سفارش: {order_status}"), small)],
+        [Paragraph(rtl(f"شماره سفارش: #{order.id}"), small)],
+    ], colWidths=[72*mm])
+    order_summary.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("BACKGROUND", (0,0), (-1,0), soft),
+        ("LINEBELOW", (0,0), (-1,0), 0.6, line),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+    ]))
+
+    summary = Table(
+        [[order_summary, totals_table]],
+        colWidths=[74*mm, 108*mm],
+    )
+    summary.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("LEFTPADDING", (0,0), (-1,-1), 0),
+        ("RIGHTPADDING", (0,0), (-1,-1), 0),
+        ("TOPPADDING", (0,0), (-1,-1), 0),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 0),
+    ]))
+
+    # ---------------------------------------------------------
+    # Notes + signature / stamp
+    # ---------------------------------------------------------
+    note_text = safe_text(
+        order.note,
+        "شرایط پرداخت و ارسال مطابق اطلاعات ثبت‌شده در سفارش است."
+    )
+    notes = Table([
+        [Paragraph(rtl("توضیحات و یادداشت سفارش"), section)],
+        [Paragraph(rtl(note_text), small)],
+        [Paragraph(rtl("این سند به صورت الکترونیکی از سامانه خریدینو صادر شده است."), tiny)],
+    ], colWidths=[182*mm])
+    notes.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 0.65, line),
+        ("BACKGROUND", (0,0), (-1,0), soft),
+        ("LINEBELOW", (0,0), (-1,0), 0.6, line),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+    ]))
+
+    signature_box_style = ParagraphStyle(
+        "SignatureTitle",
+        parent=center,
+        fontSize=8.5,
+        leading=11,
+        textColor=ink,
+    )
+    signature_boxes = Table([
+        [
+            Paragraph(rtl("مهر و امضای فروشنده"), signature_box_style),
+            Paragraph(rtl("مهر و امضای خریدار"), signature_box_style),
+        ],
+        [
+            Paragraph(rtl(""), center),
+            Paragraph(rtl(""), center),
+        ],
+        [
+            Paragraph(rtl("نام و امضای مجاز"), tiny),
+            Paragraph(rtl("تأیید دریافت کالا / خدمات"), tiny),
+        ],
+    ], colWidths=[91*mm, 91*mm], rowHeights=[8*mm, 28*mm, 8*mm])
+    signature_boxes.setStyle(TableStyle([
+        ("BOX", (0,0), (0,-1), 0.65, line),
+        ("BOX", (1,0), (1,-1), 0.65, line),
+        ("LINEBELOW", (0,0), (-1,0), 0.35, line),
+        ("ALIGN", (0,0), (-1,-1), "CENTER"),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+        ("BACKGROUND", (0,0), (-1,0), soft),
+        ("LEFTPADDING", (0,0), (-1,-1), 7),
+        ("RIGHTPADDING", (0,0), (-1,-1), 7),
+        ("TOPPADDING", (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+    ]))
+
+    # ---------------------------------------------------------
+    # Page chrome
+    # ---------------------------------------------------------
+    def draw_page_chrome(canvas, doc_obj):
+        canvas.saveState()
+        width, height = A4
+
+        # Thin premium top accent.
+        canvas.setFillColor(accent)
+        canvas.rect(0, height-3.2*mm, width, 3.2*mm, stroke=0, fill=1)
+
+        # Subtle footer rule.
+        canvas.setStrokeColor(line)
+        canvas.setLineWidth(0.5)
+        canvas.line(13*mm, 11.5*mm, width-13*mm, 11.5*mm)
+
+        canvas.setFont("Helvetica", 6.5)
+        canvas.setFillColor(muted)
+        canvas.drawString(13*mm, 7.2*mm, "KHARIDINO • SALES INVOICE")
+        canvas.drawRightString(width-13*mm, 7.2*mm, f"Page {canvas.getPageNumber()}")
+
+        canvas.restoreState()
+
+    qr_widget = QrCodeWidget(f"KHARIDINO|{invoice.invoice_number}|ORDER:{order.id}")
+    qr_widget.barWidth = 24*mm
+    qr_widget.barHeight = 24*mm
+    qr_drawing = Drawing(28*mm, 28*mm)
+    qr_drawing.add(qr_widget)
+
+    bank_table = Table([
+        [Paragraph(rtl("اطلاعات بانکی"), section)],
+        [Paragraph(rtl(f"بانک: {safe_text(company.get('bank_name'))}"), small)],
+        [Paragraph(rtl(f"شماره شبا: {safe_text(company.get('iban'))}"), small)],
+    ], colWidths=[82*mm])
+    bank_table.setStyle(TableStyle([
+        ("BOX",(0,0),(-1,-1),0.65,line), ("BACKGROUND",(0,0),(-1,0),soft),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"), ("ALIGN",(0,0),(-1,-1),"RIGHT"),
+        ("LEFTPADDING",(0,0),(-1,-1),7), ("RIGHTPADDING",(0,0),(-1,-1),7),
+        ("TOPPADDING",(0,0),(-1,-1),6), ("BOTTOMPADDING",(0,0),(-1,-1),6),
+    ]))
+
+    payment_panel = Table([[
+        bank_table,
+        Table([[qr_drawing], [Paragraph(rtl("QR فاکتور"), tiny)]], colWidths=[38*mm],
+              style=TableStyle([("ALIGN",(0,0),(-1,-1),"CENTER"),
+                                ("VALIGN",(0,0),(-1,-1),"MIDDLE")]))
+    ]], colWidths=[130*mm, 52*mm])
+    payment_panel.setStyle(TableStyle([
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+        ("LEFTPADDING",(0,0),(-1,-1),0), ("RIGHTPADDING",(0,0),(-1,-1),0),
+        ("TOPPADDING",(0,0),(-1,-1),0), ("BOTTOMPADDING",(0,0),(-1,-1),0),
+    ]))
+
+    stamp_box = Table([[Paragraph(rtl("مهر خریدینو"), ParagraphStyle(
+        "Stamp", parent=center, fontSize=9, textColor=accent, leading=11
+    ))]], colWidths=[42*mm], rowHeights=[20*mm])
+    stamp_box.setStyle(TableStyle([
+        ("BOX",(0,0),(-1,-1),1.1,accent),
+        ("BACKGROUND",(0,0),(-1,-1),accent_soft),
+        ("ALIGN",(0,0),(-1,-1),"CENTER"),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+    ]))
+
+    delivery_panel = Table([
+        [Paragraph(rtl("اطلاعات ارسال و تحویل"), section)],
+        [Paragraph(rtl(f"گیرنده: {safe_text(order.customer_name)}"), small)],
+        [Paragraph(rtl(f"تلفن: {safe_text(order.phone)}"), small)],
+        [Paragraph(rtl(f"نشانی تحویل: {safe_text(order.address)}"), small)],
+    ], colWidths=[140*mm])
+    delivery_panel.setStyle(TableStyle([
+        ("BOX",(0,0),(-1,-1),0.65,line), ("BACKGROUND",(0,0),(-1,0),soft),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"), ("ALIGN",(0,0),(-1,-1),"RIGHT"),
+        ("LEFTPADDING",(0,0),(-1,-1),7), ("RIGHTPADDING",(0,0),(-1,-1),7),
+        ("TOPPADDING",(0,0),(-1,-1),5), ("BOTTOMPADDING",(0,0),(-1,-1),5),
+    ]))
+
+    story = [
+        brand,
+        Spacer(1, 3.5*mm),
+        invoice_meta,
+        Spacer(1, 2.5*mm),
+        status_table,
+        Spacer(1, 5.5*mm),
+        parties,
+        Spacer(1, 6*mm),
+        Table(
+            [[
+                Paragraph(rtl("اقلام فاکتور"), section),
+                Paragraph(rtl("INVOICE ITEMS"), tiny),
+            ]],
+            colWidths=[145*mm, 37*mm],
+            style=TableStyle([
+                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+                ("LINEBELOW", (0,0), (-1,-1), 1.2, ink),
+                ("LEFTPADDING", (0,0), (-1,-1), 0),
+                ("RIGHTPADDING", (0,0), (-1,-1), 0),
+                ("TOPPADDING", (0,0), (-1,-1), 0),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+            ]),
+        ),
+        Spacer(1, 2.5*mm),
+        items_table,
+        Spacer(1, 5.5*mm),
+        summary,
+        Spacer(1, 5*mm),
+        notes,
+        Spacer(1, 5*mm),
+        delivery_panel,
+        Spacer(1, 4*mm),
+        Table([[payment_panel, stamp_box]], colWidths=[140*mm, 42*mm], style=TableStyle([("VALIGN",(0,0),(-1,-1),"MIDDLE"),("LEFTPADDING",(0,0),(-1,-1),0),("RIGHTPADDING",(0,0),(-1,-1),0),("TOPPADDING",(0,0),(-1,-1),0),("BOTTOMPADDING",(0,0),(-1,-1),0)])),
+        Spacer(1, 5*mm),
+        signature_boxes,
+        Spacer(1, 4*mm),
+        Table(
+            [[
+                Paragraph(rtl(company.get("website") or "خریدینو"), tiny),
+                Paragraph(rtl(company.get("email") or ""), tiny),
+                Paragraph(rtl(company.get("phone") or ""), tiny),
+            ]],
+            colWidths=[61*mm, 61*mm, 60*mm],
+            style=TableStyle([
+                ("ALIGN", (0,0), (-1,-1), "CENTER"),
+                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("LEFTPADDING", (0,0), (-1,-1), 4),
+                ("RIGHTPADDING", (0,0), (-1,-1), 4),
+                ("TOPPADDING", (0,0), (-1,-1), 3),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+            ]),
+        ),
+    ]
+
+    doc.build(
+        story,
+        onFirstPage=draw_page_chrome,
+        onLaterPages=draw_page_chrome,
+    )
+    return buffer.getvalue()
+
+def _send_invoice_email(invoice, order, company, pdf_bytes):
+    recipient = (order.user.email if order.user else "").strip()
+    if not recipient:
+        return False
+
+    items_html = "".join(
+        f"<tr><td style='padding:10px;border-bottom:1px solid #eee'>{escape(str(item.product_name or ''))}</td>"
+        f"<td style='padding:10px;border-bottom:1px solid #eee;text-align:center'>{item.quantity}</td>"
+        f"<td style='padding:10px;border-bottom:1px solid #eee'>{item.price * item.quantity:,} تومان</td></tr>"
+        for item in order.items
+    )
+    html = render_template(
+        "email_invoice.html",
+        invoice=invoice,
+        order=order,
+        company=company,
+        items_html=items_html,
+    )
+    plain = (
+        f"فاکتور خریدینو صادر شد.\n\n"
+        f"شماره فاکتور: {invoice.invoice_number}\n"
+        f"خریدار: {invoice.buyer_name}\n"
+        f"مبلغ نهایی: {invoice.total:,} تومان\n\n"
+        "فایل PDF فاکتور نیز به این ایمیل پیوست شده است."
+    )
+
+    smtp_host = os.environ.get("KHARIDINO_SMTP_HOST", "").strip() or os.environ.get("SMTP_HOST", "").strip()
+    smtp_user = os.environ.get("KHARIDINO_SMTP_USER", "").strip() or os.environ.get("SMTP_USERNAME", "").strip()
+    smtp_password = os.environ.get("KHARIDINO_SMTP_PASSWORD", "") or os.environ.get("SMTP_PASSWORD", "")
+    if not smtp_host or not smtp_user or not smtp_password:
+        app.logger.error("Invoice email skipped: SMTP is not fully configured.")
+        return False
+    try:
+        port = int(os.environ.get("KHARIDINO_SMTP_PORT", "").strip() or os.environ.get("SMTP_PORT", "587").strip())
+    except ValueError:
+        return False
+    sender = os.environ.get("KHARIDINO_SMTP_FROM", "").strip() or os.environ.get("MAIL_FROM", "").strip() or smtp_user
+    use_ssl = (os.environ.get("KHARIDINO_SMTP_SSL", "").strip() or os.environ.get("SMTP_USE_SSL", "0").strip()).lower() in {"1","true","yes"}
+
+    msg = EmailMessage()
+    msg["Subject"] = f"فاکتور خریدینو | {invoice.invoice_number}"
+    msg["From"] = sender
+    msg["To"] = recipient
+    msg.set_content(plain)
+    msg.add_alternative(html, subtype="html")
+    msg.add_attachment(pdf_bytes, maintype="application", subtype="pdf",
+                       filename=f"{invoice.invoice_number}.pdf")
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, port, timeout=20) as server:
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(smtp_host, port, timeout=20) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+        app.logger.info("Invoice email sent to %s", recipient)
+        return True
+    except Exception:
+        app.logger.exception("Invoice email failed")
+        return False
+
+
 # =========================================================
 # AUTH HELPERS
 # =========================================================
@@ -1311,6 +2057,51 @@ def money(value):
         return "0"
 
 
+
+# =========================================================
+# SMART SEARCH HELPERS
+# =========================================================
+
+_PERSIAN_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
+_ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
+def normalize_search_text(value):
+    return (value or "").translate(_PERSIAN_DIGITS).translate(_ARABIC_DIGITS).strip()
+
+def parse_search_intent(value):
+    """Parse common Persian shopping price intents deterministically."""
+    raw = normalize_search_text(value)
+    lower = raw.lower()
+    import re
+
+    def amount(number, unit):
+        try:
+            n = float(number.replace(",", "").replace("٬", ""))
+        except (TypeError, ValueError):
+            return None
+        unit = (unit or "").lower()
+        if "میلیون" in unit:
+            n *= 1_000_000
+        elif "هزار" in unit:
+            n *= 1_000
+        return int(n)
+
+    nums = re.findall(r"(\d+(?:[.,]\d+)?)\s*(میلیون|هزار)?", lower)
+    values = [amount(n, u) for n, u in nums]
+    values = [v for v in values if v is not None and v > 0]
+    min_price = max_price = None
+    if values:
+        if len(values) >= 2 and re.search(r"(بین|از).*?(تا|-)", lower):
+            min_price, max_price = sorted(values[-2:])
+        elif re.search(r"(زیر|کمتر از|حداکثر|تا)", lower):
+            max_price = values[-1]
+        elif re.search(r"(بالای|بیشتر از|حداقل|از)", lower):
+            min_price = values[-1]
+    cleaned = re.sub(r"(زیر|کمتر از|بیشتر از|بالای|حداکثر|حداقل|بین|میلیون|هزار|تومان|تا)", " ", raw)
+    cleaned = re.sub(r"\d+(?:[.,]\d+)?", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return {"original": value or "", "query": cleaned, "min_price": min_price, "max_price": max_price}
+
 # =========================================================
 # HOME
 # =========================================================
@@ -1319,13 +2110,17 @@ def money(value):
 def home():
 
     q = request.args.get("q", "").strip()
+    intent = parse_search_intent(q)
+    # If the query is price-only (for example «زیر ۵ میلیون»),
+    # the price intent should filter the catalog instead of becoming a text query.
+    search_q = intent["query"]
     sort = request.args.get("sort", "newest").strip()
     category_id = request.args.get("category", "").strip()
 
     query = Product.query.filter_by(active=True)
 
-    if q:
-        search = f"%{q}%"
+    if search_q:
+        search = f"%{search_q}%"
         query = query.filter(
             db.or_(
                 Product.name.ilike(search),
@@ -1341,6 +2136,8 @@ def home():
             category_id = ""
 
     products = query.all()
+    if intent["min_price"] is not None or intent["max_price"] is not None:
+        products = [p for p in products if (intent["min_price"] is None or lowest_price(p) >= intent["min_price"]) and (intent["max_price"] is None or lowest_price(p) <= intent["max_price"])]
 
     # Sort by the effective price shown to users, not the stale base price.
     if sort == "price_low":
@@ -1386,6 +2183,7 @@ def home():
         categories=categories,
         stores=stores,
         q=q,
+        search_intent=intent,
         sort=sort,
         category_id=category_id,
         selected_category=selected_category,
@@ -1400,14 +2198,28 @@ def home():
 
 @app.route("/products")
 def catalog_products():
-    """Display the complete active product catalog."""
-    q = request.args.get("q", "").strip()
+    """Display the complete active product catalog with one consistent filter model."""
+    q = request.args.get("q", "").strip()[:100]
+    intent = parse_search_intent(q)
+    # If the query is price-only (for example «زیر ۵ میلیون»),
+    # the price intent should filter the catalog instead of becoming a text query.
+    search_q = intent["query"]
     sort = request.args.get("sort", "newest").strip()
+    category_id = request.args.get("category", "").strip()
 
-    query = Product.query.filter_by(active=True)
+    try:
+        min_price = max(0, int(request.args.get("min_price", "0") or 0))
+        max_price = max(0, int(request.args.get("max_price", "0") or 0))
+    except (TypeError, ValueError):
+        min_price = max_price = 0
 
-    if q:
-        search = f"%{q}%"
+    if min_price and max_price and min_price > max_price:
+        min_price, max_price = max_price, min_price
+
+    query = Product.query.filter(Product.active.is_(True))
+
+    if search_q:
+        search = f"%{search_q}%"
         query = query.filter(
             db.or_(
                 Product.name.ilike(search),
@@ -1416,7 +2228,23 @@ def catalog_products():
             )
         )
 
+    if category_id:
+        try:
+            query = query.filter(Product.category_id == int(category_id))
+        except (TypeError, ValueError):
+            category_id = ""
+
     products = query.all()
+
+    # Keep natural-language price intent and explicit toolbar filters compatible.
+    effective_min = intent["min_price"] if intent["min_price"] is not None else min_price
+    effective_max = intent["max_price"] if intent["max_price"] is not None else max_price
+    if effective_min is not None or effective_max is not None:
+        products = [
+            p for p in products
+            if (effective_min in (None, 0) or lowest_price(p) >= effective_min)
+            and (effective_max in (None, 0) or lowest_price(p) <= effective_max)
+        ]
 
     if sort == "price_low":
         products.sort(key=lambda item: (lowest_price(item), -item.id))
@@ -1435,24 +2263,64 @@ def catalog_products():
         .all()
     )
 
-    stores = (
-        Store.query
-        .filter_by(active=True)
-        .order_by(Store.name.asc())
+    selected_category = None
+    if category_id.isdigit():
+        selected_category = db.session.get(Category, int(category_id))
+
+    return render_template(
+        "catalog_products.html",
+        products=products,
+        categories=categories,
+        q=q,
+        search_intent=intent,
+        sort=sort,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        selected_category=selected_category,
+        lowest_price=lowest_price,
+    )
+
+
+@app.get("/api/catalog/search")
+def api_catalog_search():
+    """Small, fast autocomplete endpoint used by the global header search."""
+    q = normalize_search_text(request.args.get("q", ""))[:100]
+    try:
+        limit = max(1, min(10, int(request.args.get("per_page", "7") or 7)))
+    except (TypeError, ValueError):
+        limit = 7
+
+    if len(q) < 2:
+        return jsonify({"items": []})
+
+    needle = f"%{q}%"
+    products = (
+        Product.query
+        .filter(
+            Product.active.is_(True),
+            db.or_(
+                Product.name.ilike(needle),
+                Product.description.ilike(needle),
+                Product.category.has(Category.name.ilike(needle)),
+            ),
+        )
+        .order_by(Product.id.desc())
+        .limit(limit)
         .all()
     )
 
-    return render_template(
-        "index.html",
-        products=products,
-        categories=categories,
-        stores=stores,
-        q=q,
-        sort=sort,
-        category_id="",
-        selected_category=None,
-        lowest_price=lowest_price,
-    )
+    return jsonify({
+        "items": [
+            {
+                "id": product.id,
+                "name": product.name,
+                "price": lowest_price(product),
+                "url": url_for("product_detail", product_id=product.id),
+            }
+            for product in products
+        ]
+    })
 
 
 # =========================================================
@@ -1551,6 +2419,46 @@ def category(category_id):
 
 
 # =========================================================
+# PRICE ALERT
+# =========================================================
+
+@app.post("/product/<int:product_id>/price-alert")
+@login_required
+def create_price_alert(product_id):
+    product = Product.query.get_or_404(product_id)
+    raw = request.form.get("target_price", "").strip().replace(",", "").replace("٬", "")
+    try:
+        target = int(normalize_search_text(raw))
+    except (TypeError, ValueError):
+        target = 0
+    if target <= 0:
+        flash("قیمت هدف معتبر وارد کن.", "warning")
+        return redirect(url_for("product_detail", product_id=product.id) + "#price-alert")
+
+    user_id = session["user_id"]
+    alert = PriceAlert.query.filter_by(user_id=user_id, product_id=product.id).first()
+    if alert:
+        alert.target_price = target
+        alert.active = True
+    else:
+        db.session.add(PriceAlert(user_id=user_id, product_id=product.id, target_price=target, active=True))
+    db.session.commit()
+    flash("هشدار قیمت برای این محصول فعال شد. 🔔", "success")
+    return redirect(url_for("product_detail", product_id=product.id) + "#price-alert")
+
+
+@app.post("/product/<int:product_id>/price-alert/remove")
+@login_required
+def remove_price_alert(product_id):
+    alert = PriceAlert.query.filter_by(user_id=session["user_id"], product_id=product_id).first()
+    if alert:
+        alert.active = False
+        db.session.commit()
+    flash("هشدار قیمت غیرفعال شد.", "success")
+    return redirect(url_for("product_detail", product_id=product_id) + "#price-alert")
+
+
+# =========================================================
 # PRODUCT
 # =========================================================
 
@@ -1619,16 +2527,22 @@ def product_detail(product_id):
 
         if text:
 
-            review = Review(
+            review = Review.query.filter_by(
                 product_id=product.id,
-                user_id=session["user_id"],
-                rating=rating,
-                text=text
-            )
+                user_id=session["user_id"]
+            ).first()
 
-            db.session.add(
-                review
-            )
+            if review:
+                review.rating = rating
+                review.text = text
+            else:
+                review = Review(
+                    product_id=product.id,
+                    user_id=session["user_id"],
+                    rating=rating,
+                    text=text
+                )
+                db.session.add(review)
 
             db.session.commit()
 
@@ -1728,69 +2642,25 @@ def product_detail(product_id):
         product
     )
 
-    # -----------------------------------------------------
-    # DEBUG
-    # -----------------------------------------------------
+    price_alert = None
+    if session.get("user_id"):
+        price_alert = PriceAlert.query.filter_by(
+            user_id=session["user_id"],
+            product_id=product.id,
+            active=True,
+        ).first()
 
-    print("")
-    print("==============================================")
-    print("KHARIDINO PRODUCT DEBUG")
-    print("==============================================")
-    print(
-        "Product ID:",
-        product.id
+    related_products = (
+        Product.query
+        .filter(
+            Product.active.is_(True),
+            Product.id != product.id,
+            Product.category_id == product.category_id,
+        )
+        .order_by(Product.id.desc())
+        .limit(8)
+        .all()
     )
-    print(
-        "Product:",
-        product.name
-    )
-    print(
-        "Offers:",
-        len(offers)
-    )
-
-    for offer in offers:
-
-        print(
-            "----------------------------------------------"
-        )
-
-        print(
-            "Offer ID:",
-            offer.id
-        )
-
-        print(
-            "Store ID:",
-            offer.store_id
-        )
-
-        print(
-            "Store:",
-            offer.store.name
-            if offer.store
-            else "NO STORE"
-        )
-
-        print(
-            "Price:",
-            offer.price
-        )
-
-        print(
-            "Stock:",
-            offer.in_stock
-        )
-
-        print(
-            "Store Active:",
-            offer.store.active
-            if offer.store
-            else False
-        )
-
-    print("==============================================")
-    print("")
 
     # -----------------------------------------------------
     # RENDER
@@ -1801,7 +2671,9 @@ def product_detail(product_id):
         product=product,
         offers=offers,
         lowest_price=lowest,
-        rating=rating
+        rating=rating,
+        price_alert=price_alert,
+        related_products=related_products
     )
 
 # =========================================================
@@ -2855,47 +3727,40 @@ def checkout():
     # ثبت سفارش
     # =====================================================
 
+    checkout_nonce = session.get("checkout_nonce")
+
+    if request.method == "GET" or not checkout_nonce:
+        checkout_nonce = secrets.token_urlsafe(24)
+        session["checkout_nonce"] = checkout_nonce
+
     if request.method == "POST":
 
-        name = request.form.get(
-            "customer_name",
-            ""
-        ).strip()
+        submitted_nonce = request.form.get("checkout_nonce", "")
+        if not submitted_nonce or not checkout_nonce or not secrets.compare_digest(
+            str(submitted_nonce), str(checkout_nonce)
+        ):
+            flash("این فرم قبلاً ثبت شده یا منقضی شده است. لطفاً دوباره تلاش کن.", "warning")
+            return redirect(url_for("checkout"))
 
-        phone = request.form.get(
-            "phone",
-            ""
-        ).strip()
+        name = request.form.get("customer_name", "").strip()[:120]
+        phone = normalize_search_text(request.form.get("phone", "")).strip()[:30]
+        address = request.form.get("address", "").strip()[:2000]
+        note = request.form.get("note", "").strip()[:2000]
 
-        address = request.form.get(
-            "address",
-            ""
-        ).strip()
-
-        note = request.form.get(
-            "note",
-            ""
-        ).strip()
-
-        # =================================================
-        # بررسی اطلاعات
-        # =================================================
-
+        # نام، آدرس و شماره تماس را قبل از ساخت سفارش اعتبارسنجی می‌کنیم.
+        phone_digits = "".join(ch for ch in phone if ch.isdigit())
         if (
             not name
-            or not phone
             or not address
+            or len(phone_digits) < 10
+            or len(phone_digits) > 15
         ):
-
-            flash(
-                "نام، شماره تماس و آدرس الزامی است.",
-                "warning"
-            )
-
+            flash("نام، شماره تماس معتبر و آدرس کامل الزامی است.", "warning")
             return render_template(
                 "checkout.html",
                 items=items,
-                total=total
+                total=total,
+                checkout_nonce=checkout_nonce,
             )
 
         # =================================================
@@ -2959,7 +3824,7 @@ def checkout():
         # =================================================
 
         session["cart"] = {}
-
+        session.pop("checkout_nonce", None)
         session.modified = True
 
         flash(
@@ -2978,7 +3843,8 @@ def checkout():
     return render_template(
         "checkout.html",
         items=items,
-        total=total
+        total=total,
+        checkout_nonce=checkout_nonce,
     )
 
 
@@ -3106,6 +3972,14 @@ def admin_business_profile():
     return render_template("admin_business_profile.html", fields=fields, profile=_company_profile())
 
 
+@app.route("/orders/<int:order_id>")
+@login_required
+def order_detail(order_id):
+    order = db.session.get(Order, order_id)
+    if not order or order.user_id != session["user_id"]:
+        abort(404)
+    return render_template("order_detail.html", order=order)
+
 @app.route("/orders/<int:order_id>/invoice")
 @login_required
 def order_invoice(order_id):
@@ -3127,6 +4001,88 @@ def order_invoice(order_id):
         db.session.add(invoice)
         db.session.commit()
     return render_template("invoice.html", invoice=invoice, order=order, company=_company_profile())
+
+
+
+@app.route("/admin/orders/<int:order_id>/invoice")
+@admin_required
+def admin_order_invoice(order_id):
+    order = db.session.get(Order, order_id)
+    if not order:
+        abort(404)
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        abort(404)
+    return render_template("invoice.html", invoice=invoice, order=order, company=_company_profile())
+
+@app.route("/orders/<int:order_id>/invoice/pdf")
+@login_required
+def order_invoice_pdf(order_id):
+    order = db.session.get(Order, order_id)
+    if not order:
+        abort(404)
+
+    # Customers may download only their own invoice; admins may download any invoice.
+    current_user = db.session.get(User, session.get("user_id")) if session.get("user_id") else None
+    if not current_user:
+        abort(404)
+    if current_user.role != "admin" and order.user_id != current_user.id:
+        abort(404)
+
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        abort(404)
+    try:
+        pdf = _invoice_pdf_bytes(invoice, order, _company_profile())
+    except RuntimeError as exc:
+        app.logger.exception("Invoice PDF generation is unavailable")
+        return ("<h1>PDF unavailable</h1><p>%s</p>" % exc, 503)
+    return send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"{invoice.invoice_number}.pdf",
+    )
+
+
+@app.route("/admin/orders/<int:order_id>/invoice/issue", methods=["POST"])
+@admin_required
+def admin_issue_invoice(order_id):
+    order = db.session.get(Order, order_id)
+    if not order:
+        abort(404)
+
+    invoice = Invoice.query.filter_by(order_id=order.id).first()
+    if not invoice:
+        invoice = Invoice(
+            order_id=order.id,
+            invoice_number=f"KH-{datetime.utcnow().strftime('%Y%m%d')}-{order.id:06d}",
+        )
+        db.session.add(invoice)
+
+    invoice.buyer_name = order.customer_name
+    invoice.buyer_phone = order.phone
+    invoice.buyer_address = order.address
+    invoice.subtotal = sum(int(item.price or 0) * int(item.quantity or 0) for item in order.items)
+    invoice.discount = max(invoice.subtotal - int(order.total or 0), 0)
+    invoice.tax = 0
+    invoice.total = int(order.total or 0)
+    invoice.status = "صادر شد"
+    db.session.commit()
+
+    try:
+        pdf = _invoice_pdf_bytes(invoice, order, _company_profile())
+        sent = _send_invoice_email(invoice, order, _company_profile(), pdf)
+        if sent:
+            invoice.status = "صادر و ایمیل شد"
+            db.session.commit()
+            flash(f"فاکتور #{invoice.invoice_number} صادر و به ایمیل خریدار ارسال شد.", "success")
+        else:
+            flash(f"فاکتور #{invoice.invoice_number} صادر شد، اما ایمیل ارسال نشد؛ تنظیمات SMTP را بررسی کن.", "warning")
+    except RuntimeError as exc:
+        app.logger.exception("Invoice issue failed")
+        flash(f"فاکتور صادر شد اما PDF ساخته نشد: {exc}", "warning")
+    return redirect(url_for("admin"))
 
 
 # =========================================================
@@ -3276,8 +4232,14 @@ def admin():
 
     orders_total = Order.query.count()
     pending_orders = Order.query.filter_by(status="در انتظار بررسی").count()
-    completed_orders = Order.query.filter_by(status="تکمیل شد").count()
+    completed_orders = Order.query.filter(Order.status.in_(["تکمیل شد", "تحویل شد"])).count()
     revenue = sum(int(o.total or 0) for o in Order.query.filter(Order.status != "لغو شد").all())
+    out_of_stock_offers = Offer.query.filter_by(in_stock=False).count()
+    active_users = User.query.filter_by(role="user").count()
+    pending_org_requests = OrganizationRequest.query.filter_by(status="در انتظار بررسی").count()
+    completion_rate = round((completed_orders / orders_total) * 100) if orders_total else 0
+    recent_orders = orders[:6]
+    invoices = Invoice.query.order_by(Invoice.id.desc()).all()
 
     stats = {
         "products": Product.query.count(),
@@ -3289,6 +4251,11 @@ def admin():
         "pending_orders": pending_orders,
         "completed_orders": completed_orders,
         "revenue": revenue,
+        "out_of_stock_offers": out_of_stock_offers,
+        "active_users": active_users,
+        "pending_org_requests": pending_org_requests,
+        "completion_rate": min(max(completion_rate, 0), 100),
+        "invoices": Invoice.query.count(),
     }
 
     return render_template(
@@ -3300,6 +4267,8 @@ def admin():
         users=users,
         orders=orders,
         stats=stats,
+        recent_orders=recent_orders,
+        invoices=invoices,
         q=q
     )
 
@@ -5328,6 +6297,25 @@ register_vehicle_chat(app, db, User, login_required)
 # =========================================================
 # DATABASE INIT
 # =========================================================
+
+@app.context_processor
+def inject_request_helpers():
+    return {"canonical_url": request.base_url}
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("404.html"), 404
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return render_template("404.html", error_message="حجم فایل یا درخواست بیش از حد مجاز است."), 413
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    db.session.rollback()
+    app.logger.exception("Unhandled Kharidino server error")
+    return render_template("404.html", error_message="خطای داخلی رخ داد. لطفاً دوباره تلاش کن."), 500
+
 
 with app.app_context():
 

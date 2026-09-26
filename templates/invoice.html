@@ -1,11 +1,88 @@
 {% extends "base.html" %}
 {% block title %}فاکتور {{ invoice.invoice_number }} | {{ site_name }}{% endblock %}
 {% block content %}
-<section class="kh-invoice-page"><div class="kh-invoice-sheet">
-<header class="kh-invoice-header"><div><div class="kh-invoice-brand"><span>🛒</span><strong>{{ site_name }}</strong></div><small>{{ company.legal_name }}</small></div><div><h1>فاکتور فروش</h1><p>شماره: <b>{{ invoice.invoice_number }}</b></p><p>تاریخ: {{ invoice.created_at.strftime('%Y/%m/%d') if invoice.created_at else '' }}</p></div></header>
-<div class="kh-invoice-meta"><div><b>فروشنده</b><span>{{ company.legal_name }}</span><span>شناسه ملی: {{ company.national_id or '—' }}</span><span>شماره اقتصادی: {{ company.economic_code or '—' }}</span><span>شماره ثبت: {{ company.registration_number or '—' }}</span><span>کد پستی: {{ company.postal_code or '—' }}</span><span>{{ company.address or '—' }}</span><span>{{ company.phone or '—' }}</span></div><div><b>خریدار</b><span>{{ invoice.buyer_name }}</span><span>شناسه ملی: {{ invoice.buyer_national_id or '—' }}</span><span>شماره اقتصادی: {{ invoice.buyer_economic_code or '—' }}</span><span>شماره ثبت: {{ invoice.buyer_registration_number or '—' }}</span><span>کد پستی: {{ invoice.buyer_postal_code or '—' }}</span><span>{{ invoice.buyer_address or '—' }}</span><span>{{ invoice.buyer_phone or '—' }}</span></div></div>
-<table><thead><tr><th>ردیف</th><th>شرح کالا / خدمت</th><th>تعداد</th><th>مبلغ واحد</th><th>مبلغ کل</th></tr></thead><tbody>{% for item in order.items %}<tr><td>{{ loop.index }}</td><td>{{ item.product_name }}</td><td>{{ item.quantity }}</td><td>{{ item.price|money }}</td><td>{{ (item.price * item.quantity)|money }}</td></tr>{% endfor %}</tbody></table>
-<div class="kh-invoice-totals"><div>جمع کالاها: <b>{{ invoice.subtotal|money }} تومان</b></div><div>تخفیف: <b>{{ invoice.discount|money }} تومان</b></div><div>مالیات و عوارض: <b>{{ invoice.tax|money }} تومان</b></div><strong>مبلغ قابل پرداخت: {{ invoice.total|money }} تومان</strong></div>
-<footer><div>شرایط پرداخت: مطابق قرارداد / سفارش</div><div>مهر و امضای فروشنده: __________________</div><div>امضای خریدار: __________________</div></footer>
-</div></section>
+<section class="kh-invoice-page">
+  <div class="kh-invoice-sheet">
+    <header class="kh-invoice-header">
+      <div class="kh-invoice-brand-wrap">
+        <div class="kh-invoice-brand-mark">🛒</div>
+        <div>
+          <div class="kh-invoice-brand"><strong>{{ site_name }}</strong></div>
+          <small>{{ company.legal_name or site_name }}</small>
+        </div>
+      </div>
+      <div class="kh-invoice-title">
+        <span class="kh-invoice-kicker">DOCUMENT / INVOICE</span>
+        <h1>فاکتور فروش</h1>
+        <div class="kh-invoice-number">{{ invoice.invoice_number }}</div>
+      </div>
+    </header>
+
+    <div class="kh-invoice-actions">
+      <a class="btn btn-primary" href="{{ url_for('order_invoice_pdf', order_id=order.id) }}"><i class="fa-solid fa-file-pdf"></i> دانلود PDF</a>
+      <span class="kh-invoice-status"><i class="fa-solid fa-circle-check"></i> {{ invoice.status }}</span>
+      <span class="kh-invoice-date">تاریخ صدور: {{ invoice.created_at.strftime('%Y/%m/%d') if invoice.created_at else '—' }}</span>
+    </div>
+
+    <div class="kh-invoice-parties">
+      <section class="kh-party-card">
+        <div class="kh-party-head"><span class="kh-party-icon"><i class="fa-solid fa-store"></i></span><div><small>SELLER</small><strong>فروشنده</strong></div></div>
+        <div class="kh-party-body">
+          <strong>{{ company.legal_name or site_name }}</strong>
+          <span>شناسه ملی: {{ company.national_id or '—' }}</span>
+          <span>شماره اقتصادی: {{ company.economic_code or '—' }}</span>
+          <span>شماره ثبت: {{ company.registration_number or '—' }}</span>
+          <span>کد پستی: {{ company.postal_code or '—' }}</span>
+          <span>{{ company.address or '—' }}</span>
+          <span>{{ company.phone or '—' }}</span>
+        </div>
+      </section>
+      <section class="kh-party-card">
+        <div class="kh-party-head"><span class="kh-party-icon"><i class="fa-solid fa-user"></i></span><div><small>CUSTOMER</small><strong>خریدار</strong></div></div>
+        <div class="kh-party-body">
+          <strong>{{ invoice.buyer_name or '—' }}</strong>
+          <span>شناسه ملی: {{ invoice.buyer_national_id or '—' }}</span>
+          <span>شماره اقتصادی: {{ invoice.buyer_economic_code or '—' }}</span>
+          <span>شماره ثبت: {{ invoice.buyer_registration_number or '—' }}</span>
+          <span>کد پستی: {{ invoice.buyer_postal_code or '—' }}</span>
+          <span>{{ invoice.buyer_address or '—' }}</span>
+          <span>{{ invoice.buyer_phone or '—' }}</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="kh-invoice-section-label"><span>جزئیات سفارش</span><small>ORDER ITEMS</small></div>
+    <div class="kh-invoice-table-wrap">
+      <table class="kh-invoice-items">
+        <thead><tr><th>ردیف</th><th>شرح کالا / خدمت</th><th>تعداد</th><th>مبلغ واحد</th><th>مبلغ کل</th></tr></thead>
+        <tbody>
+          {% for item in order.items %}
+          <tr><td>{{ loop.index }}</td><td class="kh-item-name">{{ item.product_name }}</td><td>{{ item.quantity }}</td><td>{{ item.price|money }}</td><td class="kh-item-total">{{ (item.price * item.quantity)|money }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="kh-invoice-bottom">
+      <div class="kh-invoice-note">
+        <div class="kh-note-title"><i class="fa-solid fa-circle-info"></i> توضیحات</div>
+        <p>شرایط پرداخت و ارسال مطابق اطلاعات ثبت‌شده در سفارش است.</p>
+        <p>این سند به صورت الکترونیکی از سامانه خریدینو صادر شده است.</p>
+      </div>
+      <div class="kh-invoice-totals">
+        <div><span>جمع کالاها</span><b>{{ invoice.subtotal|money }} تومان</b></div>
+        <div><span>تخفیف</span><b>{{ invoice.discount|money }} تومان</b></div>
+        <div><span>مالیات و عوارض</span><b>{{ invoice.tax|money }} تومان</b></div>
+        <strong><span>مبلغ قابل پرداخت</span><b>{{ invoice.total|money }} تومان</b></strong>
+      </div>
+    </div>
+
+    <div class="kh-signature-area">
+      <div class="kh-signature-box"><div class="kh-signature-title">مهر و امضای فروشنده</div><div class="kh-signature-space"></div><small>نام و امضای مجاز</small></div>
+      <div class="kh-signature-box"><div class="kh-signature-title">مهر و امضای خریدار</div><div class="kh-signature-space"></div><small>تأیید دریافت کالا / خدمات</small></div>
+    </div>
+
+    <footer class="kh-invoice-footer"><span>خریدینو • فاکتور {{ invoice.invoice_number }}</span><span>ممنون که خریدتان را با خریدینو انجام دادید.</span></footer>
+  </div>
+</section>
 {% endblock %}

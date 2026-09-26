@@ -95,6 +95,83 @@
             </div>
         </section>
 
+        <section class="kh-price-alert" id="price-alert">
+          <div class="kh-price-alert-icon"><i class="fa-regular fa-bell"></i></div>
+          <div class="kh-price-alert-copy">
+            <span>هشدار قیمت</span>
+            <h2>وقتی قیمت رسید، بهت خبر می‌دهیم</h2>
+            <p>قیمت هدف خودت را وارد کن تا هشدار این محصول در حساب خریدینو ذخیره شود.</p>
+          </div>
+          {% if current_user %}
+          <form method="post" action="{{ url_for('create_price_alert', product_id=product.id) }}" class="kh-price-alert-form">
+            <label><span>قیمت هدف</span><input name="target_price" inputmode="numeric" value="{{ price_alert.target_price if price_alert else '' }}" placeholder="مثلاً ۵۰٬۰۰۰٬۰۰۰"></label>
+            <button type="submit"><i class="fa-regular fa-bell"></i> {{ 'به‌روزرسانی هشدار' if price_alert else 'فعال‌سازی هشدار' }}</button>
+          </form>
+          {% if price_alert %}<form method="post" action="{{ url_for('remove_price_alert', product_id=product.id) }}"><button class="kh-price-alert-remove" type="submit">غیرفعال کردن</button></form>{% endif %}
+          {% else %}
+          <a class="btn btn-primary" href="{{ url_for('login', next=request.path + '#price-alert') }}">ورود برای فعال‌سازی</a>
+          {% endif %}
+        </section>
+
+        <section class="kh-product-reviews" id="reviews">
+          <div class="kh-reviews-head">
+            <div><span class="kd-section-label"><i class="fa-solid fa-star"></i> تجربه خریداران</span><h2>نظر کاربران درباره این محصول</h2></div>
+            <div class="kh-review-summary"><strong>{{ rating or '—' }}</strong><span>از ۵</span><small>{{ product.reviews|length }} نظر</small></div>
+          </div>
+          <div class="kh-review-layout">
+            <div class="kh-review-list">
+              {% for review in product.reviews|sort(attribute='id', reverse=True) %}
+              <article class="kh-review-card">
+                <div class="kh-review-avatar"><i class="fa-solid fa-user"></i></div>
+                <div class="kh-review-body">
+                  <div class="kh-review-meta"><strong>{{ review.user.name if review.user else 'کاربر خریدینو' }}</strong><span>{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span></div>
+                  <p>{{ review.text }}</p>
+                  <small>{{ review.created_at.strftime('%Y/%m/%d') if review.created_at else '' }}</small>
+                </div>
+              </article>
+              {% else %}
+              <div class="kh-review-empty"><i class="fa-regular fa-comment-dots"></i><h3>هنوز نظری ثبت نشده</h3><p>اولین نفری باش که تجربه‌ات را درباره این محصول ثبت می‌کنی.</p></div>
+              {% endfor %}
+            </div>
+            <div class="kh-review-form">
+              <h3>نظر خودت را ثبت کن</h3>
+              {% if current_user %}
+              <form method="post" action="{{ url_for('product_detail', product_id=product.id) }}">
+                <label>امتیاز
+                  <select name="rating">
+                    {% for n in range(5,0,-1) %}<option value="{{ n }}">{{ n }} از ۵</option>{% endfor %}
+                  </select>
+                </label>
+                <label>متن نظر
+                  <textarea name="text" rows="5" maxlength="1500" placeholder="تجربه‌ات از کیفیت، ارزش خرید یا عملکرد محصول..."></textarea>
+                </label>
+                <button type="submit" class="kd-add-cart"><i class="fa-solid fa-paper-plane"></i> ثبت نظر</button>
+              </form>
+              {% else %}
+              <a class="kd-add-cart" href="{{ url_for('login', next=request.path) }}"><i class="fa-solid fa-right-to-bracket"></i> ورود برای ثبت نظر</a>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        {% if related_products %}
+        <section class="kh-related-products">
+          <div class="kh-reviews-head">
+            <div><span class="kd-section-label"><i class="fa-solid fa-wand-magic-sparkles"></i> پیشنهاد خرید</span><h2>محصولات مشابه</h2></div>
+            <a class="btn" href="{{ url_for('catalog_products') }}">مشاهده همه</a>
+          </div>
+          <div class="kh-related-grid">
+            {% for p in related_products %}
+            <a class="kh-related-card" href="{{ url_for('product_detail', product_id=p.id) }}">
+              {% if p.image %}<img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy">{% else %}<div class="kh-related-placeholder"><i class="fa-solid fa-box"></i></div>{% endif %}
+              <strong>{{ p.name }}</strong>
+              <span>{{ lowest_price(p)|money }} تومان</span>
+            </a>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
         <section class="kd-benefits"><div class="kd-benefit"><div class="kd-benefit-icon"><i class="fa-solid fa-scale-balanced"></i></div><div><strong>مقایسه هوشمند</strong><span>قیمت چند فروشگاه را یکجا ببینید.</span></div></div><div class="kd-benefit"><div class="kd-benefit-icon"><i class="fa-solid fa-bolt"></i></div><div><strong>سریع و ساده</strong><span>در چند لحظه بهترین پیشنهاد را پیدا کنید.</span></div></div><div class="kd-benefit"><div class="kd-benefit-icon"><i class="fa-solid fa-heart"></i></div><div><strong>علاقه‌مندی‌ها</strong><span>محصولات موردعلاقه خود را ذخیره کنید.</span></div></div></section>
     </div>
 

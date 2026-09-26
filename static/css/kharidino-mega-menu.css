@@ -56,3 +56,8 @@
  .km-mega-panel{padding:15px}
  .km-mega-panel-head h3{font-size:18px}
 }
+
+
+/* Mega menu remains below account dropdown but above page content. */
+.km-nav,.km-nav-inner,.km-nav-primary{position:relative;z-index:4000}
+.km-category-mega{z-index:4500!important}

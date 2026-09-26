@@ -10,94 +10,57 @@
          SIDEBAR
     ====================================================== -->
 
-    <aside class="admin-sidebar">
-
-        <div class="admin-brand">
-            <div class="admin-brand-icon">
-                <i class="fa-solid fa-gauge-high"></i>
-            </div>
-
-            <div>
-                <strong>پنل مدیریت</strong>
-                <small>{{ site_name }}</small>
-            </div>
+    <aside class="admin-sidebar" aria-label="ناوبری مدیریت">
+        <div class="admin-sidebar-head">
+            <a class="admin-brand admin-brand-pro" href="{{ url_for('admin') }}" aria-label="داشبورد مدیریت">
+                <span class="admin-brand-mark"><i class="fa-solid fa-bag-shopping"></i></span>
+                <span class="admin-brand-copy"><strong>خریدینو</strong><small>مرکز فرمان مدیریت</small></span>
+            </a>
+            <button type="button" class="admin-sidebar-collapse" data-admin-collapse aria-label="جمع کردن منوی مدیریت">
+                <i class="fa-solid fa-angles-right"></i>
+            </button>
         </div>
 
+        <div class="admin-store-status">
+            <span class="admin-status-pulse"></span>
+            <div><strong>فروشگاه آنلاین</strong><small>سیستم فعال و آماده مدیریت</small></div>
+            <span class="admin-status-dot" title="Online"></span>
+        </div>
 
-        <nav class="admin-nav">
+        <nav class="admin-nav admin-nav-pro">
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">نمای کلی</span>
+                <a href="#dashboard" class="is-active" data-admin-target="dashboard"><i class="fa-solid fa-grid-2"></i><span>داشبورد</span><kbd>01</kbd></a>
+                <a href="#orders-admin" data-admin-target="orders-admin"><i class="fa-solid fa-bag-shopping"></i><span>سفارش‌ها</span>{% if stats.pending_orders %}<b class="admin-nav-badge">{{ stats.pending_orders }}</b>{% endif %}</a>
+                <a href="#products-admin" data-admin-target="products-admin"><i class="fa-solid fa-box-open"></i><span>محصولات</span></a>
+                <a href="#offers-admin" data-admin-target="offers-admin"><i class="fa-solid fa-tags"></i><span>قیمت و پیشنهادها</span>{% if stats.out_of_stock_offers %}<b class="admin-nav-badge admin-nav-badge--warning">{{ stats.out_of_stock_offers }}</b>{% endif %}</a>
+            </div>
 
-            <a href="#dashboard">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>داشبورد</span>
-            </a>
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">فروشگاه</span>
+                <a href="#categories-admin" data-admin-target="categories-admin"><i class="fa-solid fa-layer-group"></i><span>دسته‌بندی‌ها</span></a>
+                <a href="#stores-admin" data-admin-target="stores-admin"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+                <a href="{{ url_for('admin_organization_requests') }}"><i class="fa-solid fa-building"></i><span>درخواست‌های سازمانی</span>{% if stats.pending_org_requests %}<b class="admin-nav-badge">{{ stats.pending_org_requests }}</b>{% endif %}</a>
+            </div>
 
-            <a href="#products-admin">
-                <i class="fa-solid fa-box"></i>
-                <span>محصولات</span>
-            </a>
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">مشتریان</span>
+                <a href="#users-admin" data-admin-target="users-admin"><i class="fa-solid fa-users"></i><span>کاربران</span></a>
+                <a href="#invoices-admin" data-admin-target="invoices-admin"><i class="fa-solid fa-file-invoice"></i><span>فاکتورها</span>{% if stats.invoices %}<b class="admin-nav-badge">{{ stats.invoices }}</b>{% endif %}</a>
+                <a href="{{ url_for('admin_business_profile') }}"><i class="fa-solid fa-building-columns"></i><span>اطلاعات حقوقی</span></a>
+            </div>
 
-            <a href="#categories-admin">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>دسته‌بندی‌ها</span>
-            </a>
-
-            <a href="#stores-admin">
-                <i class="fa-solid fa-store"></i>
-                <span>فروشگاه‌ها</span>
-            </a>
-
-            <a href="#offers-admin">
-                <i class="fa-solid fa-tags"></i>
-                <span>قیمت‌ها</span>
-            </a>
-
-            <a href="#users-admin">
-                <i class="fa-solid fa-users"></i>
-                <span>کاربران</span>
-            </a>
-
-            <a href="#orders-admin">
-                <i class="fa-solid fa-bag-shopping"></i>
-                <span>سفارش‌ها</span>
-            </a>
-
-            <a href="{{ url_for('admin_organization_requests') }}">
-                <i class="fa-solid fa-file-invoice-dollar"></i>
-                <span>درخواست‌های سازمانی</span>
-            </a>
-
-            <a href="#appearance-admin">
-                <i class="fa-solid fa-palette"></i>
-                <span>ظاهر سایت</span>
-            </a>
-
-            <a href="{{ url_for('admin_business_profile') }}">
-                <i class="fa-solid fa-file-invoice"></i>
-                <span>اطلاعات حقوقی و فاکتور</span>
-            </a>
-
-            <a href="#settings">
-                <i class="fa-solid fa-gear"></i>
-                <span>تنظیمات سایت</span>
-            </a>
-
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">سایت</span>
+                <a href="#appearance-admin" data-admin-target="appearance-admin"><i class="fa-solid fa-palette"></i><span>ظاهر و رسانه</span></a>
+                <a href="#settings" data-admin-target="settings"><i class="fa-solid fa-sliders"></i><span>تنظیمات</span></a>
+            </div>
         </nav>
 
-
-        <div class="admin-sidebar-bottom">
-
-            <a href="{{ url_for('home') }}">
-                <i class="fa-solid fa-arrow-right"></i>
-                بازگشت به سایت
-            </a>
-
-            <a href="{{ url_for('logout') }}">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                خروج
-            </a>
-
+        <div class="admin-sidebar-bottom admin-sidebar-bottom-pro">
+            <a href="{{ url_for('home') }}"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>مشاهده فروشگاه</span></a>
+            <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i><span>خروج امن</span></a>
         </div>
-
     </aside>
 
 
@@ -106,6 +69,32 @@
     ====================================================== -->
 
     <div class="admin-main container">
+        <div class="admin-mobile-backdrop" data-admin-backdrop></div>
+        <header class="admin-topbar">
+            <div class="admin-topbar-left">
+                <button type="button" class="admin-mobile-menu" data-admin-mobile-menu aria-label="باز کردن منوی مدیریت"><i class="fa-solid fa-bars-staggered"></i></button>
+                <div class="admin-breadcrumb"><span>مدیریت</span><i class="fa-solid fa-chevron-left"></i><strong data-admin-breadcrumb>داشبورد</strong></div>
+            </div>
+            <div class="admin-topbar-actions">
+                <button type="button" class="admin-top-action" data-admin-search-toggle title="جستجوی مدیریت"><i class="fa-solid fa-magnifying-glass"></i><span>جستجو</span><kbd>⌘ K</kbd></button>
+                <button type="button" class="admin-top-action" data-admin-theme title="حالت کم‌نور"><i class="fa-solid fa-moon"></i></button>
+                <a class="admin-top-action admin-top-site" href="{{ url_for('home') }}" title="مشاهده سایت"><i class="fa-solid fa-globe"></i></a>
+                <div class="admin-top-user">
+                    <span class="admin-avatar">{{ current_user.name[:1]|upper }}</span>
+                    <span><strong>{{ current_user.name }}</strong><small>مدیر سیستم</small></span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-search-panel" data-admin-search-panel hidden>
+            <div class="admin-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" data-admin-search-input placeholder="در پنل مدیریت جستجو کن؛ مثلاً سفارش، محصول، کاربر..." autocomplete="off">
+                <kbd>ESC</kbd>
+            </div>
+            <div class="admin-search-results" data-admin-search-results></div>
+        </div>
 
 
         <!-- =================================================
@@ -177,8 +166,191 @@
 
             </div>
 
+            <div class="admin-welcome-grid">
+                <div class="admin-welcome-copy">
+                    <span class="section-kicker">مرکز فرمان خریدینو</span>
+                    <h2>امروز چه چیزی را مدیریت می‌کنیم؟</h2>
+                    <p>وضعیت فروش، سفارش‌ها، موجودی و مشتری‌ها را از یک نمای واحد کنترل کن.</p>
+                    <div class="admin-welcome-actions">
+                        <a href="#products-admin" class="admin-hero-btn admin-hero-btn--primary"><i class="fa-solid fa-plus"></i> محصول جدید</a>
+                        <a href="#orders-admin" class="admin-hero-btn"><i class="fa-solid fa-arrow-left"></i> بررسی سفارش‌ها</a>
+                    </div>
+                </div>
+                <div class="admin-welcome-visual">
+                    <div class="admin-orbit admin-orbit-1"></div><div class="admin-orbit admin-orbit-2"></div>
+                    <span class="admin-orbit-icon"><i class="fa-solid fa-chart-simple"></i></span>
+                    <span class="admin-floating-chip chip-one"><i class="fa-solid fa-arrow-trend-up"></i> فروش</span>
+                    <span class="admin-floating-chip chip-two"><i class="fa-solid fa-box"></i> کالا</span>
+                    <span class="admin-floating-chip chip-three"><i class="fa-solid fa-users"></i> مشتری</span>
+                </div>
+            </div>
+
+            <div class="admin-insight-strip">
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-truck-fast"></i></span><div><small>سفارش‌های در انتظار</small><strong>{{ stats.pending_orders }}</strong></div><a href="#orders-admin">بررسی</a></div>
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-circle-check"></i></span><div><small>نرخ تکمیل سفارش</small><strong>{{ stats.completion_rate }}٪</strong></div><a href="#orders-admin">گزارش</a></div>
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-user-group"></i></span><div><small>کاربران عادی</small><strong>{{ stats.active_users }}</strong></div><a href="#users-admin">مشاهده</a></div>
+                <div><span class="admin-insight-icon"><i class="fa-solid fa-building"></i></span><div><small>درخواست سازمانی</small><strong>{{ stats.pending_org_requests }}</strong></div><a href="{{ url_for('admin_organization_requests') }}">بررسی</a></div>
+            </div>
+
+            <div class="admin-command-bar">
+                <div class="admin-command-copy">
+                    <span class="admin-command-dot"></span>
+                    <div><strong>مرکز عملیات خریدینو</strong><small>کارهای مهم را از همین‌جا سریع انجام بده.</small></div>
+                </div>
+                <div class="admin-command-actions">
+                    <a class="admin-quick-btn primary" href="#products-admin"><i class="fa-solid fa-plus"></i> افزودن محصول</a>
+                    <a class="admin-quick-btn" href="#offers-admin"><i class="fa-solid fa-tags"></i> ثبت قیمت</a>
+                    <a class="admin-quick-btn" href="#orders-admin"><i class="fa-solid fa-truck-fast"></i> سفارش‌ها</a>
+                    <a class="admin-quick-btn" href="#users-admin"><i class="fa-solid fa-user-plus"></i> کاربران</a>
+                </div>
+            </div>
+
+            <div class="admin-dashboard-grid">
+                <article class="admin-dashboard-card admin-dashboard-card--wide">
+                    <div class="admin-dashboard-card-head">
+                        <div><span class="section-kicker">عملیات امروز</span><h3>وضعیت فروشگاه</h3></div>
+                        <span class="admin-live-badge"><i class="fa-solid fa-circle"></i> زنده</span>
+                    </div>
+                    <div class="admin-health-grid">
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-clock"></i></span><div><strong>{{ stats.pending_orders }}</strong><small>سفارش در انتظار بررسی</small></div><a href="#orders-admin">بررسی</a></div>
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-boxes-stacked"></i></span><div><strong>{{ stats.out_of_stock_offers }}</strong><small>قیمت ناموجود</small></div><a href="#offers-admin">مدیریت</a></div>
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-user-check"></i></span><div><strong>{{ stats.active_users }}</strong><small>کاربر عادی</small></div><a href="#users-admin">مشاهده</a></div>
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-building"></i></span><div><strong>{{ stats.pending_org_requests }}</strong><small>درخواست سازمانی</small></div><a href="{{ url_for('admin_organization_requests') }}">بررسی</a></div>
+                    </div>
+                </article>
+
+                <article class="admin-dashboard-card admin-dashboard-card--revenue">
+                    <div class="admin-dashboard-card-head"><div><span class="section-kicker">مالی</span><h3>فروش ثبت‌شده</h3></div><span class="admin-revenue-icon"><i class="fa-solid fa-chart-line"></i></span></div>
+                    <strong class="admin-revenue-value">{{ stats.revenue|money }}</strong>
+                    <small>تومان · سفارش‌های لغوشده محاسبه نشده‌اند</small>
+                    <div class="admin-mini-progress"><span style="width: {{ stats.completion_rate }}%"></span></div>
+                    <div class="admin-revenue-meta"><span>{{ stats.completed_orders }} تکمیل‌شده</span><span>{{ stats.orders }} کل سفارش</span></div>
+                </article>
+
+                <article class="admin-dashboard-card admin-dashboard-card--recent">
+                    <div class="admin-dashboard-card-head"><div><span class="section-kicker">آخرین فعالیت</span><h3>سفارش‌های اخیر</h3></div><a href="#orders-admin">همه سفارش‌ها ←</a></div>
+                    <div class="admin-recent-orders">
+                        {% for o in recent_orders %}
+                        <a class="admin-recent-order" href="#orders-admin">
+                            <span class="admin-order-avatar">{{ o.customer_name[:1]|upper }}</span>
+                            <span class="admin-recent-order-main"><strong>#{{ o.id }} · {{ o.customer_name }}</strong><small>{{ o.total|money }} تومان · {{ o.status }}</small></span>
+                            <span class="admin-order-arrow"><i class="fa-solid fa-chevron-left"></i></span>
+                        </a>
+                        {% else %}
+                        <div class="admin-empty-mini"><i class="fa-solid fa-inbox"></i> هنوز سفارشی ثبت نشده است.</div>
+                        {% endfor %}
+                    </div>
+                </article>
+
+                <article class="admin-dashboard-card admin-dashboard-card--shortcuts">
+                    <div class="admin-dashboard-card-head"><div><span class="section-kicker">میانبرها</span><h3>مدیریت سریع</h3></div></div>
+                    <div class="admin-shortcuts-grid">
+                        <a href="#categories-admin"><i class="fa-solid fa-layer-group"></i><span>دسته‌بندی‌ها</span></a>
+                        <a href="#stores-admin"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+                        <a href="#appearance-admin"><i class="fa-solid fa-palette"></i><span>ظاهر سایت</span></a>
+                        <a href="#settings"><i class="fa-solid fa-gear"></i><span>تنظیمات</span></a>
+                    </div>
+                </article>
+            </div>
+
         </section>
 
+
+        <!-- =================================================
+             ORDERS
+        ================================================== -->
+        <section id="orders-admin" class="admin-section">
+            <div class="section-head">
+                <div>
+                    <span class="section-kicker">سفارش‌ها</span>
+                    <h2>مدیریت سفارش‌های مشتریان</h2>
+                    <p>وضعیت سفارش‌ها را بررسی و فاکتور هر سفارش را مدیریت کن.</p>
+                </div>
+                <div class="invoice-admin-summary"><strong>{{ stats.orders }}</strong><span>سفارش ثبت‌شده</span></div>
+            </div>
+
+            <div class="admin-card order-admin-list">
+                {% for o in orders %}
+                <div class="admin-order">
+                    <div>
+                        <b>#{{ o.id }} — {{ o.customer_name }}</b>
+                        <small>{{ o.phone }} · {{ o.total|money }} تومان</small>
+                        <small>{{ o.address }}</small>
+                        {% if o.note %}<small>یادداشت: {{ o.note }}</small>{% endif %}
+                    </div>
+
+                    <div>
+                        <form method="post" action="{{ url_for('update_order_status', order_id=o.id) }}">
+                            <select name="status">
+                                {% for st in ['در انتظار بررسی','تأیید شد','در حال آماده‌سازی','ارسال شد','تحویل شد','لغو شد'] %}
+                                <option value="{{ st }}" {% if o.status == st %}selected{% endif %}>{{ st }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn" type="submit"><i class="fa-solid fa-check"></i> ذخیره</button>
+                        </form>
+
+                        <div class="admin-order-actions">
+                            {% if o.invoice %}
+                            <a class="btn" href="{{ url_for('admin_order_invoice', order_id=o.id) }}"><i class="fa-solid fa-file-invoice"></i> مشاهده فاکتور</a>
+                            <a class="btn" href="{{ url_for('order_invoice_pdf', order_id=o.id) }}"><i class="fa-solid fa-download"></i> PDF</a>
+                            {% if o.invoice.status != 'صادر و ایمیل شد' %}
+                            <form method="post" action="{{ url_for('admin_issue_invoice', order_id=o.id) }}" style="display:inline">
+                                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> صدور و ارسال</button>
+                            </form>
+                            {% endif %}
+                            {% else %}
+                            <form method="post" action="{{ url_for('admin_issue_invoice', order_id=o.id) }}" style="display:inline">
+                                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-file-circle-plus"></i> صدور فاکتور و ایمیل</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty">
+                    <i class="fa-solid fa-box-open"></i>
+                    هنوز سفارشی ثبت نشده است.
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- =================================================
+             INVOICES
+        ================================================== -->
+        <section id="invoices-admin" class="admin-section">
+            <div class="section-head">
+                <div>
+                    <span class="section-kicker">مالی و اسناد</span>
+                    <h2>مرکز فاکتورهای خریدینو</h2>
+                    <p>صدور، مشاهده، دانلود و ارسال فاکتور مشتریان از یک محل.</p>
+                </div>
+                <div class="invoice-admin-summary"><strong>{{ stats.invoices }}</strong><span>فاکتور ثبت‌شده</span></div>
+            </div>
+            <div class="admin-card invoice-admin-card">
+                <div class="invoice-admin-head">
+                    <div><i class="fa-solid fa-file-circle-check"></i><div><strong>فاکتورهای اخیر</strong><small>برای صدور فاکتور، سفارش مربوطه را انتخاب کن.</small></div></div>
+                    <a class="btn" href="#orders-admin"><i class="fa-solid fa-bag-shopping"></i> رفتن به سفارش‌ها</a>
+                </div>
+                <div class="invoice-admin-table">
+                    <div class="invoice-admin-row invoice-admin-row--head"><span>شماره</span><span>خریدار</span><span>مبلغ</span><span>وضعیت</span><span>عملیات</span></div>
+                    {% for inv in invoices %}
+                    <div class="invoice-admin-row">
+                        <span><strong>{{ inv.invoice_number }}</strong><small>{{ inv.created_at.strftime('%Y/%m/%d') if inv.created_at else '—' }}</small></span>
+                        <span><strong>{{ inv.buyer_name }}</strong><small>{{ inv.buyer_phone or '—' }}</small></span>
+                        <span><strong>{{ inv.total|money }}</strong><small>تومان</small></span>
+                        <span><em class="invoice-status-pill">{{ inv.status }}</em></span>
+                        <span class="invoice-admin-actions">
+                            <a class="btn" href="{{ url_for('admin_order_invoice', order_id=inv.order_id) }}"><i class="fa-solid fa-eye"></i> مشاهده</a>
+                            <a class="btn" href="{{ url_for('order_invoice_pdf', order_id=inv.order_id) }}"><i class="fa-solid fa-download"></i> PDF</a>
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="invoice-admin-empty"><i class="fa-solid fa-file-circle-plus"></i><strong>هنوز فاکتوری صادر نشده</strong><span>از بخش سفارش‌ها اولین فاکتور را صادر کن.</span><a class="btn btn-primary" href="#orders-admin">مشاهده سفارش‌ها</a></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
 
         <!-- =================================================
              SITE SETTINGS
@@ -990,6 +1162,7 @@
                         </button>
 
                     </form>
+
 
                 </div>
 
@@ -2073,6 +2246,21 @@
 
                     </form>
 
+                    <div class="admin-order-actions">
+                        {% if o.invoice %}
+                        <a class="btn" href="{{ url_for('admin_order_invoice', order_id=o.id) }}"><i class="fa-solid fa-file-invoice"></i> مشاهده فاکتور</a>
+                        {% if o.invoice.status != 'صادر و ایمیل شد' %}
+                        <form method="post" action="{{ url_for('admin_issue_invoice', order_id=o.id) }}" style="display:inline">
+                            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> صدور و ارسال</button>
+                        </form>
+                        {% endif %}
+                        {% else %}
+                        <form method="post" action="{{ url_for('admin_issue_invoice', order_id=o.id) }}" style="display:inline">
+                            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-file-circle-plus"></i> صدور فاکتور و ایمیل</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
                 </div>
 
                 {% else %}
@@ -2096,4 +2284,5 @@
 
 </div>
 
+    <script src="{{ url_for('static', filename='js/kharidino-admin-2026.js', v='2026-09-26-1') }}" defer></script>
 {% endblock %}

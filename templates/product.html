@@ -95,6 +95,24 @@
             </div>
         </section>
 
+        <section class="kh-price-alert" id="price-alert">
+          <div class="kh-price-alert-icon"><i class="fa-regular fa-bell"></i></div>
+          <div class="kh-price-alert-copy">
+            <span>هشدار قیمت</span>
+            <h2>وقتی قیمت رسید، بهت خبر می‌دهیم</h2>
+            <p>قیمت هدف خودت را وارد کن تا هشدار این محصول در حساب خریدینو ذخیره شود.</p>
+          </div>
+          {% if current_user %}
+          <form method="post" action="{{ url_for('create_price_alert', product_id=product.id) }}" class="kh-price-alert-form">
+            <label><span>قیمت هدف</span><input name="target_price" inputmode="numeric" value="{{ price_alert.target_price if price_alert else '' }}" placeholder="مثلاً ۵۰٬۰۰۰٬۰۰۰"></label>
+            <button type="submit"><i class="fa-regular fa-bell"></i> {{ 'به‌روزرسانی هشدار' if price_alert else 'فعال‌سازی هشدار' }}</button>
+          </form>
+          {% if price_alert %}<form method="post" action="{{ url_for('remove_price_alert', product_id=product.id) }}"><button class="kh-price-alert-remove" type="submit">غیرفعال کردن</button></form>{% endif %}
+          {% else %}
+          <a class="btn btn-primary" href="{{ url_for('login', next=request.path + '#price-alert') }}">ورود برای فعال‌سازی</a>
+          {% endif %}
+        </section>
+
         <section class="kh-product-reviews" id="reviews">
           <div class="kh-reviews-head">
             <div><span class="kd-section-label"><i class="fa-solid fa-star"></i> تجربه خریداران</span><h2>نظر کاربران درباره این محصول</h2></div>

@@ -1504,6 +1504,34 @@ def _invoice_pdf_bytes(invoice, order, company):
 
         canvas.restoreState()
 
+    qr_widget = QrCodeWidget(f"KHARIDINO|{invoice.invoice_number}|ORDER:{order.id}")
+    qr_widget.barWidth = 24*mm
+    qr_widget.barHeight = 24*mm
+
+    bank_table = Table([
+        [Paragraph(rtl("اطلاعات بانکی"), section)],
+        [Paragraph(rtl(f"بانک: {safe_text(company.get('bank_name'))}"), small)],
+        [Paragraph(rtl(f"شماره شبا: {safe_text(company.get('iban'))}"), small)],
+    ], colWidths=[82*mm])
+    bank_table.setStyle(TableStyle([
+        ("BOX",(0,0),(-1,-1),0.65,line), ("BACKGROUND",(0,0),(-1,0),soft),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"), ("ALIGN",(0,0),(-1,-1),"RIGHT"),
+        ("LEFTPADDING",(0,0),(-1,-1),7), ("RIGHTPADDING",(0,0),(-1,-1),7),
+        ("TOPPADDING",(0,0),(-1,-1),6), ("BOTTOMPADDING",(0,0),(-1,-1),6),
+    ]))
+
+    payment_panel = Table([[
+        bank_table,
+        Table([[qr_widget], [Paragraph(rtl("QR فاکتور"), tiny)]], colWidths=[38*mm],
+              style=TableStyle([("ALIGN",(0,0),(-1,-1),"CENTER"),
+                                ("VALIGN",(0,0),(-1,-1),"MIDDLE")]))
+    ]], colWidths=[130*mm, 52*mm])
+    payment_panel.setStyle(TableStyle([
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+        ("LEFTPADDING",(0,0),(-1,-1),0), ("RIGHTPADDING",(0,0),(-1,-1),0),
+        ("TOPPADDING",(0,0),(-1,-1),0), ("BOTTOMPADDING",(0,0),(-1,-1),0),
+    ]))
+
     story = [
         brand,
         Spacer(1, 3.5*mm),
@@ -1535,6 +1563,8 @@ def _invoice_pdf_bytes(invoice, order, company):
         summary,
         Spacer(1, 5*mm),
         notes,
+        Spacer(1, 5*mm),
+        payment_panel,
         Spacer(1, 5*mm),
         signature_boxes,
         Spacer(1, 4*mm),

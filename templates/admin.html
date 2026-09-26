@@ -257,6 +257,65 @@
 
 
         <!-- =================================================
+             ORDERS
+        ================================================== -->
+        <section id="orders-admin" class="admin-section">
+            <div class="section-head">
+                <div>
+                    <span class="section-kicker">سفارش‌ها</span>
+                    <h2>مدیریت سفارش‌های مشتریان</h2>
+                    <p>وضعیت سفارش‌ها را بررسی و فاکتور هر سفارش را مدیریت کن.</p>
+                </div>
+                <div class="invoice-admin-summary"><strong>{{ stats.orders }}</strong><span>سفارش ثبت‌شده</span></div>
+            </div>
+
+            <div class="admin-card order-admin-list">
+                {% for o in orders %}
+                <div class="admin-order">
+                    <div>
+                        <b>#{{ o.id }} — {{ o.customer_name }}</b>
+                        <small>{{ o.phone }} · {{ o.total|money }} تومان</small>
+                        <small>{{ o.address }}</small>
+                        {% if o.note %}<small>یادداشت: {{ o.note }}</small>{% endif %}
+                    </div>
+
+                    <div>
+                        <form method="post" action="{{ url_for('update_order_status', order_id=o.id) }}">
+                            <select name="status">
+                                {% for st in ['در انتظار بررسی','تأیید شد','در حال آماده‌سازی','ارسال شد','تحویل شد','لغو شد'] %}
+                                <option value="{{ st }}" {% if o.status == st %}selected{% endif %}>{{ st }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn" type="submit"><i class="fa-solid fa-check"></i> ذخیره</button>
+                        </form>
+
+                        <div class="admin-order-actions">
+                            {% if o.invoice %}
+                            <a class="btn" href="{{ url_for('admin_order_invoice', order_id=o.id) }}"><i class="fa-solid fa-file-invoice"></i> مشاهده فاکتور</a>
+                            <a class="btn" href="{{ url_for('order_invoice_pdf', order_id=o.id) }}"><i class="fa-solid fa-download"></i> PDF</a>
+                            {% if o.invoice.status != 'صادر و ایمیل شد' %}
+                            <form method="post" action="{{ url_for('admin_issue_invoice', order_id=o.id) }}" style="display:inline">
+                                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> صدور و ارسال</button>
+                            </form>
+                            {% endif %}
+                            {% else %}
+                            <form method="post" action="{{ url_for('admin_issue_invoice', order_id=o.id) }}" style="display:inline">
+                                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-file-circle-plus"></i> صدور فاکتور و ایمیل</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty">
+                    <i class="fa-solid fa-box-open"></i>
+                    هنوز سفارشی ثبت نشده است.
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- =================================================
              INVOICES
         ================================================== -->
         <section id="invoices-admin" class="admin-section">

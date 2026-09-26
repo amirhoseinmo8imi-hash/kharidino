@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}صفحه پیدا نشد | {{ site_name }}{% endblock %}
+{% block content %}
+<section style="min-height:60vh;display:grid;place-items:center;padding:60px 16px">
+  <div style="width:min(620px,100%);text-align:center;background:#fff;border:1px solid #e6e9ee;border-radius:24px;padding:42px 24px;box-shadow:0 14px 40px rgba(18,25,38,.07)">
+    <div style="font-size:58px;font-weight:1000;color:#ef4056;line-height:1">404</div>
+    <h1 style="margin:16px 0 8px">این صفحه پیدا نشد</h1>
+    <p style="color:#737d8d;margin:0 0 24px">{{ error_message|default("ممکن است لینک تغییر کرده باشد یا صفحه حذف شده باشد.") }}</p>
+    <a href="{{ url_for('home') }}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#ef4056;color:#fff;text-decoration:none;border-radius:12px;padding:12px 20px;font-weight:900">بازگشت به خریدینو <i class="fa-solid fa-arrow-left"></i></a>
+  </div>
+</section>
+{% endblock %}

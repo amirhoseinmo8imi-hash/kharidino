@@ -76,6 +76,7 @@
                 <span>اطلاعات حقوقی و فاکتور</span>
             </a>
 
+            <div class="admin-nav-group-label">سیستم</div>
             <a href="#settings">
                 <i class="fa-solid fa-gear"></i>
                 <span>تنظیمات سایت</span>
@@ -175,6 +176,67 @@
 
                 {% endfor %}
 
+            </div>
+
+            <div class="admin-command-bar">
+                <div class="admin-command-copy">
+                    <span class="admin-command-dot"></span>
+                    <div><strong>مرکز عملیات خریدینو</strong><small>کارهای مهم را از همین‌جا سریع انجام بده.</small></div>
+                </div>
+                <div class="admin-command-actions">
+                    <a class="admin-quick-btn primary" href="#products-admin"><i class="fa-solid fa-plus"></i> افزودن محصول</a>
+                    <a class="admin-quick-btn" href="#offers-admin"><i class="fa-solid fa-tags"></i> ثبت قیمت</a>
+                    <a class="admin-quick-btn" href="#orders-admin"><i class="fa-solid fa-truck-fast"></i> سفارش‌ها</a>
+                    <a class="admin-quick-btn" href="#users-admin"><i class="fa-solid fa-user-plus"></i> کاربران</a>
+                </div>
+            </div>
+
+            <div class="admin-dashboard-grid">
+                <article class="admin-dashboard-card admin-dashboard-card--wide">
+                    <div class="admin-dashboard-card-head">
+                        <div><span class="section-kicker">عملیات امروز</span><h3>وضعیت فروشگاه</h3></div>
+                        <span class="admin-live-badge"><i class="fa-solid fa-circle"></i> زنده</span>
+                    </div>
+                    <div class="admin-health-grid">
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-clock"></i></span><div><strong>{{ stats.pending_orders }}</strong><small>سفارش در انتظار بررسی</small></div><a href="#orders-admin">بررسی</a></div>
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-boxes-stacked"></i></span><div><strong>{{ stats.out_of_stock_offers }}</strong><small>قیمت ناموجود</small></div><a href="#offers-admin">مدیریت</a></div>
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-user-check"></i></span><div><strong>{{ stats.active_users }}</strong><small>کاربر فعال</small></div><a href="#users-admin">مشاهده</a></div>
+                        <div class="admin-health-item"><span class="admin-health-icon"><i class="fa-solid fa-building"></i></span><div><strong>{{ stats.pending_org_requests }}</strong><small>درخواست سازمانی</small></div><a href="{{ url_for('admin_organization_requests') }}">بررسی</a></div>
+                    </div>
+                </article>
+
+                <article class="admin-dashboard-card admin-dashboard-card--revenue">
+                    <div class="admin-dashboard-card-head"><div><span class="section-kicker">مالی</span><h3>فروش ثبت‌شده</h3></div><span class="admin-revenue-icon"><i class="fa-solid fa-chart-line"></i></span></div>
+                    <strong class="admin-revenue-value">{{ stats.revenue|money }}</strong>
+                    <small>تومان · سفارش‌های لغوشده محاسبه نشده‌اند</small>
+                    <div class="admin-mini-progress"><span style="width: {{ stats.completion_rate }}%"></span></div>
+                    <div class="admin-revenue-meta"><span>{{ stats.completed_orders }} تکمیل‌شده</span><span>{{ stats.orders }} کل سفارش</span></div>
+                </article>
+
+                <article class="admin-dashboard-card admin-dashboard-card--recent">
+                    <div class="admin-dashboard-card-head"><div><span class="section-kicker">آخرین فعالیت</span><h3>سفارش‌های اخیر</h3></div><a href="#orders-admin">همه سفارش‌ها ←</a></div>
+                    <div class="admin-recent-orders">
+                        {% for o in recent_orders %}
+                        <a class="admin-recent-order" href="#orders-admin">
+                            <span class="admin-order-avatar">{{ o.customer_name[:1]|upper }}</span>
+                            <span class="admin-recent-order-main"><strong>#{{ o.id }} · {{ o.customer_name }}</strong><small>{{ o.total|money }} تومان · {{ o.status }}</small></span>
+                            <span class="admin-order-arrow"><i class="fa-solid fa-chevron-left"></i></span>
+                        </a>
+                        {% else %}
+                        <div class="admin-empty-mini"><i class="fa-solid fa-inbox"></i> هنوز سفارشی ثبت نشده است.</div>
+                        {% endfor %}
+                    </div>
+                </article>
+
+                <article class="admin-dashboard-card admin-dashboard-card--shortcuts">
+                    <div class="admin-dashboard-card-head"><div><span class="section-kicker">میانبرها</span><h3>مدیریت سریع</h3></div></div>
+                    <div class="admin-shortcuts-grid">
+                        <a href="#categories-admin"><i class="fa-solid fa-layer-group"></i><span>دسته‌بندی‌ها</span></a>
+                        <a href="#stores-admin"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+                        <a href="#appearance-admin"><i class="fa-solid fa-palette"></i><span>ظاهر سایت</span></a>
+                        <a href="#settings"><i class="fa-solid fa-gear"></i><span>تنظیمات</span></a>
+                    </div>
+                </article>
             </div>
 
         </section>

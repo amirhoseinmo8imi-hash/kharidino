@@ -299,6 +299,25 @@ class Offer(db.Model):
     )
 
 
+class GamingSubmission(db.Model):
+    """User-submitted gaming content; publication requires moderation."""
+    __tablename__ = "gaming_submission"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(220), nullable=False, unique=True)
+    description = db.Column(db.Text, default="")
+    platform = db.Column(db.String(40), default="")
+    genre = db.Column(db.String(80), default="")
+    version = db.Column(db.String(80), default="")
+    official_url = db.Column(db.String(700), default="")
+    cover_url = db.Column(db.String(700), default="")
+    status = db.Column(db.String(30), default="pending", nullable=False)
+    moderator_note = db.Column(db.String(500), default="")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    user = db.relationship("User", backref=db.backref("gaming_submissions", lazy=True))
+
+
 class User(db.Model):
     id = db.Column(
         db.Integer,

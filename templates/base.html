@@ -91,6 +91,9 @@
     <a class="km-nav-link" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span></a>
     <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
     <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
+    <a class="km-nav-link km-nav-link--service" href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><span>گیمینگ</span></a>
+    <a class="km-nav-link km-nav-link--service" href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><span>میوه و تازه</span></a>
+    <a class="km-nav-link km-nav-link--service" href="{{ url_for('insurance_hub') }}"><i class="fa-solid fa-shield-halved"></i><span>بیمه</span></a>
     <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
 
   <div class="km-nav-business">
@@ -165,6 +168,10 @@
 
 </header>
 <div class="kh-global-rail" aria-label="دسترسی‌های مهم خریدینو">
+  <a href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><span><strong>گیمینگ</strong>بازار گیمرها</span></a>
+  <a href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><span><strong>میوه و تازه</strong>بازار محصولات تازه</span></a>
+  <a href="{{ url_for('insurance_hub') }}"><i class="fa-solid fa-shield-halved"></i><span><strong>بیمه</strong>دسترسی سریع بیمه</span></a>
+  
   <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span><strong>مقایسه قیمت</strong>انتخاب اقتصادی‌تر</span></a>
   <a href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span><strong>بازار خودرو</strong>آگهی‌های تازه</span></a>
   <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span><strong>فروشگاه‌ها</strong>فروشنده‌های خریدینو</span></a>

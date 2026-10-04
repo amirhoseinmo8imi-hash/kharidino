@@ -12,6 +12,7 @@ product_brand = Table(
     db.metadata,
     Column("product_id", Integer, ForeignKey("product.id", ondelete="CASCADE"), primary_key=True),
     Column("brand_id", Integer, ForeignKey("kharidino_brand.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True,
 )
 
 
@@ -91,8 +92,8 @@ def inject_catalog_globals():
     return {"home_banners": _active_banners("home")}
 
 
-@app.get("/products")
-def catalog_products():
+@app.get("/catalog/products")
+def catalog_products_extended():
     q = (request.args.get("q") or "").strip()[:100]
     brand_slug = (request.args.get("brand") or "").strip()[:140]
     category_id = (request.args.get("category") or "").strip()

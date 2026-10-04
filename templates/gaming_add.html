@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}افزودن بازی | خریدینو{% endblock %}
+{% block content %}
+<div class="kh-gaming-submit"><div class="kh-gaming-submit-card"><span>GAMING COMMUNITY</span><h1>بازی جدیدی می‌شناسی؟ اضافه‌اش کن 🎮</h1><p>اطلاعات بازی را ثبت کن؛ بعد از بررسی مدیر در بخش گیمینگ منتشر می‌شود.</p>
+<form method="post"><label>نام بازی<input name="title" required maxlength="200" placeholder="مثلاً Elden Ring"></label><div class="kh-gaming-submit-grid"><label>پلتفرم<input name="platform" maxlength="40" placeholder="PC / PS5 / Xbox"></label><label>ژانر<input name="genre" maxlength="80" placeholder="Action / RPG"></label><label>نسخه<input name="version" maxlength="80" placeholder="v1.0.0"></label><label>لینک رسمی<input name="official_url" type="url" maxlength="700" placeholder="https://..."></label></div><label>لینک تصویر کاور<input name="cover_url" type="url" maxlength="700"></label><label>معرفی بازی<textarea name="description" maxlength="5000" rows="7"></textarea></label><div class="kh-gaming-submit-actions"><a href="{{ url_for('gaming_hub') }}">انصراف</a><button type="submit">ارسال برای بررسی</button></div></form></div></div>
+{% endblock %}

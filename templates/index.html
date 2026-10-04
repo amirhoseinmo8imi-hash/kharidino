@@ -157,7 +157,16 @@
   </section>
   {% endif %}
 
-  </section>  {% endif %}  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
+  </section>  {% endif %}  <section class="kh-home-hubs" aria-label="بخش‌های جدید خریدینو">
+    <div class="kh-home-hubs-head"><div><span>بخش‌های تازه خریدینو</span><h2>خدمات و بازارهای تخصصی</h2></div></div>
+    <div class="kh-home-hubs-grid">
+      <a href="{{ url_for('gaming_hub') }}" class="kh-home-hub kh-home-hub-game"><i class="fa-solid fa-gamepad"></i><div><strong>دنیای گیمرها</strong><span>گیمینگ، کنسول، PC و تجهیزات استریم</span></div><i class="fa-solid fa-arrow-left"></i></a>
+      <a href="{{ url_for('fresh_market') }}" class="kh-home-hub kh-home-hub-fresh"><i class="fa-solid fa-apple-whole"></i><div><strong>میوه و بازار تازه</strong><span>میوه، سبزی، خشکبار و میوه‌فروشی‌های محلی</span></div><i class="fa-solid fa-arrow-left"></i></a>
+      <a href="{{ url_for('insurance_hub') }}" class="kh-home-hub kh-home-hub-insurance"><i class="fa-solid fa-shield-halved"></i><div><strong>مرکز بیمه</strong><span>دسترسی سریع به مقایسه و خرید بیمه آنلاین</span></div><i class="fa-solid fa-arrow-left"></i></a>
+    </div>
+  </section>
+
+  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
     <a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span><small>هزاران محصول</small></a>
     <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span><small>انتخاب اقتصادی</small></a>
     <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span><small>فروشنده‌ها</small></a>

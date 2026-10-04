@@ -10,7 +10,6 @@ import secrets
 import smtplib
 import json
 import urllib.parse
-import urllib.request
 from datetime import datetime, timedelta
 
 from flask import render_template, request, redirect, url_for, flash, abort, session, jsonify
@@ -182,9 +181,15 @@ def register_vehicle_chat(app, db, User, login_required):
                 "message": f"کد تأیید خریدینو: {code} - اعتبار 10 دقیقه",
             }).encode()
             url = f"https://api.kavenegar.com/v1/{urllib.parse.quote(api_key)}/sms/send.json"
-            req = urllib.request.Request(url, data=params, method="POST")
-            with urllib.request.urlopen(req, timeout=15) as response:
-                payload = json.loads(response.read().decode("utf-8", "replace"))
+            import requests
+            response = requests.post(
+                url,
+                data=params,
+                timeout=15,
+                headers={"Accept": "application/json"},
+            )
+            response.raise_for_status()
+            payload = response.json()
             return int(payload.get("return", {}).get("status", 0)) in {200, 201}
         except Exception:
             app.logger.exception("Vehicle verification SMS failed")

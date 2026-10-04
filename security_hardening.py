@@ -18,7 +18,6 @@ from flask import abort, g, request, session
 
 _INSECURE_KEYS = {"", "change-this-secret-key", "dev-secret", "secret"}
 _RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
-_CSRF_SESSION_KEY = "_kharidino_csrf_token"
 _CSRF_FIELD = "csrf_token"
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 _CHECKOUT_WINDOW_SECONDS = 24 * 60 * 60
@@ -33,15 +32,13 @@ def _is_production() -> bool:
 
 
 def csrf_token() -> str:
-    token = session.get(_CSRF_SESSION_KEY)
-    if not token or not isinstance(token, str) or len(token) < 32:
-        token = secrets.token_urlsafe(48)
-        session[_CSRF_SESSION_KEY] = token
-    return token
+    """Return the single CSRF token owned by the Flask application."""
+    from app import csrf_token as app_csrf_token
+    return app_csrf_token()
 
 
 def _csrf_valid() -> bool:
-    expected = session.get(_CSRF_SESSION_KEY)
+    expected = session.get("csrf_token") or session.get("_kharidino_csrf_token")
     supplied = request.form.get(_CSRF_FIELD) or request.headers.get("X-CSRF-Token")
     if not expected or not supplied:
         return False
@@ -185,17 +182,22 @@ def _validate_checkout_stock() -> None:
 def apply_security(app):
     if getattr(app, "_kharidino_security_applied", False):
         return app
-    configured_key = os.environ.get("SECRET_KEY", "").strip()
+    configured_key = (
+        os.environ.get("KHARIDINO_SECRET_KEY", "").strip()
+        or os.environ.get("SECRET_KEY", "").strip()
+    )
+    # app.py is the canonical owner of SECRET_KEY. Only override it when an
+    # explicit environment value exists; otherwise preserve the stable local key.
     if configured_key in _INSECURE_KEYS:
         if _is_production():
             raise RuntimeError("SECRET_KEY must be set to a strong random value in production.")
-        app.config["SECRET_KEY"] = secrets.token_urlsafe(48)
+        if not app.config.get("SECRET_KEY"):
+            app.config["SECRET_KEY"] = secrets.token_urlsafe(48)
     else:
-        app.config["SECRET_KEY"] = configured_key
+        app.config["SECRET_KEY"] = configured_key or app.config.get("SECRET_KEY") or secrets.token_urlsafe(48)
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = _is_production()
-    app.config["SESSION_COOKIE_NAME"] = "kharidino_session"
     app.config["MAX_FORM_MEMORY_SIZE"] = 2 * 1024 * 1024
     app.config["MAX_FORM_PARTS"] = 200
     app.config["MAX_CONTENT_LENGTH"] = min(int(app.config.get("MAX_CONTENT_LENGTH") or _MAX_UPLOAD_BYTES), _MAX_UPLOAD_BYTES)

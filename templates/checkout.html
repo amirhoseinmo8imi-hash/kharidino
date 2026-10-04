@@ -11,7 +11,7 @@
     </div>
 
     <div class="kh-checkout-layout">
-      <form class="kh-checkout-main" method="post" novalidate>
+      <form class="kh-checkout-main" method="post" novalidate><input type="hidden" name="checkout_nonce" value="{{ checkout_nonce }}">
         <div class="kh-checkout-card">
           <div class="kh-card-title"><span class="kh-card-icon"><i class="fa-solid fa-location-dot"></i></span><div><small>مرحله ۲ از ۴</small><h2>آدرس و اطلاعات تحویل</h2></div></div>
           <div class="kh-checkout-body">
@@ -22,19 +22,14 @@
               <label class="kh-check-field kh-field-full"><span>توضیحات سفارش <small>اختیاری</small></span><div class="kh-textarea"><i class="fa-regular fa-note-sticky"></i><textarea name="note" rows="3" maxlength="2000" placeholder="توضیحی برای تحویل‌دهنده یا سفارش..."></textarea></div></label>
             </div>
 
-            <div class="kh-coupon-box">
-              <div><i class="fa-solid fa-ticket"></i><div><strong>کد تخفیف داری؟</strong><small>کد را وارد کن تا قبل از پرداخت روی سفارش اعمال شود.</small></div></div>
-              <input name="coupon_code" placeholder="کد تخفیف" maxlength="80" autocomplete="off">
-            </div>
-
             <div class="kh-payment-method">
-              <div class="kh-payment-method-icon"><i class="fa-solid fa-credit-card"></i></div>
-              <div><strong>پرداخت آنلاین</strong><span>پس از ثبت سفارش به درگاه پرداخت هدایت می‌شوی و وضعیت پرداخت به‌صورت امن تأیید می‌شود.</span></div>
+              <div class="kh-payment-method-icon"><i class="fa-solid fa-receipt"></i></div>
+              <div><strong>ثبت سفارش</strong><span>بعد از ثبت، سفارش در حساب کاربری ذخیره می‌شود و وضعیت آن از بخش «پیگیری سفارش» قابل مشاهده است.</span></div>
               <span class="kh-payment-selected"><i class="fa-solid fa-circle-check"></i></span>
             </div>
 
-            <button class="kh-checkout-submit" type="submit"><span>ثبت سفارش و ادامه به پرداخت</span><i class="fa-solid fa-arrow-left"></i></button>
-            <div class="kh-secure-note"><i class="fa-solid fa-shield-halved"></i> اطلاعات کارت مستقیماً در درگاه پرداخت وارد می‌شود و در خریدینو ذخیره نمی‌شود.</div>
+            <button class="kh-checkout-submit" type="submit"><span>ثبت نهایی سفارش</span><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="kh-secure-note"><i class="fa-solid fa-shield-halved"></i> در این مرحله هیچ اطلاعات بانکی در خریدینو ذخیره نمی‌شود؛ وضعیت سفارش از حساب کاربری قابل پیگیری است.</div>
           </div>
         </div>
       </form>

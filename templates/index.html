@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}
-{% block extra_css %}\n<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-redesign-2026.css', v='2026-09-26-1') }}">\n
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-redesign-2026.css', v='2026-09-26-1') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-3') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-26-2') }}">
 {% endblock %}
@@ -141,7 +141,7 @@
   </script>
 
   {% if not q %}
-  <section class="kh-auto-zone" aria-label="بازار خودرو و وسایل نقلیه">\n    <div class="kh-auto-zone-bar"><div><span><i class="fa-solid fa-car-side"></i> KHARIDINO AUTO</span><strong>بازار خرید و فروش وسایل نقلیه</strong></div><a href="{{ url_for('vehicles') }}">ورود به بازار خودرو <i class="fa-solid fa-arrow-left"></i></a></div>\n  <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
+  <section class="kh-auto-zone" aria-label="بازار خودرو و وسایل نقلیه">    <div class="kh-auto-zone-bar"><div><span><i class="fa-solid fa-car-side"></i> KHARIDINO AUTO</span><strong>بازار خرید و فروش وسایل نقلیه</strong></div><a href="{{ url_for('vehicles') }}">ورود به بازار خودرو <i class="fa-solid fa-arrow-left"></i></a></div>  <section class="kh-vehicle-categories" aria-label="دسته‌بندی وسایل نقلیه">
     <div class="kh-vcat-head">
       <div><span><i class="fa-solid fa-road"></i> MARKETPLACE</span><h2>هر چیزی که <strong>حرکت می‌کند</strong></h2><p>بازار اختصاصی وسایل نقلیه خریدینو</p></div>
       <a href="{{ url_for('vehicles') }}">ورود به بازار <i class="fa-solid fa-arrow-left"></i></a>
@@ -157,7 +157,16 @@
   </section>
   {% endif %}
 
-  </section>\n  {% endif %}\n\n  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
+  </section>  {% endif %}  <section class="kh-home-hubs" aria-label="بخش‌های جدید خریدینو">
+    <div class="kh-home-hubs-head"><div><span>بخش‌های تازه خریدینو</span><h2>خدمات و بازارهای تخصصی</h2></div></div>
+    <div class="kh-home-hubs-grid">
+      <a href="{{ url_for('gaming_hub') }}" class="kh-home-hub kh-home-hub-game"><i class="fa-solid fa-gamepad"></i><div><strong>دنیای گیمرها</strong><span>گیمینگ، کنسول، PC و تجهیزات استریم</span></div><i class="fa-solid fa-arrow-left"></i></a>
+      <a href="{{ url_for('fresh_market') }}" class="kh-home-hub kh-home-hub-fresh"><i class="fa-solid fa-apple-whole"></i><div><strong>میوه و بازار تازه</strong><span>میوه، سبزی، خشکبار و میوه‌فروشی‌های محلی</span></div><i class="fa-solid fa-arrow-left"></i></a>
+      <a href="{{ url_for('insurance_hub') }}" class="kh-home-hub kh-home-hub-insurance"><i class="fa-solid fa-shield-halved"></i><div><strong>مرکز بیمه</strong><span>دسترسی سریع به مقایسه و خرید بیمه آنلاین</span></div><i class="fa-solid fa-arrow-left"></i></a>
+    </div>
+  </section>
+
+  <div class="kh-market-shortcuts" aria-label="دسترسی سریع">
     <a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span><small>هزاران محصول</small></a>
     <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span><small>انتخاب اقتصادی</small></a>
     <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span><small>فروشنده‌ها</small></a>
@@ -315,6 +324,18 @@
   {% else %}
   <section class="kdg-section" id="all-products">
     <div class="kdg-section-head"><div><span>جستجوی خریدینو</span><h2>نتایج جستجو برای «{{ q }}»</h2></div><strong>{{ products|length }} محصول</strong></div>
+    {% if search_intent and (search_intent.min_price or search_intent.max_price) %}
+    <div class="kh-search-intent">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>فیلتر هوشمند قیمت فعال شد:</span>
+      <strong>
+        {% if search_intent.min_price %}از {{ search_intent.min_price|money }} تومان{% endif %}
+        {% if search_intent.min_price and search_intent.max_price %} تا {% endif %}
+        {% if search_intent.max_price %}{{ search_intent.max_price|money }} تومان{% endif %}
+      </strong>
+      <small>عبارت جستجو همزمان روی نام و دسته‌بندی اعمال شده است.</small>
+    </div>
+    {% endif %}
     <div class="kdg-products">
       {% for product in products %}
       <article class="kdg-card-wrap">

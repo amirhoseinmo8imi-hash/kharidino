@@ -5,7 +5,7 @@ from flask import abort, jsonify, request
 
 from app import app, db, Order
 from merchant_marketplace import seller_required, _seller_account
-from merchant_marketplace_v2 import SellerOrder, SellerLedger
+from merchant_marketplace_v2 import SellerOrder, SellerLedger, sync_master_order_status
 from marketplace_ultimate import Shipment
 
 

@@ -3,7 +3,7 @@ import re
 
 from flask import abort, flash, redirect, render_template, url_for, request
 
-from app import app, db, admin_required
+from app import app, db, admin_required, SellerProfile
 from merchant_marketplace import MerchantStore
 
 
@@ -39,6 +39,14 @@ def _set_merchant_status(account_id: int, status: str):
     account.status = status
     if account.store is not None:
         account.store.active = status == "approved"
+    if status == "approved" and account.user_id:
+        profile = SellerProfile.query.filter_by(user_id=account.user_id).first()
+        if profile is None:
+            profile = SellerProfile(user_id=account.user_id, store_id=account.store_id, verification_status="تأیید شده")
+            db.session.add(profile)
+        else:
+            profile.store_id = account.store_id
+            profile.verification_status = "تأیید شده"
     db.session.commit()
 
     messages = {

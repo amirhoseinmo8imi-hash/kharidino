@@ -61,13 +61,6 @@ def delete_address(address_id):
         if replacement:replacement.is_default=True
     db.session.commit(); return redirect(url_for("account_addresses"))
 
-@app.get("/orders/<int:order_id>")
-@login_required
-def order_detail(order_id):
-    order=_owned_order(order_id)
-    if not order:return ("Not Found",404)
-    return render_template("order_detail.html",order=order)
-
 @app.get("/api/orders/<int:order_id>")
 @login_required
 def order_detail_api(order_id):

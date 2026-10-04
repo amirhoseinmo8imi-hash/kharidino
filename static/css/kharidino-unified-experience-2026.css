@@ -1,0 +1,927 @@
+/* Kharidino Unified Experience Layer — 2026
+   UX direction:
+   Digikala -> storefront depth and merchandising
+   Torob -> comparison/search clarity
+   Divar -> marketplace/vehicle utility
+   Kharidino -> one premium RTL visual language
+*/
+:root{
+  --kh-ux-bg:#f5f6f8;
+  --kh-ux-surface:#fff;
+  --kh-ux-surface-soft:#fafbfc;
+  --kh-ux-ink:#151a22;
+  --kh-ux-text:#343b48;
+  --kh-ux-muted:#7b8492;
+  --kh-ux-line:#e6e9ee;
+  --kh-ux-red:#ef4056;
+  --kh-ux-red-soft:#fff1f3;
+  --kh-ux-dark:#1d242d;
+  --kh-ux-radius:18px;
+  --kh-ux-shadow:0 10px 30px rgba(15,23,42,.055);
+  --kh-ux-shadow-hover:0 18px 45px rgba(15,23,42,.095);
+}
+
+body.kh-inner-page,body.kh-home-page{background:var(--kh-ux-bg)}
+.site-content>main{width:100%}
+.container,.kdg-home,.kdg-category-page,.vehicle-page,.vehicle-detail-page,.vehicle-compare-page,.kp-page{
+  width:min(1440px,calc(100% - 32px));
+  margin-inline:auto;
+}
+
+/* Global section rhythm */
+.kdg-section,.kh-market-section,.vehicle-section,.kp-section{margin-top:28px}
+.kdg-section-head,.vehicle-section-title{display:flex;align-items:end;justify-content:space-between;gap:16px}
+.kdg-section-head h2,.vehicle-section-title h2{margin:0;color:var(--kh-ux-ink);font-size:21px;font-weight:950;letter-spacing:-.3px}
+.kdg-section-head p,.vehicle-section-title p{color:var(--kh-ux-muted)}
+
+/* Home: marketplace-first hierarchy */
+.kh-home-hero-pro{
+  min-height:430px!important;
+  border-radius:28px!important;
+  margin-top:18px!important;
+  overflow:hidden!important;
+  box-shadow:var(--kh-ux-shadow-hover)!important;
+}
+.kh-portal-switch{margin-top:22px!important}
+.kh-portal-grid{gap:14px!important}
+.kh-portal-card{
+  min-height:142px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.kh-portal-card:hover{transform:translateY(-4px)!important;box-shadow:var(--kh-ux-shadow-hover)!important}
+.kh-market-hero{
+  margin-top:22px!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  border:1px solid var(--kh-ux-line)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+
+/* Product/category merchandising */
+.kdg-category-page{padding-top:18px;padding-bottom:20px}
+.kdg-breadcrumb,.kd-breadcrumb,.vehicle-breadcrumb{
+  display:flex;align-items:center;gap:8px;
+  min-height:38px;color:var(--kh-ux-muted);
+  font-size:11px;
+}
+.kdg-breadcrumb a,.kd-breadcrumb a,.vehicle-breadcrumb a{color:#687181;text-decoration:none}
+.kdg-breadcrumb a:hover,.kd-breadcrumb a:hover,.vehicle-breadcrumb a:hover{color:var(--kh-ux-red)}
+.kdg-category-head{
+  margin-top:10px!important;
+  padding:24px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:22px!important;
+  background:linear-gradient(135deg,#fff,#fafbfc)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.kdg-category-head h1{margin:3px 0 5px!important;font-size:29px!important;letter-spacing:-.6px}
+.kdg-category-head p{color:var(--kh-ux-muted)!important}
+.kdg-catalog-toolbar{
+  margin-top:14px!important;
+  padding:12px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.kdg-catalog-toolbar form{gap:8px!important}
+.kdg-catalog-search{
+  min-height:44px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:12px!important;
+  background:#f8f9fb!important;
+}
+.kdg-catalog-toolbar select,.kdg-catalog-toolbar input{
+  min-height:44px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  background:#fff!important;
+}
+.kdg-catalog-toolbar button{
+  min-height:44px!important;
+  border-radius:12px!important;
+  background:var(--kh-ux-red)!important;
+  color:#fff!important;
+  border:0!important;
+  font-weight:900!important;
+}
+.kdg-results-head{
+  margin:18px 2px 10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  color:var(--kh-ux-muted)!important;
+}
+.kdg-results-head strong{color:var(--kh-ux-ink)!important;font-size:14px!important}
+.kdg-products{align-items:stretch!important}
+.kdg-card-wrap{height:100%;display:flex;flex-direction:column}
+.kdg-product{height:100%;display:flex;flex-direction:column}
+.kdg-product h3{min-height:50px}
+.kdg-card-compare{margin-top:auto}
+
+/* Category filters */
+.kdg-category-layout{gap:18px!important;align-items:start!important}
+.kdg-filter{
+  position:sticky!important;
+  top:16px;
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  overflow:hidden!important;
+}
+.kdg-filter-form{padding:16px!important}
+.kdg-filter-form>strong{display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #eef0f3}
+.kdg-filter-form label{color:#596273!important}
+.kdg-filter-form input,.kdg-filter-form select{background:#fafbfc!important;border-color:#e4e7ec!important}
+.kdg-filter-submit{border-radius:11px!important;font-weight:900!important}
+
+/* Product detail */
+.kd-product-page{background:transparent!important}
+.kd-product-hero{
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:24px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  padding:18px!important;
+}
+.kd-product-image-card,.kd-product-info-card,.kd-offers-card,.kd-specs-card{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+.product-top-actions{display:flex;justify-content:flex-start;gap:8px;margin:8px 0 12px}
+.product-top-actions .btn{border-radius:11px!important}
+.kd-price-offers,.kd-offer-row{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:15px!important;
+}
+.kd-offer-row{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.kd-offer-row:hover{transform:translateY(-2px);box-shadow:var(--kh-ux-shadow);border-color:#dce1e7!important}
+
+/* Compare: Torob-like decision workspace */
+.kp-page{padding-top:18px;padding-bottom:28px}
+.kp-hero{
+  border-radius:24px!important;
+  border:1px solid var(--kh-ux-line)!important;
+  background:linear-gradient(135deg,#fff,#fafbfc)!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.kp-hero h1{letter-spacing:-.5px}
+.kp-table,.kp-card,.kp-product-card{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  background:#fff!important;
+}
+.kp-table{overflow:hidden}
+.kp-table th{background:#f8f9fb!important;color:#687181!important}
+.kp-table td{border-color:#eef0f3!important}
+
+/* Stores */
+.kdg-stores-page,.stores-page,.store-page{padding-top:18px}
+.kdg-store,.store-card,.storefront-card{
+  border:1px solid var(--kh-ux-line)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.kdg-store:hover,.store-card:hover,.storefront-card:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--kh-ux-shadow-hover)!important;
+  border-color:#dfe3e8!important;
+}
+
+/* Vehicle portal: Divar utility, but Kharidino identity */
+.vehicle-page,.vehicle-detail-page,.vehicle-compare-page{
+  --vehicle-red:var(--kh-ux-red);
+}
+.vehicle-page{
+  padding-top:18px;
+  padding-bottom:30px;
+}
+.vehicle-page,.vehicle-detail-page{color:#e9edf2}
+.vehicle-hero,.vehicle-market-hero,.vehicle-filter-panel,.vehicle-filters,.vehicle-detail-layout,.vehicle-seller-box,.vehicle-spec-box{
+  border-color:#303842!important;
+}
+.vehicle-filters{
+  border-radius:20px!important;
+  background:#20272f!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.18)!important;
+}
+.vehicle-filters input,.vehicle-filters select{
+  background:#171d23!important;
+  border-color:#37404a!important;
+  color:#f3f5f7!important;
+}
+.vehicle-layout{gap:18px!important}
+.vehicle-card,.vehicle-listing-card{
+  border:1px solid #303842!important;
+  border-radius:17px!important;
+  background:#20272f!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.14)!important;
+  overflow:hidden!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.vehicle-card:hover,.vehicle-listing-card:hover{
+  transform:translateY(-3px);
+  border-color:#49535f!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.2)!important;
+}
+.vehicle-category-chip{
+  border:1px solid #343d47!important;
+  background:#20272f!important;
+  border-radius:15px!important;
+}
+.vehicle-category-chip.active,.vehicle-category-chip:hover{
+  border-color:rgba(239,64,86,.55)!important;
+  background:#2a2024!important;
+}
+.vehicle-price-panel{
+  border-radius:17px!important;
+  background:#20272f!important;
+  border:1px solid #353e48!important;
+}
+.vehicle-action-btn{
+  border:1px solid #39434e!important;
+  background:#20272f!important;
+}
+.vehicle-action-btn:hover,.vehicle-action-btn.active{
+  border-color:rgba(239,64,86,.5)!important;
+  background:#2a2024!important;
+}
+.vehicle-detail-layout{
+  border-radius:24px!important;
+  background:#171d23!important;
+  box-shadow:0 20px 60px rgba(0,0,0,.2)!important;
+}
+.vehicle-main-photo{background:#11171c!important}
+.vehicle-spec-grid-pro>div{background:#20272f!important;border-color:#343d47!important}
+
+/* Keep vehicle typography high contrast */
+.vehicle-page h1,.vehicle-page h2,.vehicle-page h3,
+.vehicle-detail-page h1,.vehicle-detail-page h2,.vehicle-detail-page h3,
+.vehicle-page strong,.vehicle-detail-page strong{color:#f5f7fa}
+.vehicle-page p,.vehicle-page small,.vehicle-detail-page p,.vehicle-detail-page small{color:#aeb6c1}
+
+/* Cart + checkout */
+.cart-page-hero,.kh-checkout-head{
+  width:min(1200px,calc(100% - 32px));
+  margin-inline:auto;
+}
+.cart-section,.kh-checkout-page{padding-bottom:30px}
+.cart-main,.cart-summary,.kh-checkout-card,.kh-order-summary{
+  border-color:var(--kh-ux-line)!important;
+  border-radius:20px!important;
+  box-shadow:var(--kh-ux-shadow)!important;
+}
+.cart-item{
+  border-color:#eef0f3!important;
+  transition:background .18s ease!important;
+}
+.cart-item:hover{background:#fafbfc!important}
+.kh-checkout-card,.kh-order-summary{background:#fff!important}
+.kh-checkout-submit{border-radius:13px!important;box-shadow:0 8px 20px rgba(239,64,86,.16)!important}
+
+/* Header / mega-menu consistency */
+.km-topbar{box-shadow:0 3px 16px rgba(20,28,38,.04)!important}
+.km-header{max-width:1440px}
+.km-nav-inner{max-width:1440px}
+.km-category-mega{border-color:#e2e6eb!important;box-shadow:0 22px 65px rgba(15,23,42,.15)!important}
+
+/* Empty states */
+.kdg-empty,.vehicle-empty,.kp-empty{
+  min-height:180px;
+  display:grid;
+  place-items:center;
+  border:1px dashed #d9dde4;
+  border-radius:18px;
+  background:#fff;
+  color:var(--kh-ux-muted);
+  padding:30px;
+}
+
+/* Responsive */
+@media(max-width:900px){
+  .container,.kdg-home,.kdg-category-page,.vehicle-page,.vehicle-detail-page,.vehicle-compare-page,.kp-page{
+    width:min(100% - 20px,1440px);
+  }
+  .kdg-filter{position:static!important}
+  .kdg-category-head{padding:18px!important}
+  .kdg-category-head h1{font-size:23px!important}
+  .vehicle-layout{grid-template-columns:1fr!important}
+  .vehicle-filters{order:0}
+}
+@media(max-width:560px){
+  .container,.kdg-home,.kdg-category-page,.vehicle-page,.vehicle-detail-page,.vehicle-compare-page,.kp-page{
+    width:calc(100% - 16px);
+  }
+  .kh-home-hero-pro{min-height:520px!important;border-radius:20px!important}
+  .kh-portal-card{min-height:125px!important}
+  .kdg-category-head{border-radius:17px!important}
+  .kdg-results-head{align-items:flex-start!important;flex-direction:column!important}
+  .product-top-actions{flex-wrap:wrap}
+  .vehicle-detail-layout{border-radius:18px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .kh-portal-card,.kdg-store,.store-card,.storefront-card,.vehicle-card,.vehicle-listing-card,.kd-offer-row{transition:none!important}
+}
+
+
+/* ============================================================
+   KHARIDINO FINAL HOME EXPERIENCE — 2026-09-26
+   Final visual layer inside the existing unified stylesheet.
+   ============================================================ */
+body.kh-home-page{
+  background:
+    radial-gradient(circle at 90% 0%,rgba(239,64,86,.055),transparent 28rem),
+    #f4f5f7!important;
+}
+.kh-home-page .kg-main{padding-top:0!important}
+.kh-home-page .kdg-home{
+  width:min(1400px,calc(100% - 40px))!important;
+  margin-inline:auto!important;
+}
+
+/* Stronger storefront hero */
+.kh-home-page .kh-home-hero-pro{
+  min-height:455px!important;
+  margin:18px 0 0!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  border-radius:30px!important;
+  box-shadow:0 24px 70px rgba(20,28,40,.13)!important;
+}
+.kh-home-page .kh-home-hero-pro-copy{max-width:700px}
+.kh-home-page .kh-home-hero-pro-kicker{
+  background:rgba(255,255,255,.14)!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  backdrop-filter:blur(8px)!important;
+}
+.kh-home-page .kh-home-hero-pro h1{
+  font-size:clamp(32px,4vw,52px)!important;
+  line-height:1.35!important;
+  letter-spacing:-1.2px!important;
+}
+.kh-home-page .kh-home-hero-search{
+  min-height:58px!important;
+  border-radius:17px!important;
+  box-shadow:0 12px 35px rgba(10,15,25,.16)!important;
+}
+.kh-home-page .kh-home-hero-search input{font-size:13px!important}
+.kh-home-page .kh-home-hero-search button{
+  min-width:92px!important;
+  border-radius:13px!important;
+}
+.kh-home-page .kh-home-hero-btn{
+  border-radius:12px!important;
+  min-height:43px!important;
+}
+.kh-home-page .kh-home-hero-card-main{
+  box-shadow:0 24px 55px rgba(15,23,42,.22)!important;
+  border:1px solid rgba(255,255,255,.35)!important;
+}
+
+/* Shopping / auto split */
+.kh-home-page .kh-portal-switch{
+  margin:24px 0 0!important;
+  padding:4px 0!important;
+}
+.kh-home-page .kh-portal-head{margin-bottom:13px!important}
+.kh-home-page .kh-portal-head h2{
+  font-size:24px!important;
+  letter-spacing:-.5px!important;
+}
+.kh-home-page .kh-portal-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important;
+}
+.kh-home-page .kh-portal-card{
+  min-height:154px!important;
+  padding:24px!important;
+  border-radius:22px!important;
+}
+
+/* Price-comparison hero */
+.kh-home-page .kh-market-hero{
+  margin-top:18px!important;
+  min-height:330px!important;
+  border-radius:25px!important;
+  box-shadow:0 18px 48px rgba(20,28,40,.08)!important;
+}
+
+/* Quick actions become a clean command bar */
+.kh-home-page .kh-market-shortcuts{
+  display:grid!important;
+  grid-template-columns:repeat(8,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin-top:18px!important;
+  padding:8px!important;
+  border-radius:20px!important;
+}
+.kh-home-page .kh-market-shortcuts a{
+  min-height:78px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  padding:8px 5px!important;
+  text-align:center!important;
+}
+.kh-home-page .kh-market-shortcuts a i{font-size:18px!important}
+.kh-home-page .kh-market-shortcuts a span{font-size:10px!important;font-weight:900!important}
+.kh-home-page .kh-market-shortcuts a small{font-size:8px!important;color:#8a919b!important}
+
+/* Homepage product sections */
+.kh-home-page .kdg-section{
+  margin-top:18px!important;
+  margin-bottom:0!important;
+  padding:20px!important;
+  border:1px solid #e4e7eb!important;
+  border-radius:22px!important;
+  background:#fff!important;
+  box-shadow:0 10px 30px rgba(15,23,42,.045)!important;
+}
+.kh-home-page .kdg-section-head{
+  margin-bottom:15px!important;
+}
+.kh-home-page .kdg-section-head h2,
+.kh-home-page .kdg-deals-head h2{
+  font-size:21px!important;
+  letter-spacing:-.35px!important;
+}
+.kh-home-page .kdg-products{
+  gap:8px!important;
+  background:transparent!important;
+  border:0!important;
+  overflow:visible!important;
+}
+.kh-home-page .kdg-product{
+  min-height:350px!important;
+  border:1px solid #e7e9ed!important;
+  border-radius:17px!important;
+  overflow:hidden!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.kh-home-page .kdg-product:hover{
+  transform:translateY(-4px)!important;
+  border-color:#dfe3e8!important;
+  box-shadow:0 16px 34px rgba(15,23,42,.09)!important;
+}
+.kh-home-page .kdg-product-image{
+  height:205px!important;
+  margin:0!important;
+  background:#fbfbfc!important;
+}
+.kh-home-page .kdg-product h3{font-size:11px!important}
+
+/* Deals get a true campaign surface */
+.kh-home-page .kdg-deals{
+  border-radius:23px!important;
+  padding:20px!important;
+  box-shadow:0 16px 40px rgba(194,26,58,.13)!important;
+}
+.kh-home-page .kdg-deals-grid{
+  gap:8px!important;
+  background:transparent!important;
+}
+.kh-home-page .kdg-deal-card{
+  min-height:325px!important;
+  border-radius:15px!important;
+  overflow:hidden!important;
+}
+
+/* Vehicle zone is intentionally darker */
+.kh-home-page .kh-auto-zone{
+  margin-top:20px!important;
+  border-radius:26px!important;
+  background:linear-gradient(145deg,#e9edf2,#f7f8fa)!important;
+  box-shadow:0 18px 48px rgba(20,25,35,.09)!important;
+}
+.kh-home-page .kh-auto-zone-bar{
+  padding:12px 12px 17px!important;
+}
+.kh-home-page .kh-auto-zone-bar strong{font-size:21px!important}
+
+/* Footer separation */
+.kh-home-page .kh-footer{margin-top:50px!important}
+
+/* Responsive */
+@media(max-width:1100px){
+  .kh-home-page .kh-market-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+  .kh-home-page .kdg-home{width:calc(100% - 20px)!important}
+  .kh-home-page .kh-home-hero-pro{min-height:540px!important;border-radius:22px!important}
+  .kh-home-page .kh-portal-grid{grid-template-columns:1fr!important}
+  .kh-home-page .kh-portal-card{min-height:125px!important}
+  .kh-home-page .kh-market-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .kh-home-page .kh-market-shortcuts a{min-height:72px!important}
+  .kh-home-page .kdg-section{padding:14px!important;border-radius:18px!important}
+}
+@media(max-width:520px){
+  .kh-home-page .kh-market-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .kh-home-page .kh-home-hero-pro h1{font-size:29px!important}
+  .kh-home-page .kh-home-hero-search{min-height:52px!important}
+}
+
+
+/* ============================================================
+   KHARIDINO 0→100 UX FINISHING LAYER — 2026-09-26
+   Site-wide consistency, accessibility, mobile navigation,
+   interaction polish and safe visual fallbacks.
+   ============================================================ */
+
+:root{
+  --kh-red:#ef4056;
+  --kh-red-dark:#d92f46;
+  --kh-ink:#202124;
+  --kh-muted:#737982;
+  --kh-line:#e5e7eb;
+  --kh-surface:#fff;
+  --kh-bg:#f5f6f8;
+  --kh-radius:18px;
+  --kh-shadow:0 12px 34px rgba(15,23,42,.07);
+}
+
+html{scroll-behavior:smooth}
+body{overflow-x:hidden}
+button,a,input,select,textarea{outline-offset:3px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid rgba(239,64,86,.55)!important;
+}
+
+/* Universal content rhythm */
+.kh-inner-page .kg-main,
+.kh-admin-page .kg-main{min-height:55vh}
+.kh-inner-page .kg-main>.container,
+.kh-inner-page .kg-main>.vehicle-page,
+.kh-inner-page .kg-main>.vehicle-detail-page,
+.kh-inner-page .kg-main>.kp-page{padding-top:12px}
+
+.km-topbar{
+  position:relative;
+  z-index:4000;
+  transition:box-shadow .2s ease,background .2s ease;
+}
+body.kh-header-scrolled .km-topbar{
+  box-shadow:0 8px 28px rgba(15,23,42,.10)!important;
+}
+
+.km-search{position:relative}
+.km-search input::placeholder{color:#9298a1}
+
+/* Product/card safety net */
+.kdg-product,.kdg-deal-card,.kdg-store,.store-card,.storefront-card,.vehicle-listing-card,.vehicle-card{
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.kdg-product img,.kdg-deal-card img,.vehicle-listing-card img,.vehicle-card img{
+  max-width:100%;
+}
+.kdg-empty,.empty-state,.kh-empty-state{
+  border-radius:16px!important;
+  border:1px dashed #d9dde3!important;
+  background:#fff!important;
+}
+
+/* Sticky mobile navigation — now available on home too */
+.mobile-bottom-nav{
+  position:fixed!important;
+  right:10px!important;
+  left:10px!important;
+  bottom:max(10px,env(safe-area-inset-bottom))!important;
+  z-index:7000!important;
+  display:none!important;
+  align-items:stretch!important;
+  gap:3px!important;
+  padding:6px!important;
+  border:1px solid rgba(255,255,255,.8)!important;
+  border-radius:18px!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:0 18px 45px rgba(15,23,42,.18)!important;
+  backdrop-filter:blur(16px)!important;
+}
+.mobile-nav-item{
+  min-width:0!important;
+  flex:1 1 0!important;
+  min-height:52px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  color:#727983!important;
+  text-decoration:none!important;
+  border-radius:13px!important;
+  font-size:9px!important;
+  font-weight:800!important;
+}
+.mobile-nav-item i{font-size:16px!important}
+.mobile-nav-item:hover,.mobile-nav-item:focus-visible{
+  color:var(--kh-red)!important;
+  background:#fff1f3!important;
+}
+body.kh-home-page .mobile-bottom-nav .mobile-nav-item:first-child,
+body.kh-inner-page .mobile-bottom-nav .mobile-nav-item:first-child{
+  color:var(--kh-red)!important;
+}
+
+.kh-back-top{
+  position:fixed;
+  left:18px;
+  bottom:22px;
+  width:44px;
+  height:44px;
+  z-index:6900;
+  display:grid;
+  place-items:center;
+  border:1px solid #e4e7eb;
+  border-radius:14px;
+  background:rgba(255,255,255,.95);
+  color:var(--kh-ink);
+  box-shadow:0 12px 30px rgba(15,23,42,.13);
+  cursor:pointer;
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(8px);
+  transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
+}
+.kh-back-top.is-visible{opacity:1;visibility:visible;transform:none}
+.kh-back-top:hover{color:var(--kh-red);border-color:#f3c0c7}
+
+/* Compact trust strip */
+.kh-trust-strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  width:min(1320px,calc(100% - 32px));
+  margin:14px auto;
+}
+.kh-trust-strip>div{
+  min-height:64px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--kh-line);
+  border-radius:15px;
+  background:#fff;
+}
+.kh-trust-strip i{
+  width:36px;height:36px;border-radius:11px;
+  display:grid;place-items:center;
+  background:#fff1f3;color:var(--kh-red);
+}
+.kh-trust-strip strong{display:block;font-size:10px}
+.kh-trust-strip span{display:block;margin-top:3px;font-size:8px;color:var(--kh-muted)}
+
+@media(max-width:760px){
+  body{padding-bottom:82px}
+  .mobile-bottom-nav{display:flex!important}
+  .kh-back-top{left:12px;bottom:88px}
+  .kh-trust-strip{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:calc(100% - 16px);
+  }
+}
+@media(max-width:480px){
+  .kh-trust-strip{gap:7px}
+  .kh-trust-strip>div{min-height:58px;padding:8px}
+  .kh-trust-strip i{width:32px;height:32px}
+  .kh-trust-strip strong{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .km-topbar,.mobile-nav-item,.kh-back-top,.kdg-product,.kdg-deal-card,.kdg-store,.store-card,.storefront-card,.vehicle-listing-card,.vehicle-card{transition:none!important}
+}
+
+
+/* Product reviews + recommendations */
+.kh-product-reviews,.kh-related-products{
+  width:min(1280px,calc(100% - 32px));
+  margin:18px auto 0;
+  padding:22px;
+  border:1px solid #e5e7eb;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 10px 30px rgba(15,23,42,.045);
+}
+.kh-reviews-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:16px;
+}
+.kh-reviews-head h2{margin:5px 0 0;font-size:20px}
+.kh-review-summary{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 14px;border-radius:14px;background:#fff7f8;border:1px solid #fde0e4;
+}
+.kh-review-summary strong{font-size:22px;color:var(--kh-red)}
+.kh-review-summary span{font-size:11px;font-weight:800}
+.kh-review-summary small{color:#8a919b}
+.kh-review-layout{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.7fr);gap:18px;
+}
+.kh-review-list{display:grid;gap:9px}
+.kh-review-card{
+  display:flex;gap:11px;padding:14px;border:1px solid #eceef1;border-radius:16px;background:#fcfcfd;
+}
+.kh-review-avatar{
+  width:38px;height:38px;flex:0 0 38px;border-radius:12px;
+  display:grid;place-items:center;background:#f1f3f5;color:#7c838d;
+}
+.kh-review-body{min-width:0;flex:1}
+.kh-review-meta{display:flex;justify-content:space-between;gap:10px}
+.kh-review-meta strong{font-size:11px}.kh-review-meta span{color:#f0a400;letter-spacing:1px}
+.kh-review-body p{margin:7px 0;font-size:11px;line-height:2;color:#464b53}
+.kh-review-body small{color:#969ca4}
+.kh-review-form{
+  align-self:start;padding:16px;border-radius:17px;background:#f7f8fa;border:1px solid #e7e9ed;
+}
+.kh-review-form h3{margin:0 0 12px;font-size:14px}
+.kh-review-form label{display:grid;gap:6px;margin-bottom:10px;font-size:10px;font-weight:900}
+.kh-review-form select,.kh-review-form textarea{
+  width:100%;border:1px solid #dfe2e6;border-radius:12px;padding:10px;background:#fff;font:inherit;
+}
+.kh-review-form textarea{resize:vertical;line-height:1.9}
+.kh-review-empty{
+  padding:35px 20px;text-align:center;border:1px dashed #dfe2e6;border-radius:16px;color:#858c95;
+}
+.kh-review-empty i{font-size:28px;margin-bottom:8px}.kh-review-empty h3{margin:5px 0;color:#333}
+.kh-related-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.kh-related-card{
+  min-width:0;display:grid;gap:7px;padding:10px;border:1px solid #e7e9ed;border-radius:15px;
+  text-decoration:none;color:inherit;background:#fff;transition:.2s ease;
+}
+.kh-related-card:hover{transform:translateY(-3px);box-shadow:0 12px 25px rgba(15,23,42,.08)}
+.kh-related-card img,.kh-related-placeholder{width:100%;height:150px;object-fit:contain;border-radius:11px;background:#f8f9fa}
+.kh-related-placeholder{display:grid;place-items:center;color:#a1a6ad;font-size:28px}
+.kh-related-card strong{font-size:10px;line-height:1.8}
+.kh-related-card span{font-size:10px;font-weight:900;color:var(--kh-red)}
+@media(max-width:800px){
+  .kh-review-layout{grid-template-columns:1fr}
+  .kh-related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+  .kh-product-reviews,.kh-related-products{width:calc(100% - 16px);padding:14px;border-radius:18px}
+  .kh-reviews-head{align-items:flex-start;flex-direction:column}
+  .kh-related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kh-related-card img,.kh-related-placeholder{height:125px}
+}
+
+.kh-search-intent{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin:0 0 12px;padding:11px 13px;
+  border:1px solid #f5d4d9;border-radius:14px;
+  background:linear-gradient(90deg,#fff7f8,#fff);
+  color:#666d76;font-size:10px;
+}
+.kh-search-intent>i{color:var(--kh-red)}
+.kh-search-intent strong{color:var(--kh-red);font-size:11px}
+.kh-search-intent small{width:100%;color:#969ca4}
+@media(max-width:520px){.kh-search-intent{font-size:9px}}
+
+.kh-price-alert{
+  width:min(1280px,calc(100% - 32px));margin:18px auto 0;padding:18px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  border:1px solid #f5d7dc;border-radius:20px;
+  background:linear-gradient(135deg,#fff8f9,#fff);
+}
+.kh-price-alert-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:14px;background:#fff0f2;color:var(--kh-red);font-size:20px}
+.kh-price-alert-copy{flex:1;min-width:230px}
+.kh-price-alert-copy>span{font-size:9px;font-weight:900;color:var(--kh-red)}
+.kh-price-alert-copy h2{margin:3px 0;font-size:16px}
+.kh-price-alert-copy p{margin:0;color:#818892;font-size:9px}
+.kh-price-alert-form{display:flex;align-items:end;gap:7px}
+.kh-price-alert-form label{display:grid;gap:5px;font-size:9px;font-weight:900}
+.kh-price-alert-form input{width:190px;height:42px;border:1px solid #dddfe3;border-radius:12px;padding:0 12px;background:#fff}
+.kh-price-alert-form button,.kh-price-alert-remove{
+  height:42px;border:0;border-radius:12px;padding:0 14px;cursor:pointer;font:inherit;font-size:9px;font-weight:900;
+}
+.kh-price-alert-form button{background:var(--kh-red);color:#fff}
+.kh-price-alert-remove{background:#f2f3f5;color:#646b74}
+@media(max-width:650px){
+  .kh-price-alert{align-items:flex-start}
+  .kh-price-alert-form{width:100%;display:grid;grid-template-columns:1fr auto}
+  .kh-price-alert-form label{min-width:0}
+  .kh-price-alert-form input{width:100%}
+}
+@media(max-width:520px){.kh-price-alert{width:calc(100% - 16px);padding:14px;border-radius:17px}}
+
+
+/* =========================================================
+   KHARIDINO 2026 — FINAL CONSISTENCY / RESPONSIVE LAYER
+   One visual language across storefront, catalog, product, cart,
+   checkout and vehicle pages. Kept as a final override layer so
+   existing working components remain intact.
+   ========================================================= */
+:root{
+  --kh-final-bg:#f5f6f8;
+  --kh-final-surface:#fff;
+  --kh-final-ink:#17202a;
+  --kh-final-muted:#737d8d;
+  --kh-final-line:#e6e9ee;
+  --kh-final-red:#ef4056;
+  --kh-final-radius:18px;
+  --kh-final-shadow:0 8px 28px rgba(18,25,38,.055);
+}
+html{scroll-behavior:smooth}
+body{background:var(--kh-final-bg);color:var(--kh-final-ink)}
+body.kh-home-page{background:radial-gradient(circle at 50% -10%,#fff 0,#f7f8fa 42%,#f3f4f6 100%)}
+body.kh-inner-page .kg-main{min-height:60vh}
+.kdg-category-page,.kd-product-page,.kp-page,.cart-page-hero,.kh-checkout-page,.vehicle-page,.vehicle-detail-page{width:min(1320px,calc(100% - 32px));margin-inline:auto}
+.kdg-breadcrumb{margin-bottom:14px;color:var(--kh-final-muted);font-size:11px}
+.kdg-breadcrumb a{color:#687386;text-decoration:none}
+.kdg-breadcrumb strong{color:var(--kh-final-ink)}
+.kdg-category-head{border:1px solid var(--kh-final-line);background:rgba(255,255,255,.94);box-shadow:var(--kh-final-shadow);border-radius:22px;padding:22px;margin-bottom:16px}
+.kdg-catalog-toolbar{position:sticky;top:0;z-index:40;background:rgba(245,246,248,.92);backdrop-filter:blur(14px);padding:10px 0}
+.kdg-catalog-toolbar form{border:1px solid var(--kh-final-line);background:#fff;border-radius:18px;padding:10px;box-shadow:var(--kh-final-shadow)}
+.kdg-catalog-toolbar input,.kdg-catalog-toolbar select{height:42px;border:1px solid #e0e4e9!important;background:#fff!important;color:var(--kh-final-ink)!important}
+.kdg-catalog-toolbar button{height:42px;border:0;border-radius:11px;background:var(--kh-final-red);color:#fff;font-weight:900;padding-inline:16px}
+.kdg-catalog-toolbar>a{height:42px;display:inline-flex;align-items:center;justify-content:center;padding-inline:12px;border-radius:11px;color:#697386;background:#f2f3f5;text-decoration:none;font-weight:800}
+.kdg-results-head{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 2px}
+.kdg-results-head strong{font-size:13px;color:var(--kh-final-ink)}
+.kdg-results-head span{font-size:10px;color:var(--kh-final-muted)}
+.kdg-products{align-items:stretch}
+.kdg-card-wrap{min-width:0;overflow:hidden;background:#fff;border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.kdg-card-wrap:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(18,25,38,.09);border-color:#dfe3e8}
+.kdg-product{height:100%}
+.kdg-product-image{background:linear-gradient(180deg,#fff,#f7f8fa);overflow:hidden}
+.kdg-product-image img{object-fit:contain;mix-blend-mode:multiply}
+.kdg-product h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:42px}
+.kdg-price{display:flex;align-items:baseline;gap:5px}
+.kdg-card-compare button{transition:.16s ease}
+.kh-search-intent{width:100%;margin:8px 0 12px;padding:11px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border:1px solid #f1d6db;border-radius:14px;background:#fff7f8;color:#5e6674}
+.kh-search-intent>i{color:var(--kh-final-red)}
+.kh-search-intent small{color:#8b93a0}
+.kd-product-page{padding-bottom:80px}
+.kd-product-hero{border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);border-radius:24px;overflow:hidden;background:#fff}
+.kd-price-section,.kh-product-reviews,.kh-related-products,.kd-benefits{border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);border-radius:22px;background:#fff}
+.kd-price-section,.kh-product-reviews,.kh-related-products{padding:20px}
+.kd-offer-card{border:1px solid var(--kh-final-line);border-radius:16px;background:#fff;transition:.18s ease}
+.kd-offer-card:hover{border-color:#d9dde3;box-shadow:0 10px 24px rgba(18,25,38,.06);transform:translateY(-2px)}
+.kh-price-alert{box-shadow:var(--kh-final-shadow)!important}
+.kh-review-card{border:1px solid var(--kh-final-line);border-radius:16px;background:#fff}
+.kh-related-card{border:1px solid var(--kh-final-line);border-radius:16px;background:#fff;transition:.18s ease}
+.kh-related-card:hover{transform:translateY(-2px);box-shadow:var(--kh-final-shadow)}
+.kh-checkout-page{padding-bottom:70px}
+.kh-checkout-card,.kh-order-summary{border:1px solid var(--kh-final-line)!important;box-shadow:var(--kh-final-shadow)!important;border-radius:22px!important;background:#fff!important}
+.kh-checkout-submit{min-height:50px;border-radius:13px}
+.kh-summary-item{border-bottom:1px solid #eef0f3}
+.cart-page,.cart-layout{width:min(1320px,calc(100% - 32px));margin-inline:auto}
+.cart-item,.cart-summary,.cart-card{border:1px solid var(--kh-final-line);box-shadow:var(--kh-final-shadow);border-radius:18px}
+.vehicle-page,.vehicle-detail-page{background:transparent}
+.vehicle-page .vehicle-hero,.vehicle-detail-page .vehicle-detail-pro{border-radius:24px;overflow:hidden}
+/* Header/search suggestions */
+.km-search{position:relative;z-index:50}
+.km-search-suggestions{position:absolute;top:calc(100% + 8px);right:0;left:0;display:grid;gap:3px;padding:7px;background:#fff;border:1px solid var(--kh-final-line);border-radius:15px;box-shadow:0 18px 50px rgba(15,23,42,.14);z-index:1600;overflow:hidden}
+.km-search-suggestions a{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;color:#374151;text-decoration:none;font-size:11px}
+.km-search-suggestions a:hover{background:#f6f7f9}
+.km-search-suggestions a>i{color:var(--kh-final-red)}
+.km-search-suggestions a small{color:#8a94a4;font-size:9px;white-space:nowrap}
+/* Accessible and consistent focus */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(239,64,86,.18);outline-offset:2px}
+/* Mobile: one predictable content rhythm and reachable controls */
+@media(max-width:860px){
+  .kdg-category-page,.kd-product-page,.kp-page,.cart-page-hero,.kh-checkout-page,.vehicle-page,.vehicle-detail-page,.cart-page,.cart-layout{width:calc(100% - 20px)}
+  .kdg-catalog-toolbar{position:static;background:transparent;padding:0 0 8px}
+  .kdg-catalog-toolbar form{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+  .kdg-catalog-toolbar .kdg-catalog-search{grid-column:1/-1}
+  .kdg-catalog-toolbar input,.kdg-catalog-toolbar select,.kdg-catalog-toolbar button,.kdg-catalog-toolbar>a{width:100%;min-width:0}
+  .kdg-results-head{padding:10px 0}
+  .kdg-results-head span{display:none}
+  .kd-product-hero{border-radius:18px}
+  .kd-price-section,.kh-product-reviews,.kh-related-products{padding:14px;border-radius:18px}
+  .kh-search-intent{font-size:10px}
+}
+@media(max-width:560px){
+  .kdg-category-head{padding:16px;border-radius:17px}
+  .kdg-category-head h1{font-size:22px}
+  .kdg-products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .kdg-card-wrap{border-radius:14px}
+  .kdg-product{padding-bottom:8px}
+  .kdg-product-image{min-height:130px!important}
+  .kdg-product h3{font-size:11px!important;min-height:38px}
+  .kdg-price strong{font-size:14px!important}
+  .kdg-card-compare{padding-inline:8px!important}
+  .kdg-card-compare button{min-height:34px!important;font-size:10px}
+  .kdg-catalog-toolbar form{grid-template-columns:1fr!important}
+  .kdg-catalog-toolbar .kdg-catalog-search{grid-column:auto}
+  .kh-search-intent{align-items:flex-start;padding:10px}
+  .kh-search-intent small{width:100%}
+  .kh-checkout-page{padding-bottom:30px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .kdg-card-wrap,.kd-offer-card,.kh-related-card{transition:none!important}
+}
+
+
+/* Final storefront stacking contract. */
+.kh-global-rail,.kh-trust-strip,.site-content{position:relative;z-index:1}
+.km-topbar{z-index:5000}

@@ -1,22 +1,12 @@
-"""Production WSGI entrypoint for Kharidino."""
-from app import app
-from kharidino_ai import register as register_ai
-from mobile_app.api.mobile_api import register_mobile_api
-from app import db, Product, Category, Store, Offer, User, Order, admin_required
-from security_hardening import apply_security
-from inventory_hardening import apply_inventory_security
-from commerce_extensions_v2 import apply_commerce_extensions
-from commerce_catalog import apply_catalog_extensions
-from payment import apply_payment
-import commerce_runtime  # noqa: F401 - registers secure checkout/address hooks
+"""Production WSGI entrypoint for Kharidino.
 
-register_ai(app, db, Product, Store, Offer, User, admin_required)
-register_mobile_api(app, db, Product, Category, Store, Offer)
+The application has one canonical initialization path: run_kharidino.py.
+WSGI reuses it so production and local execution register the same security,
+commerce, payment and marketplace extensions.
+"""
+import os
 
-with app.app_context():
-    apply_payment(app, db, Order, User)
-    apply_security(app)
-    apply_inventory_security(app)
-    apply_commerce_extensions(app)
-    apply_catalog_extensions(app)
-    db.create_all()
+# WSGI must never seed demo/catalog data on import.
+os.environ.setdefault("KHARIDINO_SKIP_SEED", "1")
+
+from run_kharidino import app  # noqa: E402,F401

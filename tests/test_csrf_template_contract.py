@@ -29,3 +29,20 @@ def test_payment_callback_remains_provider_driven_while_browser_payment_forms_ge
     assert 'token_factory = app.jinja_env.globals.get("csrf_token")' in payment
     assert 'render_template("payment_start.html", order=order, csrf_token=token, idempotency_key=key)' in payment
     assert '@app.route("/payment/callback/<string:transaction_id>", methods=["GET", "POST"])' in payment
+
+
+def test_security_hardening_uses_the_app_csrf_session_key():
+    security = _read("security_hardening.py")
+    assert 'session.get("csrf_token")' in security
+    assert "_CSRF_SESSION_KEY" not in security or "_CSRF_SESSION_KEY" in security and 'session.get(_CSRF_SESSION_KEY)' not in security
+
+
+def test_app_initialization_does_not_seed_on_import():
+    app = _read("app.py")
+    assert "seed_demo_vehicle_ads(db, User)" not in app.split("if __name__ == \"__main__\":", 1)[0]
+
+
+def test_security_preserves_kharidino_secret_configuration():
+    security = _read("security_hardening.py")
+    assert 'os.environ.get("KHARIDINO_SECRET_KEY", "").strip()' in security
+    assert 'or app.config.get("SECRET_KEY")' in security

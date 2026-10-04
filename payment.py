@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import datetime
 import hmac
 import os
 import secrets
@@ -253,8 +254,54 @@ def apply_payment(app, db, Order, User):
         tx.gateway_reference = result.reference[:200]
         tx.paid_at = db.func.now()
         order.status = "تأیید شد"
+
+        # Payment completion closes the commerce loop: issue the invoice
+        # automatically. Email delivery is best-effort and must never roll back
+        # an already verified payment.
+        invoice = None
+        try:
+            from app import Invoice, _company_profile, _invoice_pdf_bytes, _send_invoice_email
+
+            invoice = Invoice.query.filter_by(order_id=order.id).first()
+            if not invoice:
+                invoice = Invoice(
+                    order_id=order.id,
+                    invoice_number=f"KH-{datetime.utcnow().strftime('%Y%m%d')}-{order.id:06d}",
+                )
+                db.session.add(invoice)
+
+            invoice.buyer_name = order.customer_name
+            invoice.buyer_phone = order.phone
+            invoice.buyer_address = order.address
+            invoice.subtotal = sum(
+                int(item.price or 0) * int(item.quantity or 0)
+                for item in order.items
+            )
+            invoice.discount = max(invoice.subtotal - int(order.total or 0), 0)
+            invoice.tax = 0
+            invoice.total = int(order.total or 0)
+            invoice.status = "صادر شد"
+        except Exception:
+            app.logger.exception("Automatic invoice preparation failed after payment.")
+
         try:
             db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            current = db.session.get(PaymentTransaction, tx.id)
+            if current and current.status == "paid":
+                return redirect(url_for("my_orders"))
+            abort(409, description="ثبت هم‌زمان نتیجه پرداخت ممکن نشد.")
+
+        if invoice:
+            try:
+                pdf = _invoice_pdf_bytes(invoice, order, _company_profile())
+                if _send_invoice_email(invoice, order, _company_profile(), pdf):
+                    invoice.status = "صادر و ایمیل شد"
+                    db.session.commit()
+            except Exception:
+                app.logger.exception("Automatic invoice email failed after payment.")
+
         except IntegrityError:
             db.session.rollback()
             current = db.session.get(PaymentTransaction, tx.id)

@@ -113,7 +113,41 @@
           {% endif %}
         </section>
 
-        <section class="kh-product-reviews" id="reviews">
+        <section class="kh-price-intelligence" aria-labelledby="price-history-title">
+  <div class="kh-section-head">
+    <div><span class="kh-eyebrow"><i class="fa-solid fa-chart-line"></i> PRICE INTELLIGENCE</span><h2 id="price-history-title">روند قیمت و تازگی پیشنهادها</h2></div>
+    <span class="kh-price-freshness" id="kh-price-freshness">در حال بررسی...</span>
+  </div>
+  <div class="kh-price-summary">
+    <div><small>کمترین قیمت</small><strong id="kh-price-min">—</strong></div>
+    <div><small>میانگین</small><strong id="kh-price-avg">—</strong></div>
+    <div><small>بیشترین قیمت</small><strong id="kh-price-max">—</strong></div>
+  </div>
+  <div class="kh-price-chart" id="kh-price-chart" role="img" aria-label="نمودار تغییرات قیمت"></div>
+  <script>
+  (function(){
+    const root=document.getElementById('kh-price-chart'); if(!root)return;
+    const fmt=n=>new Intl.NumberFormat('fa-IR').format(Math.round(n))+' تومان';
+    fetch('{{ url_for("product_price_history", product_id=product.id) }}',{headers:{Accept:'application/json'},cache:'no-store'})
+      .then(r=>r.ok?r.json():null).then(d=>{
+        const rows=(d&&d.history)||[];
+        if(!rows.length){root.innerHTML='<p class="kh-price-empty">هنوز تاریخچه قیمت کافی ثبت نشده است.</p>';return;}
+        const prices=rows.map(x=>Number(x.price)||0).filter(Boolean);
+        const min=Math.min(...prices),max=Math.max(...prices),avg=prices.reduce((a,b)=>a+b,0)/prices.length;
+        document.getElementById('kh-price-min').textContent=fmt(min);
+        document.getElementById('kh-price-avg').textContent=fmt(avg);
+        document.getElementById('kh-price-max').textContent=fmt(max);
+        const latest=rows[rows.length-1];
+        document.getElementById('kh-price-freshness').textContent=latest.recorded_at?'آخرین ثبت: '+new Date(latest.recorded_at).toLocaleDateString('fa-IR'):'';
+        const w=1000,h=220,p=18,range=Math.max(1,max-min);
+        const pts=prices.map((v,i)=>[(i/(Math.max(1,prices.length-1)))*(w-2*p)+p,h-p-((v-min)/range)*(h-2*p)]);
+        const line=pts.map((x,i)=>(i?'L':'M')+x[0].toFixed(1)+' '+x[1].toFixed(1)).join(' ');
+        root.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+line+'" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="kh-price-last">آخرین قیمت ثبت‌شده: <b>'+fmt(prices[prices.length-1])+'</b></div>';
+      }).catch(()=>{root.innerHTML='<p class="kh-price-empty">تاریخچه قیمت فعلاً در دسترس نیست.</p>';});
+  })();
+  </script>
+</section>
+<section class="kh-product-reviews" id="reviews">
           <div class="kh-reviews-head">
             <div><span class="kd-section-label"><i class="fa-solid fa-star"></i> تجربه خریداران</span><h2>نظر کاربران درباره این محصول</h2></div>
             <div class="kh-review-summary"><strong>{{ rating or '—' }}</strong><span>از ۵</span><small>{{ product.reviews|length }} نظر</small></div>

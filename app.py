@@ -3429,6 +3429,26 @@ def gaming_add_submission():
     return render_template("gaming_add.html")
 
 
+@app.route("/admin/gaming-submissions")
+@admin_required
+def admin_gaming_submissions():
+    submissions = GamingSubmission.query.order_by(GamingSubmission.created_at.desc()).all()
+    return render_template("admin_gaming_submissions.html", submissions=submissions)
+
+
+@app.post("/admin/gaming-submissions/<int:submission_id>/<action>")
+@admin_required
+def admin_gaming_submission_action(submission_id, action):
+    item = db.session.get(GamingSubmission, submission_id)
+    if not item or action not in {"approve", "reject"}:
+        abort(404)
+    item.status = "approved" if action == "approve" else "rejected"
+    item.moderator_note = (request.form.get("note") or "").strip()[:500]
+    db.session.commit()
+    flash("وضعیت ارسال بازی به‌روزرسانی شد.", "success")
+    return redirect(url_for("admin_gaming_submissions"))
+
+
 @app.route("/gaming")
 def gaming_hub():
     # The specialized catalog lives in commerce_catalog.py; keep /gaming as the public entry point.

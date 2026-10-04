@@ -36,3 +36,12 @@ def test_approved_seller_gets_trust_profile():
     text = read(ADMIN)
     assert "SellerProfile" in text
     assert 'verification_status="تأیید شده"' in text
+
+
+def test_product_trust_contract():
+    app_source = Path("app.py").read_text(encoding="utf-8")
+    template_source = Path("templates/product.html").read_text(encoding="utf-8")
+    assert "def review_verified_purchase" in app_source
+    assert "def offer_trust_badge" in app_source
+    assert "review_verified_purchase(review)" in template_source
+    assert "offer_trust_badge(o, lowest_price)" in template_source

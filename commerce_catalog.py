@@ -200,8 +200,8 @@ def catalog_products():
     )
 
 
-@app.get("/gaming")
-def gaming_market():
+@app.get("/gaming/catalog")
+def gaming_market_catalog():
     """Specialized gaming marketplace with semantic filters, price range and stock."""
     q = (request.args.get("q") or "").strip()[:100]
     gaming_type = (request.args.get("type") or "").strip()[:40]
@@ -327,7 +327,7 @@ def gaming_market():
     def page_url(target_page):
         args = request.args.to_dict(flat=True)
         args["page"] = target_page
-        return url_for("gaming_market", **args)
+        return url_for("gaming_market_catalog", **args)
 
     return render_template(
         "gaming_hub.html",

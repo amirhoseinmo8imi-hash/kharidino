@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import datetime
 import hmac
 import os
 import secrets
@@ -265,7 +266,7 @@ def apply_payment(app, db, Order, User):
             if not invoice:
                 invoice = Invoice(
                     order_id=order.id,
-                    invoice_number=f"KH-AUTO-{order.id:06d}",
+                    invoice_number=f"KH-{datetime.utcnow().strftime('%Y%m%d')}-{order.id:06d}",
                 )
                 db.session.add(invoice)
 

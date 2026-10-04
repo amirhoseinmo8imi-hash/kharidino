@@ -458,8 +458,37 @@ def register_gaming(app, db, User):
             flash("گزارش شما برای بررسی تیم مدیریت ثبت شد.", "success")
         return redirect(request.referrer or url_for("gaming"))
 
+    def _ensure_gaming_schema():
+        # Lightweight SQLite migration for existing Kharidino databases.
+        # db.create_all() creates new tables but does not add columns to old gaming tables.
+        tables = {
+            "gaming_game": {
+                "cover": "VARCHAR(500)", "publisher": "VARCHAR(160)", "release_year": "INTEGER DEFAULT 2026"
+            },
+            "gaming_profile": {},
+            "gaming_team": {
+                "verified": "BOOLEAN DEFAULT 0", "wins": "INTEGER DEFAULT 0", "reputation": "INTEGER DEFAULT 100"
+            },
+            "gaming_post": {
+                "likes_count": "INTEGER DEFAULT 0", "comments_count": "INTEGER DEFAULT 0"
+            },
+            "gaming_tournament": {
+                "max_players": "INTEGER DEFAULT 32", "participants_count": "INTEGER DEFAULT 0"
+            }
+        }
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        for table, columns in tables.items():
+            if not inspector.has_table(table):
+                continue
+            existing = {x["name"] for x in inspector.get_columns(table)}
+            for name, sql_type in columns.items():
+                if name not in existing:
+                    db.session.execute(db.text(f'ALTER TABLE "{table}" ADD COLUMN "{name}" {sql_type}'))
+        db.session.commit()
+
     def seed_gaming():
-        games = [
+        _ensure_gaming_schema()\n        games = [
             ("Counter-Strike 2","counter-strike-2","PC","FPS","Ranked"),
             ("Valorant","valorant","PC","FPS","Ranked"),
             ("EA Sports FC 26","ea-sports-fc-26","PC","Sports","Online"),

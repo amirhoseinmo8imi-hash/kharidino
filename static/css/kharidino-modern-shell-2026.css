@@ -55,3 +55,23 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .kh-trust-strip{overflow:auto;justify-content:flex-start;gap:8px}
   .kh-trust-strip>div{min-width:180px}
 }
+
+/* Product intelligence + trust + admin return surfaces */
+.kh-price-intelligence,.kh-admin-workspace{max-width:1240px;margin:28px auto;padding:24px;background:var(--kh-surface);border:1px solid var(--kh-border);border-radius:var(--kh-radius);box-shadow:var(--kh-shadow)}
+.kh-section-head,.kh-admin-page-head,.kh-return-card-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.kh-eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--kh-primary)}
+.kh-section-head h2,.kh-admin-page-head h1{margin:5px 0 0;font-size:clamp(20px,3vw,30px)}
+.kh-price-freshness{font-size:12px;color:var(--kh-muted)}
+.kh-price-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+.kh-price-summary>div{padding:16px;border:1px solid var(--kh-border);border-radius:14px;background:var(--kh-surface-2)}
+.kh-price-summary small{display:block;color:var(--kh-muted);margin-bottom:6px}.kh-price-summary strong{font-size:18px}
+.kh-price-chart{min-height:220px;padding:10px;border:1px dashed var(--kh-border);border-radius:14px;color:var(--kh-primary)}
+.kh-price-chart svg{display:block;width:100%;height:220px}.kh-price-last{margin-top:10px;color:var(--kh-muted);font-size:13px}.kh-price-empty{padding:60px 10px;text-align:center;color:var(--kh-muted)}
+.kh-admin-page-head{margin-bottom:20px}.kh-admin-page-head p{color:var(--kh-muted)}.kh-admin-back{padding:10px 15px;border:1px solid var(--kh-border);border-radius:12px}
+.kh-admin-return-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.kh-return-card{padding:20px;background:var(--kh-surface);border:1px solid var(--kh-border);border-radius:16px;box-shadow:var(--kh-shadow)}
+.kh-return-card-top span{padding:6px 10px;border-radius:999px;background:var(--kh-surface-2);font-size:12px}.kh-return-card h2{font-size:18px;margin:16px 0 8px}.kh-return-card p{color:var(--kh-muted)}
+.kh-return-card dl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.kh-return-card dl div{padding:10px;border-radius:10px;background:var(--kh-surface-2)}.kh-return-card dt{font-size:11px;color:var(--kh-muted)}.kh-return-card dd{margin:4px 0 0;font-weight:700}
+.kh-return-card form{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kh-return-card form input,.kh-return-card form select,.kh-return-card form button{min-height:42px;padding:8px 10px;border:1px solid var(--kh-border);border-radius:10px;background:var(--kh-surface);color:var(--kh-text)}.kh-return-card form input{grid-column:1/-1}.kh-return-card form button{background:var(--kh-primary);color:#fff;border-color:var(--kh-primary);font-weight:800}
+.kh-empty-state{text-align:center;padding:70px 20px;color:var(--kh-muted);grid-column:1/-1}.kh-empty-state i{font-size:40px;color:var(--kh-primary);margin-bottom:12px}
+@media(max-width:640px){.kh-price-intelligence,.kh-admin-workspace{margin:16px 10px;padding:16px}.kh-section-head,.kh-admin-page-head{align-items:flex-start;flex-direction:column}.kh-price-summary{grid-template-columns:1fr}.kh-return-card form{grid-template-columns:1fr}}

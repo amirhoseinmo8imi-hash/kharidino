@@ -4,7 +4,7 @@ Security rule: all mutations remain POST-only and rely on Kharidino's global CSR
 """
 from datetime import datetime
 from flask import flash, redirect, render_template, request, url_for
-from sqlalchemy import Table, Column, Integer, ForeignKey, func
+from sqlalchemy import Table, Column, Integer, ForeignKey, func, exists
 from app import app, db, Product, Category, Store, Offer, admin_required, validate_external_url
 
 product_brand = Table(
@@ -98,7 +98,7 @@ def catalog_products():
     brand_slug = (request.args.get("brand") or "").strip()[:140]
     category_id = (request.args.get("category") or "").strip()
     store_id = (request.args.get("store") or "").strip()
-    stock = (request.args.get("stock") or "").strip()
+    stock = (request.args.get("stock") or "").strip()\n    page = max(1, int(request.args.get("page", "1") or 1)) if (request.args.get("page", "1") or "1").isdigit() else 1\n    per_page = 24
     sort = (request.args.get("sort") or "newest").strip()
     try:
         min_price = max(0, int(request.args.get("min_price", "0") or 0))
@@ -153,7 +153,7 @@ def catalog_products():
         brands=Brand.query.filter_by(active=True).order_by(Brand.name.asc()).all(),
         categories=Category.query.filter_by(active=True).order_by(Category.name.asc()).all(),
         q=q, brand_slug=brand_slug, category_id=category_id, store_id=store_id,
-        stock=stock, min_price=min_price, max_price=max_price, sort=sort,
+        stock=stock, min_price=min_price, max_price=max_price, sort=sort,\n        stores=Store.query.filter_by(active=True).order_by(Store.name.asc()).all(),\n        total=total, page=page, per_page=per_page, pages=pagination.pages, has_prev=pagination.has_prev, has_next=pagination.has_next,
     )
 
 

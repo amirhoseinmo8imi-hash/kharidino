@@ -200,6 +200,181 @@ def catalog_products():
     )
 
 
+@app.get("/gaming")
+def gaming_market():
+    """Specialized gaming marketplace with semantic filters, price range and stock."""
+    q = (request.args.get("q") or "").strip()[:100]
+    gaming_type = (request.args.get("type") or "").strip()[:40]
+    platform = (request.args.get("platform") or "").strip()[:40]
+    brand_slug = (request.args.get("brand") or "").strip()[:140]
+    stock = (request.args.get("stock") or "").strip()[:20]
+    sort = (request.args.get("sort") or "relevance").strip()[:30]
+    try:
+        min_price = max(0, int(request.args.get("min_price", "0") or 0))
+        max_price = max(0, int(request.args.get("max_price", "0") or 0))
+    except ValueError:
+        min_price = max_price = 0
+    page_raw = (request.args.get("page") or "1").strip()
+    page = max(1, int(page_raw)) if page_raw.isdigit() else 1
+    per_page = 24
+
+    type_terms = {
+        "console": ["کنسول", "playstation", "xbox", "nintendo", "پلی استیشن", "ایکس باکس"],
+        "game": ["بازی", "game", "گیم", "ps5", "ps4", "xbox"],
+        "gpu": ["کارت گرافیک", "gpu", "rtx", "radeon", "geforce"],
+        "cpu": ["پردازنده", "cpu", "core i", "ryzen"],
+        "monitor": ["مانیتور", "monitor", "144hz", "165hz", "240hz"],
+        "keyboard": ["کیبورد", "keyboard"],
+        "mouse": ["موس", "mouse"],
+        "headset": ["هدست", "headphone", "headset"],
+        "streaming": ["استریم", "میکروفون", "وبکم", "webcam", "microphone", "stream"],
+        "chair": ["صندلی گیمینگ", "gaming chair"],
+        "desk": ["میز گیمینگ", "gaming desk"],
+        "accessory": ["کنترلر", "دسته", "گیم پد", "gamepad", "کابل", "لوازم جانبی"],
+    }
+    platform_terms = {
+        "playstation": ["playstation", "پلی استیشن", "ps5", "ps4", "ps3"],
+        "xbox": ["xbox", "ایکس باکس"],
+        "nintendo": ["nintendo", "نینتندو", "switch"],
+        "pc": ["pc", "کامپیوتر", "gaming pc", "ویندوز"],
+        "mobile": ["موبایل", "اندروید", "ios", "mobile"],
+        "universal": ["universal", "همه دستگاه‌ها", "عمومی"],
+    }
+
+    def term_filter(terms):
+        conditions = []
+        for term in terms:
+            needle = f"%{term}%"
+            conditions.extend([
+                Product.name.ilike(needle),
+                Product.description.ilike(needle),
+                Category.name.ilike(needle),
+            ])
+        return db.or_(*conditions)
+
+    query = Product.query.join(Category, isouter=True).filter(Product.active.is_(True))
+
+    if q:
+        query = query.filter(term_filter([q]))
+
+    # The gaming hub is intentionally keyword-driven so it works with today's
+    # catalog without forcing a risky database migration. Only products that
+    # look gaming-related in product/category text are included.
+    gaming_terms = sorted({
+        term for terms in type_terms.values() for term in terms
+    } | {
+        term for terms in platform_terms.values() for term in terms
+    } | {"گیمینگ", "gaming", "گیمر", "گیمرها"}
+    )
+    query = query.filter(term_filter(gaming_terms))
+
+    if gaming_type in type_terms:
+        query = query.filter(term_filter(type_terms[gaming_type]))
+    if platform in platform_terms:
+        query = query.filter(term_filter(platform_terms[platform]))
+
+    if brand_slug:
+        brand = Brand.query.filter_by(slug=brand_slug, active=True).first()
+        if brand:
+            query = query.join(product_brand, product_brand.c.product_id == Product.id).filter(product_brand.c.brand_id == brand.id)
+        else:
+            query = query.filter(db.false())
+
+    lowest_offer_price = (
+        db.session.query(func.min(Offer.price))
+        .join(Store, Offer.store_id == Store.id)
+        .filter(
+            Offer.product_id == Product.id,
+            Offer.in_stock.is_(True),
+            Store.active.is_(True),
+            Offer.price > 0,
+        )
+        .correlate(Product)
+        .scalar_subquery()
+    )
+    effective_price = func.coalesce(lowest_offer_price, Product.price)
+
+    if stock == "available":
+        query = query.filter(exists().where(and_(
+            Offer.product_id == Product.id,
+            Offer.in_stock.is_(True),
+            Offer.price > 0,
+        )))
+    elif stock == "unavailable":
+        query = query.filter(~exists().where(and_(
+            Offer.product_id == Product.id,
+            Offer.in_stock.is_(True),
+            Offer.price > 0,
+        )))
+    if min_price:
+        query = query.filter(effective_price >= min_price)
+    if max_price:
+        query = query.filter(effective_price <= max_price)
+
+    if sort == "price_low":
+        query = query.order_by(effective_price.asc(), Product.id.desc())
+    elif sort == "price_high":
+        query = query.order_by(effective_price.desc(), Product.id.desc())
+    elif sort == "name":
+        query = query.order_by(Product.name.asc(), Product.id.desc())
+    else:
+        sort = "relevance"
+        query = query.order_by(Product.id.desc())
+
+    total = query.count()
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    def page_url(target_page):
+        args = request.args.to_dict(flat=True)
+        args["page"] = target_page
+        return url_for("gaming_market", **args)
+
+    return render_template(
+        "gaming_hub.html",
+        products=pagination.items,
+        total=total,
+        page=page,
+        pages=pagination.pages,
+        has_prev=pagination.has_prev,
+        has_next=pagination.has_next,
+        prev_url=page_url(page - 1) if pagination.has_prev else "",
+        next_url=page_url(page + 1) if pagination.has_next else "",
+        q=q,
+        gaming_type=gaming_type,
+        platform=platform,
+        brand_slug=brand_slug,
+        stock=stock,
+        min_price=min_price,
+        max_price=max_price,
+        sort=sort,
+        gaming_types=[
+            ("", "همه محصولات"),
+            ("console", "کنسول"),
+            ("game", "بازی"),
+            ("gpu", "کارت گرافیک"),
+            ("cpu", "پردازنده"),
+            ("monitor", "مانیتور"),
+            ("keyboard", "کیبورد"),
+            ("mouse", "موس"),
+            ("headset", "هدست"),
+            ("streaming", "استریم"),
+            ("chair", "صندلی گیمینگ"),
+            ("desk", "میز گیمینگ"),
+            ("accessory", "لوازم جانبی"),
+        ],
+        platforms=[
+            ("", "همه پلتفرم‌ها"),
+            ("playstation", "PlayStation"),
+            ("xbox", "Xbox"),
+            ("nintendo", "Nintendo"),
+            ("pc", "PC"),
+            ("mobile", "موبایل"),
+            ("universal", "عمومی"),
+        ],
+        brands=Brand.query.filter_by(active=True).order_by(Brand.name.asc()).all(),
+    )
+
+
 @app.get("/magazine")
 def magazine():
     articles = Article.query.filter(

@@ -38,7 +38,7 @@ def csrf_token() -> str:
 
 
 def _csrf_valid() -> bool:
-    expected = session.get("csrf_token")
+    expected = session.get("csrf_token") or session.get("_kharidino_csrf_token")
     supplied = request.form.get(_CSRF_FIELD) or request.headers.get("X-CSRF-Token")
     if not expected or not supplied:
         return False

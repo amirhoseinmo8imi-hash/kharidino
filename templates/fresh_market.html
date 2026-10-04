@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}میوه و تره‌بار | خریدینو{% endblock %}
+{% block content %}
+<div class="kh-hub kh-fresh-hub">
+  <section class="kh-hub-hero"><span class="kh-hub-kicker">KHARIDINO FRESH</span><h1>بازار <strong>میوه و تره‌بار</strong></h1><p>یک بخش اختصاصی برای میوه، سبزی، خشکبار و محصولات تازه؛ با تمرکز روی فروشنده‌های محلی و مقایسه قیمت.</p></section>
+  <section class="kh-fresh-cats">
+    {% for item in [('میوه تازه','fa-apple-whole','میوه‌های روز و فصل'),('سبزی و صیفی','fa-carrot','سبزی، گوجه، خیار و محصولات تازه'),('خشکبار','fa-seedling','آجیل، خشکبار و محصولات بسته‌بندی'),('سبد میوه','fa-basket-shopping','سبدهای آماده برای خانه و هدیه')] %}
+    <a href="{{ url_for('home', q=item[0]) }}" class="kh-fresh-card"><i class="fa-solid {{ item[1] }}"></i><strong>{{ item[0] }}</strong><span>{{ item[2] }}</span><b>مشاهده <i class="fa-solid fa-arrow-left"></i></b></a>
+    {% endfor %}
+  </section>
+  <section class="kh-fresh-seller"><div><span>ویژه میوه‌فروشی‌ها</span><h2>میوه‌فروشی خودت را وارد خریدینو کن</h2><p>فروشگاه محلی‌ات را ثبت کن، محصولات روزانه و قیمت‌ها را معرفی کن و مشتری نزدیک خودت را پیدا کن.</p></div><a href="{{ url_for('seller_register') }}">ثبت فروشگاه <i class="fa-solid fa-arrow-left"></i></a></section>
+  <section class="kh-hub-note"><i class="fa-solid fa-leaf"></i><div><strong>نسخه اول بازار تازه</strong><p>ساختار این بخش آماده شده و محصولات واقعی آن از فروشگاه‌های ثبت‌شده تغذیه خواهد شد؛ قیمت و موجودی ساختگی نمایش نمی‌دهیم.</p></div></section>
+</div>
+{% endblock %}

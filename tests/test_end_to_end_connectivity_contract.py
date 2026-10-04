@@ -17,3 +17,10 @@ def test_seller_status_updates_master_order():
     assert 'order.status = "تحویل شد"' in source
     assert 'order.status = "ارسال شد"' in source
     assert "sync_master_order_status(order.order)" in source
+
+
+def test_shipment_lifecycle_updates_master_order():
+    source = (ROOT / "seller_fulfillment.py").read_text(encoding="utf-8")
+    assert "sync_master_order_status" in source
+    assert 'seller_order.status = "shipped"' in source
+    assert 'seller_order.status = "delivered"' in source

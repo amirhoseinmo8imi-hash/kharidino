@@ -2113,6 +2113,42 @@ app.jinja_env.globals[
     "product_rating"
 ] = product_rating
 
+def review_verified_purchase(review):
+    """Return whether the reviewer has a completed/fulfilled order containing this product."""
+    if not review or not review.user_id or not review.product_id:
+        return False
+    return bool(
+        OrderItem.query
+        .join(Order, OrderItem.order_id == Order.id)
+        .filter(
+            Order.user_id == review.user_id,
+            OrderItem.product_id == review.product_id,
+            Order.status.in_(["تایید شده", "در حال ارسال", "تحویل شد", "تکمیل شد"]),
+        )
+        .first()
+    )
+
+app.jinja_env.globals["review_verified_purchase"] = review_verified_purchase
+
+
+def offer_trust_badge(offer, lowest=None):
+    """Expose a conservative trust badge without changing the database schema."""
+    if not offer or not offer.store:
+        return ""
+    profile = SellerProfile.query.filter_by(store_id=offer.store_id).first()
+    if not profile or profile.verification_status != "تأیید شده":
+        return ""
+    try:
+        price = int(offer.price or 0)
+        floor = int(lowest or 0)
+    except (TypeError, ValueError):
+        return ""
+    if price > 0 and floor > 0 and price <= round(floor * 1.05):
+        return "انتخاب مطمئن"
+    return "فروشنده تأییدشده"
+
+app.jinja_env.globals["offer_trust_badge"] = offer_trust_badge
+
 
 # =========================================================
 # MONEY FILTER

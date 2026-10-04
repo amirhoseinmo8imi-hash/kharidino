@@ -101,6 +101,26 @@ def _offer_for_order_item(item):
     return None
 
 
+def sync_master_order_status(order):
+    """Keep the customer-facing order status aligned with all seller suborders."""
+    if not order:
+        return
+    subs = SellerOrder.query.filter_by(order_id=order.id).all()
+    if not subs:
+        return
+    statuses = {x.status for x in subs}
+    if statuses and statuses <= {"cancelled"}:
+        order.status = "لغو شد"
+    elif statuses and statuses <= {"delivered"}:
+        order.status = "تحویل شد"
+    elif "shipped" in statuses or "delivered" in statuses:
+        order.status = "ارسال شد"
+    elif "preparing" in statuses or "confirmed" in statuses:
+        order.status = "در حال آماده‌سازی"
+    elif "new" in statuses:
+        order.status = "تأیید شد"
+
+
 def sync_order_to_seller_orders(order):
     """Build seller suborders only after the master order is payment-confirmed.
 

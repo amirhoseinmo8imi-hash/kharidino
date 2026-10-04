@@ -169,7 +169,6 @@ def register_vehicle_marketplace(app, db, User, login_required, admin_required):
         if not VehicleView.query.filter_by(vehicle_ad_id=ad.id,viewer_key=viewer_key).first():
             db.session.add(VehicleView(vehicle_ad_id=ad.id,viewer_key=viewer_key))
             db.session.commit()
-        view_count=VehicleView.query.filter_by(vehicle_ad_id=ad.id).count()
         favorite = False
         if session.get("user_id"):
             favorite = bool(VehicleFavorite.query.filter_by(

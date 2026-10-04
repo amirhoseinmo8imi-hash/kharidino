@@ -4608,6 +4608,9 @@ def seed():
     print("")
 
 
+from gaming import register_gaming, seed_gaming
+register_gaming(app, db, User)
+
 # =========================================================
 # DATABASE INIT
 # =========================================================
@@ -4617,6 +4620,7 @@ with app.app_context():
     db.create_all()
 
     seed()
+    seed_gaming()
 
 
 # =========================================================

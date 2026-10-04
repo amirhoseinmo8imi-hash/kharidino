@@ -3395,6 +3395,40 @@ def fresh_market():
     return render_template("fresh_market.html")
 
 
+@app.route("/gaming/add", methods=["GET", "POST"])
+@login_required
+def gaming_add_submission():
+    if request.method == "POST":
+        title = (request.form.get("title") or "").strip()[:200]
+        if not title:
+            flash("نام بازی الزامی است.", "danger")
+            return redirect(url_for("gaming_add_submission"))
+        slug = re.sub(r"[^a-z0-9\u0600-\u06ff]+", "-", title.lower()).strip("-")[:180] or f"game-{uuid.uuid4().hex[:10]}"
+        if GamingSubmission.query.filter_by(slug=slug).first():
+            slug = f"{slug}-{uuid.uuid4().hex[:6]}"
+        official_url = (request.form.get("official_url") or "").strip()[:700]
+        if official_url:
+            try:
+                validate_external_url(official_url)
+            except ValueError:
+                flash("لینک رسمی بازی معتبر نیست.", "danger")
+                return redirect(url_for("gaming_add_submission"))
+        item = GamingSubmission(
+            user_id=session["user_id"], title=title, slug=slug,
+            description=(request.form.get("description") or "").strip()[:5000],
+            platform=(request.form.get("platform") or "").strip()[:40],
+            genre=(request.form.get("genre") or "").strip()[:80],
+            version=(request.form.get("version") or "").strip()[:80],
+            official_url=official_url,
+            cover_url=(request.form.get("cover_url") or "").strip()[:700],
+        )
+        db.session.add(item)
+        db.session.commit()
+        flash("بازی برای بررسی مدیر ارسال شد. بعد از تأیید عمومی می‌شود.", "success")
+        return redirect(url_for("gaming_hub"))
+    return render_template("gaming_add.html")
+
+
 @app.route("/gaming")
 def gaming_hub():
     # The specialized catalog lives in commerce_catalog.py; keep /gaming as the public entry point.

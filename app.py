@@ -4608,8 +4608,8 @@ def seed():
     print("")
 
 
-from gaming import register_gaming, seed_gaming
-register_gaming(app, db, User)
+from gaming import register_gaming
+seed_gaming = register_gaming(app, db, User)
 
 # =========================================================
 # DATABASE INIT

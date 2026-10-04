@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}مرجوعی‌ها | {{ site_name }}{% endblock %}
+{% block content %}
+<main class="kh-admin-workspace">
+  <header class="kh-admin-page-head">
+    <div><span class="kh-eyebrow">TRUST CENTER</span><h1>مدیریت مرجوعی و اختلاف</h1><p>درخواست‌های مرجوعی را با وضعیت، مهلت پاسخ و یادداشت مدیریتی کنترل کن.</p></div>
+    <a class="kh-admin-back" href="{{ url_for('admin') }}">بازگشت به مدیریت</a>
+  </header>
+  <section class="kh-admin-return-grid">
+  {% for item in returns %}
+    <article class="kh-return-card">
+      <div class="kh-return-card-top"><strong>#{{ item.id }} · سفارش {{ item.order_id }}</strong><span>{{ item.status }}</span></div>
+      <h2>{{ item.reason }}</h2>
+      <p>{{ item.details or 'بدون توضیحات تکمیلی' }}</p>
+      <dl><div><dt>خریدار</dt><dd>{{ item.user.name if item.user else '—' }}</dd></div><div><dt>ثبت</dt><dd>{{ item.created_at.strftime('%Y/%m/%d %H:%M') if item.created_at else '—' }}</dd></div><div><dt>مهلت پاسخ</dt><dd>{{ item.seller_deadline.strftime('%Y/%m/%d %H:%M') if item.seller_deadline else '—' }}</dd></div></dl>
+      <form method="post" action="{{ url_for('admin_return_status', return_id=item.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="status"><option>در انتظار بررسی</option><option>در انتظار پاسخ فروشنده</option><option>تایید شد</option><option>رد شد</option><option>بازپرداخت شد</option></select>
+        <input name="admin_note" value="{{ item.admin_note or '' }}" placeholder="یادداشت مدیریت">
+        <button type="submit">ثبت وضعیت</button>
+      </form>
+    </article>
+  {% else %}
+    <div class="kh-empty-state"><i class="fa-solid fa-shield-heart"></i><h2>درخواست مرجوعی نداریم</h2><p>فعلاً موردی برای بررسی ثبت نشده است.</p></div>
+  {% endfor %}
+  </section>
+</main>
+{% endblock %}

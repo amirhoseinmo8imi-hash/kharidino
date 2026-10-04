@@ -4609,7 +4609,9 @@ def seed():
 
 
 from gaming import register_gaming
+from gaming_marketplace import register_gaming_marketplace
 seed_gaming = register_gaming(app, db, User)
+register_gaming_marketplace(app, db, User, Product, Category)
 
 # =========================================================
 # DATABASE INIT

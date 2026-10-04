@@ -90,6 +90,17 @@
         {% endfor %}
       </section>
 
+      {% if community_games %}
+      <section class="kh-gaming-community">
+        <div class="kh-gaming-results-head"><div><span>COMMUNITY</span><h2>بازی‌های اضافه‌شده توسط کاربران</h2></div><a class="kh-gaming-community-add" href="{{ url_for('gaming_add_submission') }}">➕ افزودن بازی</a></div>
+        <div class="kh-gaming-community-grid">
+          {% for game in community_games %}
+          <article><div class="kh-gaming-community-cover">{% if game.cover_url %}<img src="{{ game.cover_url }}" alt="{{ game.title }}" loading="lazy">{% else %}<i class="fa-solid fa-gamepad"></i>{% endif %}</div><div><h3>{{ game.title }}</h3><p>{{ game.platform }}{% if game.genre %} · {{ game.genre }}{% endif %}{% if game.version %} · {{ game.version }}{% endif %}</p><p>{{ game.description|truncate(180) }}</p>{% if game.official_url %}<a href="{{ game.official_url }}" target="_blank" rel="noopener noreferrer">صفحه رسمی بازی</a>{% endif %}</div></article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
       {% if pages > 1 %}
       <nav class="kh-gaming-pagination" aria-label="صفحه‌بندی گیمینگ">
         {% if has_prev %}<a href="{{ prev_url }}"><i class="fa-solid fa-chevron-right"></i></a>{% endif %}

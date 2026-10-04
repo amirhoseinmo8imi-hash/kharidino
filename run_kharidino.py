@@ -95,6 +95,10 @@ with app.app_context():
     apply_clawback_reconciliation(app, db, Store)
     apply_button_flow_hardening(app, db, Store, User)
     db.create_all()
+    # Demo/catalog seed is explicit and never runs merely because app.py is imported.
+    from app import seed, seed_demo_vehicle_ads
+    seed()
+    seed_demo_vehicle_ads(db, User)
     ensure_settlement_allocation_guard()
     apply_financial_reconciliation(app, db)
 

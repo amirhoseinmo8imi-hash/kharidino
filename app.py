@@ -935,6 +935,9 @@ def csrf_token():
     if not token:
         token = secrets.token_urlsafe(32)
         session["csrf_token"] = token
+        session["_kharidino_csrf_token"] = token
+    elif not session.get("_kharidino_csrf_token"):
+        session["_kharidino_csrf_token"] = token
     return token
 
 
@@ -955,7 +958,7 @@ def validate_csrf():
         or request.headers.get("X-CSRF-Token")
         or ""
     )
-    expected = session.get("csrf_token") or ""
+    expected = session.get("csrf_token") or session.get("_kharidino_csrf_token") or ""
 
     # If an old/invalid development session cookie was discarded by Flask, allow
     # a public form carrying its own token to establish the fresh session token.
@@ -963,6 +966,7 @@ def validate_csrf():
     if not expected:
         if submitted and not session.get("user_id"):
             session["csrf_token"] = str(submitted)
+            session["_kharidino_csrf_token"] = str(submitted)
             session.modified = True
             return None
         abort(400, description="CSRF token is missing or invalid.")

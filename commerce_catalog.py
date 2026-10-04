@@ -4,7 +4,7 @@ Security rule: all mutations remain POST-only and rely on Kharidino's global CSR
 """
 from datetime import datetime\nfrom flask import flash, redirect, render_template, request, url_for
 from sqlalchemy import Table, Column, Integer, ForeignKey, func, exists, and_
-from app import app, db, Product, Category, Store, Offer, admin_required, validate_external_url
+from app import app, db, Product, Category, Store, Offer, GamingSubmission, admin_required, validate_external_url
 
 product_brand = Table(
     "kharidino_product_brand",

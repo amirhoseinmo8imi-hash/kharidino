@@ -79,4 +79,14 @@
 })();
 </script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script><script src="{{ url_for('static', filename='js/background.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const token=document.querySelector('meta[name="csrf-token"]')?.content;
+  if(!token)return;
+  document.querySelectorAll('form[method="post" i]').forEach(function(form){
+    if(form.querySelector('input[name="csrf_token"]'))return;
+    const input=document.createElement('input'); input.type='hidden'; input.name='csrf_token'; input.value=token; form.appendChild(input);
+  });
+});
+</script>
 </body></html>

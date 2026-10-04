@@ -1,13 +1,109 @@
 {% extends "base.html" %}
-{% block title %}گیمینگ | خریدینو{% endblock %}
+{% block title %}بازار تخصصی گیمینگ | خریدینو{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-2') }}">
+{% endblock %}
 {% block content %}
 <div class="kh-hub kh-gaming-hub">
-  <section class="kh-game-hero"><div><span class="kh-hub-kicker">KHARIDINO GAMING</span><h1>دنیای <strong>گیمرها</strong> در خریدینو</h1><p>تجهیزات گیمینگ، کنسول، بازی، لوازم استریم و قطعات را در یک فضای اختصاصی پیدا کن.</p><div class="kh-game-actions"><a href="{{ url_for('catalog_products', q='گیمینگ') }}">مشاهده محصولات <i class="fa-solid fa-arrow-left"></i></a><a class="secondary" href="{{ url_for('stores') }}">فروشگاه‌های گیمینگ</a></div></div><div class="kh-game-symbol"><i class="fa-solid fa-gamepad"></i><i class="fa-solid fa-headset"></i><i class="fa-solid fa-keyboard"></i></div></section>
-  <section class="kh-game-grid">
-    {% for item in [('کنسول و بازی','fa-gamepad','PlayStation، Xbox، Nintendo و بازی‌ها'),('PC Gaming','fa-desktop','کیس، کارت گرافیک، CPU و قطعات'),('لوازم جانبی','fa-headset','هدست، موس، کیبورد و کنترلر'),('استریم و تولید محتوا','fa-video','میکروفون، وب‌کم، نور و تجهیزات استریم'),('صندلی و میز گیمینگ','fa-chair','ستاپ حرفه‌ای برای اتاق گیم'),('گیفت کارت و اکانت','fa-ticket','گیفت‌کارت و خدمات دیجیتال؛ فقط از فروشنده معتبر')] %}
-    <a href="{{ url_for('home', q=item[0]) }}" class="kh-game-card"><i class="fa-solid {{ item[1] }}"></i><div><strong>{{ item[0] }}</strong><span>{{ item[2] }}</span></div><i class="fa-solid fa-chevron-left"></i></a>
-    {% endfor %}
+  <section class="kh-game-hero">
+    <div>
+      <span class="kh-hub-kicker">KHARIDINO GAMING MARKET</span>
+      <h1>بازار تخصصی <strong>گیمینگ</strong></h1>
+      <p>کنسول، بازی، قطعات PC و تجهیزات ستاپ را با فیلترهای تخصصی پیدا کن و قبل از خرید قیمت فروشنده‌ها را مقایسه کن.</p>
+      <div class="kh-game-actions">
+        <a href="#gaming-products">شروع خرید <i class="fa-solid fa-arrow-left"></i></a>
+        <a class="secondary" href="{{ url_for('stores') }}">فروشگاه‌های گیمینگ</a>
+      </div>
+    </div>
+    <div class="kh-game-symbol" aria-hidden="true"><i class="fa-solid fa-gamepad"></i><i class="fa-solid fa-headset"></i><i class="fa-solid fa-keyboard"></i><i class="fa-solid fa-display"></i></div>
   </section>
-  <section class="kh-game-tools"><div><i class="fa-solid fa-scale-balanced"></i><h3>مقایسه تجهیزات</h3><p>قبل از خرید مشخصات و قیمت فروشگاه‌ها را کنار هم ببین.</p></div><div><i class="fa-solid fa-chart-line"></i><h3>رصد قیمت</h3><p>برای کالاهای مهم، تاریخچه قیمت و هشدار قیمت را دنبال کن.</p></div><div><i class="fa-solid fa-store"></i><h3>فروشنده گیمینگ</h3><p>فروشگاه‌های تخصصی را پیدا کن و پیشنهادهایشان را مقایسه کن.</p></div></section>
+
+  <section class="kh-gaming-categories">
+    <div class="kh-gaming-section-head"><span>انتخاب سریع</span><h2>دسته گیمینگت را انتخاب کن</h2></div>
+    <div class="kh-gaming-category-row">
+      {% for key,label in gaming_types if key %}
+      <a href="{{ url_for('gaming_market', type=key) }}" class="{% if gaming_type==key %}is-active{% endif %}"><i class="fa-solid {% if key=='console' %}fa-gamepad{% elif key=='game' %}fa-dice{% elif key=='gpu' %}fa-microchip{% elif key=='cpu' %}fa-microchip{% elif key=='monitor' %}fa-display{% elif key=='keyboard' %}fa-keyboard{% elif key=='mouse' %}fa-computer-mouse{% elif key=='headset' %}fa-headset{% elif key=='streaming' %}fa-video{% elif key=='chair' %}fa-chair{% elif key=='desk' %}fa-table{% else %}fa-puzzle-piece{% endif %}"></i><span>{{ label }}</span></a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="kh-gaming-shop" id="gaming-products">
+    <aside class="kh-gaming-filters">
+      <div class="kh-gaming-filter-head"><div><span>فیلتر حرفه‌ای</span><h2>انتخاب دقیق</h2></div><a href="{{ url_for('gaming_market') }}">پاک‌سازی</a></div>
+      <form method="get" action="{{ url_for('gaming_market') }}">
+        <div class="kh-gaming-search"><i class="fa-solid fa-magnifying-glass"></i><input name="q" value="{{ q }}" placeholder="مدل، نام کالا، برند..." autocomplete="off"></div>
+
+        <label class="kh-gaming-field"><span>نوع محصول</span><select name="type">{% for key,label in gaming_types %}<option value="{{ key }}" {% if gaming_type==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="kh-gaming-field"><span>پلتفرم</span><select name="platform">{% for key,label in platforms %}<option value="{{ key }}" {% if platform==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="kh-gaming-field"><span>برند</span><select name="brand"><option value="">همه برندها</option>{% for brand in brands %}<option value="{{ brand.slug }}" {% if brand_slug==brand.slug %}selected{% endif %}>{{ brand.name }}</option>{% endfor %}</select></label>
+
+        <div class="kh-gaming-field"><span>محدوده قیمت</span><div class="kh-gaming-price"><input type="number" name="min_price" min="0" value="{{ min_price or '' }}" placeholder="از"><b>تا</b><input type="number" name="max_price" min="0" value="{{ max_price or '' }}" placeholder="تا"></div></div>
+
+        <div class="kh-gaming-field"><span>وضعیت کالا</span><div class="kh-gaming-chips">
+          <label><input type="radio" name="stock" value="" {% if not stock %}checked{% endif %}> همه</label>
+          <label><input type="radio" name="stock" value="available" {% if stock=='available' %}checked{% endif %}> موجود</label>
+          <label><input type="radio" name="stock" value="unavailable" {% if stock=='unavailable' %}checked{% endif %}> ناموجود</label>
+        </div></div>
+
+        <label class="kh-gaming-field"><span>مرتب‌سازی</span><select name="sort">
+          <option value="relevance" {% if sort=='relevance' %}selected{% endif %}>پیشنهادهای مرتبط</option>
+          <option value="price_low" {% if sort=='price_low' %}selected{% endif %}>ارزان‌ترین</option>
+          <option value="price_high" {% if sort=='price_high' %}selected{% endif %}>گران‌ترین</option>
+          <option value="name" {% if sort=='name' %}selected{% endif %}>نام محصول</option>
+        </select></label>
+
+        <button class="kh-gaming-apply" type="submit"><i class="fa-solid fa-sliders"></i> اعمال فیلترها</button>
+      </form>
+    </aside>
+
+    <div class="kh-gaming-results">
+      <div class="kh-gaming-results-head">
+        <div><span>بازار گیمینگ</span><h2>{% if gaming_type %}{{ dict(gaming_types).get(gaming_type, 'محصولات گیمینگ') }}{% else %}همه محصولات گیمینگ{% endif %}</h2></div>
+        <strong>{{ total }} کالا</strong>
+      </div>
+      {% if q or gaming_type or platform or brand_slug or stock or min_price or max_price %}
+      <div class="kh-gaming-active">
+        {% if q %}<span>جستجو: {{ q }}</span>{% endif %}
+        {% if gaming_type %}<span>نوع: {{ dict(gaming_types).get(gaming_type, gaming_type) }}</span>{% endif %}
+        {% if platform %}<span>پلتفرم: {{ dict(platforms).get(platform, platform) }}</span>{% endif %}
+        {% if brand_slug %}<span>برند: {{ brand_slug }}</span>{% endif %}
+        {% if stock %}<span>{{ 'موجود' if stock=='available' else 'ناموجود' }}</span>{% endif %}
+        {% if min_price %}<span>از {{ min_price|money }}</span>{% endif %}
+        {% if max_price %}<span>تا {{ max_price|money }}</span>{% endif %}
+      </div>
+      {% endif %}
+
+      <section class="kh-gaming-products">
+        {% for product in products %}
+        <article class="kh-gaming-product">
+          <a href="{{ url_for('product_detail', product_id=product.id) }}">
+            <div class="kh-gaming-product-image">{% if product.image %}<img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="fa-solid {{ product.category.icon if product.category else 'fa-gamepad' }}"></i>{% endif %}</div>
+            <small>{{ product.category.name if product.category else 'گیمینگ' }}</small>
+            <h3>{{ product.name }}</h3>
+            <div class="kh-gaming-price-value"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div>
+            <div class="kh-gaming-meta"><span><i class="fa-solid fa-store"></i> {{ product.offers|length }} فروشگاه</span>{% if product.offers %}<em>پیشنهاد دارد</em>{% else %}<em class="is-muted">بدون پیشنهاد</em>{% endif %}</div>
+          </a>
+          <form method="post" action="{{ url_for('compare_add', product_id=product.id) }}"><input type="hidden" name="next" value="{{ request.full_path }}"><button type="submit"><i class="fa-solid fa-scale-balanced"></i> مقایسه</button></form>
+        </article>
+        {% else %}
+        <div class="kh-gaming-empty"><i class="fa-solid fa-gamepad"></i><h3>محصولی با این فیلتر پیدا نشد</h3><p>فیلترها را کمی بازتر کن یا جستجوی دیگری امتحان کن.</p><a href="{{ url_for('gaming_market') }}">نمایش همه گیمینگ</a></div>
+        {% endfor %}
+      </section>
+
+      {% if pages > 1 %}
+      <nav class="kh-gaming-pagination" aria-label="صفحه‌بندی گیمینگ">
+        {% if has_prev %}<a href="{{ prev_url }}"><i class="fa-solid fa-chevron-right"></i></a>{% endif %}
+        <span>صفحه <b>{{ page }}</b> از <b>{{ pages }}</b></span>
+        {% if has_next %}<a href="{{ next_url }}"><i class="fa-solid fa-chevron-left"></i></a>{% endif %}
+      </nav>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="kh-game-tools">
+    <div><i class="fa-solid fa-scale-balanced"></i><h3>مقایسه تجهیزات</h3><p>کالاها را برای مقایسه انتخاب کن و قیمت فروشنده‌ها را کنار هم ببین.</p></div>
+    <div><i class="fa-solid fa-chart-line"></i><h3>رصد قیمت</h3><p>تاریخچه قیمت و هشدار قیمت خریدینو برای کالاهای پشتیبانی‌شده در دسترس است.</p></div>
+    <div><i class="fa-solid fa-store"></i><h3>فروشنده تخصصی</h3><p>فروشگاه‌های گیمینگ را پیدا کن و پیشنهادهایشان را مقایسه کن.</p></div>
+  </section>
 </div>
 {% endblock %}

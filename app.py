@@ -559,6 +559,60 @@ class PriceAlert(db.Model):
     )
 
 
+class SellerProfile(db.Model):
+    __tablename__ = "seller_profile"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=True)
+    verification_status = db.Column(db.String(30), default="در انتظار تایید", nullable=False)
+    rating = db.Column(db.Float, default=0.0, nullable=False)
+    rating_count = db.Column(db.Integer, default=0, nullable=False)
+    response_rate = db.Column(db.Integer, default=0, nullable=False)
+    response_time_minutes = db.Column(db.Integer, default=0, nullable=False)
+    fulfilled_orders = db.Column(db.Integer, default=0, nullable=False)
+    cancellation_rate = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("seller_profile", uselist=False))
+    store = db.relationship("Store", backref=db.backref("seller_profile", uselist=False))
+
+
+class PriceHistory(db.Model):
+    __tablename__ = "price_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    offer_id = db.Column(db.Integer, db.ForeignKey("offer.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+    in_stock = db.Column(db.Boolean, default=True, nullable=False)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    offer = db.relationship("Offer", backref=db.backref("price_history", lazy=True, cascade="all, delete-orphan"))
+    product = db.relationship("Product")
+    store = db.relationship("Store")
+
+
+class ReturnRequest(db.Model):
+    __tablename__ = "return_request"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    reason = db.Column(db.String(250), nullable=False)
+    details = db.Column(db.Text, default="")
+    status = db.Column(db.String(40), default="درخواست ثبت شد", nullable=False)
+    evidence = db.Column(db.String(700), default="")
+    seller_deadline = db.Column(db.DateTime, nullable=True)
+    admin_note = db.Column(db.Text, default="")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    order = db.relationship("Order", backref=db.backref("return_requests", lazy=True, cascade="all, delete-orphan"))
+    user = db.relationship("User")
+
+
 class Favorite(db.Model):
     id = db.Column(
         db.Integer,
@@ -588,6 +642,27 @@ class Favorite(db.Model):
     user = db.relationship("User")
     product = db.relationship("Product")
 
+
+
+def record_price_snapshot(offer):
+    """Append a price snapshot when an offer changes, without duplicating the same state."""
+    if not offer or not offer.id:
+        return
+    last = (
+        PriceHistory.query
+        .filter_by(offer_id=offer.id)
+        .order_by(PriceHistory.recorded_at.desc())
+        .first()
+    )
+    if last and last.price == int(offer.price or 0) and bool(last.in_stock) == bool(offer.in_stock):
+        return
+    db.session.add(PriceHistory(
+        offer_id=offer.id,
+        product_id=offer.product_id,
+        store_id=offer.store_id,
+        price=int(offer.price or 0),
+        in_stock=bool(offer.in_stock),
+    ))
 
 # =========================================================
 # SETTINGS
@@ -4873,6 +4948,78 @@ def admin_fix_offers():
         url_for("admin")
     )
 
+
+@app.get("/api/products/<int:product_id>/price-history")
+def product_price_history(product_id):
+    product = Product.query.get_or_404(product_id)
+    rows = (
+        PriceHistory.query
+        .filter_by(product_id=product.id)
+        .order_by(PriceHistory.recorded_at.asc())
+        .limit(180)
+        .all()
+    )
+    return jsonify({
+        "product_id": product.id,
+        "product": product.name,
+        "history": [{
+            "store": row.store.name if row.store else "",
+            "price": int(row.price or 0),
+            "in_stock": bool(row.in_stock),
+            "recorded_at": row.recorded_at.isoformat() if row.recorded_at else None,
+        } for row in rows],
+    })
+
+
+@app.post("/returns/request/<int:order_id>")
+@login_required
+def request_return(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != session.get("user_id"):
+        abort(403)
+    reason = request.form.get("reason", "").strip()
+    details = request.form.get("details", "").strip()
+    if not reason:
+        flash("علت مرجوعی را وارد کنید.", "danger")
+        return redirect(url_for("order_detail", order_id=order.id))
+    existing = ReturnRequest.query.filter_by(order_id=order.id, user_id=order.user_id).first()
+    if existing:
+        flash("برای این سفارش یک درخواست مرجوعی ثبت شده است.", "warning")
+        return redirect(url_for("order_detail", order_id=order.id))
+    db.session.add(ReturnRequest(
+        order_id=order.id,
+        user_id=order.user_id,
+        reason=reason,
+        details=details,
+        status="در انتظار بررسی",
+        seller_deadline=datetime.utcnow() + timedelta(days=2),
+    ))
+    db.session.commit()
+    flash("درخواست مرجوعی ثبت شد و در صف بررسی خریدینو قرار گرفت.", "success")
+    return redirect(url_for("order_detail", order_id=order.id))
+
+
+@app.get("/admin/returns")
+@admin_required
+def admin_returns():
+    returns = ReturnRequest.query.order_by(ReturnRequest.created_at.desc()).all()
+    return render_template("admin_returns.html", returns=returns)
+
+
+@app.post("/admin/returns/<int:return_id>/status")
+@admin_required
+def admin_return_status(return_id):
+    item = ReturnRequest.query.get_or_404(return_id)
+    status = request.form.get("status", "").strip()
+    allowed = {"در انتظار بررسی", "در انتظار پاسخ فروشنده", "تایید شد", "رد شد", "بازپرداخت شد"}
+    if status not in allowed:
+        abort(400)
+    item.status = status
+    item.admin_note = request.form.get("admin_note", "").strip()
+    db.session.commit()
+    flash("وضعیت مرجوعی بروزرسانی شد.", "success")
+    return redirect(url_for("admin_returns"))
+
 # =========================================================
 # ADMIN SETTINGS
 # =========================================================
@@ -5418,6 +5565,8 @@ def save_offer():
         ) == "1"
     )
 
+    db.session.flush()
+    record_price_snapshot(offer)
     db.session.commit()
 
     flash(

@@ -22,15 +22,15 @@
     <div class="kh-gaming-section-head"><span>انتخاب سریع</span><h2>دسته گیمینگت را انتخاب کن</h2></div>
     <div class="kh-gaming-category-row">
       {% for key,label in gaming_types if key %}
-      <a href="{{ url_for('gaming_market', type=key) }}" class="{% if gaming_type==key %}is-active{% endif %}"><i class="fa-solid {% if key=='console' %}fa-gamepad{% elif key=='game' %}fa-dice{% elif key=='gpu' %}fa-microchip{% elif key=='cpu' %}fa-microchip{% elif key=='monitor' %}fa-display{% elif key=='keyboard' %}fa-keyboard{% elif key=='mouse' %}fa-computer-mouse{% elif key=='headset' %}fa-headset{% elif key=='streaming' %}fa-video{% elif key=='chair' %}fa-chair{% elif key=='desk' %}fa-table{% else %}fa-puzzle-piece{% endif %}"></i><span>{{ label }}</span></a>
+      <a href="{{ url_for('gaming_market_catalog', type=key) }}" class="{% if gaming_type==key %}is-active{% endif %}"><i class="fa-solid {% if key=='console' %}fa-gamepad{% elif key=='game' %}fa-dice{% elif key=='gpu' %}fa-microchip{% elif key=='cpu' %}fa-microchip{% elif key=='monitor' %}fa-display{% elif key=='keyboard' %}fa-keyboard{% elif key=='mouse' %}fa-computer-mouse{% elif key=='headset' %}fa-headset{% elif key=='streaming' %}fa-video{% elif key=='chair' %}fa-chair{% elif key=='desk' %}fa-table{% else %}fa-puzzle-piece{% endif %}"></i><span>{{ label }}</span></a>
       {% endfor %}
     </div>
   </section>
 
   <section class="kh-gaming-shop" id="gaming-products">
     <aside class="kh-gaming-filters">
-      <div class="kh-gaming-filter-head"><div><span>فیلتر حرفه‌ای</span><h2>انتخاب دقیق</h2></div><a href="{{ url_for('gaming_market') }}">پاک‌سازی</a></div>
-      <form method="get" action="{{ url_for('gaming_market') }}">
+      <div class="kh-gaming-filter-head"><div><span>فیلتر حرفه‌ای</span><h2>انتخاب دقیق</h2></div><a href="{{ url_for('gaming_market_catalog') }}">پاک‌سازی</a></div>
+      <form method="get" action="{{ url_for('gaming_market_catalog') }}">
         <div class="kh-gaming-search"><i class="fa-solid fa-magnifying-glass"></i><input name="q" value="{{ q }}" placeholder="مدل، نام کالا، برند..." autocomplete="off"></div>
 
         <label class="kh-gaming-field"><span>نوع محصول</span><select name="type">{% for key,label in gaming_types %}<option value="{{ key }}" {% if gaming_type==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
@@ -86,7 +86,7 @@
           <form method="post" action="{{ url_for('compare_add', product_id=product.id) }}"><input type="hidden" name="next" value="{{ request.full_path }}"><button type="submit"><i class="fa-solid fa-scale-balanced"></i> مقایسه</button></form>
         </article>
         {% else %}
-        <div class="kh-gaming-empty"><i class="fa-solid fa-gamepad"></i><h3>محصولی با این فیلتر پیدا نشد</h3><p>فیلترها را کمی بازتر کن یا جستجوی دیگری امتحان کن.</p><a href="{{ url_for('gaming_market') }}">نمایش همه گیمینگ</a></div>
+        <div class="kh-gaming-empty"><i class="fa-solid fa-gamepad"></i><h3>محصولی با این فیلتر پیدا نشد</h3><p>فیلترها را کمی بازتر کن یا جستجوی دیگری امتحان کن.</p><a href="{{ url_for('gaming_market_catalog') }}">نمایش همه گیمینگ</a></div>
         {% endfor %}
       </section>
 

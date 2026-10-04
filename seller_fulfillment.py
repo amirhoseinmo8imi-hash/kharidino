@@ -5,7 +5,7 @@ from flask import abort, jsonify, request
 
 from app import app, db, Order
 from merchant_marketplace import seller_required, _seller_account
-from merchant_marketplace_v2 import SellerOrder, SellerLedger
+from merchant_marketplace_v2 import SellerOrder, SellerLedger, sync_master_order_status
 from marketplace_ultimate import Shipment
 
 
@@ -24,7 +24,7 @@ def _refresh_delivery_state(seller_order):
     order = db.session.get(Order, seller_order.order_id)
     if not order:
         return
-    if all(x.status == "delivered" for x in shipments):
+    sync_master_order_status(order)\n    if all(x.status == "delivered" for x in shipments):
         seller_order.status = "delivered"
         if order.status in {"تأیید شد", "در حال آماده‌سازی", "ارسال شد"}:
             order.status = "تحویل شد"

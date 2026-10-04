@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import render_template, request, session, redirect, url_for, flash
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, and_
 
 def register_gaming(app, db, User):
     class GamingGame(db.Model):
@@ -213,6 +213,213 @@ def register_gaming(app, db, User):
 
     app.jinja_env.globals["gaming_game_model"] = GamingGame
     app.jinja_env.globals["gaming_profile_model"] = GamerProfile
+
+
+    # --- Gaming 3.0: platform identity, quests, wallet/rewards, clips, guides, seasons, leagues ---
+    class GamingPlatformAccount(db.Model):
+        __tablename__ = "gaming_platform_account"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        platform = db.Column(db.String(40), nullable=False)
+        external_tag = db.Column(db.String(120), nullable=False)
+        verified = db.Column(db.Boolean, default=False)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+        __table_args__ = (db.UniqueConstraint("platform","external_tag",name="uq_gaming_platform_identity"),)
+
+    class GamingQuest(db.Model):
+        __tablename__ = "gaming_quest"
+        id = db.Column(db.Integer, primary_key=True)
+        title = db.Column(db.String(180), nullable=False)
+        description = db.Column(db.String(500), default="")
+        xp = db.Column(db.Integer, default=100)
+        reward_points = db.Column(db.Integer, default=0)
+        kind = db.Column(db.String(40), default="weekly")
+        active = db.Column(db.Boolean, default=True)
+
+    class GamingQuestProgress(db.Model):
+        __tablename__ = "gaming_quest_progress"
+        id = db.Column(db.Integer, primary_key=True)
+        quest_id = db.Column(db.Integer, db.ForeignKey("gaming_quest.id"), nullable=False)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        progress = db.Column(db.Integer, default=0)
+        completed = db.Column(db.Boolean, default=False)
+        claimed = db.Column(db.Boolean, default=False)
+        __table_args__ = (db.UniqueConstraint("quest_id","user_id",name="uq_gaming_quest_user"),)
+
+    class GamingRewardWallet(db.Model):
+        __tablename__ = "gaming_reward_wallet"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+        points = db.Column(db.Integer, default=0)
+        lifetime_earned = db.Column(db.Integer, default=0)
+        updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    class GamingClip(db.Model):
+        __tablename__ = "gaming_clip"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        game = db.Column(db.String(160), default="")
+        title = db.Column(db.String(180), nullable=False)
+        url = db.Column(db.String(700), nullable=False)
+        thumbnail = db.Column(db.String(700), default="")
+        views = db.Column(db.Integer, default=0)
+        likes = db.Column(db.Integer, default=0)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    class GamingGuide(db.Model):
+        __tablename__ = "gaming_guide"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        game = db.Column(db.String(160), nullable=False)
+        title = db.Column(db.String(180), nullable=False)
+        body = db.Column(db.Text, default="")
+        tags = db.Column(db.String(500), default="")
+        views = db.Column(db.Integer, default=0)
+        helpful = db.Column(db.Integer, default=0)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    class GamingSeason(db.Model):
+        __tablename__ = "gaming_season"
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String(120), nullable=False)
+        start_at = db.Column(db.DateTime, default=datetime.utcnow)
+        end_at = db.Column(db.DateTime, nullable=True)
+        active = db.Column(db.Boolean, default=True)
+
+    class GamingLeague(db.Model):
+        __tablename__ = "gaming_league"
+        id = db.Column(db.Integer, primary_key=True)
+        season_id = db.Column(db.Integer, db.ForeignKey("gaming_season.id"), nullable=True)
+        name = db.Column(db.String(160), nullable=False)
+        game = db.Column(db.String(160), default="")
+        platform = db.Column(db.String(40), default="")
+        tier = db.Column(db.String(50), default="Open")
+        teams_count = db.Column(db.Integer, default=0)
+        prize = db.Column(db.String(120), default="")
+
+    class GamingClanWar(db.Model):
+        __tablename__ = "gaming_clan_war"
+        id = db.Column(db.Integer, primary_key=True)
+        season_id = db.Column(db.Integer, db.ForeignKey("gaming_season.id"), nullable=True)
+        team_a_id = db.Column(db.Integer, db.ForeignKey("gaming_team.id"), nullable=False)
+        team_b_id = db.Column(db.Integer, db.ForeignKey("gaming_team.id"), nullable=False)
+        score_a = db.Column(db.Integer, default=0)
+        score_b = db.Column(db.Integer, default=0)
+        status = db.Column(db.String(30), default="scheduled")
+        scheduled_at = db.Column(db.DateTime, nullable=True)
+
+    class GamingParty(db.Model):
+        __tablename__ = "gaming_party"
+        id = db.Column(db.Integer, primary_key=True)
+        owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        game = db.Column(db.String(160), nullable=False)
+        platform = db.Column(db.String(40), default="PC")
+        mode = db.Column(db.String(80), default="Squad")
+        max_members = db.Column(db.Integer, default=4)
+        status = db.Column(db.String(30), default="open")
+        voice_enabled = db.Column(db.Boolean, default=True)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    class GamingPartyMember(db.Model):
+        __tablename__ = "gaming_party_member"
+        id = db.Column(db.Integer, primary_key=True)
+        party_id = db.Column(db.Integer, db.ForeignKey("gaming_party.id"), nullable=False)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+        __table_args__ = (db.UniqueConstraint("party_id","user_id",name="uq_gaming_party_member"),)
+
+    class GamingModerationAction(db.Model):
+        __tablename__ = "gaming_moderation_action"
+        id = db.Column(db.Integer, primary_key=True)
+        report_id = db.Column(db.Integer, db.ForeignKey("gaming_report.id"), nullable=True)
+        moderator_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+        action = db.Column(db.String(60), nullable=False)
+        note = db.Column(db.String(500), default="")
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @app.get("/gaming/arena")
+    def gaming_arena():
+        season = GamingSeason.query.filter_by(active=True).order_by(GamingSeason.id.desc()).first()
+        leagues = GamingLeague.query.order_by(GamingLeague.teams_count.desc()).limit(20).all()
+        wars = GamingClanWar.query.order_by(GamingClanWar.id.desc()).limit(20).all()
+        return render_template("gaming/arena.html", season=season, leagues=leagues, wars=wars)
+
+    @app.get("/gaming/quests")
+    def gaming_quests():
+        user = logged_user()
+        quests = GamingQuest.query.filter_by(active=True).order_by(GamingQuest.id.desc()).all()
+        progress = {p.quest_id:p for p in GamingQuestProgress.query.filter_by(user_id=user.id).all()} if user else {}
+        wallet = GamingRewardWallet.query.filter_by(user_id=user.id).first() if user else None
+        return render_template("gaming/quests.html", quests=quests, progress=progress, wallet=wallet)
+
+    @app.post("/gaming/quests/<int:quest_id>/claim")
+    def gaming_quest_claim(quest_id):
+        user = logged_user()
+        if not user: return redirect(url_for("login", next="/gaming/quests"))
+        q = db.session.get(GamingQuest, quest_id)
+        if not q: return redirect(url_for("gaming_quests"))
+        p = GamingQuestProgress.query.filter_by(quest_id=quest_id,user_id=user.id).first()
+        if not p or not p.completed or p.claimed: return redirect(url_for("gaming_quests"))
+        p.claimed = True
+        profile = ensure_profile(user.id); profile.xp += q.xp; profile.level = xp_level(profile.xp)
+        wallet = GamingRewardWallet.query.filter_by(user_id=user.id).first()
+        if not wallet: wallet = GamingRewardWallet(user_id=user.id); db.session.add(wallet)
+        wallet.points += q.reward_points; wallet.lifetime_earned += q.reward_points
+        db.session.commit()
+        return redirect(url_for("gaming_quests"))
+
+    @app.get("/gaming/party")
+    def gaming_party():
+        parties = GamingParty.query.filter_by(status="open").order_by(GamingParty.id.desc()).limit(50).all()
+        games = GamingGame.query.filter_by(active=True).order_by(GamingGame.name).all()
+        return render_template("gaming/party.html", parties=parties, games=games)
+
+    @app.post("/gaming/party/create")
+    def gaming_party_create():
+        user = logged_user()
+        if not user: return redirect(url_for("login", next="/gaming/party"))
+        party = GamingParty(owner_id=user.id, game=request.form.get("game","").strip(),
+            platform=request.form.get("platform","PC"), mode=request.form.get("mode","Squad"),
+            max_members=max(2,min(10,int(request.form.get("max_members",4) or 4))),
+            voice_enabled=bool(request.form.get("voice_enabled")))
+        db.session.add(party); db.session.flush()
+        db.session.add(GamingPartyMember(party_id=party.id,user_id=user.id))
+        db.session.commit()
+        return redirect(url_for("gaming_party"))
+
+    @app.post("/gaming/party/<int:party_id>/join")
+    def gaming_party_join(party_id):
+        user=logged_user()
+        if not user: return redirect(url_for("login",next="/gaming/party"))
+        party=db.session.get(GamingParty,party_id)
+        if not party or party.status!="open": return redirect(url_for("gaming_party"))
+        if not GamingPartyMember.query.filter_by(party_id=party_id,user_id=user.id).first():
+            count=GamingPartyMember.query.filter_by(party_id=party_id).count()
+            if count < party.max_members:
+                db.session.add(GamingPartyMember(party_id=party_id,user_id=user.id))
+                if count+1 >= party.max_members: party.status="full"
+                db.session.commit()
+        return redirect(url_for("gaming_party"))
+
+    @app.post("/gaming/platform/connect")
+    def gaming_platform_connect():
+        user=logged_user()
+        if not user: return redirect(url_for("login",next="/gaming"))
+        platform=request.form.get("platform","").strip(); tag=request.form.get("external_tag","").strip()
+        if platform and tag:
+            row=GamingPlatformAccount(user_id=user.id,platform=platform,external_tag=tag)
+            db.session.add(row); db.session.commit()
+        return redirect(request.referrer or url_for("gaming"))
+
+    @app.post("/gaming/clip/create")
+    def gaming_clip_create():
+        user=logged_user()
+        if not user: return redirect(url_for("login",next="/gaming/club"))
+        title=request.form.get("title","").strip(); url=request.form.get("url","").strip()
+        if title and url:
+            db.session.add(GamingClip(user_id=user.id,game=request.form.get("game",""),title=title,url=url,thumbnail=request.form.get("thumbnail","")))
+            db.session.commit()
+        return redirect(request.referrer or url_for("gaming_club"))
 
     @app.get("/gaming")
     def gaming():
@@ -488,7 +695,21 @@ def register_gaming(app, db, User):
         db.session.commit()
 
     def seed_gaming():
-        _ensure_gaming_schema()\n        games = [
+        _ensure_gaming_schema()
+        if GamingQuest.query.count() == 0:
+            db.session.add_all([
+                GamingQuest(title="اولین پست کلاب", description="یک پست باکیفیت منتشر کن.", xp=120, reward_points=20, kind="weekly"),
+                GamingQuest(title="اولین هم‌تیمی", description="یک درخواست Matchmaking بساز.", xp=150, reward_points=25, kind="weekly"),
+                GamingQuest(title="ساخت تیم", description="یک تیم یا کلن بساز.", xp=250, reward_points=40, kind="seasonal"),
+                GamingQuest(title="رقابت", description="در یک تورنمنت ثبت‌نام کن.", xp=300, reward_points=60, kind="seasonal")
+            ])
+        if GamingSeason.query.count() == 0:
+            season=GamingSeason(name="Kharidino Season 1", active=True); db.session.add(season); db.session.flush()
+            db.session.add_all([
+                GamingLeague(season_id=season.id,name="Open League",game="Counter-Strike 2",platform="PC",tier="Open",prize="جایزه ویژه"),
+                GamingLeague(season_id=season.id,name="FC Champions",game="EA Sports FC 26",platform="PlayStation",tier="Gold",prize="جایزه ویژه")
+            ])
+\n        games = [
             ("Counter-Strike 2","counter-strike-2","PC","FPS","Ranked"),
             ("Valorant","valorant","PC","FPS","Ranked"),
             ("EA Sports FC 26","ea-sports-fc-26","PC","Sports","Online"),

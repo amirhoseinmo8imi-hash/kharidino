@@ -2,6 +2,7 @@
 {% block title %}{{ category.name }} | {{ site_name }}{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-catalog-pro-2026.css', v='2026-10-04-1') }}">
 {% endblock %}
 {% block content %}
 <div class="kdg-category-page">
@@ -27,7 +28,7 @@
           <label>حداقل قیمت<input type="number" name="min_price" min="0" value="{{ min_price|default(0) }}" placeholder="تومان"></label>
           <label>حداکثر قیمت<input type="number" name="max_price" min="0" value="{{ max_price|default(0) }}" placeholder="تومان"></label>
         </div>
-        <label>مرتب‌سازی
+        <label>وضعیت کالا\n          <select name="stock"><option value="">همه</option><option value="available" {% if stock|default("")=="available" %}selected{% endif %}>فقط موجود</option><option value="unavailable" {% if stock|default("")=="unavailable" %}selected{% endif %}>ناموجود</option></select>\n        </label>\n        <label>مرتب‌سازی
           <select name="sort">
             <option value="newest" {% if sort == 'newest' %}selected{% endif %}>جدیدترین</option>
             <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>ارزان‌ترین</option>

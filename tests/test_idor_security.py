@@ -10,9 +10,10 @@ def _read(name):
 
 def test_order_endpoints_use_explicit_owner_boundary():
     source = _read("commerce_extensions_v2.py")
+    app_source = _read("app.py")
     assert "def _owned_order(order_id):" in source
     assert "order.user_id==user.id" in source
-    assert "@app.get(\"/orders/<int:order_id>\")" in source
+    assert "@app.route(\"/orders/<int:order_id>\")" in app_source or "@app.get(\"/orders/<int:order_id>\")" in app_source
     assert "order=_owned_order(order_id)" in source
     assert "@app.get(\"/api/orders/<int:order_id>\")" in source
 

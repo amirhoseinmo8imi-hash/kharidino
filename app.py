@@ -5041,8 +5041,17 @@ def admin_return_status(return_id):
     allowed = {"در انتظار بررسی", "در انتظار پاسخ فروشنده", "تایید شد", "رد شد", "بازپرداخت شد"}
     if status not in allowed:
         abort(400)
-    item.status = status
     item.admin_note = request.form.get("admin_note", "").strip()
+    if status == "بازپرداخت شد":
+        execute_refund = app.extensions.get("kharidino_execute_return_refund")
+        if not execute_refund:
+            flash("ماژول استرداد پرداخت فعال نیست؛ بازپرداخت انجام نشد.", "danger")
+            return redirect(url_for("admin_returns"))
+        ok, error = execute_refund(item)
+        if not ok:
+            flash(f"بازپرداخت انجام نشد: {error}", "danger")
+            return redirect(url_for("admin_returns"))
+    item.status = status
     db.session.commit()
     flash("وضعیت مرجوعی بروزرسانی شد.", "success")
     return redirect(url_for("admin_returns"))

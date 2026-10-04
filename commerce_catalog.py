@@ -188,6 +188,7 @@ def catalog_products():
     return render_template(
         "catalog_products.html",
         products=pagination.items,
+        community_games=community_games,
         brands=Brand.query.filter_by(active=True).order_by(Brand.name.asc()).all(),
         categories=Category.query.filter_by(active=True).order_by(Category.name.asc()).all(),
         q=q, brand_slug=brand_slug, category_id=category_id, store_id=store_id,
@@ -328,6 +329,8 @@ def gaming_market_catalog():
         args = request.args.to_dict(flat=True)
         args["page"] = target_page
         return url_for("gaming_market_catalog", **args)
+
+    community_games = GamingSubmission.query.filter_by(status="approved").order_by(GamingSubmission.created_at.desc()).limit(12).all()
 
     return render_template(
         "gaming_hub.html",

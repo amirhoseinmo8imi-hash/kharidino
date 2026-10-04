@@ -1043,8 +1043,6 @@ def _invoice_pdf_bytes(invoice, order, company):
     line = HexColor("#E4E7EC")
     accent = HexColor("#D31852")
     accent_soft = HexColor("#FFF0F4")
-    success = HexColor("#087443")
-    success_soft = HexColor("#ECFDF3")
     white = colors.white
 
     buffer = BytesIO()

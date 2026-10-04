@@ -48,6 +48,7 @@
                 <a href="#users-admin" data-admin-target="users-admin"><i class="fa-solid fa-users"></i><span>کاربران</span></a>
                 <a href="#invoices-admin" data-admin-target="invoices-admin"><i class="fa-solid fa-file-invoice"></i><span>فاکتورها</span>{% if stats.invoices %}<b class="admin-nav-badge">{{ stats.invoices }}</b>{% endif %}</a>
                 <a href="{{ url_for('admin_business_profile') }}"><i class="fa-solid fa-building-columns"></i><span>اطلاعات حقوقی</span></a>
+                <a href="{{ url_for('admin_returns') }}"><i class="fa-solid fa-shield-heart"></i><span>مرجوعی و اختلاف</span></a>
             </div>
 
             <div class="admin-nav-group">

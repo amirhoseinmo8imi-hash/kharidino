@@ -22,7 +22,7 @@
         </select>
       </div>
       <div class="kh-quick-filters">
-        <label class="kh-check"><input type="checkbox" name="stock" value="available" {% if stock=='available' %}checked{% endif %}><span><i class="fa-solid fa-circle-check"></i> فقط موجود</span></label>
+        <button type="button" class="kh-check kh-stock-toggle {% if stock=='available' %}is-active{% endif %}" onclick="this.form.elements['stock'].value=this.classList.contains('is-active')?'':'available';this.classList.toggle('is-active');this.form.submit()"><i class="fa-solid fa-circle-check"></i> فقط موجود</button>
         <select name="category"><option value="">همه دسته‌ها</option>{% for c in categories %}<option value="{{ c.id }}" {% if category_id==c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
         <select name="brand"><option value="">همه برندها</option>{% for b in brands %}<option value="{{ b.slug }}" {% if brand_slug==b.slug %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select>
         <select name="store"><option value="">همه فروشگاه‌ها</option>{% for store in stores %}<option value="{{ store.id }}" {% if store_id==store.id|string %}selected{% endif %}>{{ store.name }}</option>{% endfor %}</select>
@@ -54,7 +54,7 @@
   </div>
   {% endif %}
   <div class="kdg-results-head">
-    <strong>{{ products|length }} محصول</strong>
+    <strong>{{ total }} محصول</strong>
     <span>{% if selected_category %}دسته: {{ selected_category.name }} · {% endif %}مقایسه قیمت بین فروشگاه‌ها و انتخاب آگاهانه</span>
   </div>
   <section class="kdg-products">
@@ -71,5 +71,6 @@
     </article>
     {% else %}<div class="kdg-empty">محصولی با این فیلترها پیدا نشد.</div>{% endfor %}
   </section>
+  {% if pages > 1 %}<nav class="kh-pagination" aria-label="صفحه‌بندی">{% if has_prev %}<a href="{{ prev_url }}" aria-label="قبلی"><i class="fa-solid fa-chevron-right"></i></a>{% endif %}<span>صفحه <b>{{ page }}</b> از <b>{{ pages }}</b></span>{% if has_next %}<a href="{{ next_url }}" aria-label="بعدی"><i class="fa-solid fa-chevron-left"></i></a>{% endif %}</nav>{% endif %}
 </div>
 {% endblock %}

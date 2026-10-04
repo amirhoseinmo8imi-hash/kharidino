@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}مدیریت ارسال‌های گیمینگ | خریدینو{% endblock %}
+{% block content %}
+<div class="kh-admin-gaming"><h1>مدیریت محتوای گیمینگ</h1><p>ارسال‌های کاربران قبل از انتشار بررسی می‌شوند.</p>
+{% for item in submissions %}<article><div><small>{{ item.status }} · {{ item.created_at.strftime('%Y/%m/%d') }}</small><h2>{{ item.title }}</h2><p>{{ item.platform }} · {{ item.genre }} · {{ item.version }}</p><p>{{ item.description }}</p>{% if item.official_url %}<a href="{{ item.official_url }}" target="_blank" rel="noopener">لینک رسمی</a>{% endif %}</div>{% if item.status == 'pending' %}<div class="kh-admin-gaming-actions"><form method="post" action="{{ url_for('admin_gaming_submission_action', submission_id=item.id, action='approve') }}"><button>تأیید و انتشار</button></form><form method="post" action="{{ url_for('admin_gaming_submission_action', submission_id=item.id, action='reject') }}"><button>رد</button></form></div>{% endif %}</article>
+{% else %}<p>ارسالی وجود ندارد.</p>{% endfor %}</div>
+{% endblock %}

@@ -93,7 +93,7 @@ def inject_catalog_globals():
 
 
 @app.get("/catalog/products")
-def catalog_products_extended():
+def catalog_products():
     q = (request.args.get("q") or "").strip()[:100]
     brand_slug = (request.args.get("brand") or "").strip()[:140]
     category_id = (request.args.get("category") or "").strip()

@@ -18,7 +18,11 @@
     <h3>جزئیات خرید</h3>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <thead><tr style="background:#f8fafc"><th style="padding:10px;text-align:right">کالا</th><th style="padding:10px">تعداد</th><th style="padding:10px;text-align:left">مبلغ</th></tr></thead>
-      <tbody>{{ items_html|safe }}</tbody>
+      <tbody>
+      {% for item in order.items %}
+      <tr><td style="padding:10px;border-bottom:1px solid #eee">{{ item.product_name }}</td><td style="padding:10px;border-bottom:1px solid #eee;text-align:center">{{ item.quantity }}</td><td style="padding:10px;border-bottom:1px solid #eee">{{ "{:,}".format(item.price * item.quantity) }} تومان</td></tr>
+      {% endfor %}
+    </tbody>
     </table>
     <div style="margin-top:24px;padding:16px;border:1px solid #f0d5df;border-radius:14px;background:#fff9fb">
       <strong>فایل PDF فاکتور در همین ایمیل پیوست شده است.</strong><br>

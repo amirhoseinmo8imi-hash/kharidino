@@ -88,7 +88,7 @@ else:
 app.config["SESSION_COOKIE_NAME"] = "kharidino_session_v2"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = False
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_ENV", "").lower() == "production" or os.environ.get("KHARIDINO_PRODUCTION", "").lower() in {"1", "true", "yes"}
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + str(BASE_DIR / "kharidino.db")
@@ -6318,11 +6318,8 @@ def internal_server_error(error):
 
 
 with app.app_context():
-
+    # Importing app no longer seeds demo data; launchers handle explicit initialization.
     db.create_all()
-
-    seed()
-    seed_demo_vehicle_ads(db, User)
 
 
 # =========================================================

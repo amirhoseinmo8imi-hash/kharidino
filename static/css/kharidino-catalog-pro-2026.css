@@ -11,3 +11,14 @@
 .kh-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0 8px}.kh-pagination a{width:42px;height:42px;border:1px solid #dddde3;border-radius:12px;display:grid;place-items:center;background:#fff;color:#333;text-decoration:none}.kh-pagination span{font-size:13px;color:#666}.kh-pagination b{color:#18181b}
 @media(max-width:800px){.kh-filter-top{grid-template-columns:1fr 48px 120px}.kh-filter-mobile-toggle{display:block;font-size:0}.kh-filter-mobile-toggle i{font-size:16px}.kh-quick-filters{grid-template-columns:1fr 1fr}.kh-advanced-filters{display:none;grid-template-columns:1fr}.kh-advanced-filters.is-open{display:grid}.kh-chip-row{flex-wrap:wrap}.kh-filter-actions{justify-content:space-between}.kh-filter-top select{min-width:0}}
 @media(max-width:520px){.kh-filter-top{grid-template-columns:1fr 48px}.kh-filter-top select{grid-column:1/-1}.kh-quick-filters{grid-template-columns:1fr}.kh-check{width:100%}.kh-catalog-pro{border-radius:16px}}
+
+
+.kh-stock-toggle{border:1px solid #e1e1e6;cursor:pointer;font:inherit}.kh-stock-toggle.is-active{border-color:#ef4056;background:rgba(239,64,86,.07);color:#c92d43}
+body.kh-modern-dark .kh-catalog-pro{background:var(--ku-surface,#18181b);border-color:var(--ku-border,#303038);box-shadow:0 10px 35px rgba(0,0,0,.18)}
+body.kh-modern-dark .kh-filter-top,body.kh-modern-dark .kh-quick-filters{border-color:var(--ku-border,#303038);background:#202024}
+body.kh-modern-dark .kh-filter-search input,body.kh-modern-dark .kh-filter-top select,body.kh-modern-dark .kh-quick-filters select,body.kh-modern-dark .kh-check,body.kh-modern-dark .kh-price-range input,body.kh-modern-dark .kh-chip-row label,body.kh-modern-dark .kh-pagination a{background:#18181b;border-color:#36363e;color:#eee}
+body.kh-modern-dark .kh-filter-search input:focus{background:#18181b}
+body.kh-modern-dark .kh-advanced-filters,body.kh-modern-dark .kh-active-filters{border-color:#303038}
+body.kh-modern-dark .kh-active-filters a,body.kh-modern-dark .kh-active-filters span:not(:first-child){background:#29292f;border-color:#3a3a42;color:#ddd}
+body.kh-modern-dark .kh-advanced-filters>div>span,body.kh-modern-dark .kh-filter-actions a,body.kh-modern-dark .kh-pagination span{color:#aaa}
+body.kh-modern-dark .kh-stock-toggle.is-active{background:rgba(239,64,86,.14)}

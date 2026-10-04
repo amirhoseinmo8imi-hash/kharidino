@@ -40,3 +40,9 @@ def test_security_hardening_uses_the_app_csrf_session_key():
 def test_app_initialization_does_not_seed_on_import():
     app = _read("app.py")
     assert "seed_demo_vehicle_ads(db, User)" not in app.split("if __name__ == \"__main__\":", 1)[0]
+
+
+def test_security_preserves_kharidino_secret_configuration():
+    security = _read("security_hardening.py")
+    assert 'os.environ.get("KHARIDINO_SECRET_KEY", "").strip()' in security
+    assert 'or app.config.get("SECRET_KEY")' in security

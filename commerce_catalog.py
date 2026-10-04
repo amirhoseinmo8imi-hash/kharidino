@@ -2,7 +2,7 @@
 
 Security rule: all mutations remain POST-only and rely on Kharidino's global CSRF layer.
 """
-from datetime import datetime
+from datetime import datetime\nfrom urllib.parse import urlencode
 from flask import flash, redirect, render_template, request, url_for
 from sqlalchemy import Table, Column, Integer, ForeignKey, func, exists
 from app import app, db, Product, Category, Store, Offer, admin_required, validate_external_url
@@ -153,7 +153,7 @@ def catalog_products():
         brands=Brand.query.filter_by(active=True).order_by(Brand.name.asc()).all(),
         categories=Category.query.filter_by(active=True).order_by(Category.name.asc()).all(),
         q=q, brand_slug=brand_slug, category_id=category_id, store_id=store_id,
-        stock=stock, min_price=min_price, max_price=max_price, sort=sort,\n        stores=Store.query.filter_by(active=True).order_by(Store.name.asc()).all(),\n        total=total, page=page, per_page=per_page, pages=pagination.pages, has_prev=pagination.has_prev, has_next=pagination.has_next,
+        stock=stock, min_price=min_price, max_price=max_price, sort=sort,\n        stores=Store.query.filter_by(active=True).order_by(Store.name.asc()).all(),\n        total=total, page=page, per_page=per_page, pages=pagination.pages, has_prev=pagination.has_prev, has_next=pagination.has_next, prev_url=prev_url, next_url=next_url,
     )
 
 

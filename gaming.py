@@ -709,7 +709,8 @@ def register_gaming(app, db, User):
                 GamingLeague(season_id=season.id,name="Open League",game="Counter-Strike 2",platform="PC",tier="Open",prize="جایزه ویژه"),
                 GamingLeague(season_id=season.id,name="FC Champions",game="EA Sports FC 26",platform="PlayStation",tier="Gold",prize="جایزه ویژه")
             ])
-\n        games = [
+
+        games = [
             ("Counter-Strike 2","counter-strike-2","PC","FPS","Ranked"),
             ("Valorant","valorant","PC","FPS","Ranked"),
             ("EA Sports FC 26","ea-sports-fc-26","PC","Sports","Online"),

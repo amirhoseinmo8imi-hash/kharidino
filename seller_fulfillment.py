@@ -24,7 +24,7 @@ def _refresh_delivery_state(seller_order):
     order = db.session.get(Order, seller_order.order_id)
     if not order:
         return
-    sync_master_order_status(order)\n    if all(x.status == "delivered" for x in shipments):
+    if all(x.status == "delivered" for x in shipments):
         seller_order.status = "delivered"
         if order.status in {"تأیید شد", "در حال آماده‌سازی", "ارسال شد"}:
             order.status = "تحویل شد"

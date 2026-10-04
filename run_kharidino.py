@@ -34,7 +34,7 @@ def _install_bundled_product_images():
     except Exception as exc: print(f"[Kharidino] Product image archive was not installed: {exc}")
 
 _install_bundled_product_images()
-from app import app, db, Product, Category, Store, Offer, User, admin_required
+from app import app, db, Product, Category, Store, Offer, User, admin_required, record_price_snapshot
 from kharidino_ai import register as register_ai
 from mobile_app.api.mobile_api import register_mobile_api
 from security_hardening import apply_security
@@ -95,6 +95,9 @@ with app.app_context():
     apply_clawback_reconciliation(app, db, Store)
     apply_button_flow_hardening(app, db, Store, User)
     db.create_all()
+    # Backfill one current snapshot per offer so price intelligence works immediately.
+    for _offer in Offer.query.all():
+        record_price_snapshot(_offer)
     # Demo/catalog seed is explicit and never runs merely because app.py is imported.
     if os.environ.get("KHARIDINO_SKIP_SEED", "0").lower() not in {"1", "true", "yes"}:
         from app import seed, seed_demo_vehicle_ads

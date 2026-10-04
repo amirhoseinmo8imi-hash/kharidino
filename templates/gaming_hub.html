@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}گیمینگ | خریدینو{% endblock %}
+{% block content %}
+<div class="kh-hub kh-gaming-hub">
+  <section class="kh-game-hero"><div><span class="kh-hub-kicker">KHARIDINO GAMING</span><h1>دنیای <strong>گیمرها</strong> در خریدینو</h1><p>تجهیزات گیمینگ، کنسول، بازی، لوازم استریم و قطعات را در یک فضای اختصاصی پیدا کن.</p><div class="kh-game-actions"><a href="{{ url_for('catalog_products', q='گیمینگ') }}">مشاهده محصولات <i class="fa-solid fa-arrow-left"></i></a><a class="secondary" href="{{ url_for('stores') }}">فروشگاه‌های گیمینگ</a></div></div><div class="kh-game-symbol"><i class="fa-solid fa-gamepad"></i><i class="fa-solid fa-headset"></i><i class="fa-solid fa-keyboard"></i></div></section>
+  <section class="kh-game-grid">
+    {% for item in [('کنسول و بازی','fa-gamepad','PlayStation، Xbox، Nintendo و بازی‌ها'),('PC Gaming','fa-desktop','کیس، کارت گرافیک، CPU و قطعات'),('لوازم جانبی','fa-headset','هدست، موس، کیبورد و کنترلر'),('استریم و تولید محتوا','fa-video','میکروفون، وب‌کم، نور و تجهیزات استریم'),('صندلی و میز گیمینگ','fa-chair','ستاپ حرفه‌ای برای اتاق گیم'),('گیفت کارت و اکانت','fa-ticket','گیفت‌کارت و خدمات دیجیتال؛ فقط از فروشنده معتبر')] %}
+    <a href="{{ url_for('home', q=item[0]) }}" class="kh-game-card"><i class="fa-solid {{ item[1] }}"></i><div><strong>{{ item[0] }}</strong><span>{{ item[2] }}</span></div><i class="fa-solid fa-chevron-left"></i></a>
+    {% endfor %}
+  </section>
+  <section class="kh-game-tools"><div><i class="fa-solid fa-scale-balanced"></i><h3>مقایسه تجهیزات</h3><p>قبل از خرید مشخصات و قیمت فروشگاه‌ها را کنار هم ببین.</p></div><div><i class="fa-solid fa-chart-line"></i><h3>رصد قیمت</h3><p>برای کالاهای مهم، تاریخچه قیمت و هشدار قیمت را دنبال کن.</p></div><div><i class="fa-solid fa-store"></i><h3>فروشنده گیمینگ</h3><p>فروشگاه‌های تخصصی را پیدا کن و پیشنهادهایشان را مقایسه کن.</p></div></section>
+</div>
+{% endblock %}

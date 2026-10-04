@@ -20,7 +20,7 @@ body.kh-modern-dark input,body.kh-modern-dark textarea,body.kh-modern-dark selec
 body.kh-modern-dark a{color:inherit}
 body.kh-modern-dark .km-search{background:#111823;border-color:var(--kh-border)}
 body.kh-modern-dark .km-search input{background:transparent}
-body.kh-modern-dark .km-account-dropdown,.body.kh-modern-dark .km-category-mega{background:var(--kh-surface);border-color:var(--kh-border)}
+body.kh-modern-dark .km-account-dropdown,body.kh-modern-dark .km-category-mega{background:var(--kh-surface);border-color:var(--kh-border)}
 .kh-theme-toggle{width:40px;height:40px;border:1px solid var(--kh-border);border-radius:12px;background:var(--kh-surface);color:var(--kh-text);cursor:pointer;display:inline-grid;place-items:center;transition:.2s;flex:0 0 auto}
 .kh-theme-toggle:hover{transform:translateY(-1px);box-shadow:var(--kh-shadow);border-color:rgba(239,64,86,.35)}
 .kh-theme-toggle .kh-theme-sun{display:none}.kh-modern-dark .kh-theme-toggle .kh-theme-moon{display:none}.kh-modern-dark .kh-theme-toggle .kh-theme-sun{display:inline}

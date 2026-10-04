@@ -3377,7 +3377,8 @@ def fresh_market():
 
 @app.route("/gaming")
 def gaming_hub():
-    return render_template("gaming_hub.html")
+    # The specialized catalog lives in commerce_catalog.py; keep /gaming as the public entry point.
+    return redirect(url_for("gaming_market", **request.args.to_dict(flat=True)))
 
 
 # =========================================================

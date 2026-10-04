@@ -216,6 +216,7 @@ def sync_order_to_seller_orders(order):
             body=f"پرداخت سفارش اصلی #{order.id} تأیید شد و سفارش فروشگاهی #{sub.id} ایجاد/به‌روزرسانی شد.",
         ))
 
+    sync_master_order_status(order)
     return created
 
 

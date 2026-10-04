@@ -33,15 +33,13 @@ def _is_production() -> bool:
 
 
 def csrf_token() -> str:
-    token = session.get(_CSRF_SESSION_KEY)
-    if not token or not isinstance(token, str) or len(token) < 32:
-        token = secrets.token_urlsafe(48)
-        session[_CSRF_SESSION_KEY] = token
-    return token
+    """Return the single CSRF token owned by the Flask application."""
+    from app import csrf_token as app_csrf_token
+    return app_csrf_token()
 
 
 def _csrf_valid() -> bool:
-    expected = session.get(_CSRF_SESSION_KEY)
+    expected = session.get("csrf_token")
     supplied = request.form.get(_CSRF_FIELD) or request.headers.get("X-CSRF-Token")
     if not expected or not supplied:
         return False
@@ -195,7 +193,6 @@ def apply_security(app):
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = _is_production()
-    app.config["SESSION_COOKIE_NAME"] = "kharidino_session"
     app.config["MAX_FORM_MEMORY_SIZE"] = 2 * 1024 * 1024
     app.config["MAX_FORM_PARTS"] = 200
     app.config["MAX_CONTENT_LENGTH"] = min(int(app.config.get("MAX_CONTENT_LENGTH") or _MAX_UPLOAD_BYTES), _MAX_UPLOAD_BYTES)

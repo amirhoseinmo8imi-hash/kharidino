@@ -2,9 +2,8 @@
 
 Security rule: all mutations remain POST-only and rely on Kharidino's global CSRF layer.
 """
-from datetime import datetime\nfrom urllib.parse import urlencode
-from flask import flash, redirect, render_template, request, url_for
-from sqlalchemy import Table, Column, Integer, ForeignKey, func, exists
+from datetime import datetime\nfrom flask import flash, redirect, render_template, request, url_for
+from sqlalchemy import Table, Column, Integer, ForeignKey, func, exists, and_
 from app import app, db, Product, Category, Store, Offer, admin_required, validate_external_url
 
 product_brand = Table(
@@ -98,7 +97,11 @@ def catalog_products():
     brand_slug = (request.args.get("brand") or "").strip()[:140]
     category_id = (request.args.get("category") or "").strip()
     store_id = (request.args.get("store") or "").strip()
-    stock = (request.args.get("stock") or "").strip()\n    page = max(1, int(request.args.get("page", "1") or 1)) if (request.args.get("page", "1") or "1").isdigit() else 1\n    per_page = 24
+    stock = (request.args.get("stock") or "").strip()
+    page_raw = (request.args.get("page") or "1").strip()
+    page = int(page_raw) if page_raw.isdigit() else 1
+    page = max(1, page)
+    per_page = 24
     sort = (request.args.get("sort") or "newest").strip()
     try:
         min_price = max(0, int(request.args.get("min_price", "0") or 0))
@@ -133,6 +136,32 @@ def catalog_products():
     )
     effective_price = func.coalesce(lowest_offer_price, Product.price)
 
+    if store_id.isdigit():
+        query = query.filter(
+            exists().where(and_(
+                Offer.product_id == Product.id,
+                Offer.store_id == int(store_id),
+                Offer.in_stock.is_(True),
+                Offer.price > 0,
+            ))
+        )
+    if stock == "available":
+        query = query.filter(
+            exists().where(and_(
+                Offer.product_id == Product.id,
+                Offer.in_stock.is_(True),
+                Offer.price > 0,
+            ))
+        )
+    elif stock == "unavailable":
+        query = query.filter(
+            ~exists().where(and_(
+                Offer.product_id == Product.id,
+                Offer.in_stock.is_(True),
+                Offer.price > 0,
+            ))
+        )
+
     if min_price:
         query = query.filter(effective_price >= min_price)
     if max_price:
@@ -142,18 +171,32 @@ def catalog_products():
     elif sort == "price_high":
         query = query.order_by(effective_price.desc(), Product.id.desc())
     elif sort == "name":
-        query = query.order_by(Product.name.asc())
+        query = query.order_by(Product.name.asc(), Product.id.desc())
     else:
         sort = "newest"
         query = query.order_by(Product.id.desc())
 
+    total = query.count()
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    page = pagination.page
+
+    def page_url(target_page):
+        args = request.args.to_dict(flat=True)
+        args["page"] = target_page
+        return url_for("catalog_products", **args)
+
     return render_template(
         "catalog_products.html",
-        products=query.all(),
+        products=pagination.items,
         brands=Brand.query.filter_by(active=True).order_by(Brand.name.asc()).all(),
         categories=Category.query.filter_by(active=True).order_by(Category.name.asc()).all(),
         q=q, brand_slug=brand_slug, category_id=category_id, store_id=store_id,
-        stock=stock, min_price=min_price, max_price=max_price, sort=sort,\n        stores=Store.query.filter_by(active=True).order_by(Store.name.asc()).all(),\n        total=total, page=page, per_page=per_page, pages=pagination.pages, has_prev=pagination.has_prev, has_next=pagination.has_next, prev_url=prev_url, next_url=next_url,
+        stock=stock, min_price=min_price, max_price=max_price, sort=sort,
+        stores=Store.query.filter_by(active=True).order_by(Store.name.asc()).all(),
+        total=total, page=page, per_page=per_page, pages=pagination.pages,
+        has_prev=pagination.has_prev, has_next=pagination.has_next,
+        prev_url=page_url(page - 1) if pagination.has_prev else "",
+        next_url=page_url(page + 1) if pagination.has_next else "",
     )
 
 

@@ -5,7 +5,7 @@ def register_gaming(app, db, User):
     class GamingGame(db.Model):
         __tablename__ = "gaming_game"
         id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.String(160), nullable=False, unique=True)
+        name = db.Column(db.String(160), nullable=False)
         slug = db.Column(db.String(180), nullable=False, unique=True)
         platform = db.Column(db.String(40), default="PC")
         genre = db.Column(db.String(80), default="")

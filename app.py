@@ -3362,6 +3362,25 @@ def profile_settings():
 
 
 # =========================================================
+# SPECIAL MARKET HUBS
+# =========================================================
+
+@app.route("/insurance")
+def insurance_hub():
+    return render_template("insurance_hub.html")
+
+
+@app.route("/fresh-market")
+def fresh_market():
+    return render_template("fresh_market.html")
+
+
+@app.route("/gaming")
+def gaming_hub():
+    return render_template("gaming_hub.html")
+
+
+# =========================================================
 # STATIC PAGES
 # =========================================================
 

@@ -382,10 +382,17 @@ def register_gaming(app, db, User):
     def gaming_party_create():
         user = logged_user()
         if not user: return redirect(url_for("login", next="/gaming/party"))
-        party = GamingParty(owner_id=user.id, game=request.form.get("game","").strip(),
-            platform=request.form.get("platform","PC"), mode=request.form.get("mode","Squad"),
-            max_members=max(2,min(10,int(request.form.get("max_members",4) or 4))),
-            voice_enabled=bool(request.form.get("voice_enabled")))
+        game = request.form.get("game","").strip()[:160]
+        if not game:
+            flash("نام بازی الزامی است.", "danger")
+            return redirect(url_for("gaming_party"))
+        try:
+            max_members = max(2, min(10, int(request.form.get("max_members", 4) or 4)))
+        except (TypeError, ValueError):
+            max_members = 4
+        party = GamingParty(owner_id=user.id, game=game,
+            platform=request.form.get("platform","PC").strip()[:40], mode=request.form.get("mode","Squad").strip()[:80],
+            max_members=max_members, voice_enabled=bool(request.form.get("voice_enabled")))
         db.session.add(party); db.session.flush()
         db.session.add(GamingPartyMember(party_id=party.id,user_id=user.id))
         db.session.commit()
@@ -630,12 +637,20 @@ def register_gaming(app, db, User):
         user = logged_user()
         if not user:
             return redirect(url_for("login", next="/gaming/matchmaking"))
+        game = request.form.get("game","").strip()[:160]
+        if not game:
+            flash("انتخاب بازی الزامی است.", "danger")
+            return redirect(url_for("gaming_matchmaking"))
+        try:
+            party_size = max(1, min(10, int(request.form.get("party_size", 1) or 1)))
+        except (TypeError, ValueError):
+            party_size = 1
         db.session.add(MatchmakingRequest(
-            user_id=user.id, game=request.form.get("game","").strip(), platform=request.form.get("platform","PC").strip(),
-            rank=request.form.get("rank","").strip(), mode=request.form.get("mode","Squad").strip(),
-            language=request.form.get("language","فارسی").strip(), play_time=request.form.get("play_time","").strip(),
-            party_size=max(1, int(request.form.get("party_size",1) or 1)),
-            mic_required=request.form.get("mic_required") == "on", city=request.form.get("city","").strip()
+            user_id=user.id, game=game, platform=request.form.get("platform","PC").strip()[:40],
+            rank=request.form.get("rank","").strip()[:80], mode=request.form.get("mode","Squad").strip()[:80],
+            language=request.form.get("language","فارسی").strip()[:80], play_time=request.form.get("play_time","").strip()[:120],
+            party_size=party_size,
+            mic_required=request.form.get("mic_required") == "on", city=request.form.get("city","").strip()[:80]
         ))
         db.session.commit()
         flash("درخواست هم‌تیمی شما فعال شد.", "success")
@@ -659,9 +674,12 @@ def register_gaming(app, db, User):
     def gaming_report():
         user = logged_user()
         if not user: return redirect(url_for("login", next=request.referrer or "/gaming"))
-        target_type = request.form.get("target_type","content").strip()
-        target_id = int(request.form.get("target_id",0) or 0)
-        reason = request.form.get("reason","").strip()
+        target_type = request.form.get("target_type","content").strip()[:40]
+        try:
+            target_id = int(request.form.get("target_id", 0) or 0)
+        except (TypeError, ValueError):
+            target_id = 0
+        reason = request.form.get("reason","").strip()[:120]
         if target_id and reason:
             db.session.add(GamingReport(reporter_id=user.id, target_type=target_type, target_id=target_id, reason=reason,
                                         details=request.form.get("details","").strip()))

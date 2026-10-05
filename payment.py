@@ -302,12 +302,6 @@ def apply_payment(app, db, Order, User):
             except Exception:
                 app.logger.exception("Automatic invoice email failed after payment.")
 
-        except IntegrityError:
-            db.session.rollback()
-            current = db.session.get(PaymentTransaction, tx.id)
-            if current and current.status == "paid":
-                return redirect(url_for("my_orders"))
-            abort(409, description="ثبت هم‌زمان نتیجه پرداخت ممکن نشد.")
         flash("پرداخت با موفقیت تأیید شد. 💳", "success")
         return redirect(url_for("my_orders"))
 

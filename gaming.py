@@ -416,10 +416,16 @@ def register_gaming(app, db, User):
     def gaming_platform_connect():
         user=logged_user()
         if not user: return redirect(url_for("login",next="/gaming"))
-        platform=request.form.get("platform","").strip(); tag=request.form.get("external_tag","").strip()
+        platform=request.form.get("platform","").strip()[:40]; tag=request.form.get("external_tag","").strip()[:120]
         if platform and tag:
-            row=GamingPlatformAccount(user_id=user.id,platform=platform,external_tag=tag)
-            db.session.add(row); db.session.commit()
+            existing = GamingPlatformAccount.query.filter_by(user_id=user.id, platform=platform).first()
+            if existing:
+                existing.external_tag = tag
+            else:
+                conflict = GamingPlatformAccount.query.filter_by(platform=platform, external_tag=tag).first()
+                if not conflict:
+                    db.session.add(GamingPlatformAccount(user_id=user.id,platform=platform,external_tag=tag))
+            db.session.commit()
         return redirect(request.referrer or url_for("gaming"))
 
     @app.post("/gaming/clip/create")
@@ -525,7 +531,11 @@ def register_gaming(app, db, User):
             flash("برای ساخت پروفایل گیمر وارد حساب شوید.", "warning")
             return redirect(url_for("login", next="/gaming"))
         p = ensure_profile(user.id)
-        p.gamer_tag = request.form.get("gamer_tag", p.gamer_tag).strip()[:80] or p.gamer_tag
+        requested_tag = request.form.get("gamer_tag", p.gamer_tag).strip()[:80] or p.gamer_tag
+        if requested_tag != p.gamer_tag and GamerProfile.query.filter_by(gamer_tag=requested_tag).first():
+            flash("این Gamer Tag قبلاً استفاده شده است.", "danger")
+            return redirect(url_for("gaming_profile", gamer_tag=p.gamer_tag))
+        p.gamer_tag = requested_tag
         p.bio = request.form.get("bio", "").strip()
         p.platform = request.form.get("platform", "PC").strip()
         p.city = request.form.get("city", "").strip()[:80]

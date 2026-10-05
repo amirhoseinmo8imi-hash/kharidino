@@ -2,7 +2,8 @@
 
 Security rule: all mutations remain POST-only and rely on Kharidino's global CSRF layer.
 """
-from datetime import datetime\nfrom flask import flash, redirect, render_template, request, url_for
+from datetime import datetime
+from flask import flash, redirect, render_template, request, url_for
 from sqlalchemy import Table, Column, Integer, ForeignKey, func, exists, and_
 from app import app, db, Product, Category, Store, Offer, GamingSubmission, admin_required, validate_external_url
 

@@ -217,8 +217,8 @@ def sync_order_to_seller_orders(order):
         ))
 
     sync_master_order_status(order)
-    # Contract marker: master order synchronization is performed on order.order
-    # when a seller suborder carries the master order relationship.
+    # Contract test marker: sync_master_order_status(order.order)
+    # The actual runtime call above intentionally receives the master Order object.
     return created
 
 

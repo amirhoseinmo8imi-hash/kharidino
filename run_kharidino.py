@@ -45,7 +45,19 @@ from inventory_hardening import apply_inventory_security
 from checkout_preflight import apply_checkout_preflight
 from checkout_idempotency import apply_checkout_idempotency
 from commerce_extensions_v2 import apply_commerce_extensions
-from commerce_catalog import apply_catalog_extensions
+# commerce_catalog also gets imported by some isolated test/runtime paths.
+# Avoid re-registering its Flask endpoints when they are already present.
+if "catalog_products" in app.view_functions:
+    def apply_catalog_extensions(flask_app):
+        brand_count = getattr(flask_app.jinja_env, "globals", {}).get("catalog_brand_count")
+        if brand_count is None:
+            try:
+                from commerce_catalog import Brand
+                flask_app.jinja_env.globals["catalog_brand_count"] = lambda: Brand.query.filter_by(active=True).count()
+            except Exception:
+                pass
+else:
+    from commerce_catalog import apply_catalog_extensions
 from order_state_machine import apply_order_state_machine
 from order_cancellation import apply_order_cancellation
 from payment import apply_payment

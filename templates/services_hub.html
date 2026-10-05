@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}مرکز خدمات خریدینو | خرید، خودرو، گیمینگ و خدمات{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-service-hub-2026.css', v='2026-10-05-1') }}">{% endblock %}
+{% block content %}
+<div class="kh-services">
+  <section class="kh-services-hero">
+    <div><span>KHARIDINO ECOSYSTEM</span><h1>همه‌چیز در <strong>خریدینو</strong>، هر بخش جای خودش</h1><p>خرید کالا، مقایسه قیمت، بازار خودرو، گیمینگ، بازار تازه و خدمات بیمه با یک حساب کاربری و تجربه یکپارچه.</p></div>
+    <div class="kh-services-orbit"><i class="fa-solid fa-cart-shopping"></i><b>خریدینو</b><small>یک حساب · چند بازار · یک تجربه</small></div>
+  </section>
+
+  <section class="kh-services-section"><div class="kh-services-heading"><span>MARKETPLACES</span><h2>بازارهای اصلی</h2></div><div class="kh-services-grid">
+    <a class="kh-service-card commerce" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-box-open"></i><div><h3>فروشگاه و کالا</h3><p>محصولات، دسته‌بندی‌ها، فروشگاه‌ها و مقایسه قیمت.</p></div><em>ورود ←</em></a>
+    <a class="kh-service-card vehicle" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><div><h3>بازار خودرو</h3><p>آگهی خودرو، فیلتر حرفه‌ای و ارتباط خریدار و فروشنده.</p></div><em>ورود ←</em></a>
+    <a class="kh-service-card gaming" href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><div><h3>Gaming Club</h3><p>پروفایل گیمر، تیم، Matchmaking، تورنمنت و بازار گیمینگ.</p></div><em>ورود ←</em></a>
+    <a class="kh-service-card fresh" href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><div><h3>میوه و تازه</h3><p>میوه، سبزی، خشکبار و فروشنده‌های محلی.</p></div><em>ورود ←</em></a>
+  </div></section>
+
+  <section class="kh-services-section"><div class="kh-services-heading"><span>SERVICES</span><h2>خدمات خریدینو</h2></div><div class="kh-services-grid kh-services-grid--small">
+    <a class="kh-service-card service" href="{{ url_for('insurance_hub') }}"><i class="fa-solid fa-shield-halved"></i><div><h3>بیمه</h3><p>دسترسی و مقایسه سرویس‌های بیمه آنلاین.</p></div><em>ورود ←</em></a>
+    <a class="kh-service-card service" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><div><h3>مقایسه قیمت</h3><p>مقایسه پیشنهاد فروشنده‌ها برای انتخاب بهتر.</p></div><em>ورود ←</em></a>
+    <a class="kh-service-card service" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><div><h3>فروشگاه‌ها</h3><p>مشاهده فروشنده‌ها و پیشنهادهای آن‌ها.</p></div><em>ورود ←</em></a>
+    <a class="kh-service-card service" href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><div><h3>فروشنده شوید</h3><p>ثبت فروشگاه و ورود به اکوسیستم فروش خریدینو.</p></div><em>ثبت ←</em></a>
+  </div></section>
+
+  <section class="kh-services-account"><div><span>ONE KHARIDINO ACCOUNT</span><h2>یک حساب برای همه بخش‌ها</h2><p>حساب کاربری، سفارش‌ها، سبد خرید، اعلان‌ها و دسترسی‌های شما در یک هویت واحد مدیریت می‌شود.</p></div><div class="kh-account-pills"><b>👤 حساب کاربری</b><b>🛒 سفارش و سبد</b><b>🔔 اعلان‌ها</b><b>🏪 فروشندگی</b><b>🎮 پروفایل گیمر</b><b>🚗 آگهی خودرو</b></div></section>
+</div>
+{% endblock %}

@@ -13,7 +13,7 @@
       {% if messages %}
         {% for message in messages %}
         <div class="vehicle-chat-message {% if message.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
-          <div>{{ message.body|e|replace('\n','<br>')}}</div>
+          <div class="vehicle-chat-message-body">{{ message.body|e }}</div>
           <small>{{ message.created_at.strftime('%Y/%m/%d %H:%M') if message.created_at else '' }}</small>
         </div>
         {% endfor %}

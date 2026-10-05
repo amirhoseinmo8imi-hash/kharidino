@@ -516,7 +516,8 @@ def register_gaming(app, db, User):
         achievements = GamingAchievement.query.filter_by(user_id=profile.user_id).order_by(GamingAchievement.earned_at.desc()).all()
         followers = GamerFollow.query.filter_by(followed_id=profile.user_id).count()
         following = GamerFollow.query.filter_by(follower_id=profile.user_id).count()
-        teams = GamingTeamMember.query.filter_by(user_id=profile.user_id).all()\n        player_items = GamingPlayerItem.query.filter_by(user_id=profile.user_id).order_by(GamingPlayerItem.id.desc()).all()
+        teams = GamingTeamMember.query.filter_by(user_id=profile.user_id).all()
+        player_items = GamingPlayerItem.query.filter_by(user_id=profile.user_id).order_by(GamingPlayerItem.id.desc()).all()
         is_following = bool(logged_user() and GamerFollow.query.filter_by(follower_id=logged_user().id, followed_id=profile.user_id).first())
         return render_template("gaming/profile.html", profile=profile, stats=stats, achievements=achievements,
                                followers=followers, following=following, teams=teams, player_items=player_items, is_following=is_following)

@@ -95,9 +95,11 @@ def register_gaming_marketplace(app, db, User, Product, Category):
         user = logged_user()
         if not user: return redirect(url_for("login", next="/gaming/store/create"))
         if request.method == "POST":
-            name = request.form.get("name", "").strip()
-            try: price = max(0, int(request.form.get("price", "0") or 0))
-            except (TypeError, ValueError): price = 0
+            name = request.form.get("name", "").strip()[:180]
+            try:
+                price = max(0, int(request.form.get("price", "0") or 0))
+            except (TypeError, ValueError):
+                price = 0
             if not name or price <= 0:
                 flash("نام کالا و قیمت معتبر الزامی است.", "danger")
                 return redirect(url_for("gaming_store_create"))
@@ -116,11 +118,12 @@ def register_gaming_marketplace(app, db, User, Product, Category):
                 region=request.form.get("region", "").strip(),
                 activation=request.form.get("activation", "").strip(),
                 warranty=request.form.get("warranty", "").strip(),
-                stock=max(0, int(request.form.get("stock", "1") or 1)),
-                status="pending", specs=request.form.get("specs", "").strip())
-            db.session.add(meta); db.session.commit()
-            flash("آگهی گیمینگ با موفقیت در بازار خریدینو ثبت شد.", "success")
-            return redirect(url_for("gaming_store_detail", listing_id=meta.id))
+                stock=max(0, min(1000000, int(request.form.get("stock", "1") or 1))),
+                status="pending", specs=request.form.get("specs", "").strip()[:10000])
+            db.session.add(meta)
+            db.session.commit()
+            flash("آگهی گیمینگ ثبت شد و پس از تأیید مدیریت منتشر می‌شود.", "success")
+            return redirect(url_for("gaming_seller"))
         return render_template("gaming/store_create.html")
 
     @app.get("/gaming/seller")
@@ -173,8 +176,7 @@ def register_gaming_marketplace(app, db, User, Product, Category):
             report_model = db.Model.registry._class_registry.get("GamingReport")
             if report_model: stats["reports"] = report_model.query.filter_by(status="open").count()
         except Exception: pass
-        return render_template("gaming/admin.html", stats=stats,
-                               recent=GamingProductMeta.query.order_by(GamingProductMeta.id.desc()).limit(30).all())
+        return redirect(url_for("gaming_control"))
 
     @app.post("/admin/gaming/listing/<int:listing_id>")
     def gaming_admin_listing(listing_id):

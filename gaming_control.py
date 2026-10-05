@@ -29,7 +29,10 @@ def register_gaming_control(app, db, User):
         if not user or user.role != "admin": abort(403)
         meta = db.session.get(Meta, listing_id) if Meta else None
         if not meta: abort(404)
-        meta.status = request.form.get("status", meta.status).strip()
+        requested = request.form.get("status", meta.status).strip().lower()
+        if requested not in {"pending", "approved", "rejected", "paused"}:
+            requested = meta.status
+        meta.status = requested
         meta.seller_verified = request.form.get("seller_verified") == "1"
         db.session.commit()
         return redirect(url_for("gaming_control"))

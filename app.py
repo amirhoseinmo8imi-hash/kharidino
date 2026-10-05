@@ -6617,6 +6617,14 @@ register_gaming_control(app, db, User)
 # the Premium header and seller workspace.
 import merchant_marketplace  # noqa: F401
 
+# Keep the Premium seller entry point available even if a deployment has
+# already imported the merchant module without registering its decorator.
+# The guard prevents an endpoint collision when the canonical route exists.
+if "seller_register" not in app.view_functions:
+    @app.route("/seller/register", methods=["GET", "POST"], endpoint="seller_register")
+    def seller_register_fallback():
+        return merchant_marketplace.seller_register()
+
 # =========================================================
 # VEHICLE CLASSIFIEDS MODULE
 # =========================================================

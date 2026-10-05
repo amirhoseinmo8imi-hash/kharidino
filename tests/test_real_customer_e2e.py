@@ -29,8 +29,6 @@ with app.app_context():
     db.create_all()
 CSRF_RE = re.compile(r'name=["\']csrf-token["\']\s+content=["\']([^"\']+)', re.I)
 CHECKOUT_NONCE_RE = re.compile(r'name=["\']checkout_nonce["\']\s+value=["\']([^"\']+)', re.I)
-CSRF_RE = re.compile(r'name=["\\']csrf-token["\\']\\s+content=["\\']([^"\\']+)', re.I)
-CHECKOUT_NONCE_RE = re.compile(r'name=["\\']checkout_nonce["\\']\\s+value=["\\']([^"\\']+)', re.I)
 ORIGIN = "http://localhost"
 
 

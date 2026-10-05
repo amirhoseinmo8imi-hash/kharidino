@@ -73,3 +73,10 @@ def test_gaming_post_forms_expose_runtime_csrf_token():
         body = response.get_data(as_text=True)
         if "<form" in body and "method=\"post\"" in body.lower():
             assert 'name="csrf_token"' in body
+
+def test_core_shell_routes_render_without_endpoint_errors():
+    client = app.test_client()
+    seller = client.get("/seller/register")
+    assert seller.status_code == 200
+    favicon = client.get("/favicon.ico")
+    assert favicon.status_code in {200, 301, 302}

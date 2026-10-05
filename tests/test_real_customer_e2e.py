@@ -29,13 +29,20 @@ with app.app_context():
     db.create_all()
 
 
-CSRF_RE = re.compile(r'name=["\']csrf-token["\']\s+content=["\']([^"\']+)', re.I)
+CSRF_RE = re.compile(r'name=["\\']csrf-token["\\']\\s+content=["\\']([^"\\']+)', re.I)
+CHECKOUT_NONCE_RE = re.compile(r'name=["\\']checkout_nonce["\\']\\s+value=["\\']([^"\\']+)', re.I)
 ORIGIN = "http://localhost"
 
 
 def _csrf(response):
     match = CSRF_RE.search(response.get_data(as_text=True))
     assert match, "rendered page did not expose the runtime CSRF token"
+    return match.group(1)
+
+
+def _checkout_nonce(response):
+    match = CHECKOUT_NONCE_RE.search(response.get_data(as_text=True))
+    assert match, "rendered checkout page did not expose the checkout nonce"
     return match.group(1)
 
 
@@ -127,7 +134,8 @@ def test_real_0_to_100_customer_journey_with_security_and_payment():
         "/checkout",
         data={
             "csrf_token": _csrf(checkout),
-            "customer_name": "E2E Customer",
+                "checkout_nonce": _checkout_nonce(checkout),
+                "customer_name": "E2E Customer",
             "phone": "09120000000",
             "address": "آدرس تست ۱، پلاک ۱",
             "note": "runtime e2e",

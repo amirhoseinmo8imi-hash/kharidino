@@ -6680,8 +6680,14 @@ def internal_server_error(error):
 
 
 with app.app_context():
-    # Importing app no longer seeds demo data; launchers handle explicit initialization.
     db.create_all()
+    # Seed the Gaming showcase after all Gaming tables exist. The seed is idempotent
+    # and only fills missing demo content, teams, tournaments, players and items.
+    try:
+        seed_gaming()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Gaming showcase seed failed during startup")
 
 
 # =========================================================

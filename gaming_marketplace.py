@@ -3,6 +3,12 @@ from flask import render_template, request, session, redirect, url_for, flash, a
 from sqlalchemy import or_
 
 def register_gaming_marketplace(app, db, User, Product, Category):
+    # Keep registration idempotent: app.py can be imported repeatedly by pytest
+    # and development reloaders, while SQLAlchemy metadata must only register
+    # these models/tables once per Flask app instance.
+    if getattr(app, "_kharidino_gaming_marketplace_registered", False):
+        return getattr(app, "_kharidino_gaming_marketplace_result", None)
+
     class GamingProductMeta(db.Model):
         __tablename__ = "gaming_product_meta"
         id = db.Column(db.Integer, primary_key=True)
@@ -182,4 +188,6 @@ def register_gaming_marketplace(app, db, User, Product, Category):
         return redirect(url_for("gaming_admin"))
 
     app.jinja_env.globals["gaming_product_meta_model"] = GamingProductMeta
+    app._kharidino_gaming_marketplace_registered = True
+    app._kharidino_gaming_marketplace_result = GamingProductMeta
     return GamingProductMeta

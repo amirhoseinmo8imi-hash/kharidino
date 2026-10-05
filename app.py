@@ -6642,9 +6642,20 @@ register_vehicle_chat(app, db, User, login_required)
 def inject_request_helpers():
     return {"canonical_url": request.base_url}
 
+@app.route("/favicon.ico")
+def favicon():
+    """Serve the browser favicon explicitly so a missing icon never enters the 404 renderer."""
+    return redirect(url_for("static", filename="icons/icon-192.svg"))
+
+
 @app.errorhandler(404)
 def page_not_found(error):
-    return render_template("404.html"), 404
+    try:
+        return render_template("404.html"), 404
+    except Exception:
+        # Error pages must never recurse into another template/routing failure.
+        app.logger.exception("Failed to render Kharidino 404 page")
+        return "صفحه موردنظر پیدا نشد.", 404
 
 @app.errorhandler(413)
 def request_entity_too_large(error):
@@ -6654,7 +6665,12 @@ def request_entity_too_large(error):
 def internal_server_error(error):
     db.session.rollback()
     app.logger.exception("Unhandled Kharidino server error")
-    return render_template("404.html", error_message="خطای داخلی رخ داد. لطفاً دوباره تلاش کن."), 500
+    try:
+        return render_template("404.html", error_message="خطای داخلی رخ داد. لطفاً دوباره تلاش کن."), 500
+    except Exception:
+        # Keep the 500 handler terminal even when a shared layout has a broken endpoint.
+        app.logger.exception("Failed to render Kharidino 500 page")
+        return "خطای داخلی سرور خریدینو.", 500
 
 
 with app.app_context():

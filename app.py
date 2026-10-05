@@ -988,7 +988,7 @@ def validate_csrf():
             session["_kharidino_csrf_token"] = str(submitted)
             session.modified = True
             return None
-        abort(400, description="CSRF token is missing or invalid.")
+        abort(403, description="CSRF token is missing or invalid.")
 
     if not submitted or not secrets.compare_digest(
         str(submitted), str(expected)
@@ -1007,7 +1007,7 @@ def validate_csrf():
             session["csrf_token"] = str(submitted)
             session.modified = True
             return None
-        abort(400, description="CSRF token is missing or invalid.")
+        abort(403, description="CSRF token is missing or invalid.")
 
     return None
 

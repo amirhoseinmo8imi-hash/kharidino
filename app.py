@@ -6563,6 +6563,17 @@ def seed():
 
 
 # =========================================================
+# GAMING CLUB + GAMING MARKETPLACE MODULES
+# =========================================================
+from gaming import register_gaming
+from gaming_marketplace import register_gaming_marketplace
+from gaming_control import register_gaming_control
+
+seed_gaming = register_gaming(app, db, User)
+register_gaming_marketplace(app, db, User, Product, Category)
+register_gaming_control(app, db, User)
+
+# =========================================================
 # VEHICLE CLASSIFIEDS MODULE
 # =========================================================
 from vehicle_marketplace import register_vehicle_marketplace, seed_demo_vehicle_ads

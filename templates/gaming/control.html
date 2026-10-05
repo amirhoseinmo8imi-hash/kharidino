@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Gaming Control Center{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-gaming.css', v='2026-10-04-4') }}">{% endblock %}
+{% block content %}
+<div class="gaming-page">
+<section class="gaming-hero pro-hero"><div><span class="eyebrow">GAMING CONTROL CENTER</span><h1>مدیریت اکوسیستم گیمینگ</h1><p>کنترل آگهی‌ها، فروشنده‌ها و وضعیت بازار گیمینگ.</p></div><div class="hero-orbit"><div class="orbit-core">KG</div></div></section>
+<div class="admin-stat-grid">{% for k,v in [('آگهی‌ها',stats.listings),('تأییدشده',stats.approved),('در انتظار',stats.pending),('فروشنده‌ها',stats.sellers),('گزارش باز',stats.reports)] %}<div class="gaming-panel"><strong>{{v}}</strong><span>{{k}}</span></div>{% endfor %}</div>
+<div class="gaming-panel"><h2>آخرین آگهی‌ها</h2>{% for m in recent %}<div class="admin-row"><div><b>{{m.product.name}}</b><small>{{m.platform}} · {{m.item_type}} · {{m.seller.name}}</small></div><form method="post" action="{{url_for('gaming_admin_listing',listing_id=m.id)}}"><select name="status"><option value="approved" {% if m.status=='approved' %}selected{% endif %}>فعال</option><option value="pending" {% if m.status=='pending' %}selected{% endif %}>در انتظار</option><option value="rejected" {% if m.status=='rejected' %}selected{% endif %}>رد</option></select><label><input type="checkbox" name="seller_verified" value="1" {% if m.seller_verified %}checked{% endif %}> تأیید فروشنده</label><button class="gaming-btn primary">ذخیره</button></form></div>{% endfor %}</div>
+</div>
+{% endblock %}

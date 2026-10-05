@@ -4039,8 +4039,16 @@ def checkout():
             "success"
         )
 
+        # Continue directly into payment for paid orders.
+        if int(order.total or 0) > 0 and app.view_functions.get("payment_start_form"):
+            return redirect(
+                url_for("payment_start_form", order_id=order.id),
+                code=303,
+            )
+
         return redirect(
-            url_for("my_orders")
+            url_for("my_orders"),
+            code=303,
         )
 
     # =====================================================

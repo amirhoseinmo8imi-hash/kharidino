@@ -6584,6 +6584,13 @@ def seed():
 
 
 # =========================================================
+# COMMERCE CATALOG EXTENSIONS
+# =========================================================
+# Register catalog routes before /gaming is exercised. The module imports
+# app/db models from this fully initialized module, so keep this import late.
+import commerce_catalog  # noqa: F401
+
+# =========================================================
 # GAMING CLUB + GAMING MARKETPLACE MODULES
 # =========================================================
 from gaming import register_gaming

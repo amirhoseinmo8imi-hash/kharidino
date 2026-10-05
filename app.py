@@ -2320,7 +2320,7 @@ def home():
         category_id=category_id,
         selected_category=selected_category,
         lowest_price=lowest_price,
-        brands=sorted({brand for product in filtered for brand in getattr(product, "brands", [])}, key=lambda item: item.name.lower()),
+        brands=sorted({brand for product in products for brand in getattr(product, "brands", [])}, key=lambda item: item.name.lower()),
         vehicle_ads=vehicle_ads
     )
 

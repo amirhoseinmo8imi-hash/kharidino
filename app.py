@@ -3464,13 +3464,16 @@ def admin_gaming_submission_action(submission_id, action):
 
 @app.route("/gaming")
 def gaming_hub():
-    # Keep /gaming as the canonical public Gaming entry point without issuing
-    # a redirect. This preserves query-string filters and makes the hub render
-    # as a normal 200 page for clients, crawlers, and smoke tests.
+    # /gaming is also registered by gaming.py. Prefer that fully featured
+    # Gaming Club hub when available, and fall back to the commerce catalog
+    # extension so the public entry point never becomes a dead 503 endpoint.
+    gaming_view = app.view_functions.get("gaming")
+    if gaming_view is not None:
+        return gaming_view()
     catalog_view = app.view_functions.get("gaming_market_catalog")
-    if catalog_view is None:
-        return ("Gaming catalog is unavailable.", 503)
-    return catalog_view()
+    if catalog_view is not None:
+        return catalog_view()
+    return ("Gaming service is unavailable.", 503)
 
 
 # =========================================================
@@ -6605,6 +6608,14 @@ from gaming_control import register_gaming_control
 seed_gaming = register_gaming(app, db, User)
 register_gaming_marketplace(app, db, User, Product, Category)
 register_gaming_control(app, db, User)
+
+# =========================================================
+# MERCHANT / SELLER MARKETPLACE MODULE
+# =========================================================
+# Register seller onboarding after the core app objects and helper functions
+# exist. The module owns the canonical /seller/register endpoint referenced by
+# the Premium header and seller workspace.
+import merchant_marketplace  # noqa: F401
 
 # =========================================================
 # VEHICLE CLASSIFIEDS MODULE

@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import render_template, request, session, redirect, url_for, flash
-from sqlalchemy import or_, func, and_\nfrom werkzeug.security import generate_password_hash
+from sqlalchemy import or_, func, and_
+from werkzeug.security import generate_password_hash
 
 def register_gaming(app, db, User):
     # Keep registration idempotent for pytest imports and development reloads.

@@ -107,6 +107,10 @@ def register_gaming_marketplace(app, db, User, Product, Category):
             product = Product(name=name, description=request.form.get("description", "").strip(),
                               price=price, category_id=category.id, active=True)
             db.session.add(product); db.session.flush()
+            try:
+                stock = max(0, min(1000000, int(request.form.get("stock", "1") or 1)))
+            except (TypeError, ValueError):
+                stock = 1
             meta = GamingProductMeta(
                 product_id=product.id, seller_id=user.id,
                 item_type=request.form.get("item_type", "game").strip(),
@@ -118,7 +122,7 @@ def register_gaming_marketplace(app, db, User, Product, Category):
                 region=request.form.get("region", "").strip(),
                 activation=request.form.get("activation", "").strip(),
                 warranty=request.form.get("warranty", "").strip(),
-                stock=max(0, min(1000000, int(request.form.get("stock", "1") or 1))),
+                stock=stock,
                 status="pending", specs=request.form.get("specs", "").strip()[:10000])
             db.session.add(meta)
             db.session.commit()

@@ -1,4 +1,5 @@
 import os
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -16,7 +17,7 @@ def test_reconciliation_passes_for_balanced_paid_refunded_flow():
     with app.app_context():
         PaymentTransaction = app.extensions["kharidino_payment_transaction"]
         from financial_reconciliation import reconcile_payment, reconcile_ledger
-        user = User(name="Recon Pass", email="recon-pass@example.invalid", password="x", role="admin")
+        user = User(name="Recon Pass", email=f"recon-pass-{uuid.uuid4().hex}@example.invalid", password="x", role="admin")
         store = Store(name="Recon Pass Store", active=True)
         db.session.add_all([user, store]); db.session.flush()
         order = Order(user_id=user.id, total=100_000, status="تأیید شد", customer_name="Recon", phone="09121111111", address="Test")

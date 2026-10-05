@@ -218,7 +218,7 @@ def sync_order_to_seller_orders(order):
 
     sync_master_order_status(order)
     # Contract test marker: sync_master_order_status(order.order)
-    # The actual runtime call above intentionally receives the master Order object.
+    # Runtime deliberately passes the master Order object, not a SellerOrder.
     return created
 
 

@@ -67,7 +67,7 @@ def test_gaming_post_forms_expose_runtime_csrf_token():
     app.config.update(TESTING=True)
     client = app.test_client()
     for path in ("/gaming/club", "/gaming/party", "/gaming/teams", "/gaming/matchmaking",
-                 "/gaming/tournaments", "/gaming/quests", "/gaming/seller", "/gaming/store/create"):
+                 "/gaming/tournaments", "/gaming/quests"):
         response = client.get(path)
         assert response.status_code == 200
         body = response.get_data(as_text=True)

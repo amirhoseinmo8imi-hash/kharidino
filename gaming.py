@@ -3,6 +3,10 @@ from flask import render_template, request, session, redirect, url_for, flash
 from sqlalchemy import or_, func, and_
 
 def register_gaming(app, db, User):
+    # Keep registration idempotent for pytest imports and development reloads.
+    if getattr(app, "_kharidino_gaming_registered", False):
+        return getattr(app, "_kharidino_gaming_seed", None)
+
     class GamingGame(db.Model):
         __tablename__ = "gaming_game"
         id = db.Column(db.Integer, primary_key=True)
@@ -752,4 +756,6 @@ def register_gaming(app, db, User):
                 db.session.add(GamingPost(title=x[0],body=x[1],game=x[2],post_type=x[3]))
         db.session.commit()
 
+    app._kharidino_gaming_registered = True
+    app._kharidino_gaming_seed = seed_gaming
     return seed_gaming

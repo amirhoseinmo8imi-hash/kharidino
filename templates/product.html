@@ -203,7 +203,7 @@
             <a class="kh-related-card" href="{{ url_for('product_detail', product_id=p.id) }}">
               {% if p.image %}<img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy">{% else %}<div class="kh-related-placeholder"><i class="fa-solid fa-box"></i></div>{% endif %}
               <strong>{{ p.name }}</strong>
-              <span>{{ lowest_price(p)|money }} تومان</span>
+              <span>{{ p.price|money }} تومان</span>
             </a>
             {% endfor %}
           </div>

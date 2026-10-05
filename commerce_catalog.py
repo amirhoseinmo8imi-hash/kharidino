@@ -92,7 +92,7 @@ def inject_catalog_globals():
     return {"home_banners": _active_banners("home")}
 
 
-@app.get("/catalog/products")
+@app.get("/catalog/products-extended", endpoint="catalog_products_extension")
 def catalog_products():
     q = (request.args.get("q") or "").strip()[:100]
     brand_slug = (request.args.get("brand") or "").strip()[:140]
@@ -184,7 +184,7 @@ def catalog_products():
     def page_url(target_page):
         args = request.args.to_dict(flat=True)
         args["page"] = target_page
-        return url_for("catalog_products", **args)
+        return url_for("catalog_products_extension", **args)
 
     return render_template(
         "catalog_products.html",

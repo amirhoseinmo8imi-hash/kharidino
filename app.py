@@ -3464,8 +3464,13 @@ def admin_gaming_submission_action(submission_id, action):
 
 @app.route("/gaming")
 def gaming_hub():
-    # The specialized catalog lives in commerce_catalog.py; keep /gaming as the public entry point.
-    return redirect(url_for("gaming_market_catalog", **request.args.to_dict(flat=True)))
+    # Keep /gaming as the canonical public Gaming entry point without issuing
+    # a redirect. This preserves query-string filters and makes the hub render
+    # as a normal 200 page for clients, crawlers, and smoke tests.
+    catalog_view = app.view_functions.get("gaming_market_catalog")
+    if catalog_view is None:
+        return ("Gaming catalog is unavailable.", 503)
+    return catalog_view()
 
 
 # =========================================================

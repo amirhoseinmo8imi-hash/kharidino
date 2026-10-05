@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import render_template, request, session, redirect, url_for, flash
-from sqlalchemy import or_, func, and_
+from sqlalchemy import or_, func, and_\nfrom werkzeug.security import generate_password_hash
 
 def register_gaming(app, db, User):
     # Keep registration idempotent for pytest imports and development reloads.
@@ -69,6 +69,17 @@ def register_gaming(app, db, User):
         verified = db.Column(db.Boolean, default=False)
         wins = db.Column(db.Integer, default=0)
         reputation = db.Column(db.Integer, default=100)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    class GamingPlayerItem(db.Model):
+        __tablename__ = "gaming_player_item"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        name = db.Column(db.String(120), nullable=False)
+        rarity = db.Column(db.String(40), default="Rare")
+        icon = db.Column(db.String(20), default="🎮")
+        description = db.Column(db.String(300), default="")
+        equipped = db.Column(db.Boolean, default=True)
         created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     class GamingTeamMember(db.Model):
@@ -504,10 +515,10 @@ def register_gaming(app, db, User):
         achievements = GamingAchievement.query.filter_by(user_id=profile.user_id).order_by(GamingAchievement.earned_at.desc()).all()
         followers = GamerFollow.query.filter_by(followed_id=profile.user_id).count()
         following = GamerFollow.query.filter_by(follower_id=profile.user_id).count()
-        teams = GamingTeamMember.query.filter_by(user_id=profile.user_id).all()
+        teams = GamingTeamMember.query.filter_by(user_id=profile.user_id).all()\n        player_items = GamingPlayerItem.query.filter_by(user_id=profile.user_id).order_by(GamingPlayerItem.id.desc()).all()
         is_following = bool(logged_user() and GamerFollow.query.filter_by(follower_id=logged_user().id, followed_id=profile.user_id).first())
         return render_template("gaming/profile.html", profile=profile, stats=stats, achievements=achievements,
-                               followers=followers, following=following, teams=teams, is_following=is_following)
+                               followers=followers, following=following, teams=teams, player_items=player_items, is_following=is_following)
 
     @app.get("/gaming/game/<slug>")
     def gaming_game(slug):
@@ -766,6 +777,10 @@ def register_gaming(app, db, User):
                 ("Night Raiders","NR","Valorant","PC","Ascendant","مشهد"),
                 ("Persian Legends","PL","EA Sports FC 26","PlayStation","Elite","شیراز"),
                 ("Desert Foxes","DF","Call of Duty Warzone","PC","Diamond","تبریز"),
+                ("Tehran Titans","TT","Apex Legends","PC","Master","تهران"),
+                ("Mashhad Storm","MS","Fortnite","PC","Champion","مشهد"),
+                ("Shiraz Phoenix","SP","Rocket League","PC","Grand Champion","شیراز"),
+                ("Caspian Guardians","CG","PUBG","PC","Conqueror","رشت"),
             ]:
                 db.session.add(GamingTeam(name=n,tag=tag,game=g,platform=p,rank=r,city=c,description="تیم رقابتی کلاب خریدینو",wins=10,reputation=120))
         if GamingTournament.query.count() == 0:
@@ -775,6 +790,38 @@ def register_gaming(app, db, User):
                 ("Valorant Night","Valorant","PC","جوایز تیمی","به‌زودی","۱۴۰۵/۰۹/۰۵",32),
             ]:
                 db.session.add(GamingTournament(title=x[0],game=x[1],platform=x[2],prize=x[3],status=x[4],date_text=x[5],max_players=x[6]))
+        # Demo gaming roster: safe, non-login seed accounts for a lively showcase.
+        player_specs = [
+            ("Arman","Arman_Wolf","Counter-Strike 2","PC","Global Elite","⚔️ AWP Phantom","Legendary"),
+            ("Nima","NimaRush","Valorant","PC","Immortal 3","🎯 Neon Aim","Epic"),
+            ("Sina","SinaKing","EA Sports FC 26","PlayStation","Elite","👑 Golden Striker","Legendary"),
+            ("Pouya","PouyaX","Call of Duty Warzone","PC","Crimson","🪖 Warzone Loadout","Epic"),
+            ("Reza","RezaDrive","Forza Horizon 5","Xbox","S2 Elite","🏎️ Turbo Falcon","Rare"),
+            ("Amir","AmirBuilds","Minecraft","PC","Builder","⛏️ Nether Pickaxe","Epic"),
+            ("Milad","MiladRocket","Rocket League","PC","Champion","🚀 Rocket Boost","Rare"),
+            ("Navid","NavidPUBG","PUBG","PC","Ace Master","🛡️ Chicken Dinner Badge","Legendary"),
+        ]
+        for name,tag,game,platform,rank,item_name,rarity in player_specs:
+            email=f"gaming.demo.{tag.lower()}@example.invalid"
+            user=User.query.filter_by(email=email).first()
+            if not user:
+                user=User(name=name,email=email,password=generate_password_hash("demo-only-disabled"),role="user")
+                db.session.add(user); db.session.flush()
+            profile=GamerProfile.query.filter_by(user_id=user.id).first()
+            if not profile:
+                profile=GamerProfile(user_id=user.id,gamer_tag=tag,platform=platform,level=20,xp=9500,reputation=150,status="online",favorite_games=game)
+                db.session.add(profile); db.session.flush()
+            if not GamingGameStat.query.filter_by(user_id=user.id,game=game,platform=platform).first():
+                db.session.add(GamingGameStat(user_id=user.id,game=game,platform=platform,rank=rank,wins=42,losses=12,hours=320,mmr=1800))
+            if not GamingPlayerItem.query.filter_by(user_id=user.id).first():
+                db.session.add(GamingPlayerItem(user_id=user.id,name=item_name,rarity=rarity,description=f"آیتم نمایشی اختصاصی {tag}",equipped=True))
+        db.session.flush()
+        seeded_players=GamerProfile.query.filter(GamerProfile.gamer_tag.in_([x[1] for x in player_specs])).all()
+        seeded_teams=GamingTeam.query.order_by(GamingTeam.id.asc()).limit(8).all()
+        for idx, profile in enumerate(seeded_players):
+            team=seeded_teams[idx % len(seeded_teams)] if seeded_teams else None
+            if team and not GamingTeamMember.query.filter_by(team_id=team.id,user_id=profile.user_id).first():
+                db.session.add(GamingTeamMember(team_id=team.id,user_id=profile.user_id,role="member"))
         if GamingPost.query.count() == 0:
             for x in [
                 ("بهترین تنظیمات FPS برای سیستم متوسط","تنظیمات بهینه برای فریم پایدار و رقابتی.","Counter-Strike 2","guide"),

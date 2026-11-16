@@ -110,6 +110,14 @@ Responsive Web       Native Android (Kotlin + Jetpack Compose)
 4. Implement foundation changes on a feature branch, beginning with tests and migrations.
 5. Do not deploy, change payment credentials, publish content or modify production data without an explicit release decision.
 
+
+## Iran-first launch profile
+- Initial launch market is Iran. Prioritize Persian RTL UX, Iranian mobile-number normalization, local address/postal-code forms, local delivery and customer support.
+- All monetary records must carry an explicit currency. For the initial market, use integer rial (IRR) as the canonical backend/payment unit and display toman in customer UI (1 toman = 10 rial). Centralize conversion and formatting; verify each payment provider's exact amount unit before integration.
+- Keep payment, SMS/OTP, shipping and invoicing providers behind adapters. Provider selection depends on merchant eligibility, contracts, fees, settlement and credentials; use sandbox mode first.
+- Order creation and payment confirmation are separate states. Verify callbacks server-to-server, use idempotency and unique provider references, and never trust a client redirect as proof of payment.
+- Before public launch, confirm applicable local requirements for e-commerce, privacy, consumer protection, tax/invoicing, seller identity, licensed media and payment processing with qualified local counsel/providers.
+
 ## 8. Assumptions still to confirm
 - Initial launch country/market, currencies, payment providers, delivery partners and legal entity.
 - Cinema licensing territories, rights windows and business model (subscription, rental, purchase, ads or mixed).

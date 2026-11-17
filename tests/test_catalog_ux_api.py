@@ -83,3 +83,41 @@ def test_catalog_pagination_caps_page_size():
     data = response.get_json()
     assert data["per_page"] == 40
     assert data["pages"] == 1
+
+
+
+def test_catalog_compare_returns_active_store_offers_sorted_by_price():
+    app = make_app()
+    cheap_id, expensive_id, _ = seed_catalog(app)
+
+    response = app.test_client().get(f"/api/catalog/compare?ids={expensive_id},{cheap_id}")
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["count"] == 2
+    assert [item["id"] for item in data["items"]] == [expensive_id, cheap_id]
+    expensive = data["items"][0]
+    assert expensive["lowest_offer_price"] == 8000
+    assert expensive["highest_offer_price"] == 8000
+    assert expensive["offer_count"] == 1
+    assert expensive["offers"][0]["store"] == "Active Store"
+
+
+def test_catalog_compare_requires_two_to_four_distinct_ids():
+    app = make_app()
+    client = app.test_client()
+
+    assert client.get("/api/catalog/compare?ids=1").status_code == 400
+    assert client.get("/api/catalog/compare?ids=1,1").status_code == 400
+    assert client.get("/api/catalog/compare?ids=1,2,3,4,5").status_code == 400
+    assert client.get("/api/catalog/compare?ids=one,two").status_code == 400
+
+
+def test_catalog_compare_does_not_expose_inactive_products():
+    app = make_app()
+    cheap_id, _, hidden_id = seed_catalog(app)
+
+    response = app.test_client().get(f"/api/catalog/compare?ids={cheap_id},{hidden_id}")
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "products_not_found"

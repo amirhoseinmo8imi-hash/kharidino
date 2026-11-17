@@ -11,7 +11,7 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, flash, redirect, render_template, request, session, url_for
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
@@ -113,11 +113,12 @@ def register_explore(app, db, User, Product, login_required, admin_required):
                  .offset((page - 1) * 12).limit(12).all())
         liked_ids = set()
         pending_posts = []
-        if getattr(__import__("flask").g, "current_user", None):
+        current_user = db.session.get(User, session.get("user_id")) if session.get("user_id") else None
+        if current_user:
             liked_ids = {row.post_id for row in ExploreLike.query.filter_by(
-                user_id=__import__("flask").g.current_user.id
+                user_id=current_user.id
             ).filter(ExploreLike.post_id.in_([post.id for post in posts])).all()} if posts else set()
-            if __import__("flask").g.current_user.role == "admin":
+            if current_user.role == "admin":
                 pending_posts = ExplorePost.query.filter_by(status="pending").order_by(
                     ExplorePost.created_at.asc()
                 ).limit(30).all()
@@ -144,7 +145,7 @@ def register_explore(app, db, User, Product, login_required, admin_required):
             if product_id and (not product or not product.active):
                 raise ValueError("محصول انتخاب‌شده معتبر یا فعال نیست.")
             post = ExplorePost(
-                user_id=__import__("flask").g.current_user.id,
+                user_id=session["user_id"],
                 product_id=product.id if product else None,
                 caption=caption,
                 media_path=f"uploads/explore/{filename}",
@@ -174,7 +175,7 @@ def register_explore(app, db, User, Product, login_required, admin_required):
         post = db.session.get(ExplorePost, post_id)
         if not post or post.status != "published":
             abort(404)
-        user_id = __import__("flask").g.current_user.id
+        user_id = session["user_id"]
         existing = ExploreLike.query.filter_by(post_id=post.id, user_id=user_id).first()
         if existing:
             db.session.delete(existing)
@@ -193,12 +194,12 @@ def register_explore(app, db, User, Product, login_required, admin_required):
         if not post or post.status != "published":
             abort(404)
         report = ExploreReport.query.filter_by(
-            post_id=post.id, user_id=__import__("flask").g.current_user.id
+            post_id=post.id, user_id=session["user_id"]
         ).first()
         if not report:
             db.session.add(ExploreReport(
                 post_id=post.id,
-                user_id=__import__("flask").g.current_user.id,
+                user_id=session["user_id"],
                 reason=(request.form.get("reason") or "گزارش کاربر").strip()[:500],
             ))
             db.session.commit()

@@ -185,7 +185,7 @@ def register_explore(app, db, User, Product, login_required, admin_required):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-        return redirect(request.referrer if request.referrer and request.referrer.startswith("/") else url_for("explore"))
+        return redirect(request.referrer if request.referrer and request.referrer.startswith("/") and not request.referrer.startswith("//") else url_for("explore"))
 
     @app.post("/explore/<int:post_id>/report", endpoint="explore_report")
     @login_required

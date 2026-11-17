@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}اکسپلور | {{ site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-explore.css', v='2026-11-17-1') }}">{% endblock %}
+{% block content %}
+<section class="ke-explore">
+  <header class="ke-heading">
+    <div><span class="ke-eyebrow">KHARIDINO EXPLORE</span><h1>اکسپلور خریدینو</h1><p>ایده‌های تازه را کشف کن؛ محصول موردعلاقه‌ات را مستقیم ببین.</p></div>
+    <a class="ke-back" href="{{ url_for('home') }}">بازگشت به فروشگاه <i class="fa-solid fa-arrow-left"></i></a>
+  </header>
+  {% if current_user %}
+  <form class="ke-compose" action="{{ url_for('explore_create') }}" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="ke-field"><span>توضیح محتوا</span><textarea name="caption" maxlength="1200" rows="3" placeholder="چه چیزی می‌خواهی با دیگران به اشتراک بگذاری؟"></textarea></label>
+    <div class="ke-compose-bottom">
+      <label class="ke-upload"><i class="fa-solid fa-cloud-arrow-up"></i><span>انتخاب تصویر یا ویدئو</span><input type="file" name="media" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" required></label>
+      <label class="ke-product-link"><span>اتصال به محصول (اختیاری)</span><input type="number" name="product_id" min="1" inputmode="numeric" placeholder="شناسه محصول"></label>
+      <button type="submit"><i class="fa-solid fa-paper-plane"></i> ارسال برای بررسی</button>
+    </div>
+    <small>تصویر تا ۱۰ مگابایت و ویدئو تا ۵۰ مگابایت؛ محتوا پس از تأیید مدیر نمایش داده می‌شود.</small>
+  </form>
+  {% else %}
+  <div class="ke-login-note"><i class="fa-solid fa-circle-info"></i> برای انتشار محتوا و تعامل با پست‌ها <a href="{{ url_for('login', next=url_for('explore')) }}">وارد حساب کاربری</a> شو.</div>
+  {% endif %}
+  {% if current_user and current_user.role == 'admin' and pending_posts %}
+  <section class="ke-moderation"><h2>محتوای در انتظار بررسی <span>{{ pending_posts|length }}</span></h2>
+    {% for post in pending_posts %}<article><div><strong>{{ post.user.name }}</strong><p>{{ post.caption or 'بدون توضیح' }}</p></div><div class="ke-review-actions">
+      <form method="post" action="{{ url_for('explore_moderate', post_id=post.id, action='publish') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="ke-approve">انتشار</button></form>
+      <form method="post" action="{{ url_for('explore_moderate', post_id=post.id, action='reject') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="ke-reject">رد محتوا</button></form>
+    </div></article>{% endfor %}
+  </section>
+  {% endif %}
+  <div class="ke-feed-head"><h2>تازه‌های اکسپلور</h2><span>محتوای تأییدشده کاربران</span></div>
+  {% if posts %}
+  <div class="ke-feed">
+    {% for post in posts %}
+    <article class="ke-post">
+      <div class="ke-media">
+        {% if post.media_type == 'video' %}<video controls playsinline preload="metadata" src="{{ url_for('static', filename=post.media_path) }}"></video>
+        {% else %}<img src="{{ url_for('static', filename=post.media_path) }}" alt="{{ post.caption or 'محتوای اکسپلور خریدینو' }}" loading="lazy">{% endif %}
+      </div>
+      <div class="ke-post-body"><div class="ke-author"><span class="ke-avatar">{{ post.user.name[:1] }}</span><strong>{{ post.user.name }}</strong><time>{{ post.created_at.strftime('%Y/%m/%d') }}</time></div>
+        {% if post.caption %}<p>{{ post.caption }}</p>{% endif %}
+        {% if post.product and post.product.active %}<a class="ke-product" href="{{ url_for('product_detail', product_id=post.product.id) }}"><i class="fa-solid fa-bag-shopping"></i> مشاهده محصول: {{ post.product.name }}</a>{% endif %}
+        <div class="ke-post-actions">
+          {% if current_user %}<form method="post" action="{{ url_for('explore_like', post_id=post.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="{% if post.id in liked_ids %}is-liked{% endif %}"><i class="fa-solid fa-heart"></i> {{ post.likes|length }}</button></form>
+          <form method="post" action="{{ url_for('explore_report', post_id=post.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="reason" value="گزارش محتوای نامناسب"><button aria-label="گزارش محتوا"><i class="fa-regular fa-flag"></i> گزارش</button></form>
+          {% else %}<span><i class="fa-solid fa-heart"></i> {{ post.likes|length }}</span>{% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<div class="ke-empty"><i class="fa-regular fa-images"></i><h3>هنوز محتوای منتشرشده‌ای وجود ندارد</h3><p>اولین محتوای اکسپلور پس از تأیید مدیر اینجا نمایش داده می‌شود.</p></div>{% endif %}
+  {% if posts|length == 12 %}<nav class="ke-pagination"><a href="{{ url_for('explore', page=page + 1) }}">محتوای قدیمی‌تر <i class="fa-solid fa-arrow-left"></i></a></nav>{% endif %}
+</section>
+{% endblock %}

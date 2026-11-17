@@ -51,6 +51,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-experience-2026.css', v='2026-09-26-4') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-modern-shell-2026.css', v='2026-10-04-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-design-tokens-2026.css', v='2026-11-17-1') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
@@ -92,8 +93,11 @@
     <a class="km-nav-link km-nav-link--service" href="{{ url_for('services_hub') }}"><i class="fa-solid fa-grid-2"></i><span>همه خدمات</span></a>
     <a class="km-nav-link" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span></a>
     <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+    <a class="km-nav-link" href="{{ url_for('store_map') }}"><i class="fa-solid fa-map-location-dot"></i><span>نقشه فروشگاه‌ها</span></a>
     <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
     <a class="km-nav-link km-nav-link--service" href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><span>گیمینگ</span></a>
+    <a class="km-nav-link km-nav-link--service" href="{{ url_for('explore') }}"><i class="fa-solid fa-compass"></i><span>اکسپلور</span></a>
+    <a class="km-nav-link km-nav-link--service" href="{{ url_for('cinema_home') }}"><i class="fa-solid fa-film"></i><span>سینما</span></a>
     <a class="km-nav-link km-nav-link--service" href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><span>میوه و تازه</span></a>
     <a class="km-nav-link km-nav-link--service" href="{{ url_for('insurance_hub') }}"><i class="fa-solid fa-shield-halved"></i><span>بیمه</span></a>
     <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
@@ -172,6 +176,7 @@
 <div class="kh-global-rail" aria-label="دسترسی‌های مهم خریدینو">
   <a href="{{ url_for('services_hub') }}"><i class="fa-solid fa-grid-2"></i><span><strong>اکوسیستم خریدینو</strong>همه بخش‌ها</span></a>
   <a href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><span><strong>گیمینگ</strong>بازار گیمرها</span></a>
+  <a href="{{ url_for('explore') }}"><i class="fa-solid fa-compass"></i><span><strong>اکسپلور</strong>کشف محتوا و محصولات</span></a>
   <a href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><span><strong>میوه و تازه</strong>بازار محصولات تازه</span></a>
   <a href="{{ url_for('insurance_hub') }}"><i class="fa-solid fa-shield-halved"></i><span><strong>بیمه</strong>دسترسی سریع بیمه</span></a>
   
@@ -254,7 +259,10 @@ if(sameOrigin && !headers.has('X-CSRF-Token'))headers.set('X-CSRF-Token',token);
    last=c; initialized=true;
   }catch(e){}
  }
- check();setInterval(check,3000);
+ check();
+ const pollTimer=setInterval(function(){if(!document.hidden)check();},30000);
+ document.addEventListener('visibilitychange',function(){if(!document.hidden)check();});
+ window.addEventListener('pagehide',function(){clearInterval(pollTimer);},{once:true});
 })();
 </script>
 </body></html>

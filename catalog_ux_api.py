@@ -5,7 +5,37 @@ storefront markup. The API follows common ecommerce discovery patterns: keyword
 search, category, price range, stock, sorting, pagination and result counts.
 """
 from flask import jsonify, request
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
+
+
+_PERSIAN_CHAR_MAP = str.maketrans({
+    "ي": "ی", "ى": "ی", "ك": "ک", "ۀ": "ه", "ة": "ه",
+    "أ": "ا", "إ": "ا", "آ": "ا",
+})
+_ARABIC_MARKS = tuple(chr(codepoint) for codepoint in (
+    0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650,
+    0x0651, 0x0652, 0x0670, 0x0640,
+))
+
+
+def normalize_search_text(value):
+    """Normalize common Arabic/Persian keyboard variants without changing stored data."""
+    text = (value or "").translate(_PERSIAN_CHAR_MAP)
+    for mark in _ARABIC_MARKS:
+        text = text.replace(mark, "")
+    return " ".join(text.split()).strip()
+
+
+def _normalized_sql(column):
+    """Build a portable SQL expression matching normalize_search_text()."""
+    expression = column
+    replacements = (
+        ("ي", "ی"), ("ى", "ی"), ("ك", "ک"), ("ۀ", "ه"),
+        ("ة", "ه"), ("أ", "ا"), ("إ", "ا"), ("آ", "ا"),
+    ) + tuple((mark, "") for mark in _ARABIC_MARKS)
+    for old, new in replacements:
+        expression = func.replace(expression, old, new)
+    return expression
 
 
 def apply_catalog_ux_api(app, db, Product, Category, Offer, Store):
@@ -15,7 +45,10 @@ def apply_catalog_ux_api(app, db, Product, Category, Offer, Store):
     @app.get("/api/catalog/search")
     def catalog_search():
         raw_q = (request.args.get("q") or "").strip()
-        q = raw_q[:100]
+        q = normalize_search_text(raw_q[:100])
+        stock = (request.args.get("stock") or "all").strip().lower()
+        if stock not in {"all", "available", "unavailable"}:
+            return jsonify({"error": "invalid_stock_filter"}), 400
         sort = (request.args.get("sort") or "newest").strip()
         if sort not in {"newest", "price_low", "price_high", "name"}:
             sort = "newest"
@@ -34,10 +67,31 @@ def apply_catalog_ux_api(app, db, Product, Category, Offer, Store):
 
         query = Product.query.filter(Product.active.is_(True))
         if q:
-            pattern = f"%{q}%"
-            query = query.filter(
-                or_(Product.name.ilike(pattern), Product.description.ilike(pattern))
+            # Every query token must match either name or description.
+            name_expr = _normalized_sql(Product.name)
+            description_expr = _normalized_sql(Product.description)
+            token_filters = []
+            for token in q.split():
+                pattern = f"%{token}%"
+                token_filters.append(or_(
+                    name_expr.ilike(pattern),
+                    description_expr.ilike(pattern),
+                ))
+            query = query.filter(and_(*token_filters))
+        if stock != "all":
+            available_product_ids = (
+                db.session.query(Offer.product_id)
+                .join(Store, Offer.store_id == Store.id)
+                .filter(
+                    Offer.in_stock.is_(True),
+                    Offer.price > 0,
+                    Store.active.is_(True),
+                )
             )
+            if stock == "available":
+                query = query.filter(Product.id.in_(available_product_ids))
+            else:
+                query = query.filter(~Product.id.in_(available_product_ids))
         if category_id is not None:
             query = query.filter(Product.category_id == category_id)
 
@@ -94,6 +148,7 @@ def apply_catalog_ux_api(app, db, Product, Category, Offer, Store):
         return jsonify({
             "query": q,
             "sort": sort,
+            "stock": stock,
             "page": page,
             "per_page": per_page,
             "total": total,

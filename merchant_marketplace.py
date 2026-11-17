@@ -4,13 +4,16 @@ Each seller owns one isolated Store workspace. Seller-created products are linke
 through SellerProduct so global catalog products and other merchants remain safe.
 """
 from functools import wraps
+from math import isfinite
+from urllib.parse import urlparse
 
-from flask import abort, flash, redirect, render_template, request, session, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash
 
 from app import (
     app, db, User, Store, Product, Offer, Category,
     Review, admin_required, save_image, remove_upload, lowest_price,
+    record_price_snapshot,
 )
 
 
@@ -24,6 +27,18 @@ class MerchantStore(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     user = db.relationship("User", backref=db.backref("merchant_account", uselist=False))
     store = db.relationship("Store", backref=db.backref("merchant_account", uselist=False))
+
+
+class StoreGeoLocation(db.Model):
+    """Optional public map coordinates and address for an active store."""
+    __tablename__ = "kharidino_store_geo_location"
+    id = db.Column(db.Integer, primary_key=True)
+    store_id = db.Column(db.Integer, db.ForeignKey("store.id"), unique=True, nullable=False, index=True)
+    address = db.Column(db.String(500), default="", nullable=False)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    store = db.relationship("Store", backref=db.backref("geo_location", uselist=False))
 
 
 class SellerProduct(db.Model):
@@ -199,6 +214,29 @@ def seller_store_save():
     if website and not website.startswith(("http://", "https://")):
         flash("لینک وب‌سایت نامعتبر است.", "warning"); return redirect(url_for("seller_dashboard"))
     store.name, store.website = name, website
+    # The profile form and location form share this endpoint. Only touch
+    # geolocation when the dedicated location fields were actually submitted.
+    if any(key in request.form for key in ("address", "latitude", "longitude")):
+        address = request.form.get("address", "").strip()[:500]
+        lat_raw = request.form.get("latitude", "").strip()
+        lon_raw = request.form.get("longitude", "").strip()
+        latitude = longitude = None
+        if lat_raw or lon_raw:
+            try:
+                latitude, longitude = float(lat_raw), float(lon_raw)
+                if not (isfinite(latitude) and isfinite(longitude) and -90 <= latitude <= 90 and -180 <= longitude <= 180):
+                    raise ValueError
+            except (TypeError, ValueError):
+                flash("مختصات جغرافیایی معتبر نیست؛ نقطه را دوباره روی نقشه انتخاب کن.", "warning")
+                return redirect(url_for("seller_dashboard") + "#store-location")
+        geo = StoreGeoLocation.query.filter_by(store_id=store.id).first()
+        if address or latitude is not None or longitude is not None:
+            if not geo:
+                geo = StoreGeoLocation(store_id=store.id)
+                db.session.add(geo)
+            geo.address, geo.latitude, geo.longitude = address, latitude, longitude
+        elif geo:
+            db.session.delete(geo)
     uploaded = request.files.get("logo")
     if uploaded and uploaded.filename:
         old = store.logo
@@ -209,7 +247,7 @@ def seller_store_save():
         except ValueError as exc:
             db.session.rollback(); flash(str(exc), "danger"); return redirect(url_for("seller_dashboard"))
     db.session.commit(); flash("اطلاعات فروشگاه ذخیره شد. ✅", "success")
-    return redirect(url_for("seller_dashboard"))
+    return redirect(url_for("seller_dashboard") + "#store-location")
 
 
 @app.post("/seller/product/save")
@@ -222,13 +260,22 @@ def seller_product_save():
     if not name:
         flash("نام محصول الزامی است.", "warning"); return redirect(url_for("seller_dashboard"))
     try:
-        price = max(0, int(price_raw or 0)); category = db.session.get(Category, int(category_id)) if category_id else None
+        price = int(price_raw or 0)
+        category = db.session.get(Category, int(category_id)) if category_id else None
     except (TypeError, ValueError):
-        flash("قیمت یا دسته‌بندی نامعتبر است.", "danger"); return redirect(url_for("seller_dashboard"))
-    if category_id and not category:
-        flash("دسته‌بندی پیدا نشد.", "danger"); return redirect(url_for("seller_dashboard"))
-    if url and not url.startswith(("http://", "https://")):
-        flash("لینک خرید نامعتبر است.", "danger"); return redirect(url_for("seller_dashboard"))
+        flash("قیمت یا دسته‌بندی نامعتبر است.", "danger")
+        return redirect(url_for("seller_dashboard"))
+    if price <= 0 or price > 10**15:
+        flash("قیمت باید بیشتر از صفر و در محدوده مجاز باشد.", "warning")
+        return redirect(url_for("seller_dashboard"))
+    if category_id and (not category or not category.active):
+        flash("دسته‌بندی فعال و معتبری انتخاب کن.", "danger")
+        return redirect(url_for("seller_dashboard"))
+    if url:
+        parsed_url = urlparse(url)
+        if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc or any(ch.isspace() for ch in url):
+            flash("لینک خرید باید یک نشانی کامل HTTP یا HTTPS باشد.", "danger")
+            return redirect(url_for("seller_dashboard"))
     if pid:
         try:
             pid_value = int(pid)
@@ -253,7 +300,10 @@ def seller_product_save():
     if not offer:
         offer = Offer(product_id=product.id, store_id=account.store_id); db.session.add(offer)
     offer.price, offer.url, offer.in_stock = price, url, stock
-    db.session.commit(); flash("محصول و قیمت فروشگاه ذخیره شد. ✅", "success")
+    db.session.flush()
+    record_price_snapshot(offer)
+    db.session.commit()
+    flash("محصول و قیمت فروشگاه ذخیره شد. ✅", "success")
     return redirect(url_for("seller_dashboard") + "#products")
 
 
@@ -283,7 +333,9 @@ def seller_offer_toggle(product_id):
     account = _seller_account(); product = _owned_product(account.store_id, product_id)
     offer = Offer.query.filter_by(product_id=product.id, store_id=account.store_id).first()
     if not offer: abort(404)
-    offer.in_stock = not offer.in_stock; db.session.commit()
+    offer.in_stock = not offer.in_stock
+    record_price_snapshot(offer)
+    db.session.commit()
     flash("وضعیت موجودی تغییر کرد.", "success")
     return redirect(url_for("seller_dashboard") + "#products")
 
@@ -308,3 +360,26 @@ def admin_merchant_status(account_id):
 def admin_merchant_delete(account_id):
     account = MerchantStore.query.get_or_404(account_id); account.store.active = False; account.status = "rejected"; db.session.commit()
     flash("فروشگاه غیرفعال شد.", "success"); return redirect(url_for("admin_merchants"))
+
+
+@app.get("/map")
+def store_map():
+    return render_template("store_map.html")
+
+
+@app.get("/api/map/stores")
+def store_map_data():
+    rows = (
+        StoreGeoLocation.query.join(Store)
+        .filter(Store.active.is_(True), StoreGeoLocation.latitude.isnot(None), StoreGeoLocation.longitude.isnot(None))
+        .order_by(Store.name.asc()).all()
+    )
+    return jsonify({"stores": [{
+        "id": row.store.id,
+        "name": row.store.name,
+        "address": row.address,
+        "latitude": row.latitude,
+        "longitude": row.longitude,
+        "website": row.store.website or "",
+        "url": url_for("store_detail", store_id=row.store.id),
+    } for row in rows]})

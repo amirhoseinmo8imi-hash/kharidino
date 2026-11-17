@@ -296,11 +296,20 @@ def seller_notifications_read_all():
 def seller_finance():
     account = _seller_account()
     ledger = SellerLedger.query.filter_by(store_id=account.store_id).order_by(SellerLedger.id.desc()).all()
+    # Settlement requests reserve ledger balances before an admin pays them.
+    # Reflect those reservations here so the seller dashboard never overstates
+    # the amount that can still be withdrawn.
+    from accounting import _ledger_allocated
+
     totals = {
         "gross": sum(x.gross for x in ledger),
         "fee": sum(x.platform_fee for x in ledger),
         "net": sum(x.net for x in ledger),
-        "available": sum(x.net for x in ledger if x.status == "available"),
+        "available": sum(
+            max(0, x.net - _ledger_allocated(x.id))
+            for x in ledger
+            if x.status == "available"
+        ),
         "paid": sum(x.net for x in ledger if x.status == "paid"),
     }
     return render_template("seller_finance.html", account=account, ledger=ledger, totals=totals)

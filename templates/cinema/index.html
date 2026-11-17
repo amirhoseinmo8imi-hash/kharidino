@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}خریدینو سینما{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-cinema.css', v='1') }}">{% endblock %}
+{% block content %}
+<main class="kc-wrap">
+<header class="kc-hero"><span>KHARIDINO CINEMA</span><h1>سینمای خریدینو</h1><p>فیلم‌ها را کشف کن، تماشا را ادامه بده و برای سانس حضوری بلیت بگیر.</p></header>
+{% if current_user and current_user.role == 'admin' %}
+<details class="kc-admin"><summary>افزودن عنوان سینمایی</summary>
+<form method="post" action="{{ url_for('cinema_admin_create') }}" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>عنوان<input name="title" maxlength="180" required></label><label>ژانر<input name="genre" maxlength="80"></label>
+<label>سال انتشار<input name="release_year" type="number" min="1888" max="2100"></label><label>آدرس پوستر<input name="poster_url" type="url" maxlength="700"></label>
+<label>خلاصه داستان<textarea name="synopsis" maxlength="5000"></textarea></label><label>ویدئو MP4/WebM تا ۱۰۰ مگابایت<input name="video" type="file" accept="video/mp4,video/webm"></label><button>ثبت برای بررسی</button>
+</form>
+<form method="post" action="{{ url_for('cinema_admin_showtime') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>شناسه عنوان منتشرشده<input name="title_id" type="number" min="1" required></label><label>نام سینما/سالن<input name="venue" maxlength="180" required></label>
+<label>زمان شروع<input name="starts_at" type="datetime-local" required></label><label>ظرفیت<input name="capacity" type="number" min="1" max="5000" required></label><label>قیمت بلیت<input name="ticket_price" type="number" min="0" value="0"></label><button>ثبت سانس</button></form>
+</details>{% endif %}
+{% if pending_titles %}
+<section class="kc-admin"><h2>عنوان‌های در انتظار تأیید</h2>
+{% for item in pending_titles %}<article class="kc-pending"><strong>#{{ item.id }} — {{ item.title }}</strong>
+<form method="post" action="{{ url_for('cinema_admin_moderate', title_id=item.id, action='publish') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>انتشار</button></form>
+<form method="post" action="{{ url_for('cinema_admin_moderate', title_id=item.id, action='reject') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>رد</button></form></article>{% endfor %}
+</section>{% endif %}
+<section class="kc-section"><h2>فیلم‌ها و مجموعه‌ها</h2>
+{% if titles %}<div class="kc-grid">{% for item in titles %}<a class="kc-card" href="{{ url_for('cinema_title', title_id=item.id) }}">
+{% if item.poster_url %}<img src="{{ item.poster_url }}" alt="پوستر {{ item.title }}" loading="lazy">{% else %}<div class="kc-poster"><i class="fa-solid fa-film"></i></div>{% endif %}
+<div><h3>{{ item.title }}</h3><p>{{ item.genre }}{% if item.release_year %} · {{ item.release_year }}{% endif %}</p></div></a>{% endfor %}</div>
+{% else %}<p class="kc-empty">هنوز عنوان منتشرشده‌ای وجود ندارد. مدیر می‌تواند عنوان‌ها را ثبت و پس از بررسی منتشر کند.</p>{% endif %}</section>
+<section class="kc-section"><h2>سانس‌های پیش‌رو</h2>{% if showtimes %}<div class="kc-times">{% for slot in showtimes %}<article><div><strong>{{ slot.title.title }}</strong><p>{{ slot.venue }} · {{ slot.starts_at.strftime('%Y/%m/%d - %H:%M') }}</p><small>{{ slot.available_seats }} ظرفیت باقی‌مانده · {{ slot.ticket_price }} تومان</small></div><a href="{{ url_for('cinema_title', title_id=slot.title_id) }}">جزئیات و رزرو</a></article>{% endfor %}</div>{% else %}<p class="kc-empty">هنوز سانس فعالی ثبت نشده است.</p>{% endif %}</section>
+</main>{% endblock %}

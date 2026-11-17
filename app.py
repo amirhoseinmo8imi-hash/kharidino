@@ -6642,6 +6642,20 @@ from vehicle_chat import register_vehicle_chat
 register_vehicle_chat(app, db, User, login_required)
 
 # =========================================================
+# EXPLORE MEDIA FEED
+# =========================================================
+from explore import register_explore
+register_explore(app, db, User, Product, login_required, admin_required)
+
+# Kharidino Cinema module
+from cinema import register_cinema
+register_cinema(app, db, User, login_required, admin_required)
+
+# Versioned API for web and Android clients
+from platform_api import register_platform_api
+register_platform_api(app, db, Product, Offer, Store)
+
+# =========================================================
 # DATABASE INIT
 # =========================================================
 

@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block title %}بلیت سینما | خریدینو{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-cinema.css', v='1') }}">{% endblock %}
+{% block content %}<main class="kc-wrap"><section class="kc-ticket"><span>KHARIDINO CINEMA</span><h1>رزرو شما ثبت شد</h1><h2>{{ booking.showtime.title.title }}</h2><p>{{ booking.showtime.venue }} · {{ booking.showtime.starts_at.strftime('%Y/%m/%d - %H:%M') }}</p><p>تعداد بلیت: {{ booking.ticket_count }}</p><strong class="kc-code">{{ booking.booking_code }}</strong><small>این نسخه کد رزرو متنی است؛ پرداخت آنلاین و QR هنوز به آن متصل نشده‌اند.</small></section></main>{% endblock %}

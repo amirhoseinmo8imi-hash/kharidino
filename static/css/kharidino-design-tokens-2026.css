@@ -1,0 +1,67 @@
+/* Kharidino Design Tokens — shared contract for new and migrated UI.
+   Keep page-specific styling in feature stylesheets; use these tokens for shared surfaces.
+*/
+:root {
+  color-scheme: light;
+  --kh-color-bg: #f5f6f8;
+  --kh-color-surface: #ffffff;
+  --kh-color-surface-muted: #fafbfc;
+  --kh-color-text: #151922;
+  --kh-color-text-muted: #707887;
+  --kh-color-border: #e7e9ee;
+  --kh-color-primary: #ef4056;
+  --kh-color-primary-hover: #d92f47;
+  --kh-color-success: #16834a;
+  --kh-color-warning: #a86608;
+  --kh-color-danger: #c52d42;
+  --kh-radius-sm: 10px;
+  --kh-radius-md: 14px;
+  --kh-radius-lg: 20px;
+  --kh-shadow-sm: 0 4px 16px rgba(16, 24, 40, .05);
+  --kh-shadow-md: 0 12px 32px rgba(16, 24, 40, .08);
+
+  /* Compatibility aliases used by existing visual modules. */
+  --kh-bg: var(--kh-color-bg);
+  --kh-surface: var(--kh-color-surface);
+  --kh-surface-2: var(--kh-color-surface-muted);
+  --kh-text: var(--kh-color-text);
+  --kh-muted: var(--kh-color-text-muted);
+  --kh-border: var(--kh-color-border);
+  --kh-primary: var(--kh-color-primary);
+  --kh-primary-2: var(--kh-color-primary-hover);
+  --kh-shadow: var(--kh-shadow-md);
+}
+
+body.kh-modern-dark {
+  color-scheme: dark;
+  --kh-color-bg: #0f141d;
+  --kh-color-surface: #171e29;
+  --kh-color-surface-muted: #1d2633;
+  --kh-color-text: #eef2f7;
+  --kh-color-text-muted: #aab4c2;
+  --kh-color-border: #2a3544;
+  --kh-color-primary: #ff6478;
+  --kh-color-primary-hover: #ff8291;
+  --kh-color-success: #4ade80;
+  --kh-color-warning: #fbbf24;
+  --kh-color-danger: #fb7185;
+  --kh-shadow-sm: 0 6px 18px rgba(0, 0, 0, .18);
+  --kh-shadow-md: 0 14px 34px rgba(0, 0, 0, .24);
+}
+
+html { text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+body { background: var(--kh-color-bg); color: var(--kh-color-text); }
+:where(button, input, select, textarea) { font: inherit; }
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--kh-color-primary) 28%, transparent);
+  outline-offset: 2px;
+}
+:where(img, video, iframe) { max-width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

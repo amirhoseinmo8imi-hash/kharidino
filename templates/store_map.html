@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}نقشه فروشگاه‌ها | خریدینو{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-store-map.css', v='2026-11-17-1') }}">
+{% endblock %}
+{% block content %}
+<main class="km-map-page" dir="rtl">
+  <header class="km-map-heading"><div><span class="km-map-kicker">KHARIDINO MAP</span><h1>فروشگاه‌ها را روی نقشه پیدا کن</h1><p>موقعیت فروشگاه‌های ثبت‌شده را ببین و ویترین هرکدام را باز کن.</p></div><a href="{{ url_for('stores') }}" class="km-map-back">فهرست فروشگاه‌ها <i class="fa-solid fa-arrow-left"></i></a></header>
+  <section class="km-map-tools"><label class="km-map-search"><i class="fa-solid fa-magnifying-glass"></i><input id="storeMapSearch" type="search" placeholder="جستجوی نام فروشگاه یا نشانی..." autocomplete="off"></label><button id="storeMapLocate" type="button"><i class="fa-solid fa-location-crosshairs"></i> مکان من</button><span id="storeMapCount" aria-live="polite">در حال دریافت فروشگاه‌ها...</span></section>
+  <div class="km-map-layout"><div id="storeDirectoryMap" class="km-map-canvas" role="application" aria-label="نقشه موقعیت فروشگاه‌ها"></div><aside class="km-map-results"><h2>فروشگاه‌های روی نقشه</h2><div id="storeMapResults"><p class="km-map-empty">در حال بارگذاری...</p></div></aside></div>
+  <p class="km-map-attribution">نقشه © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>، داده‌های موقعیت با ثبت فروشندگان ارائه می‌شود.</p>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="{{ url_for('static', filename='js/kharidino-store-map.js', v='2026-11-17-1') }}" defer></script>
+{% endblock %}

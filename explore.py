@@ -97,8 +97,6 @@ def register_explore(app, db, User, Product, login_required, admin_required):
         created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
         post = db.relationship(ExplorePost, back_populates="comments")
         user = db.relationship(User)
-        __table_args__ = (db.UniqueConstraint("post_id", "user_id", "body", name="uq_explore_comment_once"),)
-
     class ExploreSave(db.Model):
         __tablename__ = "explore_save"
         id = db.Column(db.Integer, primary_key=True)
@@ -128,10 +126,18 @@ def register_explore(app, db, User, Product, login_required, admin_required):
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     @app.get("/explore", endpoint="explore")
+    @app.get("/explore/saved", endpoint="explore_saved")
     def explore_feed():
         page = request.args.get("page", 1, type=int) or 1
         page = max(1, min(page, 100000))
-        posts = (ExplorePost.query.filter_by(status="published")
+        post_query = ExplorePost.query.filter_by(status="published")
+        if request.path == "/explore/saved":
+            if not session.get("user_id"):
+                return redirect(url_for("login", next=url_for("explore_saved")))
+            post_query = post_query.join(ExploreSave).filter(
+                ExploreSave.user_id == session["user_id"]
+            )
+        posts = (post_query
                  .order_by(ExplorePost.created_at.desc(), ExplorePost.id.desc())
                  .offset((page - 1) * 12).limit(12).all())
         liked_ids = set()

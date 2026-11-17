@@ -18,3 +18,15 @@ def test_refund_journal_reverses_original_amount():
     original = 250_000
     refund_cash = 250_000
     assert refund_cash == original
+
+
+def test_seller_finance_dashboard_subtracts_reserved_settlement_allocations():
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parents[1] / "merchant_marketplace_v2.py").read_text(encoding="utf-8")
+    start = source.index('def seller_finance():')
+    end = source.index('\n\n\n@app.', start)
+    block = source[start:end]
+    assert 'from accounting import _ledger_allocated' in block
+    assert 'max(0, x.net - _ledger_allocated(x.id))' in block
+    assert 'if x.status == "available"' in block

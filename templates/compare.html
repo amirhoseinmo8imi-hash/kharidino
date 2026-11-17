@@ -1,5 +1,71 @@
 {% extends "base.html" %}
-{% block title %}مقایسه محصولات | {{ site_name }}{% endblock %}
+{% block title %}مقایسه محصولات | {{ site_name }}
+{% if products|length >= 2 and products|length <= 4 %}
+<script>
+(() => {
+  const cells = Array.from(document.querySelectorAll("[data-compare-offers]"));
+  if (cells.length < 2 || cells.length > 4) return;
+  const ids = cells.map((cell) => cell.dataset.compareOffers).filter(Boolean);
+  if (ids.length !== cells.length) return;
+
+  const formatPrice = (value) => Number(value).toLocaleString("fa-IR") + " تومان";
+  const safeExternalUrl = (value) => {
+    try {
+      const url = new URL(value, window.location.origin);
+      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+    } catch (_) {
+      return "";
+    }
+  };
+
+  fetch("/api/catalog/compare?ids=" + encodeURIComponent(ids.join(",")), {
+    headers: { "Accept": "application/json" },
+    credentials: "same-origin"
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("compare_unavailable");
+      return response.json();
+    })
+    .then((payload) => {
+      const byId = new Map(payload.items.map((item) => [String(item.id), item]));
+      cells.forEach((cell) => {
+        const product = byId.get(cell.dataset.compareOffers);
+        cell.replaceChildren();
+        if (!product || !product.offers.length) {
+          cell.textContent = "پیشنهاد فعال و موجودی ثبت نشده است";
+          return;
+        }
+        const list = document.createElement("ul");
+        list.className = "kh-compare-offer-list";
+        product.offers.slice(0, 5).forEach((offer) => {
+          const item = document.createElement("li");
+          const name = document.createElement("span");
+          name.textContent = offer.store;
+          const price = document.createElement("strong");
+          price.textContent = formatPrice(offer.price);
+          item.append(name, price);
+          const href = safeExternalUrl(offer.url);
+          if (href) {
+            const link = document.createElement("a");
+            link.href = href;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer nofollow";
+            link.textContent = "مشاهده فروشگاه";
+            item.append(link);
+          }
+          list.append(item);
+        });
+        cell.append(list);
+      });
+    })
+    .catch(() => {
+      cells.forEach((cell) => { cell.textContent = "دریافت پیشنهادها موقتاً ممکن نیست؛ قیمت پایه همچنان نمایش داده می‌شود."; });
+    });
+})();
+</script>
+{% endif %}
+
+{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pages-v3.css', v='2026-09-06-1') }}">{% endblock %}
 {% block content %}
 <div class="kp-page">
@@ -9,6 +75,7 @@
   <tr><td>دسته‌بندی</td>{% for p in products %}<td>{{ p.category.name if p.category else '—' }}</td>{% endfor %}</tr>
   <tr><td>بهترین قیمت</td>{% for p in products %}<td><strong class="kp-best">{{ lowest_price(p)|money }} <small>تومان</small></strong>{% if p.offers %}<br><small>{{ p.offers|selectattr('in_stock')|list|length }} پیشنهاد موجود</small>{% endif %}</td>{% endfor %}</tr>
   <tr><td>فروشگاه‌ها</td>{% for p in products %}<td><i class="fa-solid fa-store"></i> {{ p.offers|length }}</td>{% endfor %}</tr>
+  <tr><td>پیشنهادهای فعال فروشگاه‌ها</td>{% for p in products %}<td><div class="kh-compare-live-offers" data-compare-offers="{{ p.id }}">در حال دریافت پیشنهادها…</div></td>{% endfor %}</tr>
   <tr><td>امتیاز کاربران</td>{% for p in products %}<td>★ {{ product_rating(p) or 'بدون امتیاز' }}</td>{% endfor %}</tr>
   <tr><td>توضیحات</td>{% for p in products %}<td>{{ p.description or 'توضیحی ثبت نشده است.' }}</td>{% endfor %}</tr>
   <tr><td>جزئیات</td>{% for p in products %}<td><a class="btn btn-primary btn-block" href="{{ url_for('product_detail', product_id=p.id) }}">مشاهده محصول</a></td>{% endfor %}</tr>

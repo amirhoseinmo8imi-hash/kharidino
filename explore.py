@@ -75,6 +75,8 @@ def register_explore(app, db, User, Product, login_required, admin_required):
         product = db.relationship(Product)
         likes = db.relationship("ExploreLike", back_populates="post", cascade="all, delete-orphan", lazy=True)
         reports = db.relationship("ExploreReport", back_populates="post", cascade="all, delete-orphan", lazy=True)
+        comments = db.relationship("ExploreComment", back_populates="post", cascade="all, delete-orphan", lazy=True)
+        saves = db.relationship("ExploreSave", back_populates="post", cascade="all, delete-orphan", lazy=True)
 
     class ExploreLike(db.Model):
         __tablename__ = "explore_like"
@@ -84,6 +86,27 @@ def register_explore(app, db, User, Product, login_required, admin_required):
         created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
         post = db.relationship(ExplorePost, back_populates="likes")
         __table_args__ = (db.UniqueConstraint("post_id", "user_id", name="uq_explore_like_post_user"),)
+
+    class ExploreComment(db.Model):
+        __tablename__ = "explore_comment"
+        id = db.Column(db.Integer, primary_key=True)
+        post_id = db.Column(db.Integer, db.ForeignKey("explore_post.id", ondelete="CASCADE"), nullable=False, index=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+        body = db.Column(db.String(1000), nullable=False)
+        status = db.Column(db.String(20), nullable=False, default="published", index=True)
+        created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+        post = db.relationship(ExplorePost, back_populates="comments")
+        user = db.relationship(User)
+        __table_args__ = (db.UniqueConstraint("post_id", "user_id", "body", name="uq_explore_comment_once"),)
+
+    class ExploreSave(db.Model):
+        __tablename__ = "explore_save"
+        id = db.Column(db.Integer, primary_key=True)
+        post_id = db.Column(db.Integer, db.ForeignKey("explore_post.id", ondelete="CASCADE"), nullable=False, index=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+        created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+        post = db.relationship(ExplorePost, back_populates="saves")
+        __table_args__ = (db.UniqueConstraint("post_id", "user_id", name="uq_explore_save_post_user"),)
 
     class ExploreReport(db.Model):
         __tablename__ = "explore_report"
@@ -98,7 +121,7 @@ def register_explore(app, db, User, Product, login_required, admin_required):
 
     app.extensions["kharidino_explore_registered"] = True
     app.extensions["kharidino_explore_models"] = {
-        "post": ExplorePost, "like": ExploreLike, "report": ExploreReport,
+        "post": ExplorePost, "like": ExploreLike, "report": ExploreReport, "comment": ExploreComment, "save": ExploreSave,
     }
 
     upload_dir = Path(app.static_folder or "static") / "uploads" / "explore"
@@ -112,19 +135,23 @@ def register_explore(app, db, User, Product, login_required, admin_required):
                  .order_by(ExplorePost.created_at.desc(), ExplorePost.id.desc())
                  .offset((page - 1) * 12).limit(12).all())
         liked_ids = set()
+        saved_ids = set()
         pending_posts = []
         current_user = db.session.get(User, session.get("user_id")) if session.get("user_id") else None
         if current_user:
             liked_ids = {row.post_id for row in ExploreLike.query.filter_by(
                 user_id=current_user.id
             ).filter(ExploreLike.post_id.in_([post.id for post in posts])).all()} if posts else set()
+            saved_ids = {row.post_id for row in ExploreSave.query.filter_by(
+                user_id=current_user.id
+            ).filter(ExploreSave.post_id.in_([post.id for post in posts])).all()} if posts else set()
             if current_user.role == "admin":
                 pending_posts = ExplorePost.query.filter_by(status="pending").order_by(
                     ExplorePost.created_at.asc()
                 ).limit(30).all()
         return render_template(
             "explore/index.html", posts=posts, liked_ids=liked_ids,
-            pending_posts=pending_posts, page=page,
+            pending_posts=pending_posts, page=page, saved_ids=saved_ids,
         )
 
     @app.post("/explore/create", endpoint="explore_create")
@@ -181,6 +208,42 @@ def register_explore(app, db, User, Product, login_required, admin_required):
             db.session.delete(existing)
         else:
             db.session.add(ExploreLike(post_id=post.id, user_id=user_id))
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+        return redirect(request.referrer if request.referrer and request.referrer.startswith("/") and not request.referrer.startswith("//") else url_for("explore"))
+
+    @app.post("/explore/<int:post_id>/comment", endpoint="explore_comment")
+    @login_required
+    def explore_comment(post_id):
+        post = db.session.get(ExplorePost, post_id)
+        if not post or post.status != "published":
+            abort(404)
+        body = (request.form.get("body") or "").strip()
+        if not body or len(body) > 1000:
+            abort(400, description="دیدگاه باید بین ۱ تا ۱۰۰۰ نویسه باشد.")
+        db.session.add(ExploreComment(
+            post_id=post.id, user_id=session["user_id"], body=body,
+        ))
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("این دیدگاه قبلاً ثبت شده است.", "info")
+        return redirect(request.referrer if request.referrer and request.referrer.startswith("/") and not request.referrer.startswith("//") else url_for("explore"))
+
+    @app.post("/explore/<int:post_id>/save", endpoint="explore_save")
+    @login_required
+    def explore_save(post_id):
+        post = db.session.get(ExplorePost, post_id)
+        if not post or post.status != "published":
+            abort(404)
+        saved = ExploreSave.query.filter_by(post_id=post.id, user_id=session["user_id"]).first()
+        if saved:
+            db.session.delete(saved)
+        else:
+            db.session.add(ExploreSave(post_id=post.id, user_id=session["user_id"]))
         try:
             db.session.commit()
         except IntegrityError:

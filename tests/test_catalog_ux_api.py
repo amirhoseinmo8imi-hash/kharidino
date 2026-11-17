@@ -1,7 +1,7 @@
 from flask import Flask
 
 from app import Category, Offer, Product, Store, db
-from catalog_ux_api import apply_catalog_ux_api
+from catalog_ux_api import apply_catalog_ux_api, normalize_search_text
 
 
 def make_app():
@@ -121,3 +121,42 @@ def test_catalog_compare_does_not_expose_inactive_products():
 
     assert response.status_code == 404
     assert response.get_json()["error"] == "products_not_found"
+
+
+
+def test_persian_search_normalization_handles_arabic_keyboard_variants():
+    assert normalize_search_text("  كالاى   ويژه  ") == "کالای ویژه"
+    assert normalize_search_text("هَزینه") == "هزینه"
+
+
+def test_catalog_search_matches_persian_arabic_keyboard_variants():
+    app = make_app()
+    with app.app_context():
+        product = Product(name="کالای ویژه", description="توضیحات فارسی", price=1200, active=True)
+        db.session.add(product)
+        db.session.commit()
+        product_id = product.id
+
+    response = app.test_client().get("/api/catalog/search?q=كالاى")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["query"] == "کالای"
+    assert [item["id"] for item in data["items"]] == [product_id]
+
+
+def test_catalog_stock_filter_only_uses_active_store_offers():
+    app = make_app()
+    cheap_id, expensive_id, _ = seed_catalog(app)
+    with app.app_context():
+        unavailable = Product(name="Unavailable Product", description="", price=300, active=True)
+        db.session.add(unavailable)
+        db.session.commit()
+        unavailable_id = unavailable.id
+
+    client = app.test_client()
+    available = client.get("/api/catalog/search?stock=available").get_json()
+    unavailable_data = client.get("/api/catalog/search?stock=unavailable").get_json()
+
+    assert {item["id"] for item in available["items"]} == {cheap_id, expensive_id}
+    assert {item["id"] for item in unavailable_data["items"]} == {unavailable_id}
+    assert client.get("/api/catalog/search?stock=unknown").status_code == 400

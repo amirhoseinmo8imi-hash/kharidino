@@ -16,6 +16,12 @@
 <label>شناسه عنوان منتشرشده<input name="title_id" type="number" min="1" required></label><label>نام سینما/سالن<input name="venue" maxlength="180" required></label>
 <label>زمان شروع<input name="starts_at" type="datetime-local" required></label><label>ظرفیت<input name="capacity" type="number" min="1" max="5000" required></label><label>قیمت بلیت<input name="ticket_price" type="number" min="0" value="0"></label><button>ثبت سانس</button></form>
 </details>{% endif %}
+{% if pending_titles %}
+<section class="kc-admin"><h2>عنوان‌های در انتظار تأیید</h2>
+{% for item in pending_titles %}<article class="kc-pending"><strong>#{{ item.id }} — {{ item.title }}</strong>
+<form method="post" action="{{ url_for('cinema_admin_moderate', title_id=item.id, action='publish') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>انتشار</button></form>
+<form method="post" action="{{ url_for('cinema_admin_moderate', title_id=item.id, action='reject') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>رد</button></form></article>{% endfor %}
+</section>{% endif %}
 <section class="kc-section"><h2>فیلم‌ها و مجموعه‌ها</h2>
 {% if titles %}<div class="kc-grid">{% for item in titles %}<a class="kc-card" href="{{ url_for('cinema_title', title_id=item.id) }}">
 {% if item.poster_url %}<img src="{{ item.poster_url }}" alt="پوستر {{ item.title }}" loading="lazy">{% else %}<div class="kc-poster"><i class="fa-solid fa-film"></i></div>{% endif %}

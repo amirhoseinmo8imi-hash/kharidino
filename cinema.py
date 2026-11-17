@@ -11,7 +11,7 @@ VIDEO_SIGNATURES = {
     "mp4": lambda data: len(data) >= 12 and data[4:8] == b"ftyp",
     "webm": lambda data: data.startswith(bytes.fromhex("1a45dfa3")),
 }
-MAX_VIDEO_BYTES = 100 * 1024 * 1024
+MAX_VIDEO_BYTES = 90 * 1024 * 1024
 
 def register_cinema(app, db, User, login_required, admin_required):
     if app.extensions.get("kharidino_cinema_registered"):
@@ -132,7 +132,7 @@ def register_cinema(app, db, User, login_required, admin_required):
             upload.stream.seek(0)
             signature = upload.stream.read(16)
             upload.stream.seek(0)
-            if not checker or size <= 0 or size > MAX_VIDEO_BYTES or not checker(signature): abort(400, description="فقط فایل معتبر MP4/WebM تا ۱۰۰ مگابایت پذیرفته می‌شود.")
+            if not checker or size <= 0 or size > MAX_VIDEO_BYTES or not checker(signature): abort(400, description="فقط فایل معتبر MP4/WebM تا ۹۰ مگابایت پذیرفته می‌شود.")
             stored = secrets.token_hex(20) + "." + ext
             upload.save(upload_dir / stored)
             video_path = "uploads/cinema/" + stored

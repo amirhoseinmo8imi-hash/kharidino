@@ -4,8 +4,8 @@
 {% block content %}
 <section class="ke-explore">
   <header class="ke-heading">
-    <div><span class="ke-eyebrow">KHARIDINO EXPLORE</span><h1>اکسپلور خریدینو</h1><p>ایده‌های تازه را کشف کن؛ محصول موردعلاقه‌ات را مستقیم ببین.</p></div>
-    <a class="ke-back" href="{{ url_for('home') }}">بازگشت به فروشگاه <i class="fa-solid fa-arrow-left"></i></a>
+    <div><span class="ke-eyebrow">KHARIDINO EXPLORE</span><h1>{% if request.path == '/explore/saved' %}ذخیره‌شده‌های من{% else %}اکسپلور خریدینو{% endif %}</h1><p>ایده‌های تازه را کشف کن؛ محصول موردعلاقه‌ات را مستقیم ببین.</p></div>
+    <nav class="ke-heading-links"><a href="{{ url_for('explore') }}">اکسپلور</a>{% if current_user %}<a href="{{ url_for('explore_saved') }}">ذخیره‌شده‌ها</a>{% endif %}<a class="ke-back" href="{{ url_for('home') }}">بازگشت به فروشگاه <i class="fa-solid fa-arrow-left"></i></a></nav>
   </header>
   {% if current_user %}
   <form class="ke-compose" action="{{ url_for('explore_create') }}" method="post" enctype="multipart/form-data">

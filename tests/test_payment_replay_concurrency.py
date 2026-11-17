@@ -130,7 +130,7 @@ def test_e2e_contract_keeps_provider_off_for_test_gateway_runs():
     source = _payment_source()
     assert 'PAYMENT_TEST_MODE' in source
     assert 'return TestGateway()' in source
-    assert 'provider == "nextpay"' in source
+    assert 'selected == "nextpay"' in source
     assert 'return DisabledGateway()' in source
 
 

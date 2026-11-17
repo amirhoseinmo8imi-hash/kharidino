@@ -64,7 +64,12 @@ def register_cinema(app, db, User, login_required, admin_required):
     def cinema_home():
         titles = CinemaTitle.query.filter_by(status="published").order_by(CinemaTitle.created_at.desc()).all()
         slots = CinemaShowtime.query.join(CinemaTitle).filter(CinemaTitle.status == "published", CinemaShowtime.starts_at >= datetime.utcnow(), CinemaShowtime.available_seats > 0).order_by(CinemaShowtime.starts_at.asc()).limit(30).all()
-        return render_template("cinema/index.html", titles=titles, showtimes=slots)
+        pending_titles = []
+        if session.get("user_id"):
+            viewer = db.session.get(User, session["user_id"])
+            if viewer and viewer.role == "admin":
+                pending_titles = CinemaTitle.query.filter_by(status="pending").order_by(CinemaTitle.created_at.asc()).limit(50).all()
+        return render_template("cinema/index.html", titles=titles, showtimes=slots, pending_titles=pending_titles)
 
     @app.get("/cinema/title/<int:title_id>", endpoint="cinema_title")
     def cinema_title(title_id):

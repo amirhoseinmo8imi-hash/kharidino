@@ -45,4 +45,4 @@ def test_seller_product_mutations_remain_store_scoped():
     source = SOURCE.read_text(encoding="utf-8")
     assert "_owned_product(account.store_id, pid_value)" in source
     assert "_owned_product(account.store_id, product_id)" in source
-    assert "SellerProduct.store_id == account.store_id" in source
+    assert "SellerProduct.query.filter_by(store_id=store_id)" in source

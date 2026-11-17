@@ -102,3 +102,63 @@ def apply_catalog_ux_api(app, db, Product, Category, Offer, Store):
         })
 
     app._kharidino_catalog_ux_api = True
+
+
+    @app.get("/api/catalog/compare")
+    def catalog_compare():
+        """Compare 2-4 active products using offers from active stores only."""
+        raw_ids = (request.args.get("ids") or "").strip()
+        parts = [part.strip() for part in raw_ids.split(",") if part.strip()]
+        if not 2 <= len(parts) <= 4:
+            return jsonify({"error": "compare_requires_two_to_four_products"}), 400
+        try:
+            product_ids = [int(part) for part in parts]
+        except ValueError:
+            return jsonify({"error": "invalid_product_ids"}), 400
+        if any(product_id <= 0 for product_id in product_ids) or len(set(product_ids)) != len(product_ids):
+            return jsonify({"error": "invalid_product_ids"}), 400
+
+        products = (
+            Product.query.filter(Product.active.is_(True), Product.id.in_(product_ids))
+            .all()
+        )
+        by_id = {product.id: product for product in products}
+        missing_ids = [product_id for product_id in product_ids if product_id not in by_id]
+        if missing_ids:
+            return jsonify({"error": "products_not_found", "ids": missing_ids}), 404
+
+        items = []
+        for product_id in product_ids:
+            product = by_id[product_id]
+            offers = (
+                db.session.query(Offer, Store)
+                .join(Store, Offer.store_id == Store.id)
+                .filter(
+                    Offer.product_id == product.id,
+                    Offer.in_stock.is_(True),
+                    Offer.price > 0,
+                    Store.active.is_(True),
+                )
+                .order_by(Offer.price.asc(), Offer.id.asc())
+                .all()
+            )
+            offer_items = [{
+                "id": offer.id,
+                "store_id": store.id,
+                "store": store.name,
+                "price": int(offer.price),
+                "url": offer.url or "",
+            } for offer, store in offers]
+            prices = [item["price"] for item in offer_items]
+            items.append({
+                "id": product.id,
+                "name": product.name,
+                "image": product.image or "",
+                "base_price": int(product.price or 0),
+                "lowest_offer_price": min(prices) if prices else None,
+                "highest_offer_price": max(prices) if prices else None,
+                "offer_count": len(offer_items),
+                "offers": offer_items,
+            })
+
+        return jsonify({"items": items, "count": len(items)})

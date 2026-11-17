@@ -189,7 +189,6 @@ def catalog_products():
     return render_template(
         "catalog_products.html",
         products=pagination.items,
-        community_games=community_games,
         brands=Brand.query.filter_by(active=True).order_by(Brand.name.asc()).all(),
         categories=Category.query.filter_by(active=True).order_by(Category.name.asc()).all(),
         q=q, brand_slug=brand_slug, category_id=category_id, store_id=store_id,
@@ -336,6 +335,7 @@ def gaming_market_catalog():
     return render_template(
         "gaming_hub.html",
         products=pagination.items,
+        community_games=community_games,
         total=total,
         page=page,
         pages=pagination.pages,

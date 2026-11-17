@@ -31,4 +31,4 @@ def test_cinema_video_upload_validates_signature_and_file_size():
     source = (ROOT / "cinema.py").read_text(encoding="utf-8")
     assert '"mp4": lambda data: len(data) >= 12 and data[4:8] == b"ftyp"' in source
     assert 'bytes.fromhex("1a45dfa3")' in source
-    assert "MAX_VIDEO_BYTES = 100 * 1024 * 1024" in source
+    assert "MAX_VIDEO_BYTES = 90 * 1024 * 1024" in source

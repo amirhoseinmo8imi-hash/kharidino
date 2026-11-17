@@ -45,6 +45,26 @@ data class CategoryResponse(val items: List<Category>)
 
 data class SearchResponse(val items: List<Product>, val total: Int)
 
+data class CompareProduct(
+    val id: Int,
+    val name: String,
+    val description: String = "",
+    val price: Long = 0,
+    val image: String = "",
+    val category_id: Int? = null,
+    val category: String = "",
+    val base_price: Long = 0,
+    val lowest_offer_price: Long? = null,
+    val highest_offer_price: Long? = null,
+    val offer_count: Int = 0,
+    val offers: List<Offer> = emptyList()
+)
+
+data class CompareResponse(
+    val items: List<CompareProduct>,
+    val count: Int
+)
+
 interface KharidinoApi {
     @GET("api/mobile/health")
     suspend fun health(): Map<String, Any>
@@ -65,4 +85,7 @@ interface KharidinoApi {
 
     @GET("api/mobile/search")
     suspend fun search(@Query("q") query: String): SearchResponse
+
+    @GET("api/mobile/compare")
+    suspend fun compare(@Query("ids") productIds: String): CompareResponse
 }

@@ -183,7 +183,7 @@ def apply_payment(app, db, Order, User):
 
         if tx.amount != int(order.total):
             abort(409, description="مبلغ تراکنش با مبلغ سفارش یکسان نیست.")
-        gateway = _gateway()
+        gateway = _gateway(tx.gateway)
         result = gateway.start(tx.public_id, tx.amount, url_for("payment_callback", transaction_id=tx.public_id, _external=True))
         if result.status != "redirect":
             tx.status = "failed"

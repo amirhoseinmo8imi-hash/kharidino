@@ -22,6 +22,18 @@ android {
         buildConfigField("String", "KHARIDINO_BASE_URL", "\"$baseUrl\"")
     }
 
+    buildTypes {
+        debug {
+            manifestPlaceholders["allowCleartextTraffic"] = "true"
+        }
+        release {
+            manifestPlaceholders["allowCleartextTraffic"] = "false"
+            if (configuredBaseUrl == null || !configuredBaseUrl.startsWith("https://")) {
+                throw GradleException("Release builds require -PkharidinoBaseUrl=https://...")
+            }
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true

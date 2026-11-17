@@ -33,6 +33,9 @@ android {
         }
         release {
             manifestPlaceholders["allowCleartextTraffic"] = "false"
+            if (configuredBaseUrl == null || !configuredBaseUrl.startsWith("https://")) {
+                throw GradleException("Release builds require -PkharidinoBaseUrl=https://...")
+            }
         }
     }
 

@@ -5,6 +5,7 @@ through SellerProduct so global catalog products and other merchants remain safe
 """
 from functools import wraps
 from math import isfinite
+from urllib.parse import urlparse
 
 from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash
@@ -12,6 +13,7 @@ from werkzeug.security import generate_password_hash
 from app import (
     app, db, User, Store, Product, Offer, Category,
     Review, admin_required, save_image, remove_upload, lowest_price,
+    record_price_snapshot,
 )
 
 
@@ -258,13 +260,22 @@ def seller_product_save():
     if not name:
         flash("نام محصول الزامی است.", "warning"); return redirect(url_for("seller_dashboard"))
     try:
-        price = max(0, int(price_raw or 0)); category = db.session.get(Category, int(category_id)) if category_id else None
+        price = int(price_raw or 0)
+        category = db.session.get(Category, int(category_id)) if category_id else None
     except (TypeError, ValueError):
-        flash("قیمت یا دسته‌بندی نامعتبر است.", "danger"); return redirect(url_for("seller_dashboard"))
-    if category_id and not category:
-        flash("دسته‌بندی پیدا نشد.", "danger"); return redirect(url_for("seller_dashboard"))
-    if url and not url.startswith(("http://", "https://")):
-        flash("لینک خرید نامعتبر است.", "danger"); return redirect(url_for("seller_dashboard"))
+        flash("قیمت یا دسته‌بندی نامعتبر است.", "danger")
+        return redirect(url_for("seller_dashboard"))
+    if price <= 0 or price > 10**15:
+        flash("قیمت باید بیشتر از صفر و در محدوده مجاز باشد.", "warning")
+        return redirect(url_for("seller_dashboard"))
+    if category_id and (not category or not category.active):
+        flash("دسته‌بندی فعال و معتبری انتخاب کن.", "danger")
+        return redirect(url_for("seller_dashboard"))
+    if url:
+        parsed_url = urlparse(url)
+        if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc or any(ch.isspace() for ch in url):
+            flash("لینک خرید باید یک نشانی کامل HTTP یا HTTPS باشد.", "danger")
+            return redirect(url_for("seller_dashboard"))
     if pid:
         try:
             pid_value = int(pid)
@@ -289,7 +300,10 @@ def seller_product_save():
     if not offer:
         offer = Offer(product_id=product.id, store_id=account.store_id); db.session.add(offer)
     offer.price, offer.url, offer.in_stock = price, url, stock
-    db.session.commit(); flash("محصول و قیمت فروشگاه ذخیره شد. ✅", "success")
+    db.session.flush()
+    record_price_snapshot(offer)
+    db.session.commit()
+    flash("محصول و قیمت فروشگاه ذخیره شد. ✅", "success")
     return redirect(url_for("seller_dashboard") + "#products")
 
 

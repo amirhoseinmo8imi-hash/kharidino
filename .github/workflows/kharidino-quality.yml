@@ -3,7 +3,7 @@ name: Kharidino quality check
 on:
   push:
     branches:
-      - feature/kharidino-premium-design-system-2026-09-26
+      - feature/kharidino-integrated-roadmap
   pull_request:
 
 jobs:

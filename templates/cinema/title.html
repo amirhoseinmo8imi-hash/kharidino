@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ title.title }} | سینمای خریدینو{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-cinema.css', v='1') }}">{% endblock %}
+{% block content %}
+<main class="kc-wrap kc-detail"><a class="kc-back" href="{{ url_for('cinema_home') }}">← بازگشت به سینما</a>
+<header><span>{{ title.genre }}{% if title.release_year %} · {{ title.release_year }}{% endif %}</span><h1>{{ title.title }}</h1><p>{{ title.synopsis }}</p></header>
+{% if title.video_path %}<video id="kc-player" class="kc-player" controls playsinline preload="metadata" src="{{ url_for('static', filename=title.video_path) }}" {% if progress and progress.seconds %}data-resume="{{ progress.seconds }}"{% endif %}></video>{% else %}<div class="kc-no-video">فایل پخش برای این عنوان ثبت نشده است.</div>{% endif %}
+{% if current_user and title.video_path %}<p class="kc-note">پیشرفت تماشا هنگام پخش ذخیره می‌شود.</p>{% elif not current_user %}<p class="kc-note"><a href="{{ url_for('login', next=request.path) }}">وارد حساب شو</a> تا پیشرفت تماشا ذخیره شود.</p>{% endif %}
+{% if showtimes %}<section class="kc-section"><h2>سانس‌های حضوری</h2><div class="kc-times">{% for slot in showtimes %}<article><div><strong>{{ slot.venue }}</strong><p>{{ slot.starts_at.strftime('%Y/%m/%d - %H:%M') }} · {{ slot.available_seats }} ظرفیت</p><small>{{ slot.ticket_price }} تومان برای هر بلیت</small></div>
+{% if current_user %}<form method="post" action="{{ url_for('cinema_book', showtime_id=slot.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="ticket_count" type="number" min="1" max="8" value="1" aria-label="تعداد بلیت"><button>رزرو بلیت</button></form>{% else %}<a href="{{ url_for('login', next=request.path) }}">ورود برای رزرو</a>{% endif %}</article>{% endfor %}</div></section>{% endif %}
+</main>
+{% if current_user and title.video_path %}<script>
+(()=>{const p=document.getElementById('kc-player');if(!p)return;const resume=Number(p.dataset.resume||0);p.addEventListener('loadedmetadata',()=>{if(resume>0&&resume<p.duration-5)p.currentTime=resume},{once:true});let last=0;const save=()=>{if(!Number.isFinite(p.currentTime)||Math.abs(p.currentTime-last)<5)return;last=p.currentTime;const body=new URLSearchParams({seconds:String(Math.floor(p.currentTime)),csrf_token:document.querySelector('meta[name="csrf-token"]')?.content||''});fetch({{ url_for('cinema_progress', title_id=title.id)|tojson }},{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body,credentials:'same-origin',keepalive:true}).catch(()=>{})};p.addEventListener('timeupdate',save);p.addEventListener('pause',save);window.addEventListener('pagehide',save)})();
+</script>{% endif %}{% endblock %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}پنل {{ store.name }} | {{ site_name }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css', v='2026-09-07-3') }}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant.css', v='2026-09-07-2') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-merchant-v2.css', v='2026-09-07-3') }}"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""><link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-store-map.css', v='2026-11-17-1') }}">{% endblock %}
 {% block content %}
 <div class="seller-shell">
   <aside class="seller-sidebar">
@@ -32,3 +32,4 @@ document.getElementById('bulk-actions')?.addEventListener('submit', function () 
 });
 </script>
 {% endblock %}
+{% block extra_js %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="{{ url_for('static', filename='js/kharidino-seller-location.js', v='2026-11-17-1') }}" defer></script>{% endblock %}

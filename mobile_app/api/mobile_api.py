@@ -32,7 +32,9 @@ def register_mobile_api(app, db, Product, Category, Store, Offer):
         }
         if include_offers:
             offers = []
-            for offer in Offer.query.filter_by(product_id=product.id).order_by(Offer.price.asc()).all():
+            for offer in Offer.query.filter_by(
+                product_id=product.id, in_stock=True
+            ).filter(Offer.price > 0).order_by(Offer.price.asc(), Offer.id.asc()).all():
                 store = db.session.get(Store, offer.store_id)
                 if not store or not store.active:
                     continue
@@ -85,6 +87,63 @@ def register_mobile_api(app, db, Product, Category, Store, Offer):
     def product_detail(product_id):
         product = Product.query.filter_by(id=product_id, active=True).first_or_404()
         return jsonify(product_json(product, include_offers=True))
+
+    @bp.get("/compare")
+    def compare_products():
+        """Return the same active, in-stock store offers used by web comparison."""
+        raw_ids = clean_query(request.args.get("ids"), 80)
+        parts = [part.strip() for part in raw_ids.split(",") if part.strip()]
+        if not 2 <= len(parts) <= 4:
+            return jsonify({"error": "compare_requires_two_to_four_products"}), 400
+        try:
+            product_ids = [int(part) for part in parts]
+        except ValueError:
+            return jsonify({"error": "invalid_product_ids"}), 400
+        if any(product_id <= 0 for product_id in product_ids) or len(set(product_ids)) != len(product_ids):
+            return jsonify({"error": "invalid_product_ids"}), 400
+
+        products_by_id = {
+            product.id: product
+            for product in Product.query.filter(
+                Product.active.is_(True), Product.id.in_(product_ids)
+            ).all()
+        }
+        missing = [product_id for product_id in product_ids if product_id not in products_by_id]
+        if missing:
+            return jsonify({"error": "products_not_found", "ids": missing}), 404
+
+        items = []
+        for product_id in product_ids:
+            product = products_by_id[product_id]
+            offers = (
+                db.session.query(Offer, Store)
+                .join(Store, Offer.store_id == Store.id)
+                .filter(
+                    Offer.product_id == product.id,
+                    Offer.in_stock.is_(True),
+                    Offer.price > 0,
+                    Store.active.is_(True),
+                )
+                .order_by(Offer.price.asc(), Offer.id.asc())
+                .all()
+            )
+            offer_items = [{
+                "id": offer.id,
+                "store_id": store.id,
+                "store": store.name,
+                "price": int(offer.price),
+                "url": offer.url or "",
+            } for offer, store in offers]
+            prices = [item["price"] for item in offer_items]
+            items.append({
+                **product_json(product),
+                "base_price": int(product.price or 0),
+                "lowest_offer_price": min(prices) if prices else None,
+                "highest_offer_price": max(prices) if prices else None,
+                "offer_count": len(offer_items),
+                "offers": offer_items,
+            })
+        return jsonify({"items": items, "count": len(items)})
 
     @bp.get("/search")
     def search_products():

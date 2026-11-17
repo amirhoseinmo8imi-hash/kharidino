@@ -43,9 +43,25 @@
         {% if post.product and post.product.active %}<a class="ke-product" href="{{ url_for('product_detail', product_id=post.product.id) }}"><i class="fa-solid fa-bag-shopping"></i> مشاهده محصول: {{ post.product.name }}</a>{% endif %}
         <div class="ke-post-actions">
           {% if current_user %}<form method="post" action="{{ url_for('explore_like', post_id=post.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="{% if post.id in liked_ids %}is-liked{% endif %}"><i class="fa-solid fa-heart"></i> {{ post.likes|length }}</button></form>
+          <form method="post" action="{{ url_for('explore_save', post_id=post.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="{% if post.id in saved_ids %}is-saved{% endif %}" aria-label="ذخیره پست"><i class="fa-regular fa-bookmark"></i> {% if post.id in saved_ids %}ذخیره‌شده{% else %}ذخیره{% endif %}</button></form>
           <form method="post" action="{{ url_for('explore_report', post_id=post.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="reason" value="گزارش محتوای نامناسب"><button aria-label="گزارش محتوا"><i class="fa-regular fa-flag"></i> گزارش</button></form>
           {% else %}<span><i class="fa-solid fa-heart"></i> {{ post.likes|length }}</span>{% endif %}
         </div>
+        <section class="ke-comments">
+          <h3>دیدگاه‌ها <span>{{ post.comments|selectattr('status', 'equalto', 'published')|list|length }}</span></h3>
+          {% for comment in post.comments|selectattr('status', 'equalto', 'published')|sort(attribute='created_at') %}
+            {% if loop.index > post.comments|selectattr('status', 'equalto', 'published')|list|length - 3 %}
+              <p><strong>{{ comment.user.name }}</strong> {{ comment.body }}</p>
+            {% endif %}
+          {% endfor %}
+          {% if current_user %}
+          <form method="post" action="{{ url_for('explore_comment', post_id=post.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input name="body" maxlength="1000" required placeholder="دیدگاهت را بنویس…">
+            <button type="submit">ارسال</button>
+          </form>
+          {% endif %}
+        </section>
       </div>
     </article>
     {% endfor %}

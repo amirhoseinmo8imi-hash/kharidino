@@ -6651,6 +6651,10 @@ register_explore(app, db, User, Product, login_required, admin_required)
 from cinema import register_cinema
 register_cinema(app, db, User, login_required, admin_required)
 
+# Versioned API for web and Android clients
+from platform_api import register_platform_api
+register_platform_api(app, db, Product)
+
 # =========================================================
 # DATABASE INIT
 # =========================================================

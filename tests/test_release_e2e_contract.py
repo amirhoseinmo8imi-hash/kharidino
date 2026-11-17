@@ -57,14 +57,14 @@ def test_payment_start_has_no_secret_or_test_gateway_fallback_in_route():
 
 def test_production_gateway_selection_is_fail_closed_and_provider_selectable():
     payment = _read("payment.py")
-    start = payment.index('def _gateway()')
+    start = payment.index('def _gateway(provider: str | None = None)')
     end = payment.index('\n\n\ndef _idempotency_key', start)
     block = payment[start:end]
     assert 'TestGateway()' in block
     assert 'return DisabledGateway()' in block
     assert 'PAYMENT_TEST_MODE' in block
     assert 'PAYMENT_PROVIDER' in block
-    assert 'provider == "nextpay"' in block
+    assert 'selected == "nextpay"' in block
     assert 'NextPayGateway' in block
 
 

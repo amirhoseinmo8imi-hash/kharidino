@@ -66,6 +66,7 @@ def test_payment_e2e_contract_connects_checkout_to_testgateway_callback_and_paid
     assert 'url_for("payment_start_form", order_id=order.id)' in source
     assert 'if os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}:' in source
     assert 'return TestGateway()' in source
+    assert 'gateway = _gateway(tx.gateway)' in source
     assert 'gateway.start(tx.public_id, tx.amount' in source
     assert 'tx.authority = result.authority' in source
     assert 'gateway.verify(tx.public_id, tx.amount, request.values.to_dict())' in source

@@ -64,7 +64,8 @@ def test_payment_e2e_contract_connects_checkout_to_testgateway_callback_and_paid
     assert 'app.view_functions["checkout"] = checkout_payment_wrapper' in source
     assert 'session["checkout_payment_order_id"] = new_orders[0].id' in source
     assert 'url_for("payment_start_form", order_id=order.id)' in source
-    assert 'if os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}:' in source
+    assert 'configured_test_mode = os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}' in source
+    assert '(provider is None and configured_test_mode)' in source
     assert 'return TestGateway()' in source
     assert 'gateway = _gateway(tx.gateway)' in source
     assert 'gateway.start(tx.public_id, tx.amount' in source

@@ -212,26 +212,29 @@ def seller_store_save():
     if website and not website.startswith(("http://", "https://")):
         flash("لینک وب‌سایت نامعتبر است.", "warning"); return redirect(url_for("seller_dashboard"))
     store.name, store.website = name, website
-    address = request.form.get("address", "").strip()[:500]
-    lat_raw = request.form.get("latitude", "").strip()
-    lon_raw = request.form.get("longitude", "").strip()
-    latitude = longitude = None
-    if lat_raw or lon_raw:
-        try:
-            latitude, longitude = float(lat_raw), float(lon_raw)
-            if not (isfinite(latitude) and isfinite(longitude) and -90 <= latitude <= 90 and -180 <= longitude <= 180):
-                raise ValueError
-        except (TypeError, ValueError):
-            flash("مختصات جغرافیایی معتبر نیست؛ نقطه را دوباره روی نقشه انتخاب کن.", "warning")
-            return redirect(url_for("seller_dashboard") + "#store-location")
-    geo = StoreGeoLocation.query.filter_by(store_id=store.id).first()
-    if address or latitude is not None or longitude is not None:
-        if not geo:
-            geo = StoreGeoLocation(store_id=store.id)
-            db.session.add(geo)
-        geo.address, geo.latitude, geo.longitude = address, latitude, longitude
-    elif geo:
-        db.session.delete(geo)
+    # The profile form and location form share this endpoint. Only touch
+    # geolocation when the dedicated location fields were actually submitted.
+    if any(key in request.form for key in ("address", "latitude", "longitude")):
+        address = request.form.get("address", "").strip()[:500]
+        lat_raw = request.form.get("latitude", "").strip()
+        lon_raw = request.form.get("longitude", "").strip()
+        latitude = longitude = None
+        if lat_raw or lon_raw:
+            try:
+                latitude, longitude = float(lat_raw), float(lon_raw)
+                if not (isfinite(latitude) and isfinite(longitude) and -90 <= latitude <= 90 and -180 <= longitude <= 180):
+                    raise ValueError
+            except (TypeError, ValueError):
+                flash("مختصات جغرافیایی معتبر نیست؛ نقطه را دوباره روی نقشه انتخاب کن.", "warning")
+                return redirect(url_for("seller_dashboard") + "#store-location")
+        geo = StoreGeoLocation.query.filter_by(store_id=store.id).first()
+        if address or latitude is not None or longitude is not None:
+            if not geo:
+                geo = StoreGeoLocation(store_id=store.id)
+                db.session.add(geo)
+            geo.address, geo.latitude, geo.longitude = address, latitude, longitude
+        elif geo:
+            db.session.delete(geo)
     uploaded = request.files.get("logo")
     if uploaded and uploaded.filename:
         old = store.logo

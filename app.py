@@ -6647,6 +6647,10 @@ register_vehicle_chat(app, db, User, login_required)
 from explore import register_explore
 register_explore(app, db, User, Product, login_required, admin_required)
 
+# Kharidino Cinema module
+from cinema import register_cinema
+register_cinema(app, db, User, login_required, admin_required)
+
 # =========================================================
 # DATABASE INIT
 # =========================================================

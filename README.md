@@ -134,7 +134,7 @@ Seller Funds: paid
 
 - **اکسپلور:** فید تصویر/ویدئو، انتشار با تأیید مدیر، پسندیدن و گزارش محتوا، اتصال اختیاری پست به محصول.
 - **سینما:** کاتالوگ عنوان‌ها، مدیریت و تأیید محتوا، پخش فایل محلی MP4/WebM تا ۹۰ مگابایت در نسخه توسعه، ذخیره ادامه تماشا، تعریف سانس و رزرو ظرفیت.
-- **API نسخه ۱:** /api/v1/platform، /api/v1/market/products، /api/v1/explore/feed و /api/v1/cinema/titles.
+- **API نسخه ۱:** /api/v1/platform، /api/v1/market/products، /api/v1/market/products/{id}/offers برای مقایسه قیمت، /api/v1/explore/feed و /api/v1/cinema/titles.
 - **نقشه:** کشف فروشگاه‌ها در /map و API فروشگاه‌های دارای مختصات.
 - **Android:** پروژه native مبتنی بر Kotlin و Jetpack Compose در پوشه android/ با Retrofit برای دریافت بازار، اکسپلور و سینما.
 

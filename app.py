@@ -6642,6 +6642,12 @@ from vehicle_chat import register_vehicle_chat
 register_vehicle_chat(app, db, User, login_required)
 
 # =========================================================
+# EXPLORE MEDIA FEED
+# =========================================================
+from explore import register_explore
+register_explore(app, db, User, Product, login_required, admin_required)
+
+# =========================================================
 # DATABASE INIT
 # =========================================================
 

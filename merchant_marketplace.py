@@ -333,7 +333,9 @@ def seller_offer_toggle(product_id):
     account = _seller_account(); product = _owned_product(account.store_id, product_id)
     offer = Offer.query.filter_by(product_id=product.id, store_id=account.store_id).first()
     if not offer: abort(404)
-    offer.in_stock = not offer.in_stock; db.session.commit()
+    offer.in_stock = not offer.in_stock
+    record_price_snapshot(offer)
+    db.session.commit()
     flash("وضعیت موجودی تغییر کرد.", "success")
     return redirect(url_for("seller_dashboard") + "#products")
 

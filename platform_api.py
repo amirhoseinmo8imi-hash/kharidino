@@ -1,5 +1,5 @@
 """Versioned read API for the unified Kharidino Android/web clients."""
-from flask import abort, jsonify, request, url_for
+from flask import jsonify, request, url_for
 
 
 def register_platform_api(app, db, Product):

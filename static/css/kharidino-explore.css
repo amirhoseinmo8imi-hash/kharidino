@@ -13,3 +13,5 @@
 .ke-comments p{font-size:.84rem;line-height:1.7;margin:7px 0;overflow-wrap:anywhere}.ke-comments p strong{margin-inline-end:5px}
 .ke-comments form{display:flex;gap:8px;margin-top:10px}.ke-comments input{min-width:0;flex:1;border:1px solid var(--border,#e1e3ea);background:var(--surface-soft,#f8f9fb);border-radius:10px;padding:10px;font:inherit}
 .ke-comments form button{border:0;border-radius:10px;background:var(--primary,#ef4056);color:#fff;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+
+.ke-heading-links{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.ke-heading-links>a:not(.ke-back){color:var(--text,#20232b);text-decoration:none;font-weight:700}

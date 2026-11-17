@@ -1,6 +1,7 @@
 """Kharidino Cinema module: moderated catalog, playback progress and in-person reservations."""
 from __future__ import annotations
-import os, secrets
+import os
+import secrets
 from datetime import datetime
 from pathlib import Path
 from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for

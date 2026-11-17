@@ -74,12 +74,18 @@ class TestGateway(PaymentGateway):
         return GatewayVerifyResult(True, reference)
 
 
-def _gateway() -> PaymentGateway:
-    """Select the configured provider; production fails closed."""
-    if os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}:
+def _gateway(provider: str | None = None) -> PaymentGateway:
+    """Resolve a provider, optionally pinned to the provider stored on a transaction.
+
+    Existing transactions must be verified with the same provider that created
+    them, even if the deployment's default provider changes between redirect
+    and callback. Production still fails closed when a provider is unavailable.
+    """
+    configured_test_mode = os.environ.get("PAYMENT_TEST_MODE", "0").lower() in {"1", "true", "yes"}
+    selected = (provider or os.environ.get("PAYMENT_PROVIDER", "disabled")).strip().lower()
+    if selected == "test" or (provider is None and configured_test_mode):
         return TestGateway()
-    provider = os.environ.get("PAYMENT_PROVIDER", "disabled").strip().lower()
-    if provider == "nextpay":
+    if selected == "nextpay":
         try:
             from payment_gateways import NextPayGateway
             return NextPayGateway()
@@ -193,7 +199,7 @@ def apply_payment(app, db, Order, User):
     @app.route("/payment/callback/<string:transaction_id>", methods=["GET", "POST"])
     def payment_callback(transaction_id):
         tx = PaymentTransaction.query.filter_by(public_id=transaction_id).first_or_404()
-        gateway = _gateway()
+        gateway = _gateway(tx.gateway)
         signature = str(request.values.get("signature", "") or request.headers.get("X-Payment-Signature", "")).strip()
 
         if gateway.callback_signature_required and not _valid_callback_signature(tx.public_id, signature):

@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_versioned_platform_api_exposes_market_explore_and_cinema():
     source = (ROOT / "platform_api.py").read_text(encoding="utf-8")
     assert '"/api/v1/market/products"' in source
+    assert '"/api/v1/market/products/<int:product_id>/offers"' in source
     assert '"/api/v1/explore/feed"' in source
     assert '"/api/v1/cinema/titles"' in source
     assert '"/api/v1/platform"' in source

@@ -6653,7 +6653,7 @@ register_cinema(app, db, User, login_required, admin_required)
 
 # Versioned API for web and Android clients
 from platform_api import register_platform_api
-register_platform_api(app, db, Product)
+register_platform_api(app, db, Product, Offer, Store)
 
 # =========================================================
 # DATABASE INIT

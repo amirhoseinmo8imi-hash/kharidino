@@ -8,6 +8,11 @@ android {
     namespace = "com.kharidino.app"
     compileSdk = 35
 
+    val configuredBaseUrl = (project.findProperty("kharidinoBaseUrl") as String?)
+        ?.trim()
+        ?.trimEnd('/')
+    val baseUrl = (configuredBaseUrl ?: "http://10.0.2.2:5000") + "/"
+
     defaultConfig {
         applicationId = "com.kharidino.app"
         minSdk = 24
@@ -28,10 +33,11 @@ android {
         }
         release {
             manifestPlaceholders["allowCleartextTraffic"] = "false"
-            if (configuredBaseUrl == null || !configuredBaseUrl.startsWith("https://")) {
-                throw GradleException("Release builds require -PkharidinoBaseUrl=https://...")
-            }
         }
+    }
+
+    if (configuredBaseUrl != null && !configuredBaseUrl.startsWith("https://")) {
+        throw GradleException("Configured API endpoint must use HTTPS.")
     }
 
     buildFeatures {

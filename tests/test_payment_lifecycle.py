@@ -101,3 +101,11 @@ def test_payment_callback_secret_never_has_a_usable_fallback(monkeypatch):
     from payment import _valid_callback_signature
 
     assert not _valid_callback_signature("tx-prod", "anything")
+
+def test_callback_gateway_is_pinned_to_transaction_provider(monkeypatch):
+    monkeypatch.setenv("PAYMENT_TEST_MODE", "0")
+    monkeypatch.setenv("PAYMENT_PROVIDER", "disabled")
+    # A deployment default change must not strand a transaction already
+    # created with the test provider; callbacks resolve from tx.gateway.
+    assert isinstance(_gateway("test"), TestGateway)
+    assert isinstance(_gateway(), DisabledGateway)

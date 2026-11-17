@@ -2,7 +2,7 @@
 from flask import jsonify, request, url_for
 
 
-def register_platform_api(app, db, Product):
+def register_platform_api(app, db, Product, Offer, Store):
     @app.get("/api/v1/market/products")
     def api_market_products():
         page = max(1, min(request.args.get("page", 1, type=int) or 1, 10000))
@@ -13,6 +13,27 @@ def register_platform_api(app, db, Product):
             "items": [{"id": p.id, "name": p.name, "description": p.description or "",
                        "price": p.price or 0, "image": p.image or ""} for p in rows],
             "page": page, "per_page": 20, "total": total,
+        })
+
+    @app.get("/api/v1/market/products/<int:product_id>/offers")
+    def api_market_product_offers(product_id):
+        product = db.session.get(Product, product_id)
+        if not product or not product.active:
+            return jsonify({"error": "product_not_found"}), 404
+        offers = Offer.query.join(Store).filter(
+            Offer.product_id == product.id,
+            Store.active.is_(True),
+        ).order_by(Offer.price.asc(), Offer.id.asc()).all()
+        return jsonify({
+            "product_id": product.id,
+            "items": [{
+                "offer_id": offer.id,
+                "store_id": offer.store_id,
+                "store": offer.store.name,
+                "price": offer.price,
+                "url": offer.url,
+                "in_stock": bool(offer.in_stock),
+            } for offer in offers],
         })
 
     @app.get("/api/v1/explore/feed")

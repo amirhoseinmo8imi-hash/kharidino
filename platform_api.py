@@ -1,18 +1,89 @@
 """Versioned read API for the unified Kharidino Android/web clients."""
 from flask import jsonify, request, url_for
+from sqlalchemy import and_, func, or_
+
+from catalog_ux_api import _normalized_sql, normalize_search_text
 
 
 def register_platform_api(app, db, Product, Offer, Store):
     @app.get("/api/v1/market/products")
     def api_market_products():
-        page = max(1, min(request.args.get("page", 1, type=int) or 1, 10000))
-        query = Product.query.filter_by(active=True).order_by(Product.id.desc())
+        raw_q = (request.args.get("q") or "")[:100]
+        q = normalize_search_text(raw_q)
+        stock = (request.args.get("stock") or "all").strip().lower()
+        sort = (request.args.get("sort") or "newest").strip()
+        if stock not in {"all", "available", "unavailable"}:
+            return jsonify({"error": "invalid_stock_filter"}), 400
+        if sort not in {"newest", "price_low", "price_high", "name"}:
+            return jsonify({"error": "invalid_sort"}), 400
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 20, type=int)
+        if page is None or per_page is None or page < 1 or per_page < 1:
+            return jsonify({"error": "invalid_pagination"}), 400
+        page = min(page, 10000)
+        per_page = min(per_page, 40)
+
+        query = Product.query.filter(Product.active.is_(True))
+        if q:
+            name_expr = _normalized_sql(Product.name)
+            description_expr = _normalized_sql(Product.description)
+            query = query.filter(and_(*[
+                or_(name_expr.ilike(f"%{token}%"), description_expr.ilike(f"%{token}%"))
+                for token in q.split()
+            ]))
+        available_ids = (
+            db.session.query(Offer.product_id)
+            .join(Store, Offer.store_id == Store.id)
+            .filter(Store.active.is_(True), Offer.in_stock.is_(True), Offer.price > 0)
+        )
+        if stock == "available":
+            query = query.filter(Product.id.in_(available_ids))
+        elif stock == "unavailable":
+            query = query.filter(~Product.id.in_(available_ids))
+
+        lowest_offer = (
+            db.session.query(func.min(Offer.price))
+            .join(Store, Offer.store_id == Store.id)
+            .filter(
+                Offer.product_id == Product.id,
+                Store.active.is_(True),
+                Offer.in_stock.is_(True),
+                Offer.price > 0,
+            )
+            .correlate(Product).scalar_subquery()
+        )
+        effective_price = func.coalesce(lowest_offer, Product.price)
+        if sort == "price_low":
+            query = query.order_by(effective_price.asc(), Product.id.desc())
+        elif sort == "price_high":
+            query = query.order_by(effective_price.desc(), Product.id.desc())
+        elif sort == "name":
+            query = query.order_by(Product.name.asc(), Product.id.desc())
+        else:
+            query = query.order_by(Product.id.desc())
+
         total = query.count()
-        rows = query.offset((page - 1) * 20).limit(20).all()
+        rows = query.offset((page - 1) * per_page).limit(per_page).all()
+        items = []
+        for product in rows:
+            offers = [
+                offer for offer in product.offers
+                if offer.in_stock and offer.store and offer.store.active and int(offer.price or 0) > 0
+            ]
+            prices = [int(offer.price) for offer in offers]
+            items.append({
+                "id": product.id,
+                "name": product.name,
+                "description": product.description or "",
+                "price": min(prices) if prices else int(product.price or 0),
+                "image": product.image or "",
+                "store_count": len({offer.store_id for offer in offers}),
+                "in_stock": bool(offers),
+            })
         return jsonify({
-            "items": [{"id": p.id, "name": p.name, "description": p.description or "",
-                       "price": p.price or 0, "image": p.image or ""} for p in rows],
-            "page": page, "per_page": 20, "total": total,
+            "items": items, "query": q, "stock": stock, "sort": sort,
+            "page": page, "per_page": per_page, "total": total,
+            "pages": (total + per_page - 1) // per_page,
         })
 
     @app.get("/api/v1/market/products/<int:product_id>/offers")

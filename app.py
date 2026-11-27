@@ -6704,13 +6704,6 @@ register_media_hubs(app)
 from media_api import register_media_api
 register_media_api(app, db, User, Product)
 
-if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
-    )
-
 # PWA service-worker entry point: root scope for installable offline experience.
 @app.route("/service-worker.js")
 def kharidino_pwa_service_worker():
@@ -6718,3 +6711,11 @@ def kharidino_pwa_service_worker():
     response.headers["Service-Worker-Allowed"] = "/"
     response.headers["Cache-Control"] = "no-cache"
     return response
+
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
+    )
+

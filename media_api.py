@@ -3,8 +3,13 @@
 Media is metadata-only for now: this module does not accept raw file uploads.
 """
 from datetime import datetime
+from pathlib import Path
+import secrets
 from flask import request, jsonify, session, abort
 from sqlalchemy import desc
+from werkzeug.utils import secure_filename
+from PIL import Image
+from io import BytesIO
 
 
 def register_media_api(app, db, User, Product):
@@ -47,6 +52,9 @@ def register_media_api(app, db, User, Product):
         created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
         __table_args__ = (db.UniqueConstraint("user_id", "post_id", name="uq_media_report"),)
 
+    app.config.setdefault("MEDIA_UPLOAD_DIR", str(Path(app.root_path) / "static" / "uploads" / "media"))
+    app.config.setdefault("MEDIA_MAX_IMAGE_BYTES", 8 * 1024 * 1024)
+    app.config.setdefault("MEDIA_MAX_VIDEO_BYTES", 80 * 1024 * 1024)
     app.config.setdefault("MEDIA_API_PAGE_SIZE", 20)
     app.config.setdefault("MEDIA_API_MAX_PAGE_SIZE", 40)
 
@@ -113,6 +121,67 @@ def register_media_api(app, db, User, Product):
         post=MediaPost(user_id=uid,kind=kind,title=title,caption=caption,media_url=media_url,product=product,status="pending")
         db.session.add(post);db.session.commit()
         return jsonify(id=post.id,status="pending_review"),201
+
+    @app.route("/api/media/upload", methods=["POST"])
+    def media_upload():
+        uid = signed_in()
+        file = request.files.get("file")
+        kind = str(request.form.get("kind", "image")).lower()
+        if not file or kind not in {"image", "video"}:
+            return jsonify(error="file_and_valid_kind_required"), 400
+        raw = file.read(app.config["MEDIA_MAX_VIDEO_BYTES"] + 1)
+        if not raw:
+            return jsonify(error="empty_file"), 400
+        if kind == "image":
+            if len(raw) > app.config["MEDIA_MAX_IMAGE_BYTES"]:
+                return jsonify(error="image_too_large"), 413
+            try:
+                image = Image.open(BytesIO(raw))
+                if image.format not in {"JPEG", "PNG", "WEBP", "GIF"}:
+                    return jsonify(error="unsupported_image"), 400
+                image.verify()
+            except Exception:
+                return jsonify(error="invalid_image"), 400
+            ext = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp", "GIF": ".gif"}[image.format]
+        else:
+            if len(raw) > app.config["MEDIA_MAX_VIDEO_BYTES"]:
+                return jsonify(error="video_too_large"), 413
+            if not (raw[4:8] == b"ftyp" or raw[:4] == b"\\x1a\\x45\\xdf\\xa3"):
+                return jsonify(error="unsupported_video_container"), 400
+            ext = ".mp4" if raw[4:8] == b"ftyp" else ".webm"
+        directory = Path(app.config["MEDIA_UPLOAD_DIR"])
+        directory.mkdir(parents=True, exist_ok=True)
+        filename = secrets.token_hex(16) + ext
+        target = directory / filename
+        target.write_bytes(raw)
+        return jsonify(media_url="/static/uploads/media/" + filename, kind=kind), 201
+
+    @app.route("/api/admin/media/pending", methods=["GET"])
+    def media_pending_admin():
+        uid = signed_in()
+        admin = db.session.get(User, uid)
+        if not admin or admin.role != "admin":
+            abort(403)
+        rows = MediaPost.query.filter_by(status="pending").order_by(MediaPost.created_at.asc()).limit(100).all()
+        return jsonify(items=[{"id":p.id,"title":p.title,"caption":p.caption,"kind":p.kind,
+          "media_url":p.media_url,"user_id":p.user_id,"product_id":p.product_id} for p in rows])
+
+    @app.route("/api/admin/media/posts/<int:post_id>/moderate", methods=["POST"])
+    def media_moderate_admin(post_id):
+        uid = signed_in()
+        admin = db.session.get(User, uid)
+        if not admin or admin.role != "admin":
+            abort(403)
+        post = db.session.get(MediaPost, post_id)
+        if not post or post.status != "pending":
+            abort(404)
+        data = request.get_json(silent=True) or request.form
+        decision = str(data.get("decision", "")).lower()
+        if decision not in {"publish", "reject"}:
+            return jsonify(error="invalid_decision"), 400
+        post.status = "published" if decision == "publish" else "rejected"
+        db.session.commit()
+        return jsonify(id=post.id, status=post.status)
 
     def get_post(post_id):
         post=db.session.get(MediaPost,post_id)

@@ -1,0 +1,18 @@
+/* Kharidino PWA offline utilities. Never queues checkout/order/payment actions. */
+(function(){
+ 'use strict';
+ const CART='kh-pwa-cart-draft-v1',FAV='kh-pwa-favorites-v1',INSTALL='kh-pwa-install';
+ function read(k,fallback){try{return JSON.parse(localStorage.getItem(k)||'null')||fallback}catch(e){return fallback}}
+ function write(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+ function toast(msg){let n=document.getElementById('kh-pwa-toast');if(!n){n=document.createElement('div');n.id='kh-pwa-toast';n.style.cssText='position:fixed;z-index:100000;bottom:60px;left:12px;background:#172033;color:#fff;padding:12px 18px;border-radius:14px;max-width:90vw;box-shadow:0 6px 22px #0005';document.body.append(n)}n.textContent=msg;setTimeout(()=>n.remove(),3200)}
+ // Persist cart quantity edits locally as a recovery draft, and sync cart-update only when online.
+ function cartDraft(){const form=document.getElementById('cart-form');if(!form)return;const save=()=>{const items={};form.querySelectorAll('input.qty[name^="qty_"]').forEach(i=>{items[i.name]=Math.max(0,Math.min(99,parseInt(i.value||0,10)||0))});write(CART,{items,savedAt:Date.now()})};form.addEventListener('input',save);form.addEventListener('submit',e=>{if(!navigator.onLine){e.preventDefault();save();toast('سبد خرید به‌صورت محلی ذخیره شد؛ برای ثبت در سرور اتصال لازم است.')}});save();}
+ // Product cards/links get lightweight favorites controls without assumptions about backend markup.
+ function favorites(){const favs=new Set(read(FAV,[]));document.querySelectorAll('a[href*="/product/"]').forEach(link=>{if(link.dataset.khFavAdded)return;const match=link.getAttribute('href').match(/\/product\/(\d+)/);if(!match)return;link.dataset.khFavAdded='1';const id=match[1];const btn=document.createElement('button');btn.type='button';btn.textContent=favs.has(id)?'♥':'♡';btn.setAttribute('aria-label',favs.has(id)?'حذف از علاقه‌مندی':'افزودن به علاقه‌مندی');btn.title=btn.getAttribute('aria-label');btn.style.cssText='border:1px solid #ffffff30;border-radius:50%;width:38px;height:38px;background:#172033;color:#ff647c;font-size:20px;cursor:pointer;';btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(favs.has(id)){favs.delete(id);btn.textContent='♡'}else{favs.add(id);btn.textContent='♥'}write(FAV,[...favs]);toast('علاقه‌مندی‌ها روی همین دستگاه ذخیره شد.')});link.parentElement.insertBefore(btn,link);});}
+ // PWA installation prompt and button.
+ let deferred=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;installButton();});
+ function installButton(){if(document.getElementById('kh-install-app')||!deferred)return;const b=document.createElement('button');b.id='kh-install-app';b.textContent=' نصب اپ خریدینو ';b.style.cssText='position:fixed;z-index:99998;bottom:12px;right:12px;border:0;border-radius:14px;padding:12px 16px;background:#ef4056;color:white;font-weight:bold;box-shadow:0 5px 20px #0004';b.addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();await deferred.userChoice;deferred=null;b.remove()});document.body.append(b)}
+ window.addEventListener('appinstalled',()=>{localStorage.setItem(INSTALL,'yes');toast('خریدینو با موفقیت نصب شد!')});
+ window.addEventListener('online',()=>{toast('اینترنت وصل شد؛ پیش‌نویس سبد خرید همچنان برای بررسی در دسترس است.')});
+ window.addEventListener('DOMContentLoaded',()=>{cartDraft();favorites();});
+})();

@@ -149,5 +149,53 @@ def register_media_api(app, db, User, Product):
         db.session.commit()
         return jsonify(status="reported"),201
 
+
+    class CinemaTitle(db.Model):
+        __tablename__ = "cinema_title"
+        id = db.Column(db.Integer, primary_key=True)
+        title = db.Column(db.String(220), nullable=False)
+        synopsis = db.Column(db.Text, default="", nullable=False)
+        kind = db.Column(db.String(20), default="movie", nullable=False)
+        genre = db.Column(db.String(100), default="", nullable=False)
+        year = db.Column(db.Integer, nullable=True)
+        poster_url = db.Column(db.String(700), default="", nullable=False)
+        trailer_url = db.Column(db.String(700), default="", nullable=False)
+        age_rating = db.Column(db.String(30), default="", nullable=False)
+        territory = db.Column(db.String(120), default="", nullable=False)
+        license_start = db.Column(db.DateTime, nullable=True)
+        license_end = db.Column(db.DateTime, nullable=True)
+        licensed = db.Column(db.Boolean, default=False, nullable=False)
+        published = db.Column(db.Boolean, default=False, nullable=False)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    @app.route("/api/cinema/catalog", methods=["GET"])
+    def cinema_catalog():
+        now=datetime.utcnow()
+        rows=CinemaTitle.query.filter_by(published=True,licensed=True).filter(
+            db.or_(CinemaTitle.license_start.is_(None),CinemaTitle.license_start<=now),
+            db.or_(CinemaTitle.license_end.is_(None),CinemaTitle.license_end>=now)
+        ).order_by(CinemaTitle.title.asc()).limit(100).all()
+        return jsonify(items=[{"id":x.id,"title":x.title,"synopsis":x.synopsis,
+          "kind":x.kind,"genre":x.genre,"year":x.year,"poster_url":x.poster_url,
+          "trailer_url":x.trailer_url,"age_rating":x.age_rating,"territory":x.territory}
+          for x in rows])
+
+    @app.route("/api/admin/cinema/titles", methods=["POST"])
+    def cinema_admin_create():
+        uid=signed_in()
+        admin=db.session.get(User,uid)
+        if not admin or admin.role!="admin":abort(403)
+        data=request.get_json(silent=True) or request.form
+        title=str(data.get("title","")).strip()[:220]
+        kind=str(data.get("kind","movie")).strip().lower()
+        if not title or kind not in {"movie","series"}:return jsonify(error="invalid_title"),400
+        row=CinemaTitle(title=title,synopsis=str(data.get("synopsis",""))[:6000],
+          kind=kind,genre=str(data.get("genre",""))[:100],year=int(data["year"]) if str(data.get("year","")).isdigit() else None,
+          poster_url=str(data.get("poster_url",""))[:700],trailer_url=str(data.get("trailer_url",""))[:700],
+          age_rating=str(data.get("age_rating",""))[:30],territory=str(data.get("territory",""))[:120],
+          licensed=False,published=False)
+        db.session.add(row);db.session.commit()
+        return jsonify(id=row.id,status="unlicensed_unpublished"),201
+
     # Expose model references for tests and future moderation workflows.
-    app.extensions["kharidino_media_models"]={"post":MediaPost,"like":MediaLike,"bookmark":MediaBookmark,"report":MediaReport}
+    app.extensions["kharidino_media_models"]={"post":MediaPost,"like":MediaLike,"bookmark":MediaBookmark,"report":MediaReport,"cinema_title":CinemaTitle}

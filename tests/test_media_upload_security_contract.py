@@ -24,5 +24,11 @@ def test_upload_image_sanitization_and_dimension_limit():
 def test_upload_container_signature_checks_and_randomized_filename():
     source = (ROOT / "media_api.py").read_text(encoding="utf-8")
     assert 'raw[4:8] == b"ftyp"' in source
-    assert 'raw[:4] == b"\\x1a\\x45\\xdf\\xa3"' in source
+    assert 'raw[:4] == bytes.fromhex("1a45dfa3")' in source
     assert "secrets.token_hex(16)" in source
+
+
+def test_upload_media_reference_rejects_protocol_relative_paths():
+    source = (ROOT / "media_api.py").read_text(encoding="utf-8")
+    assert 'media_url.startswith("//")' in source
+    assert 'len(raw) >= 12' in source

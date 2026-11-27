@@ -1,19 +1,10 @@
-/* Kharidino PWA worker: caches public static assets only. Never cache API, auth, or HTML responses. */
-const CACHE_NAME = 'kharidino-pwa-static-v1';
-const OFFLINE_URL = '/static/offline.html';
-const STATIC_CORE = ['/static/icons/icon-192.svg','/static/manifest.webmanifest','/static/css/style.css','/static/css/pro.css',OFFLINE_URL];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(STATIC_CORE.map(u=>new Request(u,{cache:'reload'}))).catch(()=>{})));self.skipWaiting();});
-self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('kharidino-pwa-')&&k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
-self.addEventListener('fetch',event=>{
- const req=event.request;if(req.method!=='GET')return;
- const url=new URL(req.url);if(url.origin!==self.location.origin)return;
- // Exclude API, auth, administrative, and personalized HTML from caching.
- if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/admin')||url.pathname.startsWith('/login')||url.pathname.startsWith('/logout')||url.pathname.startsWith('/register')||url.pathname.startsWith('/account'))return;
- if(url.pathname.startsWith('/static/')){
-  event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(res=>{if(res.ok&&res.type==='basic'){const copy=res.clone();caches.open(CACHE_NAME).then(c=>c.put(req,copy)).catch(()=>{});}return res;}).catch(()=>hit||Response.error())));
-  return;
- }
- if(req.mode==='navigate'){
-  event.respondWith(fetch(req).catch(()=>caches.match(OFFLINE_URL).then(r=>r||new Response('اتصال اینترنت برقرار نیست.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}}))));
- }
+/* Kharidino PWA worker v2. Public static caching only; private data and commerce actions excluded. */
+const CACHE='kharidino-pwa-static-v2',OFFLINE='/static/offline.html';
+const CORE=[OFFLINE,'/static/manifest.webmanifest','/static/icons/icon-192.svg','/static/icons/icon-512.svg','/static/css/style.css','/static/css/pro.css','/static/js/main.js','/static/js/kharidino-pwa.js','/static/css/kharidino-pwa.css'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(x=>new Request(x,{cache:'reload'}))).catch(()=>{})));self.skipWaiting()});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('kharidino-pwa-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(u.origin!==self.location.origin)return;
+if(/^\/(api\/|admin|login|logout|register|account|cart|checkout|payment|orders)/.test(u.pathname))return;
+if(u.pathname.startsWith('/static/')){e.respondWith(caches.match(r).then(hit=>hit||fetch(r).then(res=>{if(res.ok&&res.type==='basic')caches.open(CACHE).then(c=>c.put(r,res.clone())).catch(()=>{});return res}).catch(()=>hit||Response.error())));return}
+if(r.mode==='navigate')e.respondWith(fetch(r).catch(()=>caches.match(OFFLINE).then(x=>x||new Response('بدون اینترنت',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}})));
 });

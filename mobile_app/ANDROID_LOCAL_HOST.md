@@ -14,7 +14,7 @@ The Android app packages the full Flask runtime and starts it on the device. A p
 
 ## Initial data
 
-The existing `run_kharidino.py` seed routine creates baseline settings, categories, demo catalog entries and the initial local data needed by the app. Seed prices are examples, not live offers. No `kharidino.db` file is present in the GitHub repository or the user's accessible ChatGPT Library, so the production website's existing users, orders, products, store records and settings have not been migrated into this APK.
+The existing `run_kharidino.py` seed routine creates baseline settings, categories, demo catalog entries and the initial local data needed by the app. Seed prices are examples, not live offers. On a standalone Android install only, the first account registered on that device is granted the local admin role; hosted-site registration behavior is unchanged. No `kharidino.db` file is present in the GitHub repository or the user's accessible ChatGPT Library, so the production website's existing users, orders, products, store records and settings have not been migrated into this APK.
 
 ## Offline boundaries
 

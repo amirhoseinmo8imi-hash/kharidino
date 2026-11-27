@@ -11,7 +11,11 @@
   <meta name="csrf-token" content="{{ _csrf_value }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='2026-09-08-1') }}">
   <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.svg', v='2026-09-08-1') }}" type="image/svg+xml">
+  {% if config.get('KHARIDINO_ANDROID_LOCAL') %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-offline-icons.css') }}">
+  {% else %}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  {% endif %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='2026-store-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pro.css', v='2026-store-2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-global-storefront.css', v='2026-09-06-4') }}">
@@ -53,6 +57,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
+{% if config.get('KHARIDINO_ANDROID_LOCAL') %}
+<div style="position:relative;z-index:10000;background:#10243a;color:#dbeafe;text-align:center;padding:7px 12px;font-size:12px;border-bottom:1px solid #25496d">نسخه داخلی خریدینو فعال است؛ اطلاعات این دستگاه محلی است. پرداخت، قیمت زنده و خدمات آنلاین به اینترنت نیاز دارند.</div>
+{% endif %}
 <div class="site-content">
 {% if request.endpoint == 'home' %}
 <div class="kh-top-promo">

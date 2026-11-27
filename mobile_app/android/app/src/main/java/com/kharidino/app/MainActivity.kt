@@ -68,8 +68,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun installWebsiteBundle() {
+        val marker = File(filesDir, ".kharidino_bundle_version")
+        val version = BuildConfig.VERSION_CODE.toString()
+        if (marker.exists() && marker.readText() == version) return
         copyAssetTree("kharidino", File(filesDir, "kharidino"))
-        File(filesDir, ".kharidino_bundle_version").writeText("1")
+        marker.writeText(version)
     }
 
     private fun copyAssetTree(assetPath: String, target: File) {

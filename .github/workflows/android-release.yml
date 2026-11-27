@@ -8,7 +8,7 @@ on:
       - 'mobile_app/api/**'
       - 'app.py'
       - 'run_kharidino.py'
-      - '*_*.py'
+      - '*.py'
       - 'templates/**'
       - 'static/**'
       - '.github/workflows/android-release.yml'

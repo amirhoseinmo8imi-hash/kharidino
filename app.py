@@ -6701,3 +6701,7 @@ if __name__ == "__main__":
         port=5000,
         debug=os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
     )
+
+# Kharidino Explore / Reels / Cinema route scaffolding
+from media_hubs import register_media_hubs
+register_media_hubs(app)

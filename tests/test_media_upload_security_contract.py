@@ -40,3 +40,22 @@ def test_pending_uploads_are_private_until_moderation():
     assert '"/media/file/" + filename' in source
     assert 'status="published"' in source[source.index("def media_file"):source.index("def media_pending_admin")]
     assert '"/static/uploads/media/"' not in source
+
+
+def test_media_mutations_are_subject_to_global_csrf_validation():
+    app_source = (ROOT / "app.py").read_text(encoding="utf-8")
+    csrf_start = app_source.index("def validate_csrf():")
+    csrf_end = app_source.index("@app.errorhandler(400)", csrf_start)
+    csrf = app_source[csrf_start:csrf_end]
+    assert "X-CSRF-Token" in csrf
+    assert "secrets.compare_digest" in csrf
+    assert "abort(403" in csrf
+    media_source = (ROOT / "media_api.py").read_text(encoding="utf-8")
+    for endpoint in ["media_upload", "media_create_post", "media_like", "media_bookmark", "media_report", "media_moderate_admin"]:
+        assert f"def {endpoint}" in media_source
+    assert "@app.before_request" in app_source and "validate_csrf" in app_source
+
+
+def test_service_worker_route_registered_before_direct_run():
+    app_source = (ROOT / "app.py").read_text(encoding="utf-8")
+    assert app_source.index('@app.route("/service-worker.js")') < app_source.index('if __name__ == "__main__":')

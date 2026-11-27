@@ -18,3 +18,10 @@ def test_worker_limits_cache_to_public_static_resources():
     assert "PRIVATE.test(url.pathname)" in sw
     assert "cache.put(request,response.clone())" in sw
     assert "cache.match(OFFLINE)" in sw
+
+
+def test_service_worker_route_is_registered_before_script_entrypoint_runs():
+    app_source=(ROOT / "app.py").read_text(encoding="utf-8")
+    route=app_source.index("@app.route(\"/service-worker.js\")")
+    run=app_source.index('if __name__ == "__main__":')
+    assert route < run

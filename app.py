@@ -6705,3 +6705,8 @@ if __name__ == "__main__":
 # Kharidino Explore / Reels / Cinema route scaffolding
 from media_hubs import register_media_hubs
 register_media_hubs(app)
+
+
+# Media discovery feeds and interactions (moderated metadata API)
+from media_api import register_media_api
+register_media_api(app, db, User, Product)

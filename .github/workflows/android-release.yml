@@ -42,7 +42,7 @@ jobs:
           if-no-files-found: error
 
   build-release:
-    if: github.event_name == 'workflow_dispatch' && vars.KHARIDINO_BASE_URL != ''
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,8 +61,10 @@ jobs:
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
       - name: Build Release APK
-        run: gradle assembleRelease -PkharidinoBaseUrl="${{ vars.KHARIDINO_BASE_URL }}"
+        run: gradle assembleRelease
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:

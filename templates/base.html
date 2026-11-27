@@ -242,11 +242,18 @@ if(sameOrigin && !headers.has('X-CSRF-Token'))headers.set('X-CSRF-Token',token);
 </script>
 <script src="{{ url_for('static', filename='js/inventory-ui.js', v='2026-09-06-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-mega-menu.js', v='2026-09-25-3') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-ultimate-2026.js', v='2026-09-07-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-experience-2026.js', v='2026-09-26-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-theme.js', v='2026-10-04-1') }}" defer></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js', v='2026-09-08-1') }}", {scope: '/'}).catch(function () {});
-    });
-  }
+(function(){
+ const root=document.documentElement;
+ function showStatus(){
+  let bar=document.getElementById('kh-pwa-status');
+  if(!bar){bar=document.createElement('div');bar.id='kh-pwa-status';bar.setAttribute('role','status');bar.style.cssText='position:fixed;z-index:99999;bottom:12px;left:12px;padding:8px 14px;border-radius:14px;font-size:13px;background:#172033;color:white;box-shadow:0 4px 18px #0003;';document.body.appendChild(bar);}
+  bar.textContent=navigator.onLine?'خریدینو · آنلاین':'خریدینو · آفلاین (پرداخت و ثبت سفارش غیرفعال)';
+  bar.style.background=navigator.onLine?'#172033':'#9b2638';
+ }
+ window.addEventListener('online',showStatus);window.addEventListener('offline',showStatus);
+ window.addEventListener('load',showStatus);
+ if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/service-worker.js',{scope:'/'}).catch(function(){});});}
+})();
 </script>
 <script>
 (function(){

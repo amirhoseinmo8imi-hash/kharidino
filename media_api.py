@@ -183,7 +183,14 @@ def register_media_api(app, db, User, Product):
         if not path.is_file():
             abort(404)
         from flask import send_file
-        return send_file(path, conditional=True)
+        content_types = {
+            ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp",
+            ".mp4": "video/mp4", ".webm": "video/webm",
+        }
+        response = send_file(path, mimetype=content_types[path.suffix.lower()], conditional=True)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return response
 
     @app.route("/api/admin/media/pending", methods=["GET"])
     def media_pending_admin():

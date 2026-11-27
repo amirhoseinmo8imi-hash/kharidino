@@ -1,31 +1,33 @@
-# Android: Embedded Local Website
+# Android: Embedded Kharidino Website
 
-The Android app packages the existing Flask website and runs it on the device. It does not require a public domain or hosting to open local pages.
+The Android app packages the full Flask runtime and starts it on the device. A public domain or hosting plan is not required for local pages.
 
-## Runtime
+## Runtime and included modules
 
 - Chaquopy embeds Python 3.11.
-- The Android Gradle build copies the website's root Python modules, all templates, and static assets into APK assets.
-- At first launch, assets are copied to app-private `filesDir/kharidino`.
-- Flask/SQLAlchemy runs on `127.0.0.1:8765` only; it is not exposed to the Wi-Fi/LAN.
-- The existing SQLite database and generated Flask secret are stored in the app-private website folder.
-- WebView renders the actual Flask website pages. External links are handed to the Android browser.
-- On app updates, bundled code/templates refresh while the SQLite DB, secret and existing user uploads are preserved.
+- The app launches the project's production entry point, `run_kharidino.py`, not only `app.py`. This registers the catalog, mobile API, security, checkout, payment, order lifecycle, seller marketplace, fulfillment, accounting, profile, gaming and vehicle modules.
+- Gradle bundles the exact runtime Python modules, `mobile_app/api`, all templates, and all static assets.
+- First launch copies the bundle into app-private `filesDir/kharidino`.
+- Flask/SQLAlchemy listens on `127.0.0.1:8765` only.
+- WebView renders the actual Flask pages. External HTTP(S) links are opened outside the local WebView.
+- SQLite, generated session secret, and uploaded files live in app-private storage. App updates refresh the bundled source while preserving the local database and existing uploads.
 
-## Build
+## Initial data
 
-Open `mobile_app/android` in Android Studio or run `.gradlew.bat :app:assembleDebug` from that directory. The first build needs internet to download Gradle/Chaquopy/Python dependencies. The installed app can open bundled local pages without a public host.
+The existing `run_kharidino.py` seed routine creates baseline settings, categories, demo catalog entries and the initial local data needed by the app. Seed prices are examples, not live offers. No `kharidino.db` file is present in the GitHub repository or the user's accessible ChatGPT Library, so the production website's existing users, orders, products, store records and settings have not been migrated into this APK.
 
 ## Offline boundaries
 
-Local pages, local SQLite records, and bundled assets can work offline. These features still need internet/provider connectivity: online payment settlement and callbacks, SMS/email delivery, password recovery, remote chat/AI, live prices, external store checkout, and cloud account synchronization. Product images not bundled in `static/uploads` may not appear offline.
+Local pages and SQLite-backed records can work offline. Payment settlement/callbacks, SMS/email, remote password recovery, live price refresh, cloud AI/chat, external checkout, sending orders to merchants and cloud synchronization still need their external providers or a future hosted API. Orders entered offline remain local to that device until a sync service is implemented.
 
-Orders stored locally are device-local records; they are not delivered to a merchant or centrally processed until a sync service is added. The PDF invoice route still depends on ReportLab and Persian text-shaping libraries which are not included in the Android Python dependency set; HTML invoices are the current fallback.
+The PDF invoice endpoint may require ReportLab and Persian shaping packages not currently installed in the Android Python environment; HTML invoice views remain the supported local fallback.
 
-## Security
+## Build and validation
 
-The embedded server binds only to loopback. WebView file/content access is disabled, mixed content is blocked, third-party cookies are disabled, and non-local links leave the WebView. Do not ship production admin credentials or treat a device-local admin session as centrally authenticated.
+Open `mobile_app/android` in Android Studio with JDK 17 and Gradle 8.9, or run `gradle assembleDebug` from that directory. The first build needs internet to download Gradle, Android SDK and Chaquopy dependencies. The installed app does not need a public host to load the embedded website.
 
-## Future hosting
+The GitHub Actions workflow publishes a debug APK artifact only after a successful build. A successful CI build still needs installation and runtime testing on a physical Android device before release.
 
-The existing Flask codebase remains the basis for future hosting. A later sync/API layer can add remote authentication and data synchronization without making the app depend on a public website for its local shell.
+## Security and future hosting
+
+The server binds to loopback only; WebView file/content access is disabled, mixed content is blocked, and third-party cookies are disabled. There is no hard-coded admin password. Local accounts are device-local, not central accounts. A future sync/API layer can connect the app to a hosted backend without making the local shell depend on a website.

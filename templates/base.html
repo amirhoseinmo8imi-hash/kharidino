@@ -53,8 +53,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pwa.css', v='pwa-1') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-app-output.css', v='app-output-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-app-splash.css', v='splash-1') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
+<div id="kh-app-splash" class="kh-app-splash" role="status" aria-label="در حال راه‌اندازی خریدینو"><div class="kh-splash-brand"><img src="{{ url_for('static', filename='icons/icon-192.svg') }}" alt=""><strong>{{ site_name }}</strong><span>خرید هوشمند، تجربه‌ای تازه</span><div class="kh-splash-loader" aria-hidden="true"><i></i></div></div></div>
 <div class="site-content">
 {% if request.endpoint == 'home' %}
 <div class="kh-top-promo">
@@ -278,4 +280,5 @@ if(sameOrigin && !headers.has('X-CSRF-Token'))headers.set('X-CSRF-Token',token);
 <a class="dock-cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد</span>{% if cart_count %}<b>{{ cart_count }}</b>{% endif %}</a>
 <a href="{{ url_for('profile') if current_user else url_for('login') }}"><i class="fa-regular fa-user"></i><span>حساب</span></a>
 </nav>
+<script src="{{ url_for('static', filename='js/kharidino-app-splash.js', v='splash-1') }}" defer></script>
 </body></html>

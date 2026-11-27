@@ -52,6 +52,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-modern-shell-2026.css', v='2026-10-04-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pwa.css', v='pwa-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-app-output.css', v='app-output-1') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
@@ -269,4 +270,12 @@ if(sameOrigin && !headers.has('X-CSRF-Token'))headers.set('X-CSRF-Token',token);
 })();
 </script>
 <script src="{{ url_for('static', filename='js/kharidino-pwa.js', v='pwa-2') }}" defer></script>
+
+<nav class="kharidino-mobile-dock" aria-label="ناوبری اپلیکیشن">
+<a href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a>
+<a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-store"></i><span>خرید</span></a>
+<a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه</span></a>
+<a class="dock-cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد</span>{% if cart_count %}<b>{{ cart_count }}</b>{% endif %}</a>
+<a href="{{ url_for('profile') if current_user else url_for('login') }}"><i class="fa-regular fa-user"></i><span>حساب</span></a>
+</nav>
 </body></html>

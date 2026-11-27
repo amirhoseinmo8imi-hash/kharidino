@@ -51,6 +51,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-experience-2026.css', v='2026-09-26-4') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-modern-shell-2026.css', v='2026-10-04-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pwa.css', v='pwa-1') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 <div class="site-content">
@@ -267,4 +268,5 @@ if(sameOrigin && !headers.has('X-CSRF-Token'))headers.set('X-CSRF-Token',token);
  check();setInterval(check,3000);
 })();
 </script>
+<script src="{{ url_for('static', filename='js/kharidino-pwa.js', v='pwa-2') }}" defer></script>
 </body></html>

@@ -5,6 +5,12 @@ on:
   push:
     paths:
       - 'mobile_app/android/**'
+      - 'mobile_app/api/**'
+      - 'app.py'
+      - 'run_kharidino.py'
+      - '*_*.py'
+      - 'templates/**'
+      - 'static/**'
       - '.github/workflows/android-release.yml'
 
 permissions:

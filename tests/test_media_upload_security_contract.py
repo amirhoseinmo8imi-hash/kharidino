@@ -32,3 +32,11 @@ def test_upload_media_reference_rejects_protocol_relative_paths():
     source = (ROOT / "media_api.py").read_text(encoding="utf-8")
     assert 'media_url.startswith("//")' in source
     assert 'len(raw) >= 12' in source
+
+
+def test_pending_uploads_are_private_until_moderation():
+    source = (ROOT / "media_api.py").read_text(encoding="utf-8")
+    assert 'Path(app.instance_path) / "private_media"' in source
+    assert '"/media/file/" + filename' in source
+    assert 'status="published"' in source[source.index("def media_file"):source.index("def media_pending_admin")]
+    assert '"/static/uploads/media/"' not in source

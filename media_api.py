@@ -8,7 +8,7 @@ import secrets
 from flask import request, jsonify, session, abort
 from sqlalchemy import desc
 from PIL import Image
-from io import BytesIO
+from io import BytesIO\nimport re
 
 
 def register_media_api(app, db, User, Product):
@@ -51,7 +51,7 @@ def register_media_api(app, db, User, Product):
         created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
         __table_args__ = (db.UniqueConstraint("user_id", "post_id", name="uq_media_report"),)
 
-    app.config.setdefault("MEDIA_UPLOAD_DIR", str(Path(app.root_path) / "static" / "uploads" / "media"))
+    app.config.setdefault("MEDIA_UPLOAD_DIR", str(Path(app.instance_path) / "private_media"))
     app.config.setdefault("MEDIA_MAX_IMAGE_BYTES", 8 * 1024 * 1024)
     app.config.setdefault("MEDIA_MAX_VIDEO_BYTES", 80 * 1024 * 1024)
     app.config.setdefault("MEDIA_API_PAGE_SIZE", 20)
@@ -168,9 +168,9 @@ def register_media_api(app, db, User, Product):
         filename = secrets.token_hex(16) + ext
         target = directory / filename
         target.write_bytes(raw)
-        return jsonify(media_url="/static/uploads/media/" + filename, kind=kind), 201
+        return jsonify(media_url="/media/file/" + filename, kind=kind), 201
 
-    @app.route("/api/admin/media/pending", methods=["GET"])
+    @app.route("/media/file/<filename>", methods=["GET"])\n    def media_file(filename):\n        # Uploaded media remains outside static storage until the linked post is published.\n        if not filename or "/" in filename or "\\\\" in filename or not re.fullmatch(r"[a-f0-9]{32}\\.(?:jpg|png|webp|mp4|webm)", filename):\n            abort(404)\n        post = MediaPost.query.filter_by(media_url="/media/file/" + filename, status="published").first()\n        if not post:\n            abort(404)\n        path = Path(app.config["MEDIA_UPLOAD_DIR"]) / filename\n        if not path.is_file():\n            abort(404)\n        from flask import send_file\n        return send_file(path, conditional=True)\n\n    @app.route("/api/admin/media/pending", methods=["GET"])
     def media_pending_admin():
         uid = signed_in()
         admin = db.session.get(User, uid)

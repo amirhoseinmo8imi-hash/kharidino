@@ -22,3 +22,14 @@ def test_pwa_install_and_local_cart_favorites():
     assert 'kh-pwa-cart-draft-v1' in js
     assert 'kh-pwa-favorites-v1' in js
     assert "if(!navigator.onLine){e.preventDefault();save();" in js
+
+
+def test_app_output_mobile_dock_and_responsive_css_are_wired():
+    base = (ROOT / "templates/base.html").read_text(encoding="utf-8")
+    css = (ROOT / "static/css/kharidino-app-output.css").read_text(encoding="utf-8")
+    for endpoint in ["catalog_products", "compare", "cart", "profile", "home"]:
+        assert f"url_for('{endpoint}')" in base
+    assert "kharidino-mobile-dock" in base
+    assert "@media(max-width:760px)" in css
+    assert "grid-template-columns:repeat(2,minmax(0,1fr))" in css
+    assert "env(safe-area-inset-bottom)" in css

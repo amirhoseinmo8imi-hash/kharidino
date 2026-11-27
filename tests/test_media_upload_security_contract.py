@@ -59,3 +59,11 @@ def test_media_mutations_are_subject_to_global_csrf_validation():
 def test_service_worker_route_registered_before_direct_run():
     app_source = (ROOT / "app.py").read_text(encoding="utf-8")
     assert app_source.index('@app.route("/service-worker.js")') < app_source.index('if __name__ == "__main__":')
+
+
+def test_published_media_responses_set_explicit_mime_and_nosniff():
+    source = (ROOT / "media_api.py").read_text(encoding="utf-8")
+    section = source[source.index("def media_file"):source.index("def media_pending_admin")]
+    assert "content_types" in section
+    assert "mimetype=content_types[path.suffix.lower()]" in section
+    assert 'response.headers["X-Content-Type-Options"] = "nosniff"' in section

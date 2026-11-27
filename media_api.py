@@ -170,21 +170,21 @@ def register_media_api(app, db, User, Product):
         target.write_bytes(raw)
         return jsonify(media_url="/media/file/" + filename, kind=kind), 201
 
-    @app.route("/media/file/<filename>", methods=["GET"])
-    def media_file(filename):
-        # Uploaded media remains outside static storage until the linked post is published.
-        if not filename or "/" in filename or "\\\\" in filename or not re.fullmatch(r"[a-f0-9]{32}\.(?:jpg|png|webp|mp4|webm)", filename):
-            abort(404)
-        post = MediaPost.query.filter_by(media_url="/media/file/" + filename, status="published").first()
-        if not post:
-            abort(404)
-        path = Path(app.config["MEDIA_UPLOAD_DIR"]) / filename
-        if not path.is_file():
-            abort(404)
-        from flask import send_file
-        return send_file(path, conditional=True)
-
-    @app.route("/api/admin/media/pending", methods=["GET"])
+        @app.route("/media/file/<filename>", methods=["GET"])
+        def media_file(filename):
+            # Uploaded media remains outside static storage until the linked post is published.
+            if not filename or "/" in filename or "\\\\" in filename or not re.fullmatch(r"[a-f0-9]{32}\.(?:jpg|png|webp|mp4|webm)", filename):
+                abort(404)
+            post = MediaPost.query.filter_by(media_url="/media/file/" + filename, status="published").first()
+            if not post:
+                abort(404)
+            path = Path(app.config["MEDIA_UPLOAD_DIR"]) / filename
+            if not path.is_file():
+                abort(404)
+            from flask import send_file
+            return send_file(path, conditional=True)
+    
+        @app.route("/api/admin/media/pending", methods=["GET"])
     def media_pending_admin():
         uid = signed_in()
         admin = db.session.get(User, uid)

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.km-media-hub{max-width:1120px;margin:2rem auto;padding:1.25rem;direction:rtl}
+.km-media-hero{border-radius:26px;padding:clamp(24px,5vw,56px);color:#fff;background:linear-gradient(125deg,#172554,#4f46e5 55%,#9333ea);position:relative;overflow:hidden}
+.km-media-hero h1{font-size:clamp(2rem,5vw,3.2rem);margin:.5rem 0}
+.km-media-hero p{max-width:720px;line-height:2;opacity:.92}
+.km-media-badge{display:inline-flex;padding:7px 12px;border:1px solid #ffffff55;border-radius:999px;background:#ffffff15}
+.km-media-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:22px}
+.km-media-card{border:1px solid #e5e7eb;background:var(--bs-body-bg,#fff);border-radius:18px;padding:20px;box-shadow:0 8px 24px #00000008}
+.km-media-card h3{margin:0 0 10px}.km-media-card p{line-height:1.9}
+.km-media-card i{font-size:1.4rem;margin-bottom:12px;color:#6366f1}
+.km-media-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.km-media-actions a{padding:11px 18px;border-radius:13px;background:#fff;color:#4338ca;font-weight:700;text-decoration:none}
+</style>
+<div class="km-media-hub">
+{% if hub == 'explore' %}
+<section class="km-media-hero"><span class="km-media-badge">Kharidino Explore</span><h1>دنیای کشف خریدینو</h1><p>محصولات تازه، فروشگاه‌ها، ویدئوهای الهام‌بخش و محتوای مرتبط را در یک تجربه کشف یکپارچه دنبال کن. زیرساخت فید و محتوا در حال توسعه است.</p><div class="km-media-actions"><a href="{{ url_for('kharidino_reels') }}">ورود به ریلز</a><a href="{{ url_for('catalog_products') }}">کشف محصولات</a></div></section>
+<div class="km-media-grid"><article class="km-media-card"><i class="fa-solid fa-wand-magic-sparkles"></i><h3>پیشنهادهای کشف</h3><p>در فاز بعد، پیشنهادها بر اساس علاقه، تعامل و کیفیت محتوا رتبه‌بندی می‌شوند.</p></article><article class="km-media-card"><i class="fa-solid fa-store"></i><h3>فروشگاه‌ها</h3><p>فروشندگان و پیشنهادهای محصولات در مسیر اتصال به فید کشف قرار دارند.</p></article><article class="km-media-card"><i class="fa-solid fa-video"></i><h3>محتوای ویدئویی</h3><p>ریلز و محتواهای مرتبط، با لینک مستقیم به محصول، در این بخش یکپارچه خواهند شد.</p></article></div>
+{% elif hub == 'reels' %}
+<section class="km-media-hero"><span class="km-media-badge">Kharidino Reels</span><h1>ویدئوهای کوتاه؛ کشف و خرید</h1><p>تجربه ویدئوهای کوتاه متصل به محصول، فروشنده و سازنده محتوا. این صفحه، نقطه شروع فید ریلز است؛ انتشار و پخش واقعی پس از تکمیل پردازش رسانه، ذخیره‌سازی، مدیریت محتوا و API فعال می‌شود.</p><div class="km-media-actions"><a href="{{ url_for('kharidino_explore') }}">رفتن به اکسپلور</a><a href="{{ url_for('catalog_products') }}">مشاهده محصولات</a></div></section>
+<div class="km-media-grid"><article class="km-media-card"><i class="fa-solid fa-mobile-screen"></i><h3>فید تمام‌صفحه</h3><p>اسکرول عمودی، پخش خودکار و کنترل صدا در طراحی فید آینده.</p></article><article class="km-media-card"><i class="fa-solid fa-bag-shopping"></i><h3>خرید از ویدئو</h3><p>کارت محصول، قیمت و مسیر خرید، بدون گم‌کردن محتوا.</p></article><article class="km-media-card"><i class="fa-solid fa-shield-halved"></i><h3>محتوای امن</h3><p>گزارش، بازبینی و کنترل بارگذاری برای جلوگیری از محتوای نامناسب.</p></article></div>
+{% else %}
+<section class="km-media-hero"><span class="km-media-badge">Kharidino Cinema</span><h1>سینمای آنلاین خریدینو</h1><p>کاتالوگ فیلم و سریال، ادامه تماشا و اشتراک؛ با اولویت حقوق انتشار، کنترل دسترسی و امنیت پخش. فعلاً این بخش پوسته معرفی است و هیچ محتوای پخش یا مجوزی ادعا نمی‌شود.</p><div class="km-media-actions"><a href="{{ url_for('kharidino_explore') }}">اکسپلور</a><a href="{{ url_for('home') }}">خانه خریدینو</a></div></section>
+<div class="km-media-grid"><article class="km-media-card"><i class="fa-solid fa-film"></i><h3>کاتالوگ</h3><p>فیلم، سریال، فصل، قسمت، ژانر و رده‌بندی سنی.</p></article><article class="km-media-card"><i class="fa-solid fa-key"></i><h3>مجوز و دسترسی</h3><p>ثبت قلمرو، زمان اعتبار و سطح دسترسی به محتوای مجاز.</p></article><article class="km-media-card"><i class="fa-solid fa-play"></i><h3>پخش امن</h3><p>کیفیت‌های مختلف، زیرنویس، ادامه تماشا و محدودیت نشست در مراحل بعد.</p></article></div>
+{% endif %}
+</div>
+{% endblock %}

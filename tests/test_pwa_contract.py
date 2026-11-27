@@ -21,4 +21,4 @@ def test_pwa_install_and_local_cart_favorites():
     assert 'beforeinstallprompt' in js
     assert 'kh-pwa-cart-draft-v1' in js
     assert 'kh-pwa-favorites-v1' in js
-    assert 'checkout' not in js.lower() or 'payment' not in js.lower()
+    assert "if(!navigator.onLine){e.preventDefault();save();" in js

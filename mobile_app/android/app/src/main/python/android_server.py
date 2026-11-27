@@ -23,10 +23,11 @@ def start(app_root: str, port: int = 8765):
     sys.path.insert(0, str(root))
     os.chdir(str(root))
 
-    import app as kharidino_app
-    kharidino_app.app.config["KHARIDINO_ANDROID_LOCAL"] = True
+    import run_kharidino as kharidino_runtime
+    kharidino_app = kharidino_runtime.app
+    kharidino_app.config["KHARIDINO_ANDROID_LOCAL"] = True
 
-    _server = make_server("127.0.0.1", int(port), kharidino_app.app, threaded=True)
+    _server = make_server("127.0.0.1", int(port), kharidino_app, threaded=True)
     _thread = threading.Thread(target=_server.serve_forever, name="KharidinoLocalHost", daemon=True)
     _thread.start()
     return "http://127.0.0.1:%s/" % port

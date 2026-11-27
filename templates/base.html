@@ -51,8 +51,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-experience-2026.css', v='2026-09-26-4') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-modern-shell-2026.css', v='2026-10-04-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-pwa.css', v='pwa-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-app-output.css', v='app-output-1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-app-splash.css', v='splash-1') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
+<div id="kh-app-splash" class="kh-app-splash" role="status" aria-label="در حال راه‌اندازی خریدینو"><div class="kh-splash-brand"><img src="{{ url_for('static', filename='icons/icon-192.svg') }}" alt=""><strong>{{ site_name }}</strong><span>خرید هوشمند، تجربه‌ای تازه</span><div class="kh-splash-loader" aria-hidden="true"><i></i></div></div></div>
 <div class="site-content">
 {% if request.endpoint == 'home' %}
 <div class="kh-top-promo">
@@ -92,6 +96,9 @@
     <a class="km-nav-link km-nav-link--service" href="{{ url_for('services_hub') }}"><i class="fa-solid fa-grid-2"></i><span>همه خدمات</span></a>
     <a class="km-nav-link" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span></a>
     <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
+    <a class="km-nav-link" href="{{ url_for('kharidino_explore') }}"><i class="fa-solid fa-compass"></i><span>اکسپلور</span></a>
+    <a class="km-nav-link" href="{{ url_for('kharidino_reels') }}"><i class="fa-solid fa-film"></i><span>ریلز</span></a>
+    <a class="km-nav-link" href="{{ url_for('kharidino_cinema') }}"><i class="fa-solid fa-clapperboard"></i><span>سینما</span></a>
     <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
     <a class="km-nav-link km-nav-link--service" href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><span>گیمینگ</span></a>
     <a class="km-nav-link km-nav-link--service" href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><span>میوه و تازه</span></a>
@@ -190,7 +197,7 @@
 <main class="kg-main">{% block content %}{% endblock %}</main>
 <footer class="footer kh-footer"><div class="container"><div class="kh-footer-top"><div class="kh-footer-brand"><a href="{{ url_for('home') }}" class="kh-footer-logo"><span class="kh-footer-logo-mark"><i class="fa-solid fa-cart-shopping"></i></span><span>{{ site_name }}</span></a><h3>خریدینو؛ انتخاب هوشمند، مقایسه شفاف، خرید مطمئن</h3><p>{{ setting('footer_text','قیمت‌ها را مقایسه کن، فروشگاه‌ها را بشناس و با آگاهی بیشتر خرید کن.') }}</p><div class="kh-footer-badges"><span><i class="fa-solid fa-scale-balanced"></i> مقایسه قیمت</span><span><i class="fa-solid fa-store"></i> فروشگاه‌های متنوع</span><span><i class="fa-solid fa-shield-heart"></i> انتخاب مطمئن</span></div></div><div class="kh-footer-links"><h4>دسترسی سریع</h4><a href="{{ url_for('home') }}">خانه</a><a href="{{ url_for('stores') }}">فروشگاه‌ها</a><a href="{{ url_for('features') }}">امکانات خریدینو</a><a href="{{ url_for('compare') }}">مقایسه محصولات</a><a href="{{ url_for('about') }}">درباره ما</a></div><div class="kh-footer-links"><h4>حساب کاربری</h4>{% if current_user %}<a href="{{ url_for('profile') }}">پروفایل من</a><a href="{{ url_for('my_orders') }}">سفارش‌های من</a>{% else %}<a href="{{ url_for('login') }}">ورود به حساب</a><a href="{{ url_for('register') }}">ثبت‌نام</a>{% endif %}<a href="{{ url_for('cart') }}">سبد خرید</a></div><div class="kh-footer-links"><h4>پشتیبانی و راهنما</h4><a href="{{ url_for('contact') }}">تماس با ما</a><a href="{{ url_for('about') }}">درباره خریدینو</a><a href="{{ url_for('features') }}">راهنمای امکانات</a><div class="kh-footer-support"><i class="fa-solid fa-headset"></i><span>پشتیبانی خریدینو<br><small>همراه شما در مسیر انتخاب</small></span></div></div></div><div class="kh-footer-stats"><div><strong>{{ store_count|default(0) }}+</strong><span>فروشگاه فعال</span></div><div><strong>{{ category_count|default(0) }}+</strong><span>دسته‌بندی</span></div><div><strong>{{ offer_count|default(0) }}+</strong><span>پیشنهاد قیمت</span></div><div><strong>{{ product_count|default(0) }}+</strong><span>محصول فعال</span></div></div><div class="footer-bottom kh-footer-bottom"><span>© {{ site_name }} — تمامی حقوق محفوظ است.</span><span>{{ setting('footer_copyright','خریدینو؛ برای یک انتخاب بهتر.') }}</span></div></div></footer>
 </div>
-<nav class="mobile-bottom-nav"><a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a><a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a><a class="mobile-nav-item" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>خودرو</span></a><a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد</span></a>{% if current_user %}<a class="mobile-nav-item" href="{{ url_for('profile') }}"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}</nav>
+<nav class="mobile-bottom-nav"><a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a><a class="mobile-nav-item" href="{{ url_for('kharidino_explore') }}"><i class="fa-solid fa-compass"></i><span>اکسپلور</span></a><a class="mobile-nav-item" href="{{ url_for('kharidino_reels') }}"><i class="fa-solid fa-film"></i><span>ریلز</span></a><a class="mobile-nav-item" href="{{ url_for('kharidino_cinema') }}"><i class="fa-solid fa-clapperboard"></i><span>سینما</span></a><a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a><a class="mobile-nav-item" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>خودرو</span></a><a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد</span></a>{% if current_user %}<a class="mobile-nav-item" href="{{ url_for('profile') }}"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}</nav>
 <script>(function(){const meta=document.querySelector('meta[name="csrf-token"]');const token=meta?meta.getAttribute('content'):'';function protectForms(){if(!token)return;document.querySelectorAll('form').forEach(function(form){const method=(form.getAttribute('method')||'get').toLowerCase();if(method==='get')return;let input=form.querySelector('input[name="csrf_token"]');if(!input){input=document.createElement('input');input.type='hidden';input.name='csrf_token';form.appendChild(input)}input.value=token})}function installAdminLogoutFallback(){if(!document.body.classList.contains('kh-admin-page')||!token)return;const logoutUrl="{{ url_for('logout') }}";document.querySelectorAll('.admin-sidebar-bottom a').forEach(function(link){if(link.getAttribute('href')!==logoutUrl)return;link.addEventListener('click',function(event){event.preventDefault();const form=document.createElement('form');form.method='post';form.action=logoutUrl;const input=document.createElement('input');input.type='hidden';input.name='csrf_token';input.value=token;form.appendChild(input);document.body.appendChild(form);form.submit()})})}function protectFetch(){if(!token||!window.fetch)return;const originalFetch=window.fetch;window.fetch=function(input,init){init=init||{};const method=(init.method||((input&&input.method)||'GET')).toUpperCase();if(['POST','PUT','PATCH','DELETE'].indexOf(method)!==-1){const headers=new Headers(init.headers||((input&&input.headers)||{}));const sameOrigin=(function(){
   try{
     const target=new URL(typeof input==='string'?input:(input&&input.url)||'',window.location.href);
@@ -239,11 +246,18 @@ if(sameOrigin && !headers.has('X-CSRF-Token'))headers.set('X-CSRF-Token',token);
 </script>
 <script src="{{ url_for('static', filename='js/inventory-ui.js', v='2026-09-06-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-mega-menu.js', v='2026-09-25-3') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-ultimate-2026.js', v='2026-09-07-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-experience-2026.js', v='2026-09-26-1') }}" defer></script><script src="{{ url_for('static', filename='js/kharidino-theme.js', v='2026-10-04-1') }}" defer></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js', v='2026-09-08-1') }}", {scope: '/'}).catch(function () {});
-    });
-  }
+(function(){
+ const root=document.documentElement;
+ function showStatus(){
+  let bar=document.getElementById('kh-pwa-status');
+  if(!bar){bar=document.createElement('div');bar.id='kh-pwa-status';bar.setAttribute('role','status');bar.style.cssText='position:fixed;z-index:99999;bottom:12px;left:12px;padding:8px 14px;border-radius:14px;font-size:13px;background:#172033;color:white;box-shadow:0 4px 18px #0003;';document.body.appendChild(bar);}
+  bar.textContent=navigator.onLine?'خریدینو · آنلاین':'خریدینو · آفلاین (پرداخت و ثبت سفارش غیرفعال)';
+  bar.style.background=navigator.onLine?'#172033':'#9b2638';
+ }
+ window.addEventListener('online',showStatus);window.addEventListener('offline',showStatus);
+ window.addEventListener('load',showStatus);
+ if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/service-worker.js',{scope:'/'}).catch(function(){});});}
+})();
 </script>
 <script>
 (function(){
@@ -257,4 +271,14 @@ if(sameOrigin && !headers.has('X-CSRF-Token'))headers.set('X-CSRF-Token',token);
  check();setInterval(check,3000);
 })();
 </script>
+<script src="{{ url_for('static', filename='js/kharidino-pwa.js', v='pwa-2') }}" defer></script>
+
+<nav class="kharidino-mobile-dock" aria-label="ناوبری اپلیکیشن">
+<a href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a>
+<a href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-store"></i><span>خرید</span></a>
+<a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه</span></a>
+<a class="dock-cart" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد</span>{% if cart_count %}<b>{{ cart_count }}</b>{% endif %}</a>
+<a href="{{ url_for('profile') if current_user else url_for('login') }}"><i class="fa-regular fa-user"></i><span>حساب</span></a>
+</nav>
+<script src="{{ url_for('static', filename='js/kharidino-app-splash.js', v='splash-1') }}" defer></script>
 </body></html>

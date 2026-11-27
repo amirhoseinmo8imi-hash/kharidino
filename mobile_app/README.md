@@ -39,3 +39,10 @@
 ## اصل مهم
 
 اپ Android نباید صرفاً WebView سایت باشد. رابط کاربری Native و مستقل طراحی می‌شود و برای داده‌ها از API خریدینو استفاده می‌کند.
+
+
+## Android Studio build scaffold
+
+Project Gradle files and Android launcher wrapper now exist under `app/`. The wrapper uses a secure HTTPS WebView, launcher icon, startup screen, progress indicator, state restoration and back navigation.
+
+To build APK: open `mobile_app` in Android Studio, change `APP_URL` in `app/src/main/java/com/kharidino/app/MainActivity.java` to the verified production HTTPS URL, sync Gradle and use Build > Build APK(s). The current URL is a placeholder; this is a WebView wrapper, not a fully native API-based app. Device testing remains required.

@@ -6695,9 +6695,27 @@ with app.app_context():
 # RUN
 # =========================================================
 
+# Kharidino Explore / Reels / Cinema route scaffolding
+from media_hubs import register_media_hubs
+register_media_hubs(app)
+
+
+# Media discovery feeds and interactions (moderated metadata API)
+from media_api import register_media_api
+register_media_api(app, db, User, Product)
+
+# PWA service-worker entry point: root scope for installable offline experience.
+@app.route("/service-worker.js")
+def kharidino_pwa_service_worker():
+    response = send_file(STATIC_DIR / "pwa-sw.js", mimetype="application/javascript")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
         debug=os.environ.get("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
     )
+

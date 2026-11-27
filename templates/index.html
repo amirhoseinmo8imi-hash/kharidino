@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-redesign-2026.css', v='2026-09-26-1') }}">
+{% block extra_css %}
+<style>
+/* App-focused homepage refinements */
+.kdg-home{max-width:1440px;margin-inline:auto;padding-inline:clamp(10px,2vw,26px)}
+.kdg-section-head,.kdg-deals-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kdg-categories,.kdg-products,.kdg-deals-grid{min-width:0}
+.kdg-product-image img,.kdg-deal-card .kdg-product-image img{object-fit:contain}
+@media(max-width:760px){.kdg-home{padding-inline:10px}.kh-home-hero-pro,.kh-market-hero{border-radius:20px;overflow:hidden}.kh-home-hero-pro-copy h1{font-size:clamp(24px,7vw,34px);line-height:1.5}.kh-home-hero-pro-copy p{font-size:14px;line-height:1.9}.kh-home-hero-actions{display:flex;flex-wrap:wrap;gap:8px}.kh-home-hero-visual{min-height:200px}.kh-portal-grid{grid-template-columns:1fr!important}.kh-market-hero-stage{min-height:230px}.kh-hero-products{gap:6px}.kh-hero-product{min-width:0}.kh-market-shortcuts{margin-inline:-2px}.kdg-section{margin-block:20px}.kdg-section-head h2,.kdg-deals-head h2{font-size:20px}.kdg-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))!important}.kdg-category{min-width:0;padding:10px 5px}.kdg-category strong{font-size:12px}.kdg-products,.kdg-deals-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))!important}.kdg-card-wrap{overflow:hidden;border-radius:16px;min-width:0}.kdg-product,.kdg-deal-card{min-width:0;padding:10px!important}.kdg-product h3,.kdg-deal-card h3{font-size:13px;line-height:1.7;min-height:2.8em}.kdg-product-image{aspect-ratio:1/1;height:auto!important}.kdg-price strong{font-size:14px}.kdg-card-compare{padding:0 8px 8px}.kh-home-hubs-grid{grid-template-columns:1fr!important}.kh-home-hub{min-width:0}.kh-vehicle-showcase{overflow:hidden}.kh-showcase-head{flex-direction:column;align-items:flex-start}.kh-auto-zone{margin-inline:0}.kdg-stores{grid-template-columns:repeat(2,minmax(0,1fr))}.kdg-quick-links{grid-template-columns:1fr!important}.kdg-cta{border-radius:18px;padding:20px!important}}
+@media(max-width:380px){.kdg-categories{grid-template-columns:repeat(2,minmax(0,1fr))!important}.kdg-products,.kdg-deals-grid{gap:8px!important}}
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-redesign-2026.css', v='2026-09-26-1') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-digikala-final.css', v='2026-09-25-3') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-marketplace-2026.css', v='2026-09-26-2') }}">
 {% endblock %}
@@ -160,6 +170,9 @@
   </section>  {% endif %}  <section class="kh-home-hubs" aria-label="بخش‌های جدید خریدینو">
     <div class="kh-home-hubs-head"><div><span>بخش‌های تازه خریدینو</span><h2>خدمات و بازارهای تخصصی</h2></div></div>
     <div class="kh-home-hubs-grid">
+      <a href="{{ url_for('kharidino_explore') }}" class="kh-home-hub"><i class="fa-solid fa-compass"></i><div><strong>اکسپلور خریدینو</strong><span>کشف کالاها، فروشگاه‌ها و محتوای تازه</span></div><i class="fa-solid fa-arrow-left"></i></a>
+      <a href="{{ url_for('kharidino_reels') }}" class="kh-home-hub"><i class="fa-solid fa-film"></i><div><strong>ریلز خریدینو</strong><span>ویدئوهای کوتاه متصل به محصولات</span></div><i class="fa-solid fa-arrow-left"></i></a>
+      <a href="{{ url_for('kharidino_cinema') }}" class="kh-home-hub"><i class="fa-solid fa-clapperboard"></i><div><strong>سینمای خریدینو</strong><span>خانه فیلم و سریال</span></div><i class="fa-solid fa-arrow-left"></i></a>
       <a href="{{ url_for('gaming_hub') }}" class="kh-home-hub kh-home-hub-game"><i class="fa-solid fa-gamepad"></i><div><strong>دنیای گیمرها</strong><span>گیمینگ، کنسول، PC و تجهیزات استریم</span></div><i class="fa-solid fa-arrow-left"></i></a>
       <a href="{{ url_for('fresh_market') }}" class="kh-home-hub kh-home-hub-fresh"><i class="fa-solid fa-apple-whole"></i><div><strong>میوه و بازار تازه</strong><span>میوه، سبزی، خشکبار و میوه‌فروشی‌های محلی</span></div><i class="fa-solid fa-arrow-left"></i></a>
       <a href="{{ url_for('insurance_hub') }}" class="kh-home-hub kh-home-hub-insurance"><i class="fa-solid fa-shield-halved"></i><div><strong>مرکز بیمه</strong><span>دسترسی سریع به مقایسه و خرید بیمه آنلاین</span></div><i class="fa-solid fa-arrow-left"></i></a>

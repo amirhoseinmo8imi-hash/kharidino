@@ -1,0 +1,2 @@
+/* Hide splash once document is ready; safety timeout prevents stuck overlay. */
+(function(){const s=document.getElementById('kh-app-splash');if(!s)return;let done=false;function hide(){if(done)return;done=true;s.classList.add('is-dismissed');setTimeout(()=>s.remove(),450)}if(document.readyState==='complete')setTimeout(hide,450);else window.addEventListener('load',()=>setTimeout(hide,450),{once:true});setTimeout(hide,4500);})();

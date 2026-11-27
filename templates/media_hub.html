@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.km-media-hub{max-width:1120px;margin:2rem auto;padding:1.25rem;direction:rtl}
+.km-media-hero{border-radius:26px;padding:clamp(24px,5vw,56px);color:#fff;background:linear-gradient(125deg,#172554,#4f46e5 55%,#9333ea);position:relative;overflow:hidden}
+.km-media-hero h1{font-size:clamp(2rem,5vw,3.2rem);margin:.5rem 0}
+.km-media-hero p{max-width:720px;line-height:2;opacity:.92}
+.km-media-badge{display:inline-flex;padding:7px 12px;border:1px solid #ffffff55;border-radius:999px;background:#ffffff15}
+.km-media-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:22px}
+.km-media-card{border:1px solid #e5e7eb;background:var(--bs-body-bg,#fff);border-radius:18px;padding:20px;box-shadow:0 8px 24px #00000008}
+.km-media-card h3{margin:0 0 10px}.km-media-card p{line-height:1.9}
+.km-media-card i{font-size:1.4rem;margin-bottom:12px;color:#6366f1}
+.km-media-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.km-media-actions a{padding:11px 18px;border-radius:13px;background:#fff;color:#4338ca;font-weight:700;text-decoration:none}
+</style>
+<div class="km-media-hub">
+{% if hub == 'explore' %}
+<section class="km-media-hero"><span class="km-media-badge">Kharidino Explore</span><h1>دنیای کشف خریدینو</h1><p>محصولات تازه، فروشگاه‌ها، ویدئوهای الهام‌بخش و محتوای مرتبط را در یک تجربه کشف یکپارچه دنبال کن. زیرساخت فید و محتوا در حال توسعه است.</p><div class="km-media-actions"><a href="{{ url_for('kharidino_reels') }}">ورود به ریلز</a><a href="{{ url_for('catalog_products') }}">کشف محصولات</a></div></section>
+<div class="km-media-grid"><article class="km-media-card"><i class="fa-solid fa-wand-magic-sparkles"></i><h3>پیشنهادهای کشف</h3><p>در فاز بعد، پیشنهادها بر اساس علاقه، تعامل و کیفیت محتوا رتبه‌بندی می‌شوند.</p></article><article class="km-media-card"><i class="fa-solid fa-store"></i><h3>فروشگاه‌ها</h3><p>فروشندگان و پیشنهادهای محصولات در مسیر اتصال به فید کشف قرار دارند.</p></article><article class="km-media-card"><i class="fa-solid fa-video"></i><h3>محتوای ویدئویی</h3><p>ریلز و محتواهای مرتبط، با لینک مستقیم به محصول، در این بخش یکپارچه خواهند شد.</p></article></div>
+{% elif hub == 'reels' %}
+<section class="km-media-hero"><span class="km-media-badge">Kharidino Reels</span><h1>ویدئوهای کوتاه؛ کشف و خرید</h1><p>تجربه ویدئوهای کوتاه متصل به محصول، فروشنده و سازنده محتوا. این صفحه، نقطه شروع فید ریلز است؛ انتشار و پخش واقعی پس از تکمیل پردازش رسانه، ذخیره‌سازی، مدیریت محتوا و API فعال می‌شود.</p><div class="km-media-actions"><a href="{{ url_for('kharidino_explore') }}">رفتن به اکسپلور</a><a href="{{ url_for('catalog_products') }}">مشاهده محصولات</a></div></section>
+<div class="km-media-grid"><article class="km-media-card"><i class="fa-solid fa-mobile-screen"></i><h3>فید تمام‌صفحه</h3><p>اسکرول عمودی، پخش خودکار و کنترل صدا در طراحی فید آینده.</p></article><article class="km-media-card"><i class="fa-solid fa-bag-shopping"></i><h3>خرید از ویدئو</h3><p>کارت محصول، قیمت و مسیر خرید، بدون گم‌کردن محتوا.</p></article><article class="km-media-card"><i class="fa-solid fa-shield-halved"></i><h3>محتوای امن</h3><p>گزارش، بازبینی و کنترل بارگذاری برای جلوگیری از محتوای نامناسب.</p></article></div>
+{% else %}
+<section class="km-media-hero"><span class="km-media-badge">Kharidino Cinema</span><h1>سینمای آنلاین خریدینو</h1><p>کاتالوگ فیلم و سریال، ادامه تماشا و اشتراک؛ با اولویت حقوق انتشار، کنترل دسترسی و امنیت پخش. فعلاً این بخش پوسته معرفی است و هیچ محتوای پخش یا مجوزی ادعا نمی‌شود.</p><div class="km-media-actions"><a href="{{ url_for('kharidino_explore') }}">اکسپلور</a><a href="{{ url_for('home') }}">خانه خریدینو</a></div></section>
+<div class="km-media-grid"><article class="km-media-card"><i class="fa-solid fa-film"></i><h3>کاتالوگ</h3><p>فیلم، سریال، فصل، قسمت، ژانر و رده‌بندی سنی.</p></article><article class="km-media-card"><i class="fa-solid fa-key"></i><h3>مجوز و دسترسی</h3><p>ثبت قلمرو، زمان اعتبار و سطح دسترسی به محتوای مجاز.</p></article><article class="km-media-card"><i class="fa-solid fa-play"></i><h3>پخش امن</h3><p>کیفیت‌های مختلف، زیرنویس، ادامه تماشا و محدودیت نشست در مراحل بعد.</p></article></div>
+{% endif %}
+</div>
+<section id="km-live-content" class="km-media-grid" aria-live="polite"></section>
+<section class="km-media-card" id="km-upload-panel" style="margin-top:20px">
+<h2>انتشار محتوا</h2><p>تصویر یا ویدئو ارسال کنید؛ محتوا تا تأیید مدیر منتشر نخواهد شد.</p>
+<form id="km-media-upload-form" style="display:grid;gap:10px">
+<label>نوع محتوا <select name="kind"><option value="image">تصویر</option><option value="video">ویدئو (ریلز)</option></select></label>
+<label>عنوان <input name="title" maxlength="180" required></label>
+<label>توضیحات <textarea name="caption" maxlength="4000"></textarea></label>
+<label>شناسه محصول (اختیاری) <input name="product_id" type="number" min="1"></label>
+<label>فایل <input name="file" type="file" accept="image/*,video/mp4,video/webm" required></label>
+<button type="submit">ارسال برای بررسی</button><p id="km-upload-status" role="status"></p></form></section>
+<script>
+(function(){
+  const hub={{ hub|tojson }};
+  const root=document.getElementById('km-live-content');
+  if(!root)return;
+  const api=hub==='cinema'?'/api/cinema/catalog':(hub==='reels'?'/api/media/reels':'/api/media/explore');
+  function card(title,body){const el=document.createElement('article');el.className='km-media-card';const h=document.createElement('h3');h.textContent=title;const p=document.createElement('p');p.textContent=body;el.append(h,p);return el;}
+  function mediaElement(item){let el;if(item.kind==='video'){el=document.createElement('video');el.controls=true;el.playsInline=true;el.preload='metadata';el.muted=true;}else{el=document.createElement('img');el.alt=item.title||'محتوای خریدینو';el.loading='lazy';}el.src=item.media_url;el.style.cssText='width:100%;max-height:65vh;object-fit:contain;border-radius:14px;background:#111';return el;}
+  function actionButton(label,endpoint){const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:9px 14px;margin:6px;border-radius:12px;cursor:pointer';b.onclick=async()=>{try{const res=await fetch(endpoint,{method:'POST',headers:{'X-CSRF-Token':(document.querySelector('meta[name="csrf-token"]')||{}).content||''}});if(res.status===401){alert('برای این عملیات ابتدا وارد حساب شوید.');return;}if(!res.ok)throw Error();b.textContent=label+' ✓';}catch(e){alert('عملیات انجام نشد. لطفاً دوباره تلاش کنید.');}};return b;}
+
+  const form=document.getElementById('km-media-upload-form');
+  if(form){form.addEventListener('submit',async ev=>{ev.preventDefault();const status=document.getElementById('km-upload-status');status.textContent='در حال ارسال…';try{
+    const fd=new FormData(form),file=fd.get('file'),kind=fd.get('kind');const upload=new FormData();upload.append('file',file);upload.append('kind',kind);
+    const token=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
+    const up=await fetch('/api/media/upload',{method:'POST',headers:{'X-CSRF-Token':token},body:upload});if(!up.ok)throw Error('upload');const media=await up.json();
+    const payload={kind,title:fd.get('title'),caption:fd.get('caption'),media_url:media.media_url};if(fd.get('product_id'))payload.product_id=fd.get('product_id');
+    const post=await fetch('/api/media/posts',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':token},body:JSON.stringify(payload)});if(!post.ok)throw Error('post');status.textContent='ارسال شد؛ پس از تأیید مدیر منتشر خواهد شد.';form.reset();
+  }catch(e){status.textContent='ارسال ناموفق بود؛ ورود به حساب و محدودیت فایل را بررسی کنید.';}});}
+  fetch(api).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
+    const items=hub==='cinema'?data.items:(data.items||[]);
+    if(!items.length){root.append(card('هنوز محتوایی منتشر نشده','با انتشار محتوای تأییدشده، اینجا نمایش داده خواهد شد.'));return;}
+    items.forEach(item=>{
+      const c=document.createElement('article');c.className='km-media-card';
+      if(hub==='cinema'){const h=document.createElement('h3');h.textContent=item.title;c.append(h);const p=document.createElement('p');p.textContent=(item.year||'')+' · '+(item.genre||'')+' · '+(item.age_rating||'');c.append(p);if(item.poster_url){const img=document.createElement('img');img.src=item.poster_url;img.alt=item.title;img.loading='lazy';img.style.cssText='max-width:100%;border-radius:12px';c.append(img);}const s=document.createElement('p');s.textContent=item.synopsis||'';c.append(s);root.append(c);return;}
+      if(item.media_url)c.append(mediaElement(item));if(hub==='reels'){c.style.cssText='min-height:80vh;display:flex;flex-direction:column;justify-content:center;max-width:680px;margin:24px auto';}const h=document.createElement('h3');h.textContent=item.title||'محتوای تازه';c.append(h);const p=document.createElement('p');p.textContent=item.caption||'';c.append(p);if(item.product){const product=document.createElement('p');product.textContent='محصول مرتبط: '+item.product.name+' · '+item.product.price; c.append(product);}const a=document.createElement('p');a.textContent='سازنده: '+(item.author&&item.author.name||'');c.append(a);
+      c.append(actionButton('پسندیدن','/api/media/posts/'+item.id+'/like'),actionButton('ذخیره','/api/media/posts/'+item.id+'/bookmark'));
+      const report= document.createElement('button');report.type='button';report.textContent='گزارش';report.style.cssText='padding:9px 14px;margin:6px;border-radius:12px;cursor:pointer';report.onclick=async()=>{const reason=prompt('دلیل گزارش محتوا را بنویسید:');if(!reason||!reason.trim())return;try{const res=await fetch('/api/media/posts/'+item.id+'/report',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':(document.querySelector('meta[name="csrf-token"]')||{}).content||''},body:JSON.stringify({reason:reason.trim()})});if(res.status===401){alert('برای گزارش محتوا ابتدا وارد حساب شوید.');return;}if(!res.ok)throw Error();alert('گزارش شما ثبت شد.');}catch(e){alert('ثبت گزارش انجام نشد.');}};c.append(report);root.append(c);
+    });
+  }).catch(()=>root.append(card('بارگذاری محتوا ممکن نشد','فید رسانه در دسترس نیست؛ بعداً دوباره تلاش کنید.')));
+})();
+</script>
+{% endblock %}

@@ -5,13 +5,15 @@ plugins {
     id("com.chaquo.python")
 }
 
-python {
-    version = "3.11"
-    pip {
-        install("Flask==3.0.3")
-        install("Flask-SQLAlchemy==3.1.1")
-        install("python-dotenv==1.0.1")
-        install("requests==2.32.3")
+chaquopy {
+    defaultConfig {
+        version = "3.11"
+        pip {
+            install("Flask==3.0.3")
+            install("Flask-SQLAlchemy==3.1.1")
+            install("python-dotenv==1.0.1")
+            install("requests==2.32.3")
+        }
     }
 }
 
@@ -44,6 +46,9 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
         buildConfigField("String", "KHARIDINO_BASE_URL", "\"$baseUrl\"")
     }
 

@@ -1,26 +1,11 @@
 {
-  "name": "خریدینو",
-  "short_name": "خریدینو",
-  "description": "مقایسه قیمت و خرید هوشمند",
-  "lang": "fa",
-  "dir": "rtl",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "background_color": "#050816",
-  "theme_color": "#ef4056",
-  "icons": [
-    {
-      "src": "/static/icons/icon-192.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/static/icons/icon-512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "name":"خریدینو | خرید هوشمند",
+  "short_name":"خریدینو",
+  "description":"مقایسه قیمت، فروشگاه‌ها و بازارهای خریدینو",
+  "lang":"fa","dir":"rtl","start_url":"/","scope":"/","display":"standalone","display_override":["standalone","minimal-ui"],
+  "background_color":"#050816","theme_color":"#ef4056",
+  "orientation":"portrait-primary",
+  "categories":["shopping","entertainment"],
+  "icons":[{"src":"/static/icons/icon-192.svg","sizes":"192x192","type":"image/svg+xml","purpose":"any"},{"src":"/static/icons/icon-512.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}],
+  "shortcuts":[{"name":"فروشگاه","url":"/","icons":[{"src":"/static/icons/icon-192.svg","sizes":"192x192"}]},{"name":"اکسپلور","url":"/explore","icons":[{"src":"/static/icons/icon-192.svg","sizes":"192x192"}]},{"name":"ریلز","url":"/reels","icons":[{"src":"/static/icons/icon-192.svg","sizes":"192x192"}]}]
 }

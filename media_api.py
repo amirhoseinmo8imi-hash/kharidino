@@ -109,7 +109,7 @@ def register_media_api(app, db, User, Product):
         title=str(data.get("title","")).strip()[:180]
         caption=str(data.get("caption","")).strip()[:4000]
         media_url=str(data.get("media_url","")).strip()
-        if not media_url or len(media_url)>700 or not media_url.startswith(("https://","/")):
+        if not media_url or len(media_url)>700 or media_url.startswith("//") or not media_url.startswith(("https://","/")):
             return jsonify(error="invalid_media_reference"),400
         product_id=data.get("product_id")
         product=None
@@ -156,9 +156,9 @@ def register_media_api(app, db, User, Product):
         else:
             # Validate common MP4 and WebM container signatures only; this is
             # not a codec scan/transcode or a malware inspection.
-            if raw[4:8] == b"ftyp":
+            if len(raw) >= 12 and raw[4:8] == b"ftyp":
                 ext = ".mp4"
-            elif raw[:4] == b"\\x1a\\x45\\xdf\\xa3":
+            elif raw[:4] == bytes.fromhex("1a45dfa3"):
                 ext = ".webm"
             else:
                 return jsonify(error="unsupported_video_container"), 400

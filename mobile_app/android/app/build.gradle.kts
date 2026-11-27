@@ -21,8 +21,16 @@ val websiteBundleDir = layout.buildDirectory.dir("generated/kharidinoAssets")
 val prepareKharidinoWebsiteAssets by tasks.registering(Sync::class) {
     val repositoryRoot = projectDir.resolve("../../..").canonicalFile
     from(repositoryRoot) {
-        include("app.py")
-        include("*.py")
+        include(
+            "app.py",
+            "commerce_catalog.py",
+            "gaming.py",
+            "gaming_marketplace.py",
+            "gaming_control.py",
+            "merchant_marketplace.py",
+            "vehicle_marketplace.py",
+            "vehicle_chat.py"
+        )
         include("templates/**")
         include("static/**")
         exclude(".env", ".env.*", "**/.env", "**/.env.*")

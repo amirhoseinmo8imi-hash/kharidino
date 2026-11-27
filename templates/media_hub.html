@@ -25,4 +25,26 @@
 <div class="km-media-grid"><article class="km-media-card"><i class="fa-solid fa-film"></i><h3>کاتالوگ</h3><p>فیلم، سریال، فصل، قسمت، ژانر و رده‌بندی سنی.</p></article><article class="km-media-card"><i class="fa-solid fa-key"></i><h3>مجوز و دسترسی</h3><p>ثبت قلمرو، زمان اعتبار و سطح دسترسی به محتوای مجاز.</p></article><article class="km-media-card"><i class="fa-solid fa-play"></i><h3>پخش امن</h3><p>کیفیت‌های مختلف، زیرنویس، ادامه تماشا و محدودیت نشست در مراحل بعد.</p></article></div>
 {% endif %}
 </div>
+<section id="km-live-content" class="km-media-grid" aria-live="polite"></section>
+<script>
+(function(){
+  const hub={{ hub|tojson }};
+  const root=document.getElementById('km-live-content');
+  if(!root)return;
+  const api=hub==='cinema'?'/api/cinema/catalog':(hub==='reels'?'/api/media/reels':'/api/media/explore');
+  function card(title,body){const el=document.createElement('article');el.className='km-media-card';const h=document.createElement('h3');h.textContent=title;const p=document.createElement('p');p.textContent=body;el.append(h,p);return el;}
+  function mediaElement(item){let el;if(item.kind==='video'){el=document.createElement('video');el.controls=true;el.playsInline=true;el.preload='metadata';el.muted=true;}else{el=document.createElement('img');el.alt=item.title||'محتوای خریدینو';el.loading='lazy';}el.src=item.media_url;el.style.cssText='width:100%;max-height:65vh;object-fit:contain;border-radius:14px;background:#111';return el;}
+  function actionButton(label,endpoint){const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:9px 14px;margin:6px;border-radius:12px;cursor:pointer';b.onclick=async()=>{try{const res=await fetch(endpoint,{method:'POST',headers:{'X-CSRFToken':(document.querySelector('meta[name="csrf-token"]')||{}).content||''}});if(res.status===401){alert('برای این عملیات ابتدا وارد حساب شوید.');return;}if(!res.ok)throw Error();b.textContent=label+' ✓';}catch(e){alert('عملیات انجام نشد. لطفاً دوباره تلاش کنید.');}};return b;}
+  fetch(api).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
+    const items=hub==='cinema'?data.items:(data.items||[]);
+    if(!items.length){root.append(card('هنوز محتوایی منتشر نشده','با انتشار محتوای تأییدشده، اینجا نمایش داده خواهد شد.'));return;}
+    items.forEach(item=>{
+      const c=document.createElement('article');c.className='km-media-card';
+      if(hub==='cinema'){const h=document.createElement('h3');h.textContent=item.title;c.append(h);const p=document.createElement('p');p.textContent=(item.year||'')+' · '+(item.genre||'')+' · '+(item.age_rating||'');c.append(p);if(item.poster_url){const img=document.createElement('img');img.src=item.poster_url;img.alt=item.title;img.loading='lazy';img.style.cssText='max-width:100%;border-radius:12px';c.append(img);}const s=document.createElement('p');s.textContent=item.synopsis||'';c.append(s);root.append(c);return;}
+      if(item.media_url)c.append(mediaElement(item));const h=document.createElement('h3');h.textContent=item.title||'محتوای تازه';c.append(h);const p=document.createElement('p');p.textContent=item.caption||'';c.append(p);const a=document.createElement('p');a.textContent='سازنده: '+(item.author&&item.author.name||'');c.append(a);
+      c.append(actionButton('پسندیدن','/api/media/posts/'+item.id+'/like'),actionButton('ذخیره','/api/media/posts/'+item.id+'/bookmark'),actionButton('گزارش','/api/media/posts/'+item.id+'/report'));root.append(c);
+    });
+  }).catch(()=>root.append(card('بارگذاری محتوا ممکن نشد','فید رسانه در دسترس نیست؛ بعداً دوباره تلاش کنید.')));
+})();
+</script>
 {% endblock %}

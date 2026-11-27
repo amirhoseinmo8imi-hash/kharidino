@@ -124,7 +124,7 @@ def register_media_api(app, db, User, Product):
 
     @app.route("/api/media/upload", methods=["POST"])
     def media_upload():
-        uid = signed_in()
+        signed_in()
         file = request.files.get("file")
         kind = str(request.form.get("kind", "image")).lower()
         if not file or kind not in {"image", "video"}:

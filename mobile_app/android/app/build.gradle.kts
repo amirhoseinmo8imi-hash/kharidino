@@ -2,6 +2,31 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.chaquo.python")
+}
+
+python {
+    version = "3.11"
+    pip {
+        install("Flask==3.0.3")
+        install("Flask-SQLAlchemy==3.1.1")
+        install("python-dotenv==1.0.1")
+        install("requests==2.32.3")
+    }
+}
+
+val websiteBundleDir = layout.buildDirectory.dir("generated/kharidinoAssets")
+val prepareKharidinoWebsiteAssets by tasks.registering(Sync::class) {
+    val repositoryRoot = projectDir.resolve("../../..").canonicalFile
+    from(repositoryRoot) {
+        include("app.py")
+        include("*.py")
+        include("templates/**")
+        include("static/**")
+        exclude(".env", ".env.*", "**/.env", "**/.env.*")
+        exclude("**/*.db", "**/*.sqlite", "**/*.sqlite3", "**/.kharidino-secret")
+    }
+    into(websiteBundleDir.map { it.dir("kharidino") })
 }
 
 android {
@@ -36,9 +61,15 @@ android {
         buildConfig = true
     }
 
+    sourceSets.getByName("main").assets.srcDir(websiteBundleDir)
+
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(prepareKharidinoWebsiteAssets)
 }
 
 dependencies {

@@ -23,14 +23,52 @@ val prepareKharidinoWebsiteAssets by tasks.registering(Sync::class) {
     from(repositoryRoot) {
         include(
             "app.py",
+            "run_kharidino.py",
+            "kharidino_ai.py",
             "commerce_catalog.py",
             "gaming.py",
             "gaming_marketplace.py",
             "gaming_control.py",
             "merchant_marketplace.py",
             "vehicle_marketplace.py",
-            "vehicle_chat.py"
+            "vehicle_chat.py",
+            "security_hardening.py",
+            "redirect_hardening.py",
+            "catalog_security.py",
+            "catalog_ux_api.py",
+            "inventory_hardening.py",
+            "checkout_preflight.py",
+            "checkout_idempotency.py",
+            "commerce_extensions_v2.py",
+            "order_state_machine.py",
+            "order_cancellation.py",
+            "payment.py",
+            "button_flow_hardening.py",
+            "refund_settlement_hardening.py",
+            "return_refund_bridge.py",
+            "clawback_reconciliation.py",
+            "financial_reconciliation.py",
+            "marketplace_ultimate.py",
+            "marketplace_hardening.py",
+            "checkout_marketplace_adjustments.py",
+            "seller_staff.py",
+            "seller_fulfillment.py",
+            "marketplace_fulfillment.py",
+            "commerce_runtime.py",
+            "profile_extensions.py",
+            "merchant_approval.py",
+            "merchant_marketplace_v2.py",
+            "merchant_customer_marketplace.py",
+            "seller_storefront.py",
+            "seller_introduction.py",
+            "terms.py",
+            "password_reset.py",
+            "accounting.py",
+            "system_health.py",
+            "inventory_atomicity.py",
+            "financial_accounting.py"
         )
+        include("mobile_app/api/**")
         include("templates/**")
         include("static/**")
         exclude(".env", ".env.*", "**/.env", "**/.env.*")

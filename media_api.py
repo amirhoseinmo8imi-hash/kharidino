@@ -8,7 +8,8 @@ import secrets
 from flask import request, jsonify, session, abort
 from sqlalchemy import desc
 from PIL import Image
-from io import BytesIO\nimport re
+from io import BytesIO
+import re
 
 
 def register_media_api(app, db, User, Product):

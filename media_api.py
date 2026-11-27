@@ -7,7 +7,6 @@ from pathlib import Path
 import secrets
 from flask import request, jsonify, session, abort
 from sqlalchemy import desc
-from werkzeug.utils import secure_filename
 from PIL import Image
 from io import BytesIO
 
@@ -129,26 +128,41 @@ def register_media_api(app, db, User, Product):
         kind = str(request.form.get("kind", "image")).lower()
         if not file or kind not in {"image", "video"}:
             return jsonify(error="file_and_valid_kind_required"), 400
-        raw = file.read(app.config["MEDIA_MAX_VIDEO_BYTES"] + 1)
+        max_bytes = app.config["MEDIA_MAX_IMAGE_BYTES"] if kind == "image" else app.config["MEDIA_MAX_VIDEO_BYTES"]
+        raw = file.read(max_bytes + 1)
         if not raw:
             return jsonify(error="empty_file"), 400
+        if len(raw) > max_bytes:
+            return jsonify(error="image_too_large" if kind == "image" else "video_too_large"), 413
+
         if kind == "image":
-            if len(raw) > app.config["MEDIA_MAX_IMAGE_BYTES"]:
-                return jsonify(error="image_too_large"), 413
             try:
                 image = Image.open(BytesIO(raw))
-                if image.format not in {"JPEG", "PNG", "WEBP", "GIF"}:
+                detected_format = image.format
+                if detected_format not in {"JPEG", "PNG", "WEBP"}:
                     return jsonify(error="unsupported_image"), 400
+                if image.width * image.height > 25_000_000:
+                    return jsonify(error="image_dimensions_too_large"), 413
                 image.verify()
+                image = Image.open(BytesIO(raw))
+                image.load()
+                # Re-encode to remove EXIF and other embedded metadata.
+                clean = BytesIO()
+                image.save(clean, format=detected_format)
+                raw = clean.getvalue()
+                ext = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}[detected_format]
             except Exception:
                 return jsonify(error="invalid_image"), 400
-            ext = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp", "GIF": ".gif"}[image.format]
         else:
-            if len(raw) > app.config["MEDIA_MAX_VIDEO_BYTES"]:
-                return jsonify(error="video_too_large"), 413
-            if not (raw[4:8] == b"ftyp" or raw[:4] == b"\\x1a\\x45\\xdf\\xa3"):
+            # Validate common MP4 and WebM container signatures only; this is
+            # not a codec scan/transcode or a malware inspection.
+            if raw[4:8] == b"ftyp":
+                ext = ".mp4"
+            elif raw[:4] == b"\\x1a\\x45\\xdf\\xa3":
+                ext = ".webm"
+            else:
                 return jsonify(error="unsupported_video_container"), 400
-            ext = ".mp4" if raw[4:8] == b"ftyp" else ".webm"
+
         directory = Path(app.config["MEDIA_UPLOAD_DIR"])
         directory.mkdir(parents=True, exist_ok=True)
         filename = secrets.token_hex(16) + ext

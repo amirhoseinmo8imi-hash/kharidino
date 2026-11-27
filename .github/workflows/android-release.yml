@@ -32,10 +32,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-      - name: Generate Gradle wrapper
-        run: gradle wrapper --gradle-version 8.9
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
@@ -63,10 +61,8 @@ jobs:
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Generate Gradle wrapper
-        run: gradle wrapper --gradle-version 8.9
       - name: Build Release APK
-        run: ./gradlew assembleRelease -PkharidinoBaseUrl="${{ vars.KHARIDINO_BASE_URL }}"
+        run: gradle assembleRelease -PkharidinoBaseUrl="${{ vars.KHARIDINO_BASE_URL }}"
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:

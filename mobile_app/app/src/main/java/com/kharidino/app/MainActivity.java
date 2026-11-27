@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient(){
             @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap favicon){ progress.setVisibility(View.VISIBLE);error.setVisibility(View.GONE); }
             @Override public void onPageFinished(WebView view,String url){ progress.setVisibility(View.GONE); }
-            @Override public void onReceivedError(WebView view,android.webkit.WebResourceRequest req,android.webkit.WebResourceError e){ if(req.isForMainFrame()){progress.setVisibility(View.GONE);error.setVisibility(View.VISIBLE;} }
+            @Override public void onReceivedError(WebView view,android.webkit.WebResourceRequest req,android.webkit.WebResourceError e){ if(req.isForMainFrame()){progress.setVisibility(View.GONE);error.setVisibility(View.VISIBLE);} }
         });
         container.addView(web,new FrameLayout.LayoutParams(-1,-1));
         container.addView(progress,new FrameLayout.LayoutParams(-1,8,Gravity.TOP));

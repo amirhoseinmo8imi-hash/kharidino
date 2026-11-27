@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
                 override fun onShowFileChooser(
                     webView: WebView?,
                     filePathCallback: ValueCallback<Array<Uri>>?,
-                    fileChooserParams: FileChooserParams?
+                    fileChooserParams: WebChromeClient.FileChooserParams?
                 ): Boolean {
                     if (filePathCallback == null || fileChooserParams == null) return false
                     uploadCallback?.onReceiveValue(null)

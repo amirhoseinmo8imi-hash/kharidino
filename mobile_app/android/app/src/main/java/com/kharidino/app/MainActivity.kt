@@ -1,140 +1,72 @@
 package com.kharidino.app
-
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.kharidino.app.api.ApiClient
 import com.kharidino.app.api.Product
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent { KharidinoApp() }
-    }
+ override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); setContent { KharidinoOfflineApp(applicationContext) } }
 }
-
-private val Background = Color(0xFF070B14)
-private val Surface = Color(0xFF101827)
-private val Primary = Color(0xFF38BDF8)
-
-@Composable
-fun KharidinoApp() {
-    var selected by remember { mutableIntStateOf(0) }
-    Scaffold(
-        containerColor = Background,
-        bottomBar = {
-            NavigationBar(containerColor = Surface) {
-                val labels = listOf("خانه", "جستجو", "سبد", "علاقه‌مندی", "حساب")
-                val icons = listOf(Icons.Default.Home, Icons.Default.Search, Icons.Default.ShoppingCart, Icons.Default.FavoriteBorder, Icons.Default.Person)
-                labels.forEachIndexed { index, label ->
-                    NavigationBarItem(selected = selected == index, onClick = { selected = index }, icon = { Icon(icons[index], label) }, label = { Text(label) })
-                }
-            }
-        }
-    ) { padding -> HomeScreen(Modifier.padding(padding)) }
+private val Background=Color(0xFFF5F7FB); private val SurfaceColor=Color.White; private val Primary=Color(0xFF0D9488)
+private val categories=listOf("همه","موبایل","لوازم دیجیتال","کامپیوتر","خانه","گیمینگ")
+private val demoProducts=listOf(
+ Product(1,"گوشی سامسونگ Galaxy S24","نمونه محصول محلی خریدینو",45900000,category="موبایل"),
+ Product(2,"هدفون بی‌سیم","هدفون بی‌سیم با کیفیت صدا",2350000,category="لوازم دیجیتال"),
+ Product(3,"لپ‌تاپ سبک","مناسب کار و استفاده روزانه",38900000,category="کامپیوتر"),
+ Product(4,"کنسول بازی","کنسول بازی نسل جدید",32500000,category="گیمینگ"),
+ Product(5,"ساعت هوشمند","ساعت هوشمند با امکانات روز",4800000,category="لوازم دیجیتال"),
+ Product(6,"اسپیکر بلوتوث","اسپیکر قابل حمل",1650000,category="لوازم دیجیتال"),
+ Product(7,"چراغ مطالعه","چراغ مطالعه رومیزی",950000,category="خانه"),
+ Product(8,"کیبورد مکانیکی","کیبورد مناسب بازی و تایپ",3200000,category="گیمینگ"))
+private fun money(v:Long)="%,d".format(v)+" تومان"
+@Composable fun KharidinoOfflineApp(context:Context){
+ val prefs=remember{context.getSharedPreferences("kharidino_local",Context.MODE_PRIVATE)}
+ var tab by remember{mutableIntStateOf(0)}; var search by remember{mutableStateOf("")}; var category by remember{mutableStateOf("همه")}
+ var cart by remember{mutableStateOf(prefs.getStringSet("cart",emptySet())?.toSet()?:emptySet())}; var favorites by remember{mutableStateOf(prefs.getStringSet("favorites",emptySet())?.toSet()?:emptySet())}
+ fun save(k:String,v:Set<String>){prefs.edit().putStringSet(k,v.toSet()).apply()}
+ fun flip(s:Set<String>,id:String)=if(id in s)s-id else s+id
+ val filtered=demoProducts.filter{(category=="همه"||it.category==category)&&(search.isBlank()||it.name.contains(search,true)||it.category.contains(search,true))}
+ Scaffold(containerColor=Background,bottomBar={NavigationBar(containerColor=SurfaceColor){val labels=listOf("خانه","جستجو","سبد","علاقه‌مندی","حساب");val icons=listOf(Icons.Default.Home,Icons.Default.Search,Icons.Default.ShoppingCart,Icons.Default.FavoriteBorder,Icons.Default.Person);labels.forEachIndexed{i,l->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],contentDescription=l)},label={Text(l)})}}}){padding->
+ Column(Modifier.fillMaxSize().padding(padding).padding(horizontal=16.dp,vertical=12.dp)){
+ Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.fillMaxWidth()){Column(Modifier.weight(1f)){Text("خریدینو",color=Primary,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold);Text("مقایسه کن، بهتر بخر",color=Color(0xFF64748B))};Text("🛍️",style=MaterialTheme.typography.headlineMedium)}
+ Spacer(Modifier.height(12.dp))
+ when(tab){
+ 0,1->{OutlinedTextField(search,{search=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text("چی می‌خوای بخری؟")},leadingIcon={Icon(Icons.Default.Search,contentDescription="جستجو")});Spacer(Modifier.height(8.dp))
+ LazyRow(horizontalArrangement=Arrangement.spacedBy(4.dp)){items(categories){c->TextButton(onClick={category=c}){Text(if(category==c)"● $c" else c,color=if(category==c)Primary else Color.DarkGray)}}}
+ Text(if(tab==1)"جستجوی محصولات (محلی)" else "محصولات منتخب",fontWeight=FontWeight.Bold,style=MaterialTheme.typography.titleLarge);Spacer(Modifier.height(8.dp))
+ LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){items(filtered){p->ProductRow(p,p.id.toString() in cart,p.id.toString() in favorites,{cart=flip(cart,p.id.toString());save("cart",cart)},{favorites=flip(favorites,p.id.toString());save("favorites",favorites)})}}
+ }
+ 2->{Text("سبد خرید محلی",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);val inCart=demoProducts.filter{it.id.toString() in cart};if(inCart.isEmpty())Text("سبد خریدت خالی است. محصولات را اضافه کن.") else {LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){items(inCart){p->ProductRow(p,true,p.id.toString() in favorites,{cart=flip(cart,p.id.toString());save("cart",cart)},{favorites=flip(favorites,p.id.toString());save("favorites",favorites)})}};Spacer(Modifier.height(8.dp));Text("جمع تقریبی: "+money(inCart.sumOf{it.price}),fontWeight=FontWeight.Bold,color=Primary);Text("سبد روی گوشی ذخیره می‌شود؛ ثبت سفارش آنلاین در آینده.")}}
+ 3->{Text("علاقه‌مندی‌های محلی",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);val fav=demoProducts.filter{it.id.toString() in favorites};if(fav.isEmpty())Text("هنوز محصولی ذخیره نکرده‌ای.");LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){items(fav){p->ProductRow(p,p.id.toString() in cart,true,{cart=flip(cart,p.id.toString());save("cart",cart)},{favorites=flip(favorites,p.id.toString());save("favorites",favorites)})}}}
+ else->{Text("حساب کاربری",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold);Spacer(Modifier.height(12.dp));Card(colors=CardDefaults.cardColors(containerColor=SurfaceColor)){Column(Modifier.padding(16.dp)){Text("نسخه مستقل خریدینو");Text("سبد خرید: ${cart.size} محصول");Text("علاقه‌مندی: ${favorites.size} محصول");Text("وضعیت: آفلاین");Text("اطلاعات اولیه روی دستگاه ذخیره می‌شود.")}}}
+ }
+ }}
 }
-
-@Composable
-private fun HomeScreen(modifier: Modifier = Modifier) {
-    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var search by remember { mutableStateOf("") }
-
-    LaunchedEffect(Unit) {
-        try {
-            products = ApiClient.service.products(limit = 20).items
-            error = null
-        } catch (e: Exception) {
-            error = "اتصال به سرور خریدینو برقرار نشد."
-        } finally {
-            loading = false
-        }
-    }
-
-    Column(modifier.fillMaxSize().background(Background).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("خریدینو", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("مقایسه کن، بهتر بخر", color = Color(0xFF94A3B8))
-            }
-            IconButton(onClick = {}) { Icon(Icons.Default.ShoppingCart, "سبد خرید", tint = Primary) }
-        }
-
-        OutlinedTextField(value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("چی می‌خوای بخری؟") }, leadingIcon = { Icon(Icons.Default.Search, "جستجو") })
-
-        Text("محصولات فروشگاه", color = Color.White, fontWeight = FontWeight.Bold)
-        when {
-            loading -> CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.CenterHorizontally))
-            error != null -> Text(error!!, color = Color(0xFFFF8A8A))
-            else -> {
-                val shown = products.filter { it.name.contains(search, ignoreCase = true) }
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) { items(shown) { ProductCard(it) } }
-            }
-        }
-
-        Spacer(Modifier.height(4.dp))
-        Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF111D33)), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(18.dp)) {
-                Text("🤖 Kharidino AI", color = Primary, fontWeight = FontWeight.Bold)
-                Text("برای انتخاب محصول بهتر، از هوش مصنوعی خریدینو کمک بگیر.", color = Color.White, modifier = Modifier.padding(top = 6.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProductCard(product: Product) {
-    Card(modifier = Modifier.size(width = 190.dp, height = 220.dp), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Surface)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Column(Modifier.fillMaxWidth().height(115.dp).background(Color(0xFF172235), RoundedCornerShape(16.dp)), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(Icons.Default.ShoppingCart, null, tint = Primary, modifier = Modifier.size(48.dp))
-            }
-            Text(product.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
-            Text("${product.price} تومان", color = Primary, fontWeight = FontWeight.Bold)
-        }
-    }
+@Composable private fun ProductRow(p:Product,inCart:Boolean,favorite:Boolean,onCart:()->Unit,onFavorite:()->Unit){
+ Card(colors=CardDefaults.cardColors(containerColor=SurfaceColor),shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth()){Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+ Column(Modifier.size(76.dp).background(Color(0xFFE7F3F2),RoundedCornerShape(14.dp)),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){Text("🛍️",style=MaterialTheme.typography.headlineMedium)}
+ Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)){Text(p.name,fontWeight=FontWeight.Bold);Text(p.category,color=Color.Gray,style=MaterialTheme.typography.bodySmall);Text(money(p.price),color=Primary,fontWeight=FontWeight.Bold);Button(onClick=onCart){Text(if(inCart)"حذف از سبد" else "افزودن به سبد")}}
+ IconButton(onClick=onFavorite){Icon(if(favorite)Icons.Default.Favorite else Icons.Default.FavoriteBorder,contentDescription="علاقه‌مندی",tint=if(favorite)Color.Red else Primary)}
+ }}
 }

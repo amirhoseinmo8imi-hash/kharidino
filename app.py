@@ -2482,6 +2482,126 @@ def explore():
     )
 
 
+@app.route("/admin/cinema", methods=["GET", "POST"])
+@admin_required
+def admin_cinema():
+    """Admin workspace for provider contracts, metadata and display licences."""
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+        if action == "provider":
+            name = (request.form.get("name") or "").strip()[:220]
+            website = (request.form.get("website") or "").strip()[:900]
+            if not name or (website and urlparse(website).scheme != "https"):
+                flash("نام تأمین‌کننده الزامی است و وب‌سایت باید با HTTPS باشد.", "danger")
+            else:
+                provider = CinemaProvider(
+                    name=name,
+                    website=website,
+                    integration_type="manual",
+                    active=request.form.get("active") == "on",
+                )
+                db.session.add(provider)
+                db.session.commit()
+                flash("تأمین‌کننده سینما ثبت شد.", "success")
+        elif action == "title":
+            title_name = (request.form.get("title") or "").strip()[:220]
+            slug = re.sub(r"[^a-z0-9-]+", "-", (request.form.get("slug") or "").strip().lower()).strip("-")[:220]
+            provider = db.session.get(CinemaProvider, request.form.get("provider_id", type=int))
+            poster_url = (request.form.get("poster_url") or "").strip()[:900]
+            backdrop_url = (request.form.get("backdrop_url") or "").strip()[:900]
+            valid_from_raw = (request.form.get("valid_from") or "").strip()
+            valid_until_raw = (request.form.get("valid_until") or "").strip()
+            try:
+                valid_from = datetime.strptime(valid_from_raw, "%Y-%m-%d") if valid_from_raw else None
+                valid_until = datetime.strptime(valid_until_raw, "%Y-%m-%d") if valid_until_raw else None
+                release_year = int(request.form.get("release_year") or 0) or None
+                duration = int(request.form.get("duration_minutes") or 0) or None
+                rating = float(request.form.get("rating") or 0) or None
+            except (TypeError, ValueError):
+                valid_from = valid_until = None
+                release_year = duration = rating = None
+                flash("سال، مدت، امتیاز یا تاریخ مجوز معتبر نیست.", "danger")
+                return redirect(url_for("admin_cinema"))
+            safe_assets = all(
+                not value or value.startswith("https://") or value.startswith("/static/")
+                for value in (poster_url, backdrop_url)
+            )
+            if not title_name or not slug or not provider or not safe_assets:
+                flash("عنوان، شناسه انگلیسی، تأمین‌کننده و نشانی امن پوستر را بررسی کن.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if CinemaTitle.query.filter_by(slug=slug).first():
+                flash("این شناسه برای یک اثر دیگر استفاده شده است.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if release_year and not 1880 <= release_year <= 2100:
+                flash("سال انتشار خارج از محدوده معتبر است.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if duration and not 1 <= duration <= 999:
+                flash("مدت زمان باید بین ۱ تا ۹۹۹ دقیقه باشد.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if rating is not None and not 0 <= rating <= 10:
+                flash("امتیاز باید بین صفر تا ده باشد.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if valid_from and valid_until and valid_until < valid_from:
+                flash("پایان اعتبار مجوز نمی‌تواند قبل از شروع آن باشد.", "danger")
+                return redirect(url_for("admin_cinema"))
+            title = CinemaTitle(
+                slug=slug,
+                title=title_name,
+                original_title=(request.form.get("original_title") or "").strip()[:220],
+                synopsis=(request.form.get("synopsis") or "").strip()[:12000],
+                content_type=request.form.get("content_type") if request.form.get("content_type") in {"movie", "series"} else "movie",
+                poster_url=poster_url,
+                backdrop_url=backdrop_url,
+                release_year=release_year,
+                duration_minutes=duration,
+                genres=(request.form.get("genres") or "").strip()[:500],
+                country=(request.form.get("country") or "").strip()[:120],
+                language=(request.form.get("language") or "").strip()[:80],
+                director=(request.form.get("director") or "").strip()[:220],
+                cast=(request.form.get("cast") or "").strip()[:3000],
+                age_rating=(request.form.get("age_rating") or "").strip()[:30],
+                rating=rating,
+                featured=request.form.get("featured") == "on",
+                status="published" if request.form.get("publish") == "on" else "draft",
+            )
+            db.session.add(title)
+            db.session.flush()
+            license_status = request.form.get("license_status")
+            if license_status not in {"pending", "active", "expired", "revoked"}:
+                license_status = "pending"
+            territory = (request.form.get("territory") or "IR").strip().upper()
+            if territory not in {"IR", "*"}:
+                territory = "IR"
+            licence = CinemaLicense(
+                title_id=title.id,
+                provider_id=provider.id,
+                reference_code=(request.form.get("reference_code") or "").strip()[:180],
+                territory=territory,
+                status=license_status,
+                display_allowed=request.form.get("display_allowed") == "on",
+                streaming_allowed=request.form.get("streaming_allowed") == "on",
+                download_allowed=request.form.get("download_allowed") == "on",
+                valid_from=valid_from,
+                valid_until=valid_until,
+            )
+            db.session.add(licence)
+            db.session.commit()
+            flash("اطلاعات اثر و رکورد مجوز آن ثبت شد.", "success")
+        else:
+            flash("درخواست نامعتبر است.", "danger")
+        return redirect(url_for("admin_cinema"))
+
+    providers = CinemaProvider.query.order_by(CinemaProvider.name.asc()).all()
+    titles = CinemaTitle.query.order_by(CinemaTitle.created_at.desc()).limit(100).all()
+    licences = CinemaLicense.query.order_by(CinemaLicense.id.desc()).limit(100).all()
+    return render_template(
+        "admin_cinema.html",
+        providers=providers,
+        cinema_titles=titles,
+        cinema_licences=licences,
+    )
+
+
 @app.route("/cinema")
 def cinema():
     """Show only titles with an active, in-date metadata display licence."""

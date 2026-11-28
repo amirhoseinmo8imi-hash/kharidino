@@ -9,7 +9,7 @@
   <link rel="canonical" href="{{ request.base_url }}">
   <meta name="theme-color" content="#ef4056">
   <meta name="csrf-token" content="{{ _csrf_value }}">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='2026-09-08-1') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='2026-11-28-2') }}">
   <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.svg', v='2026-09-08-1') }}" type="image/svg+xml">
   {% if config.get('KHARIDINO_ANDROID_LOCAL') %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-offline-icons.css') }}">
@@ -72,7 +72,7 @@
 {% endif %}
 <header class="km-topbar">
   <div class="km-header">
-    <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><img src="{{ url_for('static', filename='icons/kharidino-mark.svg') }}" alt="" width="26" height="26"></span><span>{{ site_name }}</span></a>
+    <a class="km-logo" href="{{ url_for('home') }}"><span class="km-logo-mark"><img src="{{ url_for('static', filename='icons/icon-192.svg') }}" alt="" width="26" height="26"></span><span>{{ site_name }}</span></a>
     <form class="km-search" method="get" action="{{ url_for('home') }}"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="جستجوی محصول، برند یا مدل..." autocomplete="off"><button type="submit">جستجو</button></form>
     <div class="km-user-actions">
       {% if current_user %}

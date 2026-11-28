@@ -2508,6 +2508,41 @@ def cinema():
 
 
 
+@app.route("/cinema/<slug>")
+def cinema_title_detail(slug):
+    """Expose metadata only while an active provider licence permits display."""
+    title = CinemaTitle.query.filter_by(slug=slug, status="published").first_or_404()
+    now = datetime.utcnow()
+    licence = (
+        CinemaLicense.query
+        .join(CinemaProvider, CinemaProvider.id == CinemaLicense.provider_id)
+        .filter(
+            CinemaLicense.title_id == title.id,
+            CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
+            CinemaProvider.active.is_(True),
+            db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),
+            db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now),
+            db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now),
+        )
+        .first()
+    )
+    if not licence:
+        abort(404)
+    episodes = sorted(
+        title.episodes,
+        key=lambda item: (item.season_number, item.episode_number),
+    )
+    seasons = sorted({item.season_number for item in episodes})
+    return render_template(
+        "cinema_title.html",
+        cinema_title=title,
+        episodes=episodes,
+        seasons=seasons,
+        cinema_licence=licence,
+    )
+
+
 # =========================================================
 # CATALOG
 # =========================================================

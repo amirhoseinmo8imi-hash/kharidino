@@ -107,3 +107,12 @@ i[class*="fa-"]::before,span[class*="fa-"]::before{display:inline-block;min-widt
  .site-content{padding-bottom:0}
  .mobile-bottom-nav i{font-family:system-ui,"Segoe UI Symbol",sans-serif!important;font-style:normal}
 }
+
+/* Unified app navigation glyphs */
+.fa-compass::before,.fa-compass-drafting::before{content:"◎"}
+.fa-clapperboard::before,.fa-film::before{content:"▣"}
+.fa-layer-group::before{content:"▤"}
+.fa-satellite-dish::before{content:"⌁"}
+.fa-closed-captioning::before{content:"CC"}
+.fa-list-ol::before{content:"☷"}
+.fa-cube::before{content:"◇"}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}اکسپلور | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="khx-page khx-explore-page">
+  <header class="khx-hero khx-explore-hero">
+    <div class="khx-hero-copy">
+      <span class="khx-eyebrow"><i class="fa-solid fa-compass"></i> DISCOVER MORE</span>
+      <h1>چیزهای تازه را <strong>کشف کن.</strong></h1>
+      <p>از میان محصولات و فروشگاه‌های خریدینو بگرد، مقایسه کن و انتخاب هوشمندانه‌تری داشته باش.</p>
+      <form class="khx-search" method="get" action="{{ url_for('explore') }}">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" name="q" value="{{ q }}" placeholder="نام محصول یا چیزی که دنبالش هستی..." aria-label="جستجو در اکسپلور">
+        <button type="submit">جستجو</button>
+      </form>
+      <div class="khx-hero-pills"><span><i class="fa-solid fa-layer-group"></i> محصولات واقعی</span><span><i class="fa-solid fa-scale-balanced"></i> مقایسه قیمت</span><span><i class="fa-solid fa-shield-halved"></i> انتخاب آگاهانه</span></div>
+    </div>
+    <div class="khx-orbit-art" aria-hidden="true"><div class="khx-orbit-ring ring-one"></div><div class="khx-orbit-ring ring-two"></div><div class="khx-orbit-core"><img src="{{ url_for('static', filename='icons/icon-192.svg') }}" alt=""></div><span class="khx-orbit-chip chip-one"><i class="fa-solid fa-bag-shopping"></i></span><span class="khx-orbit-chip chip-two"><i class="fa-solid fa-tag"></i></span><span class="khx-orbit-chip chip-three"><i class="fa-solid fa-star"></i></span></div>
+  </header>
+  <nav class="khx-category-rail" aria-label="فیلتر دسته‌بندی">
+    <a class="{% if not category_id %}is-active{% endif %}" href="{{ url_for('explore', q=q) }}">همه</a>
+    {% for category in categories %}<a class="{% if category_id == category.id|string %}is-active{% endif %}" href="{{ url_for('explore', category=category.id, q=q) }}"><i class="fa-solid {{ category.icon or 'fa-box' }}"></i>{{ category.name }}</a>{% endfor %}
+  </nav>
+  <div class="khx-section-head"><div><span class="khx-eyebrow">CURATED FOR YOU</span><h2>{% if q %}نتایج جستجو برای «{{ q }}»{% elif selected_category %}{{ selected_category.name }}{% else %}پیشنهادهایی برای کشف بیشتر{% endif %}</h2><p>{{ products|length }} محصول در این نمایش</p></div>
+    <form method="get" action="{{ url_for('explore') }}" class="khx-sort"><input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="category" value="{{ category_id }}"><label for="khx-sort">مرتب‌سازی</label><select id="khx-sort" name="sort" onchange="this.form.submit()"><option value="newest" {% if sort == 'newest' %}selected{% endif %}>جدیدترین</option><option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>ارزان‌ترین</option><option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>گران‌ترین</option></select></form>
+  </div>
+  {% if products %}
+  <div class="khx-product-grid">
+    {% for product in products %}
+    <article class="khx-product-card">
+      <a class="khx-product-media" href="{{ url_for('product_detail', product_id=product.id) }}">{% if product.image %}<img src="{{ product_image_url(product) }}" alt="{{ product.name }}" loading="lazy">{% else %}<span class="khx-product-placeholder"><i class="fa-solid fa-cube"></i></span>{% endif %}<span class="khx-product-tag">خریدینو</span></a>
+      <div class="khx-product-info">{% if product.category %}<small>{{ product.category.name }}</small>{% endif %}<h3><a href="{{ url_for('product_detail', product_id=product.id) }}">{{ product.name }}</a></h3><div class="khx-product-price"><strong>{{ lowest_price(product)|money }}</strong><span>تومان</span></div><a class="khx-product-link" href="{{ url_for('product_detail', product_id=product.id) }}">بررسی محصول <i class="fa-solid fa-arrow-left"></i></a></div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="khx-empty"><span><i class="fa-solid fa-compass"></i></span><h3>هنوز محصولی در این جستجو پیدا نشد</h3><p>عبارت دیگری امتحان کن یا همه دسته‌ها را ببین.</p><a href="{{ url_for('explore') }}">نمایش همه محصولات</a></div>
+  {% endif %}
+</section>
+{% endblock %}

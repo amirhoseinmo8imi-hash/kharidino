@@ -122,14 +122,16 @@
         <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>همه دسته‌بندی‌ها</span></div>
         <aside class="km-mega-sidebar" aria-label="گروه‌های دسته‌بندی">
         <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>دسته‌بندی کالاها</span></div>
+        {% set first_nav_item = namespace(value=true) %}
         {% for nav_group in category_navigation_groups|default([]) %}
         <div class="km-mega-group">
           <div class="km-mega-group-title">{{ nav_group.name }}</div>
           {% for cat in nav_group.categories %}
-          <a class="km-mega-side-item{% if loop.first %} is-active{% endif %}" data-mega-target="mega-panel-{{ cat.id }}" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
+          <a class="km-mega-side-item{% if first_nav_item.value %} is-active{% endif %}" data-mega-target="mega-panel-{{ cat.id }}" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
             <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
             <span>{{ cat.name }}</span><i class="fa-solid fa-chevron-left"></i>
           </a>
+          {% set first_nav_item.value = false %}
           {% endfor %}
         </div>
         {% endfor %}

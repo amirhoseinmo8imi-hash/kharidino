@@ -55,7 +55,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-experience-2026.css', v='2026-09-26-4') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-modern-shell-2026.css', v='2026-10-04-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-app-2026.css', v='2026-11-28-2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-app-2026.css', v='2026-11-28-3') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 {% if config.get('KHARIDINO_ANDROID_LOCAL') %}
@@ -84,7 +84,7 @@
           <div class="km-account-dropdown-head"><i class="fa-regular fa-circle-user"></i><div><strong>{{ current_user.name }}</strong><small>حساب کاربری خریدینو</small></div></div>
           <a href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i> پروفایل و تنظیمات</a>
           <a href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i> سفارش‌های من</a>
-          {% if current_user.role == 'admin' %}<a href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i> مدیریت سایت</a>{% endif %}
+          {% if current_user.role == 'admin' %}<a href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i> مدیریت سایت</a>{% endif %}{% if current_user.role == 'admin' %}<a href="{{ url_for('admin_cinema') }}"><i class="fa-solid fa-clapperboard"></i> مدیریت سینما</a>{% endif %}
           <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ _csrf_value }}"><button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i> خروج از حساب</button></form>
         </div>
       </div>

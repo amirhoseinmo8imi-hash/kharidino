@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}تماشای {{ cinema_title.title }} | سینمای خریدینو{% endblock %}
+{% block content %}
+<section class="khx-page khx-player-page">
+  <a class="khx-back-link" href="{{ url_for('cinema_title_detail', slug=cinema_title.slug) }}"><i class="fa-solid fa-arrow-right"></i> بازگشت به اطلاعات اثر</a>
+  <header class="khx-player-heading"><span class="khx-eyebrow">LICENSED STREAM</span><h1>{{ cinema_title.title }}{% if cinema_episode %} — {{ cinema_episode.title }}{% endif %}</h1><p>پخش از منبع تأمین‌کننده دارای مجوز؛ کیفیت و زیرنویس به منبع انتخاب‌شده بستگی دارد.</p></header>
+  <div class="khx-player-frame">
+    <video id="khx-cinema-video" controls playsinline preload="metadata" poster="{{ cinema_title.backdrop_url or cinema_title.poster_url }}">
+      {% set first = cinema_sources[0] %}
+      <source src="{{ first.playback_url }}" type="{% if first.stream_format == 'mp4' %}video/mp4{% elif first.stream_format == 'webm' %}video/webm{% else %}application/vnd.apple.mpegurl{% endif %}">
+      {% if first.subtitle_url %}<track kind="subtitles" src="{{ first.subtitle_url }}" srclang="{{ first.subtitle_language or 'fa' }}" label="زیرنویس" default>{% endif %}
+    </video>
+    <div id="khx-player-error" class="khx-player-error" hidden>این قالب پخش در مرورگر فعلی پشتیبانی نمی‌شود یا منبع تأمین‌کننده در دسترس نیست.</div>
+  </div>
+  <div class="khx-player-options"><label for="khx-source-select">کیفیت و منبع پخش</label><select id="khx-source-select">{% for source in cinema_sources %}<option value="{{ source.id }}" data-url="{{ source.playback_url }}" data-format="{{ source.stream_format }}" data-subtitle="{{ source.subtitle_url }}" data-language="{{ source.audio_language }}" data-subtitle-language="{{ source.subtitle_language }}">{{ source.quality }} · {{ source.audio_language }} · {{ source.provider.name }}</option>{% endfor %}</select><span><i class="fa-solid fa-shield-halved"></i> این منبع با مجوز پخش فعال ارائه شده است.</span></div>
+</section>
+<script>
+(function(){
+ const video=document.getElementById('khx-cinema-video');
+ const select=document.getElementById('khx-source-select');
+ const error=document.getElementById('khx-player-error');
+ if(!video||!select)return;
+ function mime(format){return format==='mp4'?'video/mp4':format==='webm'?'video/webm':'application/vnd.apple.mpegurl';}
+ function setSource(option){
+   if(!option)return;
+   video.pause();video.innerHTML='';
+   const source=document.createElement('source');source.src=option.dataset.url;source.type=mime(option.dataset.format);video.appendChild(source);
+   if(option.dataset.subtitle){const track=document.createElement('track');track.kind='subtitles';track.src=option.dataset.subtitle;track.srclang=option.dataset.subtitleLanguage||'fa';track.label='زیرنویس';track.default=true;video.appendChild(track);}
+   error.hidden=true;video.load();
+ }
+ select.addEventListener('change',function(){setSource(select.options[select.selectedIndex]);});
+ video.addEventListener('error',function(){error.hidden=false;});
+})();
+</script>
+{% endblock %}

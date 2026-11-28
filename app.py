@@ -300,6 +300,94 @@ class Offer(db.Model):
     )
 
 
+class CinemaTitle(db.Model):
+    """Licensed film or series metadata; no media is playable by default."""
+    __tablename__ = "cinema_title"
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(220), unique=True, nullable=False, index=True)
+    title = db.Column(db.String(220), nullable=False)
+    original_title = db.Column(db.String(220), default="")
+    synopsis = db.Column(db.Text, default="")
+    content_type = db.Column(db.String(20), default="movie", nullable=False)  # movie | series
+    poster_url = db.Column(db.String(900), default="")
+    backdrop_url = db.Column(db.String(900), default="")
+    release_year = db.Column(db.Integer)
+    duration_minutes = db.Column(db.Integer)
+    genres = db.Column(db.String(500), default="")
+    country = db.Column(db.String(120), default="")
+    language = db.Column(db.String(80), default="")
+    director = db.Column(db.String(220), default="")
+    cast = db.Column(db.Text, default="")
+    age_rating = db.Column(db.String(30), default="")
+    rating = db.Column(db.Float)
+    featured = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(db.String(20), default="draft", nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CinemaProvider(db.Model):
+    """A contracted content supplier; activation is an explicit admin action."""
+    __tablename__ = "cinema_provider"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(220), nullable=False)
+    website = db.Column(db.String(900), default="")
+    integration_type = db.Column(db.String(40), default="manual")
+    active = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CinemaLicense(db.Model):
+    """Rights record for one title, supplier and territory."""
+    __tablename__ = "cinema_license"
+    id = db.Column(db.Integer, primary_key=True)
+    title_id = db.Column(db.Integer, db.ForeignKey("cinema_title.id"), nullable=False, index=True)
+    provider_id = db.Column(db.Integer, db.ForeignKey("cinema_provider.id"), nullable=False, index=True)
+    reference_code = db.Column(db.String(180), default="")
+    territory = db.Column(db.String(12), default="IR", nullable=False)
+    status = db.Column(db.String(20), default="pending", nullable=False, index=True)
+    display_allowed = db.Column(db.Boolean, default=False, nullable=False)
+    streaming_allowed = db.Column(db.Boolean, default=False, nullable=False)
+    download_allowed = db.Column(db.Boolean, default=False, nullable=False)
+    valid_from = db.Column(db.DateTime)
+    valid_until = db.Column(db.DateTime)
+    title = db.relationship("CinemaTitle", backref=db.backref("licenses", lazy=True))
+    provider = db.relationship("CinemaProvider", backref=db.backref("licenses", lazy=True))
+
+
+class CinemaEpisode(db.Model):
+    """Episode metadata for a licensed series."""
+    __tablename__ = "cinema_episode"
+    id = db.Column(db.Integer, primary_key=True)
+    series_id = db.Column(db.Integer, db.ForeignKey("cinema_title.id"), nullable=False, index=True)
+    season_number = db.Column(db.Integer, nullable=False)
+    episode_number = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(220), nullable=False)
+    synopsis = db.Column(db.Text, default="")
+    duration_minutes = db.Column(db.Integer)
+    thumbnail_url = db.Column(db.String(900), default="")
+    series = db.relationship("CinemaTitle", backref=db.backref("episodes", lazy=True, order_by="CinemaEpisode.season_number, CinemaEpisode.episode_number"))
+    __table_args__ = (db.UniqueConstraint("series_id", "season_number", "episode_number", name="uq_cinema_episode_number"),)
+
+
+class CinemaMediaSource(db.Model):
+    """Provider-owned playback endpoint; never exposed without a valid streaming license."""
+    __tablename__ = "cinema_media_source"
+    id = db.Column(db.Integer, primary_key=True)
+    title_id = db.Column(db.Integer, db.ForeignKey("cinema_title.id"), nullable=False, index=True)
+    episode_id = db.Column(db.Integer, db.ForeignKey("cinema_episode.id"), nullable=True, index=True)
+    provider_id = db.Column(db.Integer, db.ForeignKey("cinema_provider.id"), nullable=False, index=True)
+    playback_url = db.Column(db.String(1800), nullable=False)
+    stream_format = db.Column(db.String(30), default="hls")
+    quality = db.Column(db.String(30), default="auto")
+    audio_language = db.Column(db.String(80), default="fa")
+    subtitle_language = db.Column(db.String(80), default="fa")
+    subtitle_url = db.Column(db.String(1800), default="")
+    active = db.Column(db.Boolean, default=False, nullable=False)
+    title = db.relationship("CinemaTitle", backref=db.backref("media_sources", lazy=True))
+    episode = db.relationship("CinemaEpisode", backref=db.backref("media_sources", lazy=True))
+    provider = db.relationship("CinemaProvider", backref=db.backref("media_sources", lazy=True))
+
+
 class GamingSubmission(db.Model):
     """User-submitted gaming content; publication requires moderation."""
     __tablename__ = "gaming_submission"
@@ -816,9 +904,34 @@ def inject_globals():
         .all()
     )
 
+    # Presentation taxonomy groups existing categories without changing the
+    # database schema or category IDs. Unmatched categories remain discoverable.
+    def _navigation_group(category_name):
+        value = (category_name or "").strip()
+        rules = (
+            ("موبایل و دیجیتال", ("موبایل", "لپ‌تاپ", "کامپیوتر", "دیجیتال", "هدفون", "هندزفری", "تلویزیون", "صوتی", "ساعت", "پوشیدنی", "گیمینگ", "کنسول")),
+            ("خانه و زندگی", ("خانه", "آشپزخانه", "لوازم خانگی", "دکور", "ابزار", "زیبایی", "سلامت", "ورزش", "سفر", "کتاب", "تحریر")),
+            ("مد و خرید روزمره", ("پوشاک", "مد", "سوپرمارکتی", "مواد غذایی", "خوراکی", "میوه")),
+            ("خودرو و حمل‌ونقل", ("خودرو", "موتور", "موتورسیکلت", "قطعات", "لوازم یدکی")),
+        )
+        for group_name, keywords in rules:
+            if any(keyword in value for keyword in keywords):
+                return group_name
+        return "سایر دسته‌بندی‌ها"
+
+    grouped_categories = {}
+    for category in global_categories:
+        grouped_categories.setdefault(_navigation_group(category.name), []).append(category)
+    group_order = ("موبایل و دیجیتال", "خانه و زندگی", "مد و خرید روزمره", "خودرو و حمل‌ونقل", "سایر دسته‌بندی‌ها")
+    category_navigation_groups = [
+        {"name": name, "categories": grouped_categories[name]}
+        for name in group_order if grouped_categories.get(name)
+    ]
+
     return {
 
         "categories": global_categories,
+        "category_navigation_groups": category_navigation_groups,
         "stores": global_stores,
         "category_count": len(global_categories),
         "store_count": len(global_stores),
@@ -2339,6 +2452,405 @@ def home():
     )
 
 
+
+# =========================================================
+# EXPLORE & CINEMA DISCOVERY
+# =========================================================
+
+@app.route("/explore")
+def explore():
+    """A searchable discovery surface backed by the real active product catalog."""
+    q = request.args.get("q", "").strip()[:100]
+    category_id = request.args.get("category", "").strip()
+    sort = request.args.get("sort", "newest").strip()
+    query = Product.query.filter_by(active=True)
+
+    if q:
+        term = f"%{q}%"
+        query = query.filter(db.or_(
+            Product.name.ilike(term),
+            Product.description.ilike(term),
+            Product.category.has(Category.name.ilike(term)),
+        ))
+
+    selected_category = None
+    if category_id:
+        try:
+            selected_category = db.session.get(Category, int(category_id))
+            if selected_category:
+                query = query.filter(Product.category_id == selected_category.id)
+            else:
+                category_id = ""
+        except (TypeError, ValueError):
+            category_id = ""
+
+    if sort == "price_low":
+        products = query.all()
+        products.sort(key=lambda item: (lowest_price(item), -item.id))
+    elif sort == "price_high":
+        products = query.all()
+        products.sort(key=lambda item: (-lowest_price(item), -item.id))
+    else:
+        sort = "newest"
+        products = query.order_by(Product.id.desc()).all()
+
+    products = products[:48]
+    categories = Category.query.filter_by(active=True).order_by(Category.id.asc()).all()
+    return render_template(
+        "explore.html",
+        products=products,
+        categories=categories,
+        q=q,
+        sort=sort,
+        category_id=category_id,
+        selected_category=selected_category,
+        lowest_price=lowest_price,
+    )
+
+
+@app.route("/admin/cinema", methods=["GET", "POST"])
+@admin_required
+def admin_cinema():
+    """Admin workspace for provider contracts, metadata and display licences."""
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+        if action == "provider":
+            name = (request.form.get("name") or "").strip()[:220]
+            website = (request.form.get("website") or "").strip()[:900]
+            if not name or (website and urlparse(website).scheme != "https"):
+                flash("نام تأمین‌کننده الزامی است و وب‌سایت باید با HTTPS باشد.", "danger")
+            else:
+                provider = CinemaProvider(
+                    name=name,
+                    website=website,
+                    integration_type="manual",
+                    active=request.form.get("active") == "on",
+                )
+                db.session.add(provider)
+                db.session.commit()
+                flash("تأمین‌کننده سینما ثبت شد.", "success")
+        elif action == "episode":
+            series = db.session.get(CinemaTitle, request.form.get("series_id", type=int))
+            episode_name = (request.form.get("episode_title") or "").strip()[:220]
+            try:
+                season_number = int(request.form.get("season_number") or 0)
+                episode_number = int(request.form.get("episode_number") or 0)
+                duration = int(request.form.get("episode_duration") or 0) or None
+            except (TypeError, ValueError):
+                season_number = episode_number = 0
+                duration = None
+            thumbnail_url = (request.form.get("thumbnail_url") or "").strip()[:900]
+            if not series or series.content_type != "series" or not episode_name or season_number < 1 or episode_number < 1 or (duration is not None and not 1 <= duration <= 999) or (thumbnail_url and not (thumbnail_url.startswith("https://") or thumbnail_url.startswith("/static/"))):
+                flash("اطلاعات قسمت معتبر نیست؛ سریال، فصل، شماره قسمت و تصویر را بررسی کن.", "danger")
+            elif CinemaEpisode.query.filter_by(series_id=series.id, season_number=season_number, episode_number=episode_number).first():
+                flash("این شماره قسمت قبلاً برای این فصل ثبت شده است.", "danger")
+            else:
+                episode = CinemaEpisode(
+                    series_id=series.id,
+                    season_number=season_number,
+                    episode_number=episode_number,
+                    title=episode_name,
+                    synopsis=(request.form.get("episode_synopsis") or "").strip()[:5000],
+                    duration_minutes=duration,
+                    thumbnail_url=thumbnail_url,
+                )
+                db.session.add(episode)
+                db.session.commit()
+                flash("قسمت سریال ثبت شد.", "success")
+        elif action == "source":
+            title = db.session.get(CinemaTitle, request.form.get("source_title_id", type=int))
+            provider = db.session.get(CinemaProvider, request.form.get("source_provider_id", type=int))
+            episode = db.session.get(CinemaEpisode, request.form.get("source_episode_id", type=int)) if request.form.get("source_episode_id") else None
+            playback_url = (request.form.get("playback_url") or "").strip()[:1800]
+            subtitle_url = (request.form.get("subtitle_url") or "").strip()[:1800]
+            now = datetime.utcnow()
+            licence = None
+            if title and provider:
+                licence = (
+                    CinemaLicense.query
+                    .filter_by(title_id=title.id, provider_id=provider.id, status="active", display_allowed=True, streaming_allowed=True)
+                    .filter(db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"))
+                    .filter(db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now))
+                    .filter(db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now))
+                    .first()
+                )
+            activate = request.form.get("source_active") == "on"
+            valid_episode = (title and ((title.content_type == "movie" and episode is None) or (title.content_type == "series" and episode and episode.series_id == title.id)))
+            if not title or not provider or not valid_episode or not playback_url.startswith("https://") or (subtitle_url and not subtitle_url.startswith(("https://", "/static/"))):
+                flash("مشخصات منبع، عنوان، قسمت و نشانی HTTPS را بررسی کن.", "danger")
+            elif activate and (not provider.active or not licence):
+                flash("فعال‌سازی منبع فقط با تأمین‌کننده فعال و مجوز پخش معتبر ممکن است.", "danger")
+            else:
+                source = CinemaMediaSource(
+                    title_id=title.id,
+                    episode_id=episode.id if episode else None,
+                    provider_id=provider.id,
+                    playback_url=playback_url,
+                    stream_format=request.form.get("stream_format") if request.form.get("stream_format") in {"mp4", "hls", "webm"} else "hls",
+                    quality=(request.form.get("quality") or "auto").strip()[:30],
+                    audio_language=(request.form.get("audio_language") or "fa").strip()[:80],
+                    subtitle_language=(request.form.get("subtitle_language") or "fa").strip()[:80],
+                    subtitle_url=subtitle_url,
+                    active=activate,
+                )
+                db.session.add(source)
+                db.session.commit()
+                flash("منبع پخش ثبت شد." if activate else "منبع پخش به‌صورت غیرفعال ثبت شد.", "success")
+        elif action == "title":
+            title_name = (request.form.get("title") or "").strip()[:220]
+            slug = re.sub(r"[^a-z0-9-]+", "-", (request.form.get("slug") or "").strip().lower()).strip("-")[:220]
+            provider = db.session.get(CinemaProvider, request.form.get("provider_id", type=int))
+            poster_url = (request.form.get("poster_url") or "").strip()[:900]
+            backdrop_url = (request.form.get("backdrop_url") or "").strip()[:900]
+            valid_from_raw = (request.form.get("valid_from") or "").strip()
+            valid_until_raw = (request.form.get("valid_until") or "").strip()
+            try:
+                valid_from = datetime.strptime(valid_from_raw, "%Y-%m-%d") if valid_from_raw else None
+                valid_until = (datetime.strptime(valid_until_raw, "%Y-%m-%d") + timedelta(days=1) - timedelta(microseconds=1)) if valid_until_raw else None
+                release_year = int(request.form.get("release_year") or 0) or None
+                duration = int(request.form.get("duration_minutes") or 0) or None
+                rating = float(request.form.get("rating") or 0) or None
+            except (TypeError, ValueError):
+                valid_from = valid_until = None
+                release_year = duration = rating = None
+                flash("سال، مدت، امتیاز یا تاریخ مجوز معتبر نیست.", "danger")
+                return redirect(url_for("admin_cinema"))
+            safe_assets = all(
+                not value or value.startswith("https://") or value.startswith("/static/")
+                for value in (poster_url, backdrop_url)
+            )
+            if not title_name or not slug or not provider or not safe_assets:
+                flash("عنوان، شناسه انگلیسی، تأمین‌کننده و نشانی امن پوستر را بررسی کن.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if CinemaTitle.query.filter_by(slug=slug).first():
+                flash("این شناسه برای یک اثر دیگر استفاده شده است.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if release_year and not 1880 <= release_year <= 2100:
+                flash("سال انتشار خارج از محدوده معتبر است.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if duration and not 1 <= duration <= 999:
+                flash("مدت زمان باید بین ۱ تا ۹۹۹ دقیقه باشد.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if rating is not None and not 0 <= rating <= 10:
+                flash("امتیاز باید بین صفر تا ده باشد.", "danger")
+                return redirect(url_for("admin_cinema"))
+            if valid_from and valid_until and valid_until < valid_from:
+                flash("پایان اعتبار مجوز نمی‌تواند قبل از شروع آن باشد.", "danger")
+                return redirect(url_for("admin_cinema"))
+            title = CinemaTitle(
+                slug=slug,
+                title=title_name,
+                original_title=(request.form.get("original_title") or "").strip()[:220],
+                synopsis=(request.form.get("synopsis") or "").strip()[:12000],
+                content_type=request.form.get("content_type") if request.form.get("content_type") in {"movie", "series"} else "movie",
+                poster_url=poster_url,
+                backdrop_url=backdrop_url,
+                release_year=release_year,
+                duration_minutes=duration,
+                genres=(request.form.get("genres") or "").strip()[:500],
+                country=(request.form.get("country") or "").strip()[:120],
+                language=(request.form.get("language") or "").strip()[:80],
+                director=(request.form.get("director") or "").strip()[:220],
+                cast=(request.form.get("cast") or "").strip()[:3000],
+                age_rating=(request.form.get("age_rating") or "").strip()[:30],
+                rating=rating,
+                featured=request.form.get("featured") == "on",
+                status="published" if request.form.get("publish") == "on" else "draft",
+            )
+            db.session.add(title)
+            db.session.flush()
+            license_status = request.form.get("license_status")
+            if license_status not in {"pending", "active", "expired", "revoked"}:
+                license_status = "pending"
+            reference_code = (request.form.get("reference_code") or "").strip()[:180]
+            display_allowed = request.form.get("display_allowed") == "on"
+            streaming_allowed = request.form.get("streaming_allowed") == "on"
+            download_allowed = request.form.get("download_allowed") == "on"
+            if license_status == "active" and (not provider.active or not reference_code or not display_allowed):
+                db.session.rollback()
+                flash("برای فعال‌کردن مجوز، تأمین‌کننده فعال، کد قرارداد و اجازه نمایش لازم است.", "danger")
+                return redirect(url_for("admin_cinema"))
+            territory = (request.form.get("territory") or "IR").strip().upper()
+            if territory not in {"IR", "*"}:
+                territory = "IR"
+            licence = CinemaLicense(
+                title_id=title.id,
+                provider_id=provider.id,
+                reference_code=reference_code,
+                territory=territory,
+                status=license_status,
+                display_allowed=display_allowed,
+                streaming_allowed=streaming_allowed,
+                download_allowed=download_allowed,
+                valid_from=valid_from,
+                valid_until=valid_until,
+            )
+            db.session.add(licence)
+            db.session.commit()
+            flash("اطلاعات اثر و رکورد مجوز آن ثبت شد.", "success")
+        else:
+            flash("درخواست نامعتبر است.", "danger")
+        return redirect(url_for("admin_cinema"))
+
+    providers = CinemaProvider.query.order_by(CinemaProvider.name.asc()).all()
+    titles = CinemaTitle.query.order_by(CinemaTitle.created_at.desc()).limit(100).all()
+    licences = CinemaLicense.query.order_by(CinemaLicense.id.desc()).limit(100).all()
+    episodes = CinemaEpisode.query.order_by(CinemaEpisode.series_id.asc(), CinemaEpisode.season_number.asc(), CinemaEpisode.episode_number.asc()).limit(300).all()
+    series_titles = [item for item in titles if item.content_type == "series"]
+    sources = CinemaMediaSource.query.order_by(CinemaMediaSource.id.desc()).limit(200).all()
+    return render_template(
+        "admin_cinema.html",
+        providers=providers,
+        cinema_titles=titles,
+        cinema_licences=licences,
+        cinema_episodes=episodes,
+        series_titles=series_titles,
+        cinema_sources=sources,
+    )
+
+
+@app.route("/cinema")
+def cinema():
+    """Show only titles with an active, in-date metadata display licence."""
+    now = datetime.utcnow()
+    cinema_titles = (
+        CinemaTitle.query
+        .join(CinemaLicense, CinemaLicense.title_id == CinemaTitle.id)
+        .join(CinemaProvider, CinemaProvider.id == CinemaLicense.provider_id)
+        .filter(
+            CinemaTitle.status == "published",
+            CinemaProvider.active.is_(True),
+            CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
+            db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),
+            db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now),
+            db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now),
+        )
+        .distinct()
+        .order_by(CinemaTitle.featured.desc(), CinemaTitle.created_at.desc())
+        .limit(36)
+        .all()
+    )
+    return render_template("cinema.html", cinema_titles=cinema_titles)
+
+
+
+@app.route("/cinema/watch/<slug>")
+def cinema_watch_movie(slug):
+    title = CinemaTitle.query.filter_by(slug=slug, status="published", content_type="movie").first_or_404()
+    return _render_licensed_cinema_player(title, None)
+
+
+@app.route("/cinema/watch/<slug>/episode/<int:episode_id>")
+def cinema_watch_episode(slug, episode_id):
+    title = CinemaTitle.query.filter_by(slug=slug, status="published", content_type="series").first_or_404()
+    episode = db.session.get(CinemaEpisode, episode_id)
+    if not episode or episode.series_id != title.id:
+        abort(404)
+    return _render_licensed_cinema_player(title, episode)
+
+
+def _render_licensed_cinema_player(title, episode):
+    now = datetime.utcnow()
+    licences = (
+        CinemaLicense.query
+        .join(CinemaProvider, CinemaProvider.id == CinemaLicense.provider_id)
+        .filter(
+            CinemaLicense.title_id == title.id,
+            CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
+            CinemaLicense.streaming_allowed.is_(True),
+            CinemaProvider.active.is_(True),
+            db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),
+            db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now),
+            db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now),
+        )
+        .all()
+    )
+    provider_ids = [item.provider_id for item in licences]
+    if not provider_ids:
+        abort(404)
+    query = CinemaMediaSource.query.filter(
+        CinemaMediaSource.title_id == title.id,
+        CinemaMediaSource.provider_id.in_(provider_ids),
+        CinemaMediaSource.active.is_(True),
+    )
+    query = query.filter(CinemaMediaSource.episode_id == (episode.id if episode else None))
+    sources = query.order_by(CinemaMediaSource.quality.asc()).all()
+    if not sources:
+        abort(404)
+    return render_template(
+        "cinema_player.html",
+        cinema_title=title,
+        cinema_episode=episode,
+        cinema_sources=sources,
+    )
+
+
+@app.route("/cinema/<slug>")
+def cinema_title_detail(slug):
+    """Expose metadata only while an active provider licence permits display."""
+    title = CinemaTitle.query.filter_by(slug=slug, status="published").first_or_404()
+    now = datetime.utcnow()
+    licence = (
+        CinemaLicense.query
+        .join(CinemaProvider, CinemaProvider.id == CinemaLicense.provider_id)
+        .filter(
+            CinemaLicense.title_id == title.id,
+            CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
+            CinemaProvider.active.is_(True),
+            db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),
+            db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now),
+            db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now),
+        )
+        .first()
+    )
+    if not licence:
+        abort(404)
+    episodes = sorted(
+        title.episodes,
+        key=lambda item: (item.season_number, item.episode_number),
+    )
+    seasons = sorted({item.season_number for item in episodes})
+    stream_licences = (
+        CinemaLicense.query
+        .join(CinemaProvider, CinemaProvider.id == CinemaLicense.provider_id)
+        .filter(
+            CinemaLicense.title_id == title.id,
+            CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
+            CinemaLicense.streaming_allowed.is_(True),
+            CinemaProvider.active.is_(True),
+            db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),
+            db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now),
+            db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now),
+        )
+        .all()
+    )
+    provider_ids = [item.provider_id for item in stream_licences]
+    active_sources = (
+        CinemaMediaSource.query
+        .filter(
+            CinemaMediaSource.title_id == title.id,
+            CinemaMediaSource.provider_id.in_(provider_ids) if provider_ids else False,
+            CinemaMediaSource.active.is_(True),
+        )
+        .all()
+    )
+    streamable_episode_ids = {item.episode_id for item in active_sources if item.episode_id is not None}
+    can_stream_movie = title.content_type == "movie" and any(item.episode_id is None for item in active_sources)
+    return render_template(
+        "cinema_title.html",
+        cinema_title=title,
+        episodes=episodes,
+        seasons=seasons,
+        cinema_licence=licence,
+        streamable_episode_ids=streamable_episode_ids,
+        can_stream_movie=can_stream_movie,
+    )
+
+
 # =========================================================
 # CATALOG
 # =========================================================
@@ -2484,6 +2996,9 @@ def category(category_id):
     sort = request.args.get("sort", "newest").strip()
     store_id = request.args.get("store", "").strip()
     q = request.args.get("q", "").strip()[:100]
+    stock_filter = request.args.get("stock", "").strip().lower()
+    if stock_filter not in {"", "available", "unavailable"}:
+        stock_filter = ""
 
     try:
         min_price = max(0, int(request.args.get("min_price", "0") or 0))
@@ -2514,18 +3029,23 @@ def category(category_id):
     # Filter using the same effective price users see on product cards.
     filtered = []
     for product in products:
-        if store_id.isdigit():
-            if not selected_store or not selected_store.active:
-                continue
-            matching = [
-                offer for offer in product.offers
-                if offer.store_id == selected_store.id
-                and offer.in_stock
-                and offer.price
-                and offer.price > 0
-            ]
-            if not matching:
-                continue
+        if store_id.isdigit() and (not selected_store or not selected_store.active):
+            continue
+
+        relevant_offers = [
+            offer for offer in product.offers
+            if offer.store and offer.store.active
+            and (not selected_store or offer.store_id == selected_store.id)
+            and offer.price and offer.price > 0
+        ]
+        if store_id.isdigit() and not relevant_offers:
+            continue
+
+        has_stock = any(offer.in_stock for offer in relevant_offers)
+        if stock_filter == "available" and not has_stock:
+            continue
+        if stock_filter == "unavailable" and has_stock:
+            continue
 
         effective = lowest_price(product)
         if min_price and effective < min_price:
@@ -2558,6 +3078,7 @@ def category(category_id):
         sort=sort,
         q=q,
         store_id=store_id,
+        stock=stock_filter,
         min_price=min_price,
         max_price=max_price,
         store_options=store_options,

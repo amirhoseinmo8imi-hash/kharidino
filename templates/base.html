@@ -7,7 +7,7 @@
   <title>{% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}</title>
   <meta name="description" content="{{ setting('meta_description', site_tagline) }}">
   <link rel="canonical" href="{{ request.base_url }}">
-  <meta name="theme-color" content="#ef4056">
+  <meta name="theme-color" content="#070b18">
   <meta name="csrf-token" content="{{ _csrf_value }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='2026-11-28-2') }}">
   <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.svg', v='2026-09-08-1') }}" type="image/svg+xml">
@@ -55,6 +55,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-experience-2026.css', v='2026-09-26-4') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-modern-shell-2026.css', v='2026-10-04-1') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-special-hubs-2026.css', v='2026-10-04-1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-unified-app-2026.css', v='2026-11-28-5') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kharidino-navigation-system.css', v='2026-11-28-2') }}">
 </head>
 <body class="{% if request.endpoint in ['login', 'register'] %}kh-auth-shell{% elif request.endpoint == 'home' %}kh-home-page{% elif request.endpoint and request.endpoint.startswith('admin') %}kh-admin-page{% else %}kh-inner-page{% endif %}">
 {% if config.get('KHARIDINO_ANDROID_LOCAL') %}
@@ -83,7 +85,7 @@
           <div class="km-account-dropdown-head"><i class="fa-regular fa-circle-user"></i><div><strong>{{ current_user.name }}</strong><small>حساب کاربری خریدینو</small></div></div>
           <a href="{{ url_for('profile') }}"><i class="fa-regular fa-user"></i> پروفایل و تنظیمات</a>
           <a href="{{ url_for('my_orders') }}"><i class="fa-solid fa-box"></i> سفارش‌های من</a>
-          {% if current_user.role == 'admin' %}<a href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i> مدیریت سایت</a>{% endif %}
+          {% if current_user.role == 'admin' %}<a href="{{ url_for('admin') }}"><i class="fa-solid fa-gauge-high"></i> مدیریت سایت</a>{% endif %}{% if current_user.role == 'admin' %}<a href="{{ url_for('admin_cinema') }}"><i class="fa-solid fa-clapperboard"></i> مدیریت سینما</a>{% endif %}
           <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ _csrf_value }}"><button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i> خروج از حساب</button></form>
         </div>
       </div>
@@ -100,9 +102,8 @@
     <a class="km-nav-link" href="{{ url_for('catalog_products') }}"><i class="fa-solid fa-boxes-stacked"></i><span>همه کالاها</span></a>
     <a class="km-nav-link" href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span>فروشگاه‌ها</span></a>
     <a class="km-nav-link km-nav-link--auto" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>بازار خودرو</span></a>
-    <a class="km-nav-link km-nav-link--service" href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><span>گیمینگ</span></a>
-    <a class="km-nav-link km-nav-link--service" href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><span>میوه و تازه</span></a>
-    <a class="km-nav-link km-nav-link--service" href="{{ url_for('insurance_hub') }}"><i class="fa-solid fa-shield-halved"></i><span>بیمه</span></a>
+    <a class="km-nav-link" href="{{ url_for('explore') }}"><i class="fa-solid fa-compass"></i><span>اکسپلور</span></a>
+    <a class="km-nav-link km-nav-link--cinema" href="{{ url_for('cinema') }}"><i class="fa-solid fa-clapperboard"></i><span>سینما</span></a>
     <a class="km-nav-link" href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه قیمت</span></a>
 
   <div class="km-nav-business">
@@ -117,48 +118,50 @@
       <i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>
     </button>
     <div class="km-category-mega" role="menu" aria-label="دسته‌بندی کالاها">
-      <aside class="km-mega-sidebar">
-        <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>همه دسته‌بندی‌ها</span></div>
-        {% set hidden_store_categories = ['خودرو'] %}
-        {% set hidden_duplicate_categories = ['لپ‌تاپ', 'هدفون', 'تلویزیون', 'ساعت هوشمند'] %}
-        {% set shown_category_names = namespace(items=[]) %}
-        {% for cat in (categories|default([])) if cat.name not in hidden_store_categories and cat.name not in hidden_duplicate_categories and cat.name not in shown_category_names.items %}
-        {% set shown_category_names.items = shown_category_names.items + [cat.name] %}
-        <a class="km-mega-side-item{% if loop.first %} is-active{% endif %}" data-mega-target="mega-panel-{{ cat.id }}" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
-          <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
-          <span>{{ cat.name }}</span><i class="fa-solid fa-chevron-left"></i>
-        </a>
+      <aside class="km-mega-sidebar" aria-label="گروه‌های دسته‌بندی">
+        <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>دسته‌بندی کالاها</span></div>
+        {% set first_nav_item = namespace(value=true) %}
+        {% for nav_group in category_navigation_groups|default([]) %}
+        <div class="km-mega-group">
+          <div class="km-mega-group-title">{{ nav_group.name }}</div>
+          {% for cat in nav_group.categories %}
+          <a class="km-mega-side-item{% if first_nav_item.value %} is-active{% endif %}" data-mega-target="mega-panel-{{ cat.id }}" role="menuitem" href="{{ url_for('category', category_id=cat.id) }}">
+            <span class="km-category-mega-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
+            <span>{{ cat.name }}</span><i class="fa-solid fa-chevron-left"></i>
+          </a>
+          {% set first_nav_item.value = false %}
+          {% endfor %}
+        </div>
         {% endfor %}
       </aside>
-      <section class="km-mega-content">
-        {% for cat in (categories|default([])) if cat.name not in hidden_store_categories and cat.name not in hidden_duplicate_categories and cat.name in shown_category_names.items %}
+      <section class="km-mega-content" aria-label="دسته‌های مرتبط">
+        {% for cat in categories|default([]) %}
         <div class="km-mega-panel{% if loop.first %} is-active{% endif %}" id="mega-panel-{{ cat.id }}" data-mega-panel="{{ cat.id }}">
           <div class="km-mega-panel-head">
-            <div><span>خرید از دسته</span><h3>{{ cat.name }}</h3><p>{{ cat.description }}</p></div>
-            <a href="{{ url_for('category', category_id=cat.id) }}">مشاهده همه <i class="fa-solid fa-arrow-left"></i></a>
+            <div><span>دسته‌بندی خریدینو</span><h3>{{ cat.name }}</h3><p>{{ cat.description or 'محصولات این گروه را بررسی و مقایسه کنید.' }}</p></div>
+            <a href="{{ url_for('category', category_id=cat.id) }}">مشاهده همه محصولات <i class="fa-solid fa-arrow-left"></i></a>
           </div>
           <div class="km-mega-columns">
+            {% for nav_group in category_navigation_groups|default([]) if cat in nav_group.categories %}
             <div class="km-mega-column">
-              <h4><i class="fa-solid fa-fire"></i> محصولات محبوب</h4>
-              {% for product in cat.products[:7] %}
-              <a href="{{ url_for('product_detail', product_id=product.id) }}">{{ product.name }}</a>
-              {% else %}
-              <a href="{{ url_for('category', category_id=cat.id) }}">مشاهده محصولات {{ cat.name }}</a>
+              <h4><i class="fa-solid fa-layer-group"></i> {{ nav_group.name }}</h4>
+              {% for sibling in nav_group.categories if sibling.id != cat.id %}
+              <a href="{{ url_for('category', category_id=sibling.id) }}">{{ sibling.name }}</a>
               {% endfor %}
+              <a href="{{ url_for('category', category_id=cat.id) }}">همه محصولات {{ cat.name }}</a>
             </div>
+            {% endfor %}
             <div class="km-mega-column">
               <h4><i class="fa-solid fa-bolt"></i> خرید سریع</h4>
-              <a href="{{ url_for('category', category_id=cat.id) }}">همه محصولات {{ cat.name }}</a>
               <a href="{{ url_for('category', category_id=cat.id, sort='price_low') }}">ارزان‌ترین‌ها</a>
               <a href="{{ url_for('category', category_id=cat.id, sort='newest') }}">جدیدترین‌ها</a>
-              <a href="{{ url_for('compare') }}">مقایسه محصولات</a>
+              <a href="{{ url_for('compare') }}">مقایسه قیمت</a>
             </div>
             <div class="km-mega-column">
-              <h4><i class="fa-solid fa-tag"></i> پیشنهادهای خرید</h4>
-              <a href="{{ url_for('category', category_id=cat.id) }}">پیشنهادهای ویژه</a>
-              <a href="{{ url_for('stores') }}">فروشگاه‌های این دسته</a>
+              <h4><i class="fa-solid fa-compass"></i> راهنمای خرید</h4>
               <a href="{{ url_for('home', q=cat.name) }}">جستجوی {{ cat.name }}</a>
-              <a href="{{ url_for('category', category_id=cat.id) }}">راهنمای انتخاب</a>
+              <a href="{{ url_for('stores') }}">فروشگاه‌های خریدینو</a>
+              <a href="{{ url_for('catalog_products') }}">مشاهده همه کالاها</a>
             </div>
           </div>
         </div>
@@ -176,28 +179,25 @@
 </div></nav>
 
 </header>
-<div class="kh-global-rail" aria-label="دسترسی‌های مهم خریدینو">
-  <a href="{{ url_for('services_hub') }}"><i class="fa-solid fa-grid-2"></i><span><strong>اکوسیستم خریدینو</strong>همه بخش‌ها</span></a>
-  <a href="{{ url_for('gaming_hub') }}"><i class="fa-solid fa-gamepad"></i><span><strong>گیمینگ</strong>بازار گیمرها</span></a>
-  <a href="{{ url_for('fresh_market') }}"><i class="fa-solid fa-apple-whole"></i><span><strong>میوه و تازه</strong>بازار محصولات تازه</span></a>
-  <a href="{{ url_for('insurance_hub') }}"><i class="fa-solid fa-shield-halved"></i><span><strong>بیمه</strong>دسترسی سریع بیمه</span></a>
-  
-  <a href="{{ url_for('compare') }}"><i class="fa-solid fa-scale-balanced"></i><span><strong>مقایسه قیمت</strong>انتخاب اقتصادی‌تر</span></a>
-  <a href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span><strong>بازار خودرو</strong>آگهی‌های تازه</span></a>
-  <a href="{{ url_for('stores') }}"><i class="fa-solid fa-store"></i><span><strong>فروشگاه‌ها</strong>فروشنده‌های خریدینو</span></a>
-  {% if current_user %}<a href="{{ url_for('my_orders') }}"><i class="fa-solid fa-truck-fast"></i><span><strong>پیگیری سفارش</strong>وضعیت سفارش‌ها</span></a>{% else %}<a href="{{ url_for('contact') }}"><i class="fa-solid fa-headset"></i><span><strong>پشتیبانی</strong>همراه شما در خرید</span></a>{% endif %}
-</div>
+{% if request.endpoint == 'home' %}
 <div class="kh-trust-strip" aria-label="مزیت‌های خریدینو">
   <div><i class="fa-solid fa-scale-balanced"></i><span><strong>مقایسه شفاف</strong>قیمت و پیشنهاد فروشنده‌ها</span></div>
   <div><i class="fa-solid fa-store"></i><span><strong>{{ store_count|default(0) }}+ فروشگاه</strong>انتخاب از فروشنده‌های مختلف</span></div>
   <div><i class="fa-solid fa-car-side"></i><span><strong>بازار خودرو</strong>خرید و فروش وسایل نقلیه</span></div>
   <div><i class="fa-solid fa-headset"></i><span><strong>پشتیبانی خریدینو</strong>راهنمایی در مسیر خرید</span></div>
 </div>
+{% endif %}
 {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash-message flash-{{ category }}"><i class="fa-solid fa-circle-info"></i><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}{% endwith %}
 <main class="kg-main">{% block content %}{% endblock %}</main>
 <footer class="footer kh-footer"><div class="container"><div class="kh-footer-top"><div class="kh-footer-brand"><a href="{{ url_for('home') }}" class="kh-footer-logo"><span class="kh-footer-logo-mark"><img src="{{ url_for('static', filename='icons/kharidino-mark.svg') }}" alt="" width="30" height="30"></span><span>{{ site_name }}</span></a><h3>خریدینو؛ انتخاب هوشمند، مقایسه شفاف، خرید مطمئن</h3><p>{{ setting('footer_text','قیمت‌ها را مقایسه کن، فروشگاه‌ها را بشناس و با آگاهی بیشتر خرید کن.') }}</p><div class="kh-footer-badges"><span><i class="fa-solid fa-scale-balanced"></i> مقایسه قیمت</span><span><i class="fa-solid fa-store"></i> فروشگاه‌های متنوع</span><span><i class="fa-solid fa-shield-heart"></i> انتخاب مطمئن</span></div></div><div class="kh-footer-links"><h4>دسترسی سریع</h4><a href="{{ url_for('home') }}">خانه</a><a href="{{ url_for('stores') }}">فروشگاه‌ها</a><a href="{{ url_for('features') }}">امکانات خریدینو</a><a href="{{ url_for('compare') }}">مقایسه محصولات</a><a href="{{ url_for('about') }}">درباره ما</a></div><div class="kh-footer-links"><h4>حساب کاربری</h4>{% if current_user %}<a href="{{ url_for('profile') }}">پروفایل من</a><a href="{{ url_for('my_orders') }}">سفارش‌های من</a>{% else %}<a href="{{ url_for('login') }}">ورود به حساب</a><a href="{{ url_for('register') }}">ثبت‌نام</a>{% endif %}<a href="{{ url_for('cart') }}">سبد خرید</a></div><div class="kh-footer-links"><h4>پشتیبانی و راهنما</h4><a href="{{ url_for('contact') }}">تماس با ما</a><a href="{{ url_for('about') }}">درباره خریدینو</a><a href="{{ url_for('features') }}">راهنمای امکانات</a><div class="kh-footer-support"><i class="fa-solid fa-headset"></i><span>پشتیبانی خریدینو<br><small>همراه شما در مسیر انتخاب</small></span></div></div></div><div class="kh-footer-stats"><div><strong>{{ store_count|default(0) }}+</strong><span>فروشگاه فعال</span></div><div><strong>{{ category_count|default(0) }}+</strong><span>دسته‌بندی</span></div><div><strong>{{ offer_count|default(0) }}+</strong><span>پیشنهاد قیمت</span></div><div><strong>{{ product_count|default(0) }}+</strong><span>محصول فعال</span></div></div><div class="footer-bottom kh-footer-bottom"><span>© {{ site_name }} — تمامی حقوق محفوظ است.</span><span>{{ setting('footer_copyright','خریدینو؛ برای یک انتخاب بهتر.') }}</span></div></div></footer>
 </div>
-<nav class="mobile-bottom-nav"><a class="mobile-nav-item" href="{{ url_for('home') }}"><i class="fa-solid fa-house"></i><span>خانه</span></a><a class="mobile-nav-item" href="{{ url_for('home') }}#categories"><i class="fa-solid fa-border-all"></i><span>دسته‌ها</span></a><a class="mobile-nav-item" href="{{ url_for('vehicles') }}"><i class="fa-solid fa-car-side"></i><span>خودرو</span></a><a class="mobile-nav-item" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i><span>سبد</span></a>{% if current_user %}<a class="mobile-nav-item" href="{{ url_for('profile') }}"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}</nav>
+<nav class="mobile-bottom-nav kh-app-bottom-nav" aria-label="ناوبری اصلی">
+  <a class="mobile-nav-item{% if request.endpoint == 'home' %} is-active{% endif %}" href="{{ url_for('home') }}" aria-label="خانه"><i class="fa-solid fa-house"></i><span>خانه</span></a>
+  <a class="mobile-nav-item{% if request.endpoint == 'explore' %} is-active{% endif %}" href="{{ url_for('explore') }}" aria-label="اکسپلور"><i class="fa-solid fa-compass"></i><span>اکسپلور</span></a>
+  <a class="mobile-nav-item{% if request.endpoint == 'compare' %} is-active{% endif %}" href="{{ url_for('compare') }}" aria-label="مقایسه"><i class="fa-solid fa-scale-balanced"></i><span>مقایسه</span></a>
+  <a class="mobile-nav-item{% if request.endpoint == 'cinema' %} is-active{% endif %}" href="{{ url_for('cinema') }}" aria-label="سینما"><i class="fa-solid fa-clapperboard"></i><span>سینما</span></a>
+  {% if current_user %}<a class="mobile-nav-item{% if request.endpoint in ['profile','profile_settings'] %} is-active{% endif %}" href="{{ url_for('profile') }}" aria-label="حساب کاربری"><i class="fa-solid fa-user"></i><span>حساب</span></a>{% else %}<a class="mobile-nav-item" href="{{ url_for('login') }}" aria-label="ورود"><i class="fa-solid fa-user"></i><span>ورود</span></a>{% endif %}
+</nav>
 <script>(function(){const meta=document.querySelector('meta[name="csrf-token"]');const token=meta?meta.getAttribute('content'):'';function protectForms(){if(!token)return;document.querySelectorAll('form').forEach(function(form){const method=(form.getAttribute('method')||'get').toLowerCase();if(method==='get')return;let input=form.querySelector('input[name="csrf_token"]');if(!input){input=document.createElement('input');input.type='hidden';input.name='csrf_token';form.appendChild(input)}input.value=token})}function installAdminLogoutFallback(){if(!document.body.classList.contains('kh-admin-page')||!token)return;const logoutUrl="{{ url_for('logout') }}";document.querySelectorAll('.admin-sidebar-bottom a').forEach(function(link){if(link.getAttribute('href')!==logoutUrl)return;link.addEventListener('click',function(event){event.preventDefault();const form=document.createElement('form');form.method='post';form.action=logoutUrl;const input=document.createElement('input');input.type='hidden';input.name='csrf_token';input.value=token;form.appendChild(input);document.body.appendChild(form);form.submit()})})}function protectFetch(){if(!token||!window.fetch)return;const originalFetch=window.fetch;window.fetch=function(input,init){init=init||{};const method=(init.method||((input&&input.method)||'GET')).toUpperCase();if(['POST','PUT','PATCH','DELETE'].indexOf(method)!==-1){const headers=new Headers(init.headers||((input&&input.headers)||{}));const sameOrigin=(function(){
   try{
     const target=new URL(typeof input==='string'?input:(input&&input.url)||'',window.location.href);

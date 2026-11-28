@@ -56,6 +56,16 @@
         <div class="kh-portal-copy"><span>AUTO MARKET</span><strong>خریدینو خودرو</strong><p>خرید و فروش خودرو، موتورسیکلت و وسایل نقلیه</p></div>
         <i class="fa-solid fa-arrow-left kh-portal-arrow"></i>
       </a>
+      <a class="kh-portal-card kh-portal-explore" href="{{ url_for('explore') }}">
+        <div class="kh-portal-icon"><i class="fa-solid fa-compass"></i></div>
+        <div class="kh-portal-copy"><span>DISCOVER</span><strong>اکسپلور خریدینو</strong><p>کشف محصولات، دسته‌ها و پیشنهادهای تازه</p></div>
+        <i class="fa-solid fa-arrow-left kh-portal-arrow"></i>
+      </a>
+      <a class="kh-portal-card kh-portal-cinema" href="{{ url_for('cinema') }}">
+        <div class="kh-portal-icon"><i class="fa-solid fa-clapperboard"></i></div>
+        <div class="kh-portal-copy"><span>CINEMA</span><strong>سینمای خریدینو</strong><p>دنیای فیلم و سریال با محتوای دارای مجوز</p></div>
+        <i class="fa-solid fa-arrow-left kh-portal-arrow"></i>
+      </a>
     </div>
   </section>
 
@@ -174,6 +184,30 @@
     {% for category in categories[:4] %}<a href="{{ url_for('category', category_id=category.id) }}"><i class="fa-solid {{ category.icon or 'fa-box' }}"></i><span>{{ category.name }}</span><small>مشاهده محصولات</small></a>{% endfor %}
     <a href="{{ url_for('seller_register') }}"><i class="fa-solid fa-shop"></i><span>ثبت فروشگاه</span><small>شروع فروش</small></a>
   </div>
+
+  {% if not q %}
+  <section class="kh-home-category-directory" aria-label="دسته‌بندی کالاهای خریدینو">
+    <div class="kh-home-category-head">
+      <div><span>دسته‌بندی‌ها</span><h2>از کجا شروع کنیم؟</h2><p>محصولات را بر اساس گروه‌های مرتب و مشخص پیدا کن.</p></div>
+      <a href="{{ url_for('catalog_products') }}">مشاهده همه کالاها <i class="fa-solid fa-arrow-left"></i></a>
+    </div>
+    <div class="kh-home-category-groups">
+      {% for nav_group in category_navigation_groups|default([]) %}
+      <section class="kh-home-category-group">
+        <h3><i class="fa-solid fa-layer-group"></i>{{ nav_group.name }}</h3>
+        <div class="kh-home-category-items">
+          {% for cat in nav_group.categories %}
+          <a href="{{ url_for('category', category_id=cat.id) }}">
+            <span class="kh-home-category-icon"><i class="fa-solid {{ cat.icon or 'fa-box' }}"></i></span>
+            <span>{{ cat.name }}</span><i class="fa-solid fa-chevron-left"></i>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   {% if not q and vehicle_ads %}
   <section class="kh-vehicle-showcase" aria-label="آگهی‌های جدید وسایل نقلیه">

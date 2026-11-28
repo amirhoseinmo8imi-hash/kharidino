@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}سینمای خریدینو | {{ site_name }}{% endblock %}
+{% block content %}
+<section class="khx-page khx-cinema-page">
+  <header class="khx-cinema-hero">
+    <div class="khx-cinema-glow"></div>
+    <div class="khx-cinema-copy"><span class="khx-eyebrow"><i class="fa-solid fa-clapperboard"></i> KHARIDINO CINEMA</span><h1>یک جهان داستان،<br><strong>در یک قاب.</strong></h1><p>سینمای خریدینو برای کشف فیلم‌ها و سریال‌ها، دنبال‌کردن فصل‌ها و قسمت‌ها و تماشای محتوای دارای مجوز طراحی می‌شود.</p><div class="khx-cinema-actions"><a href="#catalog-status" class="khx-primary-button">وضعیت کاتالوگ <i class="fa-solid fa-arrow-down"></i></a><a href="{{ url_for('contact') }}" class="khx-secondary-button">همکاری تأمین‌کنندگان <i class="fa-solid fa-arrow-left"></i></a></div></div>
+    <div class="khx-cinema-art" aria-hidden="true"><div class="khx-cinema-poster poster-a"><span>KH</span><b>STORIES</b></div><div class="khx-cinema-poster poster-b"><i class="fa-solid fa-play"></i></div><div class="khx-cinema-poster poster-c"><span>01</span><b>EPISODE</b></div><div class="khx-cinema-play"><i class="fa-solid fa-play"></i></div></div>
+  </header>
+  <section class="khx-cinema-features"><article><i class="fa-solid fa-film"></i><div><strong>فیلم و سریال</strong><span>کاتالوگ یکپارچه آثار سینمایی و تلویزیونی</span></div></article><article><i class="fa-solid fa-list-ol"></i><div><strong>فصل و قسمت</strong><span>ساختار منظم مجموعه‌ها و ادامه تماشا</span></div></article><article><i class="fa-solid fa-closed-captioning"></i><div><strong>زیرنویس و دوبله</strong><span>آماده برای چندزبانه و چندکیفیتی</span></div></article><article><i class="fa-solid fa-shield-halved"></i><div><strong>محتوای قانونی</strong><span>انتشار فقط با مجوز معتبر یا قرارداد تأمین‌کننده</span></div></article></section>
+  {% if cinema_titles %}
+  <section class="khx-cinema-catalog">
+    <div class="khx-section-head"><div><span class="khx-eyebrow">LICENSED COLLECTION</span><h2>آثار قابل نمایش</h2><p>فقط آثاری که مجوز نمایش معتبر دارند.</p></div></div>
+    <div class="khx-cinema-grid">
+      {% for title in cinema_titles %}
+      <a class="khx-cinema-title-card" href="{{ url_for('cinema_title_detail', slug=title.slug) }}">
+        <div class="khx-cinema-title-poster">{% if title.poster_url %}<img src="{{ title.poster_url }}" alt="{{ title.title }}" loading="lazy">{% else %}<i class="fa-solid fa-film"></i>{% endif %}<span>{{ 'سریال' if title.content_type == 'series' else 'فیلم' }}</span></div>
+        <div class="khx-cinema-title-meta"><strong>{{ title.title }}</strong><small>{{ title.release_year or 'سال نامشخص' }}{% if title.age_rating %} · {{ title.age_rating }}{% endif %}</small><p>{{ title.synopsis|default('اطلاعات بیشتر این اثر را ببینید.', true)|truncate(110) }}</p></div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="khx-cinema-status" id="catalog-status"><div class="khx-status-icon"><i class="fa-solid fa-satellite-dish"></i></div><div><span class="khx-eyebrow">CONTENT NETWORK</span><h2>در حال آماده‌سازی شبکه تأمین محتوا</h2><p>در نسخه فعلی هنوز منبع پخش و کاتالوگ دارای مجوز به این بخش متصل نشده است؛ بنابراین هیچ فیلم یا سریال ساختگی یا بدون مجوز نمایش داده نمی‌شود. زیرساخت این صفحه برای اتصال تأمین‌کنندگان قانونی و مدیریت مجوزها آماده‌سازی خواهد شد.</p></div><span class="khx-status-pill">کاتالوگ هنوز متصل نیست</span></section>
+  {% endif %}
+</section>
+{% endblock %}

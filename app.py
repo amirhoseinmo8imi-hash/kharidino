@@ -2710,6 +2710,58 @@ def cinema():
 
 
 
+@app.route("/cinema/watch/<slug>")
+def cinema_watch_movie(slug):
+    title = CinemaTitle.query.filter_by(slug=slug, status="published", content_type="movie").first_or_404()
+    return _render_licensed_cinema_player(title, None)
+
+
+@app.route("/cinema/watch/<slug>/episode/<int:episode_id>")
+def cinema_watch_episode(slug, episode_id):
+    title = CinemaTitle.query.filter_by(slug=slug, status="published", content_type="series").first_or_404()
+    episode = db.session.get(CinemaEpisode, episode_id)
+    if not episode or episode.series_id != title.id:
+        abort(404)
+    return _render_licensed_cinema_player(title, episode)
+
+
+def _render_licensed_cinema_player(title, episode):
+    now = datetime.utcnow()
+    licences = (
+        CinemaLicense.query
+        .join(CinemaProvider, CinemaProvider.id == CinemaLicense.provider_id)
+        .filter(
+            CinemaLicense.title_id == title.id,
+            CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
+            CinemaLicense.streaming_allowed.is_(True),
+            CinemaProvider.active.is_(True),
+            db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),
+            db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now),
+            db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now),
+        )
+        .all()
+    )
+    provider_ids = [item.provider_id for item in licences]
+    if not provider_ids:
+        abort(404)
+    query = CinemaMediaSource.query.filter(
+        CinemaMediaSource.title_id == title.id,
+        CinemaMediaSource.provider_id.in_(provider_ids),
+        CinemaMediaSource.active.is_(True),
+    )
+    query = query.filter(CinemaMediaSource.episode_id == (episode.id if episode else None))
+    sources = query.order_by(CinemaMediaSource.quality.asc()).all()
+    if not sources:
+        abort(404)
+    return render_template(
+        "cinema_player.html",
+        cinema_title=title,
+        cinema_episode=episode,
+        cinema_sources=sources,
+    )
+
+
 @app.route("/cinema/<slug>")
 def cinema_title_detail(slug):
     """Expose metadata only while an active provider licence permits display."""

@@ -2581,7 +2581,7 @@ def admin_cinema():
             valid_until_raw = (request.form.get("valid_until") or "").strip()
             try:
                 valid_from = datetime.strptime(valid_from_raw, "%Y-%m-%d") if valid_from_raw else None
-                valid_until = datetime.strptime(valid_until_raw, "%Y-%m-%d") if valid_until_raw else None
+                valid_until = (datetime.strptime(valid_until_raw, "%Y-%m-%d") + timedelta(days=1) - timedelta(microseconds=1)) if valid_until_raw else None
                 release_year = int(request.form.get("release_year") or 0) or None
                 duration = int(request.form.get("duration_minutes") or 0) or None
                 rating = float(request.form.get("rating") or 0) or None
@@ -2637,18 +2637,26 @@ def admin_cinema():
             license_status = request.form.get("license_status")
             if license_status not in {"pending", "active", "expired", "revoked"}:
                 license_status = "pending"
+            reference_code = (request.form.get("reference_code") or "").strip()[:180]
+            display_allowed = request.form.get("display_allowed") == "on"
+            streaming_allowed = request.form.get("streaming_allowed") == "on"
+            download_allowed = request.form.get("download_allowed") == "on"
+            if license_status == "active" and (not provider.active or not reference_code or not display_allowed):
+                db.session.rollback()
+                flash("برای فعال‌کردن مجوز، تأمین‌کننده فعال، کد قرارداد و اجازه نمایش لازم است.", "danger")
+                return redirect(url_for("admin_cinema"))
             territory = (request.form.get("territory") or "IR").strip().upper()
             if territory not in {"IR", "*"}:
                 territory = "IR"
             licence = CinemaLicense(
                 title_id=title.id,
                 provider_id=provider.id,
-                reference_code=(request.form.get("reference_code") or "").strip()[:180],
+                reference_code=reference_code,
                 territory=territory,
                 status=license_status,
-                display_allowed=request.form.get("display_allowed") == "on",
-                streaming_allowed=request.form.get("streaming_allowed") == "on",
-                download_allowed=request.form.get("download_allowed") == "on",
+                display_allowed=display_allowed,
+                streaming_allowed=streaming_allowed,
+                download_allowed=download_allowed,
                 valid_from=valid_from,
                 valid_until=valid_until,
             )

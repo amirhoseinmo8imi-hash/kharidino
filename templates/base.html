@@ -118,9 +118,7 @@
       <i class="fa-solid fa-bars"></i><span>دسته‌بندی کالاها</span><i class="fa-solid fa-chevron-down km-cat-chevron"></i>
     </button>
     <div class="km-category-mega" role="menu" aria-label="دسته‌بندی کالاها">
-      <aside class="km-mega-sidebar">
-        <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>همه دسته‌بندی‌ها</span></div>
-        <aside class="km-mega-sidebar" aria-label="گروه‌های دسته‌بندی">
+      <aside class="km-mega-sidebar" aria-label="گروه‌های دسته‌بندی">
         <div class="km-mega-sidebar-title"><i class="fa-solid fa-layer-group"></i><span>دسته‌بندی کالاها</span></div>
         {% set first_nav_item = namespace(value=true) %}
         {% for nav_group in category_navigation_groups|default([]) %}

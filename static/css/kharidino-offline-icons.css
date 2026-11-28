@@ -5,7 +5,7 @@ i[class*="fa-"], span[class*="fa-"], .fa, .fas, .far, .fab {
   font-style: normal !important;
   font-weight: 600;
 }
-i[class*="fa-"]::before, span[class*="fa-"]::before { content: "•"; }
+i[class*="fa-"]::before, span[class*="fa-"]::before { content: ""; }
 .fa-home::before,.fa-house::before { content: "⌂"; }
 .fa-user::before,.fa-user-circle::before { content: "👤"; }
 .fa-users::before { content: "👥"; }

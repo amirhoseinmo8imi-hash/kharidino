@@ -2542,7 +2542,7 @@ def admin_cinema():
             if title and provider:
                 licence = (
                     CinemaLicense.query
-                    .filter_by(title_id=title.id, provider_id=provider.id, status="active", streaming_allowed=True)
+                    .filter_by(title_id=title.id, provider_id=provider.id, status="active", display_allowed=True, streaming_allowed=True)
                     .filter(db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"))
                     .filter(db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now))
                     .filter(db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now))
@@ -2732,6 +2732,7 @@ def cinema_title_detail(slug):
         .filter(
             CinemaLicense.title_id == title.id,
             CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
             CinemaLicense.streaming_allowed.is_(True),
             CinemaProvider.active.is_(True),
             db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),

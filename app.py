@@ -2339,6 +2339,69 @@ def home():
     )
 
 
+
+# =========================================================
+# EXPLORE & CINEMA DISCOVERY
+# =========================================================
+
+@app.route("/explore")
+def explore():
+    """A searchable discovery surface backed by the real active product catalog."""
+    q = request.args.get("q", "").strip()[:100]
+    category_id = request.args.get("category", "").strip()
+    sort = request.args.get("sort", "newest").strip()
+    query = Product.query.filter_by(active=True)
+
+    if q:
+        term = f"%{q}%"
+        query = query.filter(db.or_(
+            Product.name.ilike(term),
+            Product.description.ilike(term),
+            Product.category.has(Category.name.ilike(term)),
+        ))
+
+    selected_category = None
+    if category_id:
+        try:
+            selected_category = db.session.get(Category, int(category_id))
+            if selected_category:
+                query = query.filter(Product.category_id == selected_category.id)
+            else:
+                category_id = ""
+        except (TypeError, ValueError):
+            category_id = ""
+
+    if sort == "price_low":
+        products = query.all()
+        products.sort(key=lambda item: (lowest_price(item), -item.id))
+    elif sort == "price_high":
+        products = query.all()
+        products.sort(key=lambda item: (-lowest_price(item), -item.id))
+    else:
+        sort = "newest"
+        products = query.order_by(Product.id.desc()).all()
+
+    products = products[:48]
+    categories = Category.query.filter_by(active=True).order_by(Category.id.asc()).all()
+    return render_template(
+        "explore.html",
+        products=products,
+        categories=categories,
+        q=q,
+        sort=sort,
+        category_id=category_id,
+        selected_category=selected_category,
+        lowest_price=lowest_price,
+    )
+
+
+@app.route("/cinema")
+def cinema():
+    """Cinema discovery hub; only licensed provider catalogues will be published here."""
+    return render_template("cinema.html")
+
+
+
 # =========================================================
 # CATALOG
 # =========================================================

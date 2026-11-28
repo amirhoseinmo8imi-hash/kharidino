@@ -32,6 +32,19 @@
       {% if not providers %}<small>ابتدا یک تأمین‌کننده ثبت کن.</small>{% endif %}
     </form>
   </div>
+  <form class="khx-admin-form khx-source-admin-form" method="post">
+    <input type="hidden" name="action" value="source">
+    <h2><i class="fa-solid fa-circle-play"></i> اتصال منبع پخش مجاز</h2>
+    <div class="khx-form-row"><label>اثر<select name="source_title_id" required>{% for item in cinema_titles %}<option value="{{ item.id }}">{{ item.title }}</option>{% endfor %}</select></label><label>تأمین‌کننده<select name="source_provider_id" required>{% for item in providers %}<option value="{{ item.id }}">{{ item.name }}</option>{% endfor %}</select></label></div>
+    <label>قسمت (برای فیلم خالی بماند)<select name="source_episode_id"><option value="">منبع فیلم / بدون قسمت</option>{% for item in cinema_episodes %}<option value="{{ item.id }}">{{ item.series.title }} · فصل {{ item.season_number }} قسمت {{ item.episode_number }} · {{ item.title }}</option>{% endfor %}</select></label>
+    <label>نشانی امن منبع پخش HTTPS<input name="playback_url" type="url" required placeholder="https://provider.example/stream.m3u8"></label>
+    <div class="khx-form-row"><label>قالب<select name="stream_format"><option value="hls">HLS</option><option value="mp4">MP4</option><option value="webm">WebM</option></select></label><label>کیفیت<input name="quality" maxlength="30" placeholder="1080p / 720p / auto"></label><label>زبان صدا<input name="audio_language" maxlength="80" value="fa"></label></div>
+    <label>زیرنویس HTTPS یا مسیر static<input name="subtitle_url" placeholder="https://... یا /static/..."></label>
+    <label class="khx-check"><input type="checkbox" name="source_active"> فعال‌سازی منبع (نیازمند مجوز پخش معتبر)</label>
+    <button type="submit" {% if not cinema_titles or not providers %}disabled{% endif %}>ثبت منبع پخش</button>
+    <small>منبع فقط وقتی قابل پخش می‌شود که مجوز فعال، اجازه پخش و تأمین‌کننده فعال وجود داشته باشد. سازگاری HLS به مرورگر بستگی دارد؛ MP4 معمولاً سازگارتر است.</small>
+  </form>
+  <section class="khx-admin-list"><h2>منابع پخش ({{ cinema_sources|length }})</h2>{% for source in cinema_sources %}<article><strong>{{ source.title.title }}</strong><span>{{ source.provider.name }} · {{ source.quality }} · {{ source.stream_format }}{% if source.episode %} · فصل {{ source.episode.season_number }} قسمت {{ source.episode.episode_number }}{% endif %}</span><b class="{{ 'is-active' if source.active else 'is-off' }}">{{ 'فعال' if source.active else 'غیرفعال' }}</b></article>{% else %}<p>هنوز منبع پخشی ثبت نشده است.</p>{% endfor %}</section>
   <form class="khx-admin-form khx-episode-admin-form" method="post">
     <input type="hidden" name="action" value="episode">
     <h2><i class="fa-solid fa-list-ol"></i> افزودن فصل و قسمت سریال</h2>

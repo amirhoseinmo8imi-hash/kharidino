@@ -39,7 +39,7 @@
     <label>قسمت (برای فیلم خالی بماند)<select name="source_episode_id"><option value="">منبع فیلم / بدون قسمت</option>{% for item in cinema_episodes %}<option value="{{ item.id }}">{{ item.series.title }} · فصل {{ item.season_number }} قسمت {{ item.episode_number }} · {{ item.title }}</option>{% endfor %}</select></label>
     <label>نشانی امن منبع پخش HTTPS<input name="playback_url" type="url" required placeholder="https://provider.example/stream.m3u8"></label>
     <div class="khx-form-row"><label>قالب<select name="stream_format"><option value="hls">HLS</option><option value="mp4">MP4</option><option value="webm">WebM</option></select></label><label>کیفیت<input name="quality" maxlength="30" placeholder="1080p / 720p / auto"></label><label>زبان صدا<input name="audio_language" maxlength="80" value="fa"></label></div>
-    <label>زیرنویس HTTPS یا مسیر static<input name="subtitle_url" placeholder="https://... یا /static/..."></label>
+    <div class="khx-form-row"><label>زیرنویس HTTPS یا مسیر static<input name="subtitle_url" placeholder="https://... یا /static/..."></label><label>زبان زیرنویس<input name="subtitle_language" maxlength="80" value="fa" placeholder="fa"></label></div>
     <label class="khx-check"><input type="checkbox" name="source_active"> فعال‌سازی منبع (نیازمند مجوز پخش معتبر)</label>
     <button type="submit" {% if not cinema_titles or not providers %}disabled{% endif %}>ثبت منبع پخش</button>
     <small>منبع فقط وقتی قابل پخش می‌شود که مجوز فعال، اجازه پخش و تأمین‌کننده فعال وجود داشته باشد. سازگاری HLS به مرورگر بستگی دارد؛ MP4 معمولاً سازگارتر است.</small>

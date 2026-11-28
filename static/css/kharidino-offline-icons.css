@@ -1,0 +1,109 @@
+/* Offline replacement for the Font Awesome glyphs used by shared templates.
+   The online website continues to load the full Font Awesome stylesheet. */
+i[class*="fa-"], span[class*="fa-"], .fa, .fas, .far, .fab {
+  font-family: system-ui, "Segoe UI Symbol", sans-serif !important;
+  font-style: normal !important;
+  font-weight: 600;
+}
+i[class*="fa-"]::before, span[class*="fa-"]::before { content: ""; }
+.fa-home::before,.fa-house::before { content: "⌂"; }
+.fa-user::before,.fa-user-circle::before { content: "👤"; }
+.fa-users::before { content: "👥"; }
+.fa-search::before,.fa-magnifying-glass::before { content: "⌕"; }
+.fa-shopping-cart::before,.fa-cart-shopping::before,.fa-bag-shopping::before { content: "🛒"; }
+.fa-heart::before { content: "♥"; }
+.fa-star::before { content: "★"; }
+.fa-bars::before { content: "☰"; }
+.fa-times::before,.fa-xmark::before { content: "×"; }
+.fa-plus::before { content: "+"; }
+.fa-minus::before { content: "−"; }
+.fa-check::before,.fa-check-circle::before { content: "✓"; }
+.fa-trash::before { content: "⌫"; }
+.fa-edit::before,.fa-pen::before { content: "✎"; }
+.fa-eye::before { content: "◉"; }
+.fa-eye-slash::before { content: "⊘"; }
+.fa-bell::before { content: "♢"; }
+.fa-envelope::before { content: "✉"; }
+.fa-phone::before { content: "☎"; }
+.fa-map-marker-alt::before,.fa-location-dot::before { content: "⌖"; }
+.fa-store::before { content: "▤"; }
+.fa-box::before { content: "▣"; }
+.fa-tag::before { content: "◇"; }
+.fa-fire::before { content: "♨"; }
+.fa-gamepad::before { content: "🎮"; }
+.fa-car::before { content: "🚘"; }
+.fa-truck::before { content: "🚚"; }
+.fa-credit-card::before { content: "▤"; }
+.fa-wallet::before { content: "▱"; }
+.fa-cog::before,.fa-gear::before { content: "⚙"; }
+.fa-arrow-left::before,.fa-chevron-left::before { content: "‹"; }
+.fa-arrow-right::before,.fa-chevron-right::before { content: "›"; }
+.fa-chevron-down::before { content: "⌄"; }
+.fa-chevron-up::before { content: "⌃"; }
+.fa-filter::before { content: "▽"; }
+.fa-image::before,.fa-camera::before { content: "▧"; }
+.fa-download::before { content: "↓"; }
+.fa-upload::before { content: "↑"; }
+.fa-file-pdf::before { content: "▤"; }
+.fa-print::before { content: "▧"; }
+.fa-info-circle::before,.fa-circle-info::before { content: "ⓘ"; }
+.fa-question-circle::before { content: "?"; }
+.fa-exclamation-triangle::before { content: "⚠"; }
+.fa-clock::before { content: "◷"; }
+.fa-calendar::before { content: "▦"; }
+.fa-lock::before { content: "🔒"; }
+.fa-unlock::before { content: "🔓"; }
+.fa-sign-out-alt::before,.fa-right-from-bracket::before { content: "⇥"; }
+.fa-sign-in-alt::before,.fa-right-to-bracket::before { content: "⇤"; }
+.fa-share::before { content: "↗"; }
+.fa-link::before { content: "↗"; }
+.fa-comments::before,.fa-comment::before { content: "▤"; }
+.fa-headset::before { content: "☏"; }
+.fa-shield-alt::before,.fa-shield-halved::before { content: "⬟"; }
+.fa-percent::before { content: "%"; }
+.fa-gift::before { content: "🎁"; }
+.fa-bolt::before { content: "ϟ"; }
+.fa-chart-line::before,.fa-chart-bar::before { content: "▥"; }
+.fa-list::before { content: "☷"; }
+.fa-th::before { content: "▦"; }
+
+
+/* Expanded offline icon font fallback: never render generic bullets. */
+i[class*="fa-"]::before,span[class*="fa-"]::before{display:inline-block;min-width:1em;text-align:center}
+.fa-house::before,.fa-home::before{content:"⌂"}
+.fa-border-all::before,.fa-th-large::before,.fa-grid-2::before{content:"▦"}
+.fa-car-side::before,.fa-car::before{content:"🚘"}
+.fa-cart-shopping::before,.fa-shopping-cart::before{content:"🛒"}
+.fa-user::before,.fa-user-circle::before{content:"●"}
+.fa-film::before,.fa-clapperboard::before{content:"▣"}
+.fa-compass::before,.fa-compass-drafting::before{content:"◎"}
+.fa-circle-user::before{content:"●"}
+.fa-scale-balanced::before{content:"⚖"}
+.fa-boxes-stacked::before,.fa-boxes::before{content:"▤"}
+.fa-arrow-left::before,.fa-chevron-left::before{content:"‹"}
+.fa-arrow-right::before,.fa-chevron-right::before{content:"›"}
+.fa-chevron-down::before{content:"⌄"}
+.fa-chevron-up::before{content:"⌃"}
+.fa-heart::before{content:"♥"}
+.fa-star::before{content:"★"}
+.fa-bolt::before{content:"ϟ"}
+.fa-shield-halved::before,.fa-shield-heart::before{content:"⬟"}
+.fa-headset::before{content:"☏"}
+.fa-magnifying-glass::before,.fa-search::before{content:"⌕"}
+.fa-apple-whole::before{content:"●"}
+.fa-gamepad::before{content:"🎮"}
+.fa-store::before{content:"▤"}
+.fa-comment::before,.fa-comments::before{content:"▤"}
+.fa-right-to-bracket::before{content:"⇤"}
+.fa-right-from-bracket::before{content:"⇥"}
+.fa-circle-info::before{content:"ⓘ"}
+.fa-fire::before{content:"♨"}
+.fa-bars::before{content:"☰"}
+/* Five equal destinations and enough scroll clearance above the fixed bar. */
+@media(max-width:700px){
+ .mobile-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr));box-sizing:border-box;min-height:72px;height:auto;padding-top:7px;padding-bottom:max(7px,env(safe-area-inset-bottom));}
+ .mobile-nav-item{min-height:54px;overflow:hidden}
+ body{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}
+ .site-content{padding-bottom:0}
+ .mobile-bottom-nav i{font-family:system-ui,"Segoe UI Symbol",sans-serif!important;font-style:normal}
+}

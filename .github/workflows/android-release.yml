@@ -5,6 +5,12 @@ on:
   push:
     paths:
       - 'mobile_app/android/**'
+      - 'mobile_app/api/**'
+      - 'app.py'
+      - 'run_kharidino.py'
+      - '*.py'
+      - 'templates/**'
+      - 'static/**'
       - '.github/workflows/android-release.yml'
 
 permissions:
@@ -26,14 +32,14 @@ jobs:
           java-version: '17'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      - name: Install Android SDK 35
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Generate Gradle wrapper
-        run: gradle wrapper --gradle-version 8.9
+        with:
+          gradle-version: 8.9
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
@@ -42,7 +48,7 @@ jobs:
           if-no-files-found: error
 
   build-release:
-    if: github.event_name == 'workflow_dispatch' && vars.KHARIDINO_BASE_URL != ''
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,10 +67,10 @@ jobs:
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Generate Gradle wrapper
-        run: gradle wrapper --gradle-version 8.9
+        with:
+          gradle-version: 8.9
       - name: Build Release APK
-        run: ./gradlew assembleRelease -PkharidinoBaseUrl="${{ vars.KHARIDINO_BASE_URL }}"
+        run: gradle assembleRelease
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:

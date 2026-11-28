@@ -1,140 +1,213 @@
 package com.kharidino.app
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.app.DownloadManager
+import android.net.Uri
+import android.webkit.ValueCallback
+import android.webkit.URLUtil
+import android.os.Environment
 import android.os.Bundle
+import android.view.Gravity
+import android.view.View
+import android.webkit.CookieManager
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.kharidino.app.api.ApiClient
-import com.kharidino.app.api.Product
+import androidx.activity.OnBackPressedCallback
+import com.chaquo.python.Python
+import com.chaquo.python.android.AndroidPlatform
+import java.io.File
+import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
+    private val executor = Executors.newSingleThreadExecutor()
+    private lateinit var root: FrameLayout
+    private lateinit var status: TextView
+    private lateinit var progress: ProgressBar
+    private lateinit var webView: WebView
+    private var uploadCallback: ValueCallback<Array<Uri>>? = null
+    private val localUrl = "http://127.0.0.1:8765/"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { KharidinoApp() }
-    }
-}
-
-private val Background = Color(0xFF070B14)
-private val Surface = Color(0xFF101827)
-private val Primary = Color(0xFF38BDF8)
-
-@Composable
-fun KharidinoApp() {
-    var selected by remember { mutableIntStateOf(0) }
-    Scaffold(
-        containerColor = Background,
-        bottomBar = {
-            NavigationBar(containerColor = Surface) {
-                val labels = listOf("خانه", "جستجو", "سبد", "علاقه‌مندی", "حساب")
-                val icons = listOf(Icons.Default.Home, Icons.Default.Search, Icons.Default.ShoppingCart, Icons.Default.FavoriteBorder, Icons.Default.Person)
-                labels.forEachIndexed { index, label ->
-                    NavigationBarItem(selected = selected == index, onClick = { selected = index }, icon = { Icon(icons[index], label) }, label = { Text(label) })
+        showStartup()
+        executor.execute {
+            try {
+                installWebsiteBundle()
+                if (!Python.isStarted()) Python.start(AndroidPlatform(this))
+                Python.getInstance().getModule("android_server")
+                    .callAttr("start", File(filesDir, "kharidino").absolutePath, 8765)
+                runOnUiThread { showWebsite() }
+            } catch (error: Exception) {
+                runOnUiThread {
+                    progress.visibility = View.GONE
+                    status.text = "راه‌اندازی خریدینو انجام نشد. برنامه را دوباره باز کن.\n\n" + error.message
                 }
             }
         }
-    ) { padding -> HomeScreen(Modifier.padding(padding)) }
-}
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (::webView.isInitialized && webView.canGoBack()) webView.goBack() else finish()
+            }
+        })
+    }
 
-@Composable
-private fun HomeScreen(modifier: Modifier = Modifier) {
-    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var search by remember { mutableStateOf("") }
+    private fun showStartup() {
+        root = FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.rgb(7, 11, 20))
+        }
+        val density = resources.displayMetrics.density
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding((28 * density).toInt(), (24 * density).toInt(), (28 * density).toInt(), (24 * density).toInt())
+        }
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.ic_kharidino_mark)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            contentDescription = "لوگوی خریدینو"
+        }
+        content.addView(logo, LinearLayout.LayoutParams((112 * density).toInt(), (112 * density).toInt()).apply {
+            bottomMargin = (22 * density).toInt()
+        })
+        status = TextView(this).apply {
+            text = "در حال آماده‌سازی خریدینو…"
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 16f
+            gravity = Gravity.CENTER
+        }
+        content.addView(status, LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = (20 * density).toInt()
+        })
+        progress = ProgressBar(this)
+        content.addView(progress, LinearLayout.LayoutParams(-2, -2))
+        root.addView(content, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
+        setContentView(root)
+    }
 
-    LaunchedEffect(Unit) {
-        try {
-            products = ApiClient.service.products(limit = 20).items
-            error = null
-        } catch (e: Exception) {
-            error = "اتصال به سرور خریدینو برقرار نشد."
-        } finally {
-            loading = false
+    private fun installWebsiteBundle() {
+        val marker = File(filesDir, ".kharidino_bundle_version")
+        val version = BuildConfig.VERSION_CODE.toString()
+        if (marker.exists() && marker.readText() == version) return
+        copyAssetTree("kharidino", File(filesDir, "kharidino"))
+        marker.writeText(version)
+    }
+
+    private fun copyAssetTree(assetPath: String, target: File) {
+        val children = assets.list(assetPath) ?: emptyArray()
+        if (children.isNotEmpty()) {
+            if (!target.exists()) target.mkdirs()
+            children.forEach { child -> copyAssetTree("$assetPath/$child", File(target, child)) }
+            return
+        }
+        val relative = assetPath.removePrefix("kharidino/")
+        if (relative.startsWith("static/uploads/") && target.exists()) return
+        target.parentFile?.mkdirs()
+        assets.open(assetPath).use { input -> target.outputStream().use { input.copyTo(it) } }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun showWebsite() {
+        webView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.databaseEnabled = true
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
+            settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            settings.javaScriptCanOpenWindowsAutomatically = false
+            settings.setSupportMultipleWindows(false)
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    val uri = request.url
+                    if (uri.scheme == "http" && uri.host == "127.0.0.1" && uri.port == 8765) return false
+                    if (uri.scheme == "mailto" || uri.scheme == "tel" || uri.scheme == "sms" || uri.scheme == "geo") {
+                        return try {
+                            startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            true
+                        } catch (_: Exception) { true }
+                    }
+                    if (uri.scheme == "http" || uri.scheme == "https") {
+                        return try {
+                            startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            true
+                        } catch (_: Exception) {
+                            Toast.makeText(this@MainActivity, "برای باز کردن این پیوند اینترنت لازم است.", Toast.LENGTH_SHORT).show()
+                            true
+                        }
+                    }
+                    return true
+                }
+            }
+            webChromeClient = object : WebChromeClient() {
+                override fun onShowFileChooser(
+                    webView: WebView?,
+                    filePathCallback: ValueCallback<Array<Uri>>?,
+                    fileChooserParams: WebChromeClient.FileChooserParams?
+                ): Boolean {
+                    if (filePathCallback == null || fileChooserParams == null) return false
+                    uploadCallback?.onReceiveValue(null)
+                    uploadCallback = filePathCallback
+                    return try {
+                        startActivityForResult(fileChooserParams.createIntent(), FILE_PICKER_REQUEST)
+                        true
+                    } catch (_: Exception) {
+                        uploadCallback?.onReceiveValue(null)
+                        uploadCallback = null
+                        false
+                    }
+                }
+            }
+            setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+                try {
+                    val request = DownloadManager.Request(Uri.parse(url))
+                    request.setMimeType(mimeType)
+                    CookieManager.getInstance().getCookie(url)?.let { request.addRequestHeader("Cookie", it) }
+                    if (!userAgent.isNullOrBlank()) request.addRequestHeader("User-Agent", userAgent)
+                    request.setTitle(URLUtil.guessFileName(url, contentDisposition, mimeType))
+                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    request.setDestinationInExternalFilesDir(this@MainActivity, Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, contentDisposition, mimeType))
+                    (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+                    Toast.makeText(this@MainActivity, "دانلود آغاز شد.", Toast.LENGTH_SHORT).show()
+                } catch (_: Exception) {
+                    Toast.makeText(this@MainActivity, "دانلود انجام نشد.", Toast.LENGTH_SHORT).show()
+                }
+            }
+            CookieManager.getInstance().setAcceptCookie(true)
+            CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
+            loadUrl(localUrl)
+        }
+        root.removeAllViews()
+        root.addView(webView, FrameLayout.LayoutParams(-1, -1))
+    }
+
+    @Deprecated("Deprecated in Android")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == FILE_PICKER_REQUEST) {
+            uploadCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data))
+            uploadCallback = null
         }
     }
 
-    Column(modifier.fillMaxSize().background(Background).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("خریدینو", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("مقایسه کن، بهتر بخر", color = Color(0xFF94A3B8))
-            }
-            IconButton(onClick = {}) { Icon(Icons.Default.ShoppingCart, "سبد خرید", tint = Primary) }
-        }
-
-        OutlinedTextField(value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("چی می‌خوای بخری؟") }, leadingIcon = { Icon(Icons.Default.Search, "جستجو") })
-
-        Text("محصولات فروشگاه", color = Color.White, fontWeight = FontWeight.Bold)
-        when {
-            loading -> CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.CenterHorizontally))
-            error != null -> Text(error!!, color = Color(0xFFFF8A8A))
-            else -> {
-                val shown = products.filter { it.name.contains(search, ignoreCase = true) }
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) { items(shown) { ProductCard(it) } }
-            }
-        }
-
-        Spacer(Modifier.height(4.dp))
-        Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF111D33)), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(18.dp)) {
-                Text("🤖 Kharidino AI", color = Primary, fontWeight = FontWeight.Bold)
-                Text("برای انتخاب محصول بهتر، از هوش مصنوعی خریدینو کمک بگیر.", color = Color.White, modifier = Modifier.padding(top = 6.dp))
-            }
-        }
+    override fun onDestroy() {
+        uploadCallback?.onReceiveValue(null)
+        uploadCallback = null
+        if (::webView.isInitialized) webView.destroy()
+        executor.shutdownNow()
+        super.onDestroy()
     }
-}
 
-@Composable
-private fun ProductCard(product: Product) {
-    Card(modifier = Modifier.size(width = 190.dp, height = 220.dp), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Surface)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Column(Modifier.fillMaxWidth().height(115.dp).background(Color(0xFF172235), RoundedCornerShape(16.dp)), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(Icons.Default.ShoppingCart, null, tint = Primary, modifier = Modifier.size(48.dp))
-            }
-            Text(product.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
-            Text("${product.price} تومان", color = Primary, fontWeight = FontWeight.Bold)
-        }
+    companion object {
+        private const val FILE_PICKER_REQUEST = 7301
     }
 }

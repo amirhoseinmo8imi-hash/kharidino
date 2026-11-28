@@ -3109,18 +3109,28 @@ def register():
             flash("این ایمیل قبلاً ثبت شده است.", "warning")
             return render_template("auth.html", mode="register")
 
+        # On a standalone Android install, bootstrap exactly one local admin:
+        # the first account created on this device. This does not affect the hosted
+        # website because the flag is enabled only by the embedded loopback runtime.
+        local_first_admin = (
+            bool(app.config.get("KHARIDINO_ANDROID_LOCAL"))
+            and User.query.filter_by(role="admin").count() == 0
+        )
         user = User(
             name=name,
             email=email,
             password=generate_password_hash(password),
-            role="user",
+            role="admin" if local_first_admin else "user",
         )
         db.session.add(user)
         db.session.commit()
 
         session["user_id"] = user.id
         session.modified = True
-        flash("حساب کاربری با موفقیت ساخته شد. خوش آمدی 👋", "success")
+        if local_first_admin:
+            flash("حساب مدیر محلی خریدینو ساخته شد. اطلاعات ورود را امن نگه دار.", "success")
+        else:
+            flash("حساب کاربری با موفقیت ساخته شد. خوش آمدی 👋", "success")
         return redirect(url_for("home"))
 
     return render_template("auth.html", mode="register")

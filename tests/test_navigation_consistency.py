@@ -31,3 +31,11 @@ def test_category_stock_filter_is_applied_by_the_route():
     assert 'stock_filter == "available"' in route
     assert 'stock_filter == "unavailable"' in route
     assert "stock=stock_filter" in route
+
+
+def test_home_has_grouped_category_directory():
+    home = (ROOT / "templates" / "index.html").read_text(encoding="utf-8")
+    css = (ROOT / "static" / "css" / "kharidino-navigation-system.css").read_text(encoding="utf-8")
+    assert "kh-home-category-directory" in home
+    assert "category_navigation_groups" in home
+    assert ".kh-home-category-groups" in css

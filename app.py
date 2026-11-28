@@ -2531,6 +2531,44 @@ def admin_cinema():
                 db.session.add(episode)
                 db.session.commit()
                 flash("قسمت سریال ثبت شد.", "success")
+        elif action == "source":
+            title = db.session.get(CinemaTitle, request.form.get("source_title_id", type=int))
+            provider = db.session.get(CinemaProvider, request.form.get("source_provider_id", type=int))
+            episode = db.session.get(CinemaEpisode, request.form.get("source_episode_id", type=int)) if request.form.get("source_episode_id") else None
+            playback_url = (request.form.get("playback_url") or "").strip()[:1800]
+            subtitle_url = (request.form.get("subtitle_url") or "").strip()[:1800]
+            now = datetime.utcnow()
+            licence = None
+            if title and provider:
+                licence = (
+                    CinemaLicense.query
+                    .filter_by(title_id=title.id, provider_id=provider.id, status="active", streaming_allowed=True)
+                    .filter(db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"))
+                    .filter(db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now))
+                    .filter(db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now))
+                    .first()
+                )
+            activate = request.form.get("source_active") == "on"
+            valid_episode = (title and ((title.content_type == "movie" and episode is None) or (title.content_type == "series" and episode and episode.series_id == title.id)))
+            if not title or not provider or not valid_episode or not playback_url.startswith("https://") or (subtitle_url and not subtitle_url.startswith(("https://", "/static/"))):
+                flash("مشخصات منبع، عنوان، قسمت و نشانی HTTPS را بررسی کن.", "danger")
+            elif activate and (not provider.active or not licence):
+                flash("فعال‌سازی منبع فقط با تأمین‌کننده فعال و مجوز پخش معتبر ممکن است.", "danger")
+            else:
+                source = CinemaMediaSource(
+                    title_id=title.id,
+                    episode_id=episode.id if episode else None,
+                    provider_id=provider.id,
+                    playback_url=playback_url,
+                    stream_format=request.form.get("stream_format") if request.form.get("stream_format") in {"mp4", "hls", "webm"} else "hls",
+                    quality=(request.form.get("quality") or "auto").strip()[:30],
+                    audio_language=(request.form.get("audio_language") or "fa").strip()[:80],
+                    subtitle_url=subtitle_url,
+                    active=activate,
+                )
+                db.session.add(source)
+                db.session.commit()
+                flash("منبع پخش ثبت شد." if activate else "منبع پخش به‌صورت غیرفعال ثبت شد.", "success")
         elif action == "title":
             title_name = (request.form.get("title") or "").strip()[:220]
             slug = re.sub(r"[^a-z0-9-]+", "-", (request.form.get("slug") or "").strip().lower()).strip("-")[:220]
@@ -2624,6 +2662,7 @@ def admin_cinema():
     licences = CinemaLicense.query.order_by(CinemaLicense.id.desc()).limit(100).all()
     episodes = CinemaEpisode.query.order_by(CinemaEpisode.series_id.asc(), CinemaEpisode.season_number.asc(), CinemaEpisode.episode_number.asc()).limit(300).all()
     series_titles = [item for item in titles if item.content_type == "series"]
+    sources = CinemaMediaSource.query.order_by(CinemaMediaSource.id.desc()).limit(200).all()
     return render_template(
         "admin_cinema.html",
         providers=providers,
@@ -2631,6 +2670,7 @@ def admin_cinema():
         cinema_licences=licences,
         cinema_episodes=episodes,
         series_titles=series_titles,
+        cinema_sources=sources,
     )
 
 

@@ -380,6 +380,7 @@ class CinemaMediaSource(db.Model):
     stream_format = db.Column(db.String(30), default="hls")
     quality = db.Column(db.String(30), default="auto")
     audio_language = db.Column(db.String(80), default="fa")
+    subtitle_language = db.Column(db.String(80), default="fa")
     subtitle_url = db.Column(db.String(1800), default="")
     active = db.Column(db.Boolean, default=False, nullable=False)
     title = db.relationship("CinemaTitle", backref=db.backref("media_sources", lazy=True))
@@ -2563,6 +2564,7 @@ def admin_cinema():
                     stream_format=request.form.get("stream_format") if request.form.get("stream_format") in {"mp4", "hls", "webm"} else "hls",
                     quality=(request.form.get("quality") or "auto").strip()[:30],
                     audio_language=(request.form.get("audio_language") or "fa").strip()[:80],
+                    subtitle_language=(request.form.get("subtitle_language") or "fa").strip()[:80],
                     subtitle_url=subtitle_url,
                     active=activate,
                 )

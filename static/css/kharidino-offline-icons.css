@@ -66,3 +66,44 @@ i[class*="fa-"]::before, span[class*="fa-"]::before { content: "•"; }
 .fa-chart-line::before,.fa-chart-bar::before { content: "▥"; }
 .fa-list::before { content: "☷"; }
 .fa-th::before { content: "▦"; }
+
+
+/* Expanded offline icon font fallback: never render generic bullets. */
+i[class*="fa-"]::before,span[class*="fa-"]::before{display:inline-block;min-width:1em;text-align:center}
+.fa-house::before,.fa-home::before{content:"⌂"}
+.fa-border-all::before,.fa-th-large::before,.fa-grid-2::before{content:"▦"}
+.fa-car-side::before,.fa-car::before{content:"🚘"}
+.fa-cart-shopping::before,.fa-shopping-cart::before{content:"🛒"}
+.fa-user::before,.fa-user-circle::before{content:"●"}
+.fa-film::before,.fa-clapperboard::before{content:"▣"}
+.fa-compass::before,.fa-compass-drafting::before{content:"◎"}
+.fa-circle-user::before{content:"●"}
+.fa-scale-balanced::before{content:"⚖"}
+.fa-boxes-stacked::before,.fa-boxes::before{content:"▤"}
+.fa-arrow-left::before,.fa-chevron-left::before{content:"‹"}
+.fa-arrow-right::before,.fa-chevron-right::before{content:"›"}
+.fa-chevron-down::before{content:"⌄"}
+.fa-chevron-up::before{content:"⌃"}
+.fa-heart::before{content:"♥"}
+.fa-star::before{content:"★"}
+.fa-bolt::before{content:"ϟ"}
+.fa-shield-halved::before,.fa-shield-heart::before{content:"⬟"}
+.fa-headset::before{content:"☏"}
+.fa-magnifying-glass::before,.fa-search::before{content:"⌕"}
+.fa-apple-whole::before{content:"●"}
+.fa-gamepad::before{content:"🎮"}
+.fa-store::before{content:"▤"}
+.fa-comment::before,.fa-comments::before{content:"▤"}
+.fa-right-to-bracket::before{content:"⇤"}
+.fa-right-from-bracket::before{content:"⇥"}
+.fa-circle-info::before{content:"ⓘ"}
+.fa-fire::before{content:"♨"}
+.fa-bars::before{content:"☰"}
+/* Five equal destinations and enough scroll clearance above the fixed bar. */
+@media(max-width:700px){
+ .mobile-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr));box-sizing:border-box;min-height:72px;height:auto;padding-top:7px;padding-bottom:max(7px,env(safe-area-inset-bottom));}
+ .mobile-nav-item{min-height:54px;overflow:hidden}
+ body{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}
+ .site-content{padding-bottom:0}
+ .mobile-bottom-nav i{font-family:system-ui,"Segoe UI Symbol",sans-serif!important;font-style:normal}
+}

@@ -16,6 +16,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -60,16 +62,35 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showStartup() {
-        root = FrameLayout(this).apply { setBackgroundColor(android.graphics.Color.rgb(7, 11, 20)) }
+        root = FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.rgb(7, 11, 20))
+        }
+        val density = resources.displayMetrics.density
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding((28 * density).toInt(), (24 * density).toInt(), (28 * density).toInt(), (24 * density).toInt())
+        }
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.ic_kharidino_mark)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            contentDescription = "لوگوی خریدینو"
+        }
+        content.addView(logo, LinearLayout.LayoutParams((112 * density).toInt(), (112 * density).toInt()).apply {
+            bottomMargin = (22 * density).toInt()
+        })
         status = TextView(this).apply {
-            text = "در حال آماده‌سازی فروشگاه داخلی خریدینو…"
+            text = "در حال آماده‌سازی خریدینو…"
             setTextColor(android.graphics.Color.WHITE)
             textSize = 16f
             gravity = Gravity.CENTER
         }
+        content.addView(status, LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = (20 * density).toInt()
+        })
         progress = ProgressBar(this)
-        root.addView(status, FrameLayout.LayoutParams(-1, -1))
-        root.addView(progress, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+        content.addView(progress, LinearLayout.LayoutParams(-2, -2))
+        root.addView(content, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
         setContentView(root)
     }
 

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}مدیریت سینمای خریدینو{% endblock %}
+{% block content %}
+<section class="khx-page khx-admin-cinema">
+  <header class="khx-admin-cinema-head"><span class="khx-eyebrow">CONTENT CONTROL CENTER</span><h1>مدیریت سینمای خریدینو</h1><p>ثبت تأمین‌کنندگان، مشخصات فیلم و سریال و محدوده مجوزها. فقط محتوای دارای مجوز معتبر در بخش عمومی نمایش داده می‌شود.</p></header>
+  <div class="khx-admin-cinema-grid">
+    <form class="khx-admin-form" method="post">
+      <input type="hidden" name="action" value="provider">
+      <h2><i class="fa-solid fa-building"></i> ثبت تأمین‌کننده قانونی</h2>
+      <label>نام تأمین‌کننده<input name="name" required maxlength="220" placeholder="نام شرکت یا پلتفرم"></label>
+      <label>وب‌سایت رسمی HTTPS<input name="website" type="url" placeholder="https://example.com"></label>
+      <label class="khx-check"><input type="checkbox" name="active"> تأمین‌کننده فعال و قرارداد بررسی شده است</label>
+      <button type="submit">ثبت تأمین‌کننده</button>
+    </form>
+    <form class="khx-admin-form khx-admin-title-form" method="post">
+      <input type="hidden" name="action" value="title">
+      <h2><i class="fa-solid fa-film"></i> ثبت فیلم یا سریال و مجوز</h2>
+      <div class="khx-form-row"><label>عنوان فارسی<input name="title" required maxlength="220"></label><label>شناسه انگلیسی یکتا<input name="slug" required pattern="[A-Za-z0-9-]+" maxlength="220" placeholder="sample-title"></label></div>
+      <div class="khx-form-row"><label>نوع اثر<select name="content_type"><option value="movie">فیلم</option><option value="series">سریال</option></select></label><label>تأمین‌کننده<select name="provider_id" required>{% for provider in providers %}<option value="{{ provider.id }}">{{ provider.name }}{% if not provider.active %} (غیرفعال){% endif %}</option>{% endfor %}</select></label></div>
+      <label>عنوان اصلی<input name="original_title" maxlength="220"></label>
+      <label>خلاصه داستان<textarea name="synopsis" rows="3" maxlength="12000"></textarea></label>
+      <div class="khx-form-row"><label>پوستر (HTTPS یا مسیر static)<input name="poster_url" placeholder="https://..."></label><label>تصویر پس‌زمینه (اختیاری)<input name="backdrop_url" placeholder="https://..."></label></div>
+      <div class="khx-form-row"><label>سال انتشار<input name="release_year" type="number" min="1880" max="2100"></label><label>مدت (دقیقه)<input name="duration_minutes" type="number" min="1" max="999"></label><label>امتیاز از ۱۰<input name="rating" type="number" min="0" max="10" step=".1"></label></div>
+      <div class="khx-form-row"><label>ژانرها<input name="genres" maxlength="500" placeholder="درام، معمایی"></label><label>کشور<input name="country" maxlength="120"></label><label>زبان<input name="language" maxlength="80"></label></div>
+      <div class="khx-form-row"><label>کارگردان<input name="director" maxlength="220"></label><label>رده سنی<input name="age_rating" maxlength="30" placeholder="مثلاً 13+"></label></div>
+      <label>بازیگران<input name="cast" maxlength="3000"></label>
+      <div class="khx-license-box"><h3>وضعیت حقوق و مجوز</h3><div class="khx-form-row"><label>وضعیت مجوز<select name="license_status"><option value="pending">در انتظار بررسی</option><option value="active">فعال و تأییدشده</option><option value="expired">منقضی</option><option value="revoked">لغوشده</option></select></label><label>محدوده<select name="territory"><option value="IR">ایران</option><option value="*">همه مناطق (فقط با مجوز صریح)</option></select></label><label>کد قرارداد/مجوز<input name="reference_code" maxlength="180"></label></div>
+        <div class="khx-form-row"><label>شروع اعتبار<input name="valid_from" type="date"></label><label>پایان اعتبار<input name="valid_until" type="date"></label></div>
+        <div class="khx-admin-checks"><label class="khx-check"><input type="checkbox" name="display_allowed"> اجازه نمایش اطلاعات و پوستر</label><label class="khx-check"><input type="checkbox" name="streaming_allowed"> اجازه پخش آنلاین</label><label class="khx-check"><input type="checkbox" name="download_allowed"> اجازه دانلود</label><label class="khx-check"><input type="checkbox" name="publish"> انتشار در کاتالوگ عمومی</label><label class="khx-check"><input type="checkbox" name="featured"> اثر ویژه</label></div>
+      </div>
+      <button type="submit" {% if not providers %}disabled{% endif %}>ثبت اثر و مجوز</button>
+      {% if not providers %}<small>ابتدا یک تأمین‌کننده ثبت کن.</small>{% endif %}
+    </form>
+  </div>
+  <section class="khx-admin-list"><h2>تأمین‌کنندگان ({{ providers|length }})</h2>{% for provider in providers %}<article><strong>{{ provider.name }}</strong><span>{{ provider.website or 'وب‌سایت ثبت نشده' }}</span><b class="{{ 'is-active' if provider.active else 'is-off' }}">{{ 'فعال' if provider.active else 'غیرفعال' }}</b></article>{% else %}<p>هنوز تأمین‌کننده‌ای ثبت نشده است.</p>{% endfor %}</section>
+  <section class="khx-admin-list"><h2>آثار ثبت‌شده ({{ cinema_titles|length }})</h2>{% for title in cinema_titles %}<article><strong>{{ title.title }}</strong><span>{{ title.slug }} · {{ 'سریال' if title.content_type == 'series' else 'فیلم' }}</span><b class="{{ 'is-active' if title.status == 'published' else 'is-off' }}">{{ 'منتشرشده' if title.status == 'published' else 'پیش‌نویس' }}</b></article>{% else %}<p>هنوز اثری ثبت نشده است.</p>{% endfor %}</section>
+  <section class="khx-admin-list"><h2>مجوزها ({{ cinema_licences|length }})</h2>{% for licence in cinema_licences %}<article><strong>{{ licence.title.title }}</strong><span>{{ licence.provider.name }} · {{ licence.reference_code or 'بدون کد' }} · {{ licence.territory }}</span><b class="{{ 'is-active' if licence.status == 'active' and licence.display_allowed else 'is-off' }}">{{ licence.status }} / {{ 'نمایش مجاز' if licence.display_allowed else 'نمایش غیرفعال' }}</b></article>{% else %}<p>هنوز مجوزی ثبت نشده است.</p>{% endfor %}</section>
+</section>
+{% endblock %}

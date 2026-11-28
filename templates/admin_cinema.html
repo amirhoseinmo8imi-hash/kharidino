@@ -32,6 +32,17 @@
       {% if not providers %}<small>ابتدا یک تأمین‌کننده ثبت کن.</small>{% endif %}
     </form>
   </div>
+  <form class="khx-admin-form khx-episode-admin-form" method="post">
+    <input type="hidden" name="action" value="episode">
+    <h2><i class="fa-solid fa-list-ol"></i> افزودن فصل و قسمت سریال</h2>
+    <div class="khx-form-row"><label>سریال<select name="series_id" required>{% for item in series_titles %}<option value="{{ item.id }}">{{ item.title }}</option>{% endfor %}</select></label><label>نام قسمت<input name="episode_title" required maxlength="220"></label></div>
+    <div class="khx-form-row"><label>شماره فصل<input name="season_number" type="number" min="1" required></label><label>شماره قسمت<input name="episode_number" type="number" min="1" required></label><label>مدت (دقیقه)<input name="episode_duration" type="number" min="1" max="999"></label></div>
+    <label>خلاصه قسمت<textarea name="episode_synopsis" rows="2" maxlength="5000"></textarea></label>
+    <label>تصویر بندانگشتی (HTTPS یا مسیر static)<input name="thumbnail_url" placeholder="https://..."></label>
+    <button type="submit" {% if not series_titles %}disabled{% endif %}>ثبت قسمت</button>
+    {% if not series_titles %}<small>ابتدا یک اثر از نوع سریال ثبت کن.</small>{% endif %}
+  </form>
+  <section class="khx-admin-list"><h2>قسمت‌های ثبت‌شده ({{ cinema_episodes|length }})</h2>{% for episode in cinema_episodes %}<article><strong>{{ episode.series.title }}</strong><span>فصل {{ episode.season_number }} · قسمت {{ episode.episode_number }} · {{ episode.title }}</span><b>{{ episode.duration_minutes or '—' }} دقیقه</b></article>{% else %}<p>هنوز قسمتی ثبت نشده است.</p>{% endfor %}</section>
   <section class="khx-admin-list"><h2>تأمین‌کنندگان ({{ providers|length }})</h2>{% for provider in providers %}<article><strong>{{ provider.name }}</strong><span>{{ provider.website or 'وب‌سایت ثبت نشده' }}</span><b class="{{ 'is-active' if provider.active else 'is-off' }}">{{ 'فعال' if provider.active else 'غیرفعال' }}</b></article>{% else %}<p>هنوز تأمین‌کننده‌ای ثبت نشده است.</p>{% endfor %}</section>
   <section class="khx-admin-list"><h2>آثار ثبت‌شده ({{ cinema_titles|length }})</h2>{% for title in cinema_titles %}<article><strong>{{ title.title }}</strong><span>{{ title.slug }} · {{ 'سریال' if title.content_type == 'series' else 'فیلم' }}</span><b class="{{ 'is-active' if title.status == 'published' else 'is-off' }}">{{ 'منتشرشده' if title.status == 'published' else 'پیش‌نویس' }}</b></article>{% else %}<p>هنوز اثری ثبت نشده است.</p>{% endfor %}</section>
   <section class="khx-admin-list"><h2>مجوزها ({{ cinema_licences|length }})</h2>{% for licence in cinema_licences %}<article><strong>{{ licence.title.title }}</strong><span>{{ licence.provider.name }} · {{ licence.reference_code or 'بدون کد' }} · {{ licence.territory }}</span><b class="{{ 'is-active' if licence.status == 'active' and licence.display_allowed else 'is-off' }}">{{ licence.status }} / {{ 'نمایش مجاز' if licence.display_allowed else 'نمایش غیرفعال' }}</b></article>{% else %}<p>هنوز مجوزی ثبت نشده است.</p>{% endfor %}</section>

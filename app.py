@@ -904,9 +904,34 @@ def inject_globals():
         .all()
     )
 
+    # Presentation taxonomy groups existing categories without changing the
+    # database schema or category IDs. Unmatched categories remain discoverable.
+    def _navigation_group(category_name):
+        value = (category_name or "").strip()
+        rules = (
+            ("موبایل و دیجیتال", ("موبایل", "لپ‌تاپ", "کامپیوتر", "دیجیتال", "هدفون", "هندزفری", "تلویزیون", "صوتی", "ساعت", "پوشیدنی", "گیمینگ", "کنسول")),
+            ("خانه و زندگی", ("خانه", "آشپزخانه", "لوازم خانگی", "دکور", "ابزار", "زیبایی", "سلامت", "ورزش", "سفر", "کتاب", "تحریر")),
+            ("مد و خرید روزمره", ("پوشاک", "مد", "سوپرمارکتی", "مواد غذایی", "خوراکی", "میوه")),
+            ("خودرو و حمل‌ونقل", ("خودرو", "موتور", "موتورسیکلت", "قطعات", "لوازم یدکی")),
+        )
+        for group_name, keywords in rules:
+            if any(keyword in value for keyword in keywords):
+                return group_name
+        return "سایر دسته‌بندی‌ها"
+
+    grouped_categories = {}
+    for category in global_categories:
+        grouped_categories.setdefault(_navigation_group(category.name), []).append(category)
+    group_order = ("موبایل و دیجیتال", "خانه و زندگی", "مد و خرید روزمره", "خودرو و حمل‌ونقل", "سایر دسته‌بندی‌ها")
+    category_navigation_groups = [
+        {"name": name, "categories": grouped_categories[name]}
+        for name in group_order if grouped_categories.get(name)
+    ]
+
     return {
 
         "categories": global_categories,
+        "category_navigation_groups": category_navigation_groups,
         "stores": global_stores,
         "category_count": len(global_categories),
         "store_count": len(global_stores),

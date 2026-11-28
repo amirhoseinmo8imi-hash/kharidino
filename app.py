@@ -300,6 +300,93 @@ class Offer(db.Model):
     )
 
 
+class CinemaTitle(db.Model):
+    """Licensed film or series metadata; no media is playable by default."""
+    __tablename__ = "cinema_title"
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(220), unique=True, nullable=False, index=True)
+    title = db.Column(db.String(220), nullable=False)
+    original_title = db.Column(db.String(220), default="")
+    synopsis = db.Column(db.Text, default="")
+    content_type = db.Column(db.String(20), default="movie", nullable=False)  # movie | series
+    poster_url = db.Column(db.String(900), default="")
+    backdrop_url = db.Column(db.String(900), default="")
+    release_year = db.Column(db.Integer)
+    duration_minutes = db.Column(db.Integer)
+    genres = db.Column(db.String(500), default="")
+    country = db.Column(db.String(120), default="")
+    language = db.Column(db.String(80), default="")
+    director = db.Column(db.String(220), default="")
+    cast = db.Column(db.Text, default="")
+    age_rating = db.Column(db.String(30), default="")
+    rating = db.Column(db.Float)
+    featured = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(db.String(20), default="draft", nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CinemaProvider(db.Model):
+    """A contracted content supplier; activation is an explicit admin action."""
+    __tablename__ = "cinema_provider"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(220), nullable=False)
+    website = db.Column(db.String(900), default="")
+    integration_type = db.Column(db.String(40), default="manual")
+    active = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CinemaLicense(db.Model):
+    """Rights record for one title, supplier and territory."""
+    __tablename__ = "cinema_license"
+    id = db.Column(db.Integer, primary_key=True)
+    title_id = db.Column(db.Integer, db.ForeignKey("cinema_title.id"), nullable=False, index=True)
+    provider_id = db.Column(db.Integer, db.ForeignKey("cinema_provider.id"), nullable=False, index=True)
+    reference_code = db.Column(db.String(180), default="")
+    territory = db.Column(db.String(12), default="IR", nullable=False)
+    status = db.Column(db.String(20), default="pending", nullable=False, index=True)
+    display_allowed = db.Column(db.Boolean, default=False, nullable=False)
+    streaming_allowed = db.Column(db.Boolean, default=False, nullable=False)
+    download_allowed = db.Column(db.Boolean, default=False, nullable=False)
+    valid_from = db.Column(db.DateTime)
+    valid_until = db.Column(db.DateTime)
+    title = db.relationship("CinemaTitle", backref=db.backref("licenses", lazy=True))
+    provider = db.relationship("CinemaProvider", backref=db.backref("licenses", lazy=True))
+
+
+class CinemaEpisode(db.Model):
+    """Episode metadata for a licensed series."""
+    __tablename__ = "cinema_episode"
+    id = db.Column(db.Integer, primary_key=True)
+    series_id = db.Column(db.Integer, db.ForeignKey("cinema_title.id"), nullable=False, index=True)
+    season_number = db.Column(db.Integer, nullable=False)
+    episode_number = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(220), nullable=False)
+    synopsis = db.Column(db.Text, default="")
+    duration_minutes = db.Column(db.Integer)
+    thumbnail_url = db.Column(db.String(900), default="")
+    series = db.relationship("CinemaTitle", backref=db.backref("episodes", lazy=True, order_by="CinemaEpisode.season_number, CinemaEpisode.episode_number"))
+    __table_args__ = (db.UniqueConstraint("series_id", "season_number", "episode_number", name="uq_cinema_episode_number"),)
+
+
+class CinemaMediaSource(db.Model):
+    """Provider-owned playback endpoint; never exposed without a valid streaming license."""
+    __tablename__ = "cinema_media_source"
+    id = db.Column(db.Integer, primary_key=True)
+    title_id = db.Column(db.Integer, db.ForeignKey("cinema_title.id"), nullable=False, index=True)
+    episode_id = db.Column(db.Integer, db.ForeignKey("cinema_episode.id"), nullable=True, index=True)
+    provider_id = db.Column(db.Integer, db.ForeignKey("cinema_provider.id"), nullable=False, index=True)
+    playback_url = db.Column(db.String(1800), nullable=False)
+    stream_format = db.Column(db.String(30), default="hls")
+    quality = db.Column(db.String(30), default="auto")
+    audio_language = db.Column(db.String(80), default="fa")
+    subtitle_url = db.Column(db.String(1800), default="")
+    active = db.Column(db.Boolean, default=False, nullable=False)
+    title = db.relationship("CinemaTitle", backref=db.backref("media_sources", lazy=True))
+    episode = db.relationship("CinemaEpisode", backref=db.backref("media_sources", lazy=True))
+    provider = db.relationship("CinemaProvider", backref=db.backref("media_sources", lazy=True))
+
+
 class GamingSubmission(db.Model):
     """User-submitted gaming content; publication requires moderation."""
     __tablename__ = "gaming_submission"
@@ -2397,8 +2484,27 @@ def explore():
 
 @app.route("/cinema")
 def cinema():
-    """Cinema discovery hub; only licensed provider catalogues will be published here."""
-    return render_template("cinema.html")
+    """Show only titles with an active, in-date metadata display licence."""
+    now = datetime.utcnow()
+    cinema_titles = (
+        CinemaTitle.query
+        .join(CinemaLicense, CinemaLicense.title_id == CinemaTitle.id)
+        .join(CinemaProvider, CinemaProvider.id == CinemaLicense.provider_id)
+        .filter(
+            CinemaTitle.status == "published",
+            CinemaProvider.active.is_(True),
+            CinemaLicense.status == "active",
+            CinemaLicense.display_allowed.is_(True),
+            db.or_(CinemaLicense.territory == "IR", CinemaLicense.territory == "*"),
+            db.or_(CinemaLicense.valid_from.is_(None), CinemaLicense.valid_from <= now),
+            db.or_(CinemaLicense.valid_until.is_(None), CinemaLicense.valid_until >= now),
+        )
+        .distinct()
+        .order_by(CinemaTitle.featured.desc(), CinemaTitle.created_at.desc())
+        .limit(36)
+        .all()
+    )
+    return render_template("cinema.html", cinema_titles=cinema_titles)
 
 
 

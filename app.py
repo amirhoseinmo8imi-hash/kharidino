@@ -2503,6 +2503,34 @@ def admin_cinema():
                 db.session.add(provider)
                 db.session.commit()
                 flash("تأمین‌کننده سینما ثبت شد.", "success")
+        elif action == "episode":
+            series = db.session.get(CinemaTitle, request.form.get("series_id", type=int))
+            episode_name = (request.form.get("episode_title") or "").strip()[:220]
+            try:
+                season_number = int(request.form.get("season_number") or 0)
+                episode_number = int(request.form.get("episode_number") or 0)
+                duration = int(request.form.get("episode_duration") or 0) or None
+            except (TypeError, ValueError):
+                season_number = episode_number = 0
+                duration = None
+            thumbnail_url = (request.form.get("thumbnail_url") or "").strip()[:900]
+            if not series or series.content_type != "series" or not episode_name or season_number < 1 or episode_number < 1 or (duration is not None and not 1 <= duration <= 999) or (thumbnail_url and not (thumbnail_url.startswith("https://") or thumbnail_url.startswith("/static/"))):
+                flash("اطلاعات قسمت معتبر نیست؛ سریال، فصل، شماره قسمت و تصویر را بررسی کن.", "danger")
+            elif CinemaEpisode.query.filter_by(series_id=series.id, season_number=season_number, episode_number=episode_number).first():
+                flash("این شماره قسمت قبلاً برای این فصل ثبت شده است.", "danger")
+            else:
+                episode = CinemaEpisode(
+                    series_id=series.id,
+                    season_number=season_number,
+                    episode_number=episode_number,
+                    title=episode_name,
+                    synopsis=(request.form.get("episode_synopsis") or "").strip()[:5000],
+                    duration_minutes=duration,
+                    thumbnail_url=thumbnail_url,
+                )
+                db.session.add(episode)
+                db.session.commit()
+                flash("قسمت سریال ثبت شد.", "success")
         elif action == "title":
             title_name = (request.form.get("title") or "").strip()[:220]
             slug = re.sub(r"[^a-z0-9-]+", "-", (request.form.get("slug") or "").strip().lower()).strip("-")[:220]
@@ -2594,11 +2622,15 @@ def admin_cinema():
     providers = CinemaProvider.query.order_by(CinemaProvider.name.asc()).all()
     titles = CinemaTitle.query.order_by(CinemaTitle.created_at.desc()).limit(100).all()
     licences = CinemaLicense.query.order_by(CinemaLicense.id.desc()).limit(100).all()
+    episodes = CinemaEpisode.query.order_by(CinemaEpisode.series_id.asc(), CinemaEpisode.season_number.asc(), CinemaEpisode.episode_number.asc()).limit(300).all()
+    series_titles = [item for item in titles if item.content_type == "series"]
     return render_template(
         "admin_cinema.html",
         providers=providers,
         cinema_titles=titles,
         cinema_licences=licences,
+        cinema_episodes=episodes,
+        series_titles=series_titles,
     )
 
 

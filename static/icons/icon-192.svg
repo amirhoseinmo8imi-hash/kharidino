@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="خریدینو">
-  <rect width="192" height="192" rx="42" fill="#050816"/>
-  <circle cx="96" cy="96" r="68" fill="#6c5ce7"/>
-  <path d="M55 66h12l8 58h50l14-42H73" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="86" cy="143" r="7" fill="#fff"/><circle cx="124" cy="143" r="7" fill="#fff"/>
+  <rect width="192" height="192" rx="42" fill="#070B18"/>
+  <circle cx="96" cy="96" r="68.16" fill="#6C5CE7"/>
+  <circle cx="96" cy="96" r="54.72" fill="#8D82FF" opacity=".5"/>
+  <path d="M55.67999999999999 65.28h10.56l11.52 59.519999999999996h55.67999999999999l14.399999999999999-42.24H67.19999999999999" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="87.36" cy="138.24" r="6.144" fill="#fff"/>
+  <circle cx="121.92" cy="138.24" r="6.144" fill="#fff"/>
+  <path d="M145.92000000000002 30.72l4.224 11.52l11.52 4.224l-11.52 4.224l-4.224 11.52l-4.224-11.52l-11.52-4.224l11.52-4.224z" fill="#37C9D6"/>
 </svg>

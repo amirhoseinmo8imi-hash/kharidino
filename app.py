@@ -2996,6 +2996,9 @@ def category(category_id):
     sort = request.args.get("sort", "newest").strip()
     store_id = request.args.get("store", "").strip()
     q = request.args.get("q", "").strip()[:100]
+    stock_filter = request.args.get("stock", "").strip().lower()
+    if stock_filter not in {"", "available", "unavailable"}:
+        stock_filter = ""
 
     try:
         min_price = max(0, int(request.args.get("min_price", "0") or 0))
@@ -3026,18 +3029,23 @@ def category(category_id):
     # Filter using the same effective price users see on product cards.
     filtered = []
     for product in products:
-        if store_id.isdigit():
-            if not selected_store or not selected_store.active:
-                continue
-            matching = [
-                offer for offer in product.offers
-                if offer.store_id == selected_store.id
-                and offer.in_stock
-                and offer.price
-                and offer.price > 0
-            ]
-            if not matching:
-                continue
+        if store_id.isdigit() and (not selected_store or not selected_store.active):
+            continue
+
+        relevant_offers = [
+            offer for offer in product.offers
+            if offer.store and offer.store.active
+            and (not selected_store or offer.store_id == selected_store.id)
+            and offer.price and offer.price > 0
+        ]
+        if store_id.isdigit() and not relevant_offers:
+            continue
+
+        has_stock = any(offer.in_stock for offer in relevant_offers)
+        if stock_filter == "available" and not has_stock:
+            continue
+        if stock_filter == "unavailable" and has_stock:
+            continue
 
         effective = lowest_price(product)
         if min_price and effective < min_price:
@@ -3070,6 +3078,7 @@ def category(category_id):
         sort=sort,
         q=q,
         store_id=store_id,
+        stock=stock_filter,
         min_price=min_price,
         max_price=max_price,
         store_options=store_options,

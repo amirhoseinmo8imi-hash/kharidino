@@ -22,3 +22,12 @@ def test_category_page_has_shared_category_navigation_and_clean_filter_markup():
     assert "kh-category-quick-nav" in category
     assert "name=\"stock\"" in category
     assert "وضعیت کالا\\n" not in category
+
+
+def test_category_stock_filter_is_applied_by_the_route():
+    app = (ROOT / "app.py").read_text(encoding="utf-8")
+    route = app[app.index("def category(category_id):"):app.index("# PRICE ALERT", app.index("def category(category_id):"))]
+    assert 'request.args.get("stock"' in route
+    assert 'stock_filter == "available"' in route
+    assert 'stock_filter == "unavailable"' in route
+    assert "stock=stock_filter" in route
